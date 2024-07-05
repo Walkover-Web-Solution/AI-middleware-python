@@ -1,0 +1,87 @@
+from ..db_services import conversationDbService as chatbotDbService
+import traceback
+
+async def getAllThreads(bridge_id, org_id, page, pageSize):
+    try:
+        chats = await chatbotDbService.findAllThreads(bridge_id, org_id, page, pageSize)
+        return { 'success': True, 'data': chats }
+    except Exception as err:
+        print("getAllThreads =>", err)
+        return { 'success': False, 'message': str(err) }
+
+async def getThread(thread_id, org_id, bridge_id):
+    try:
+        chats = await chatbotDbService.find(org_id, thread_id, bridge_id)
+        return { 'success': True, 'data': chats }
+    except Exception as err:
+        print(err)
+        return { 'success': False, 'message': str(err) }
+
+async def getChatData(chat_id):
+    try:
+        chat = await chatbotDbService.findChat(chat_id)
+        return { 'success': True, 'data': chat }
+    except Exception as err:
+        print(err)
+        return { 'success': False, 'message': str(err) }
+
+async def getThreadHistory(thread_id, org_id, bridge_id):
+    try:
+        chats = await chatbotDbService.findMessage(org_id, thread_id, bridge_id)
+        return { 'success': True, 'data': chats }
+    except Exception as err:
+        print(err)
+        return { 'success': False, 'message': str(err) }
+
+async def savehistory(thread_id, userMessage, botMessage, org_id, bridge_id, model_name, type, messageBy, userRole="user", tools={}):
+    print('hello save history')
+    try:
+        chatToSave = [{
+            'thread_id': thread_id,
+            'org_id': org_id,
+            'model_name': model_name,
+            'message': userMessage or "",
+            'message_by': userRole,
+            'type': type,
+            'bridge_id': bridge_id
+        }]
+        
+        if tools:
+            chatToSave.append({
+                'thread_id': thread_id,
+                'org_id': org_id,
+                'model_name': model_name,
+                'message': "",
+                'message_by': "tools_call",
+                'type': type,
+                'bridge_id': bridge_id,
+                'function': tools
+            })
+
+        if botMessage:
+            chatToSave.append({
+                'thread_id': thread_id,
+                'org_id': org_id,
+                'model_name': model_name,
+                'message': "" if messageBy == "tool_calls" else botMessage,
+                'message_by': messageBy,
+                'type': type,
+                'bridge_id': bridge_id,
+                'function': botMessage if messageBy == "tool_calls" else {}
+            })
+
+        if userRole == "tool":
+            success = await chatbotDbService.deleteLastThread(org_id, thread_id, bridge_id)
+            chatToSave = chatToSave[-1:]
+            if not success:
+                return { 'success': False, 'message': "failed to delete last chat!" }
+
+        result = await chatbotDbService.createBulk(chatToSave)
+        return { 'success': True, 'message': "successfully saved chat history", 'result': list(result) }
+    except Exception as error:
+        # traceback.print_exc()
+        print("saveconversation error=>", error)
+        return { 'success': False, 'message': str(error) }
+
+# Exporting the functions
+__all__ = ['getAllThreads', 'savehistory', 'getThread', 'getThreadHistory', 'getChatData']

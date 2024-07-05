@@ -1,0 +1,66 @@
+import os
+import sqlalchemy as sa
+from sqlalchemy.orm import declarative_base, sessionmaker
+import importlib.util
+import sys
+
+Base = declarative_base()
+db = {}
+
+DB_NAME = 'chatBot'
+DB_USER = 'postgres'
+DB_PASS = "LYS^e{GDh7+un2l*"
+DB_HOST = '34.100.159.41'
+
+DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}/{DB_NAME}"
+engine = sa.create_engine(DATABASE_URL, pool_pre_ping=True)
+Session = sessionmaker(bind=engine)
+session = Session()
+
+retry_strategy = {
+    'max_retries': 100,
+    'pool_recycle': 300,
+}
+
+# Function to sync the database
+def dbservice():
+    try:
+        Base.metadata.create_all(engine)
+        # print('Connection has been established successfully.')
+    except Exception as error:
+        print('Unable to connect to the database:', error)
+
+dbservice()
+
+def load_models():
+    current_dir = os.path.dirname(os.path.realpath(__file__))
+    files = [f for f in os.listdir(current_dir) if os.path.isfile(os.path.join(current_dir, f)) and f.endswith('.py') and f != os.path.basename(__file__)]
+
+    for file in files:
+        spec = importlib.util.spec_from_file_location(file[:-3], os.path.join(current_dir, file))
+        module = importlib.util.module_from_spec(spec)
+        sys.modules[file[:-3]] = module
+        spec.loader.exec_module(module)
+        if hasattr(module, 'default'):
+            model = module.default(engine, sa)
+            db[model.__name__] = model
+
+load_models()
+
+for model_name in db:
+    model = db[model_name]
+    if hasattr(model, 'associate'):
+        model.associate(db)
+
+db['engine'] = engine
+db['session'] = session
+# db['conversations'] = sa.Table('conversations', sa.MetaData().reflect(bind=engine), autoload_with=engine)
+metadata = sa.MetaData()
+
+# Reflect the table from the database
+metadata.reflect(bind=engine)
+db['conversations'] = metadata.tables['conversations']
+db['raw_data'] = metadata.tables['raw_data']
+
+
+# This dictionary is now ready to be used.
