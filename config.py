@@ -27,3 +27,4 @@ class Config:
     ORG_ID = os.getenv('ORG_ID')
     PROJECT_ID = os.getenv('PROJECT_ID')
     RTLAYER_AUTH = os.getenv('RTLAYER_AUTH')
+    PORT = os.getenv('PORT', 8080)

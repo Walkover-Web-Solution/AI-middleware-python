@@ -33,5 +33,5 @@ app.add_middleware(JWTMiddleware)
 app.include_router(model_router, prefix="/api/v1/model")
 
 if __name__ == "__main__":
-    PORT = int(os.getenv("PORT", 7072))
+    PORT = int(Config.PORT)
     uvicorn.run(app, host="0.0.0.0", port=PORT)
