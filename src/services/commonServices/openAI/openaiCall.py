@@ -1,22 +1,14 @@
 import asyncio
 import pydash as _
-# from chat import chats
 from .chat import chats
 from ..createConversations import ConversationService
 from ...utils.helper import Helper
-# from utils.custom_res import ResponseSender
-# from services.completion import completion
-# from db_services.metrics_services import metrics_services
 from ....db_services import metrics_service
-
-# from services.embedding import embeddings
 from .functionCall import function_call
 from ...utils.customRes import ResponseSender
-import os
 from datetime import datetime
 import json
 from ...utils.helper import Helper
-import copy
 
 class UnifiedOpenAICase:
     def __init__(self, params):
@@ -36,15 +28,13 @@ class UnifiedOpenAICase:
         self.rtlLayer = params.get('rtlayer')
         self.req = params.get('req')
         self.modelOutputConfig = params.get('modelOutputConfig')
-        bridge = params.get('bridge')
+        self.bridge = params.get('bridge')
         self.apiCallavailable = True #bridge.get('is_api_call', False) if bridge is not None else False
         self.playground = params.get('playground')
-        self.metrics_service = params.get('metrics_service')
         self.RTLayer = params.get('RTLayer')
         self.webhook = params.get('webhook')
         self.headers = params.get('headers')
         self.template = params.get('template')
-        # self.responseSender = ResponseSender()
         self.prompt = params.get('prompt')
         self.input = params.get('input')
 

@@ -27,9 +27,9 @@ app = FastAPI()
 async def getchat(request: Request, bridge_id):
     try:
         body = await request.json()
-        apikey = body.get("apikey")#
-        configuration = body.get("configuration")#
-        service = body.get("service")#
+        apikey = body.get("apikey")
+        configuration = body.get("configuration")
+        service = body.get("service")
         variables = body.get("variables", {})
         customConfig = {}
         bridge_id = request.path_params['bridge_id']

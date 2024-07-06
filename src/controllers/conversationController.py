@@ -1,5 +1,4 @@
 from ..db_services import conversationDbService as chatbotDbService
-import traceback
 
 async def getAllThreads(bridge_id, org_id, page, pageSize):
     try:
@@ -34,7 +33,6 @@ async def getThreadHistory(thread_id, org_id, bridge_id):
         return { 'success': False, 'message': str(err) }
 
 async def savehistory(thread_id, userMessage, botMessage, org_id, bridge_id, model_name, type, messageBy, userRole="user", tools={}):
-    print('hello save history')
     try:
         chatToSave = [{
             'thread_id': thread_id,
