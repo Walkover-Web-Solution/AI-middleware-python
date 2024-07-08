@@ -3,4 +3,4 @@ WORKDIR /app
 COPY . /app
 RUN pip install --trusted-host --no-cache-dir -r req.txt
 EXPOSE 8080
-CMD ["python3.10", "index.py"]
+CMD ["gunicorn", "index:app", "-k", " uvicorn.workers.UvicornWorker"]
