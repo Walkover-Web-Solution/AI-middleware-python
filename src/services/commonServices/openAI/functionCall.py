@@ -6,7 +6,6 @@ from ....db_services import ConfigurationServices as ConfigurationService
 import requests
 from ...utils.customRes import ResponseSender
 
-response_sender = ResponseSender()
 
 async def function_call(data):
     try:
@@ -40,7 +39,7 @@ async def function_call(data):
             configuration['messages'].append(func_response_data)
 
             if not playground:
-                response_sender.send_response({
+                ResponseSender.sendResponse({
                     'rtlLayer': rtl_layer,
                     'data': {'function_call': False, 'success': True, 'message': 'Going to GPT'},
                     'reqBody': body,
@@ -56,7 +55,7 @@ async def function_call(data):
 
             if model_response.get(output_config['tools']) and l <= 3:
                 if not playground:
-                    response_sender.send_response({
+                    ResponseSender.sendResponse({
                         'rtlLayer': rtl_layer,
                         'data': {'function_call': True, 'success': True, 'message': 'sending the next function call'},
                         'reqBody': body,

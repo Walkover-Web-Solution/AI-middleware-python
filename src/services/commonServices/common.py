@@ -254,7 +254,17 @@ async def prochat(request: Request):
             "success": False,
             "error": str(error)
         })
-        metrics_service.create([usage])
+        asyncio.create_task( metrics_service.create([usage],{ 
+                "thread_id": thread_id,
+                "user": user,
+                "message": "",
+                "org_id": org_id,
+                "bridge_id": bridge_id,
+                "model": configuration.get("model", None),
+                "channel": 'chat',
+                "type": "error",
+                "actor": "user"
+            }))
         print("prochats common error=>", error)
         ResponseSender.sendResponse({
             "rtlLayer": rtlLayer,

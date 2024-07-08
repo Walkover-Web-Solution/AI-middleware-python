@@ -88,7 +88,7 @@ class UnifiedOpenAICase:
             return {'success': False, 'error': openAIResponse.get('error')}
         if _.get(modelResponse, self.modelOutputConfig.get('tools')) and self.apiCallavailable:
             if not self.playground:
-                self.responseSender.send_response({
+                ResponseSender.sendResponse({
                     'rtlLayer': self.rtlLayer,
                     'webhook': self.webhook,
                     'data': {'function_call': True, 'success': True},
