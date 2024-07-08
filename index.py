@@ -1,7 +1,6 @@
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-from src.middlewares.middleware import JWTMiddleware
 import uvicorn
 import os
 
@@ -29,7 +28,6 @@ async def healthcheck():
     return JSONResponse(status_code=200, content="OK running good...")
 
 # Include routers
-# app.add_middleware(JWTMiddleware)
 app.include_router(model_router, prefix="/api/v1/model")
 
 if __name__ == "__main__":

@@ -4,12 +4,12 @@ from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 import traceback
 from config import Config
-
-class JWTMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request: Request, call_next):
+   
+        
+async def jwt_middleware(request: Request):
         token = request.headers.get('Authorization')
         if not token:
-            return JSONResponse(status_code=498, content="invalid token")
+            raise HTTPException(status_code=498, detail="invalid token")
         
         try:
             decoded_token = jwt.decode(token, options={"verify_signature": False})
@@ -19,14 +19,13 @@ class JWTMiddleware(BaseHTTPMiddleware):
                     check_token['org']['id'] = str(check_token['org']['id'])
                     request.state.profile = check_token
                     request.state.org_id = str(check_token.get('org', {}).get('id'))
-                    response = await call_next(request)
-                    return response
+                    return
                 
-                return JSONResponse(status_code=404, content="unauthorized user")
+                raise HTTPException(status_code=404, detail="unauthorized user")
             
-            return JSONResponse(status_code=401, content="unauthorized user")
+            raise HTTPException(status_code=401, detail="unauthorized user")
         
         except Exception as err:
             traceback.print_exc()
             print(f"middleware error => {err}")
-            return JSONResponse(status_code=401, content="unauthorized user")
+            raise HTTPException(status_code=401, detail="unauthorized user")
