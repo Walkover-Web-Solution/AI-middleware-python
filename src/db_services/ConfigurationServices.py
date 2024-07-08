@@ -35,14 +35,15 @@ async def get_api_call_by_id(api_id):
     
 async def get_bridge_by_slugname(org_id, slug_name):
     try:
-        # Assuming the use of Motor, an async driver for MongoDB
         bridges = await configurationModel.find_one({
             'slugName': slug_name,
             'org_id': org_id
         })
-        
+        print("hii", bridges)
+        print("hi how are you 1")
         if bridges and 'responseRef' in bridges:
             # Populate 'responseRef' if it's a reference to another collection
+            print("hi how are you 2")
             response_ref = await db['responses'].find_one({'_id': bridges['responseRef']})
             bridges['responseRef'] = response_ref
         
@@ -51,6 +52,7 @@ async def get_bridge_by_slugname(org_id, slug_name):
             'bridges': bridges
         }
     except Exception as error:
+        traceback.print_exc()
         print(f"error: {error}")
         return {
             'success': False,

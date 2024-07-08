@@ -18,6 +18,7 @@ async def send_data_middleware(request: Request, botId: str):
         channelId = f"{chatBotId}{threadId}"
 
     bridge_response = await ConfigurationServices.get_bridge_by_slugname(org_id, slugName)
+    print("hi how are you")
     bridges = bridge_response['bridges'] if(bridge_response['success']) else {}
 
     actions = []
@@ -26,7 +27,6 @@ async def send_data_middleware(request: Request, botId: str):
         action_type = actionDetails.get('type')
         variable = actionDetails.get('variable')
         actions.append({"actionId": actionId, "description": description, "type": action_type, "variable": variable})
-
     if not actions:
         actions = "no available action"
 
