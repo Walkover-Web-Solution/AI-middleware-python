@@ -1,9 +1,9 @@
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Request, Body
 
-from src.middlewares.interfaceMiddlewares import send_data_middleware
+from src.middlewares.interfaceMiddlewares import send_data_middleware,chat_bot_auth
 from src.services.commonServices import common
 router = APIRouter()
 
-@router.post("/{botId}/sendMessage")
-async def send_message(request: Request, body: Body, botId: str = Depends(common.prochat)):
-    await send_data_middleware(request, body, profile, botId)
+@router.post("/{botId}/sendMessage", dependencies=[Depends(chat_bot_auth)])
+async def send_message(request: Request, body: Body, botId: str):
+    await send_data_middleware(request, body, botId)
