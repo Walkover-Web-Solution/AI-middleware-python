@@ -3,13 +3,14 @@ from ..db_services import ConfigurationServices
 import jwt
 import config as config
 from ..services.commonServices import common
-async def send_data_middleware(request: Request, body: Body, botId: str):
-    org_id = body.org_id
-    slugName = body.slugName
-    threadId = body.threadId
+async def send_data_middleware(request: Request, botId: str):
+    body = await request.json()
+    org_id = body.get("org_id")
+    slugName = body.get("slugName")
+    threadId = body.get("threadId")
     profile = request.state.profile
-    message = body.message
-    userId = profile.get(userId) 
+    message = body.get("message")
+    userId = profile.get("userId") 
     chatBotId = botId
     
     channelId = f"{chatBotId}{userId}"
