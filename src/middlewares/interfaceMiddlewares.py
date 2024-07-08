@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Depends, Request, HTTPException, Body
 from ..db_services import ConfigurationServices
 import jwt
-import config as config
+from config import Config
 from ..services.commonServices import common
 async def send_data_middleware(request: Request, botId: str):
     body = await request.json()
-    org_id = body.get("org_id")
+    org_id = request.state.org_id
     slugName = body.get("slugName")
     threadId = body.get("threadId")
     profile = request.state.profile
@@ -17,7 +17,8 @@ async def send_data_middleware(request: Request, botId: str):
     if threadId and threadId.strip():
         channelId = f"{chatBotId}{threadId}"
 
-    bridges, success = await ConfigurationServices.get_bridge_by_slugname(org_id, slugName)
+    bridge_response = await ConfigurationServices.get_bridge_by_slugname(org_id, slugName)
+    bridges = bridge_response['bridges'] if(bridge_response['success']) else {}
 
     actions = []
     for actionId, actionDetails in bridges.get('actions', {}).items():
@@ -29,7 +30,7 @@ async def send_data_middleware(request: Request, botId: str):
     if not actions:
         actions = "no available action"
 
-    if not success:
+    if not bridge_response['success']:
         raise HTTPException(status_code=400, detail="some error occurred")
 
     request.state.chatbot = True
@@ -41,7 +42,7 @@ async def send_data_middleware(request: Request, botId: str):
         "thread_id": threadId,
         "variables": {**body.interfaceContextData, "message": message, "actions": actions, **profile.variables},
         "RTLayer": True,
-        "template_id": config.TEMPLATE_ID,
+        "template_id": Config.TEMPLATE_ID,
         "rtlOptions": {
             "channel": channelId,
             "ttl": 1,
@@ -60,12 +61,11 @@ async def chat_bot_auth(request: Request):
     try:
         decoded_token = jwt.decode(token, options={"verify_signature": False})
         if decoded_token:
-            check_token = jwt.decode(token, config.CHATBOTSECRETKEY, algorithms=["HS256"])
+            check_token = jwt.decode(token, Config.CHATBOTSECRETKEY, algorithms=["HS256"])
             if check_token:
                 check_token['org_id'] = str(check_token['org_id'])
                 request.state.profile = check_token
-                request.state.body = request.state.body or {}
-                request.state.body['org_id'] = check_token['org_id']
+                request.state.org_id = check_token['org_id']
                 if 'user' not in check_token:
                     request.state.profile['viewOnly'] = True
                 return True
