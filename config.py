@@ -28,3 +28,5 @@ class Config:
     PROJECT_ID = os.getenv('PROJECT_ID')
     RTLAYER_AUTH = os.getenv('RTLAYER_AUTH')
     PORT = os.getenv('PORT', 8080)
+    CHATBOTSECRETKEY = os.getenv('CHATBOTSECRETKEY')
+    TEMPLATE_ID = os.getenv('TEMPLATE_ID')
