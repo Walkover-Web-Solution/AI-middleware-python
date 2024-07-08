@@ -3,14 +3,15 @@ import sqlalchemy as sa
 from sqlalchemy.orm import declarative_base, sessionmaker
 import importlib.util
 import sys
+from config import Config
 
 Base = declarative_base()
 db = {}
 
-DB_NAME = 'chatBot'
-DB_USER = 'postgres'
-DB_PASS = "LYS^e{GDh7+un2l*"
-DB_HOST = '34.100.159.41'
+DB_NAME = Config.DB_NAME
+DB_USER = Config.DB_USER
+DB_PASS = Config.DB_PASS
+DB_HOST = Config.DB_HOST
 
 DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}/{DB_NAME}"
 engine = sa.create_engine(DATABASE_URL, pool_pre_ping=True)
