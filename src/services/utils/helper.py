@@ -6,6 +6,7 @@ from Crypto.Util.Padding import unpad
 import traceback    
 from functools import reduce
 import operator
+import re
 
 class Helper:
     @staticmethod
