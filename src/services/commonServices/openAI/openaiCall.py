@@ -121,7 +121,7 @@ class UnifiedOpenAICase:
                     'success': False,
                     'error': functionCallRes.get('error')
                 }
-                metrics_service.create([usage], {
+                asyncio.create_task(metrics_service.create([usage], {
                     'thread_id': self.thread_id,
                     'user': self.user if self.user else json.dumps(self.tool_call),
                     'message': "",
@@ -131,7 +131,7 @@ class UnifiedOpenAICase:
                     'channel': 'chat',
                     'type': "error",
                     'actor': "user" if self.user else "tool"
-                })
+                }))
 
                 asyncio.create_task(ResponseSender.sendResponse(
                     rtl_layer = self.rtlLayer,
@@ -144,7 +144,6 @@ class UnifiedOpenAICase:
                     return
 
                 return {'success': False, 'error': functionCallRes.get('error')}
-            print("hello world dldldld" ,funcModelResponse, _.get(funcModelResponse, self.modelOutputConfig['usage'][0]['total_tokens']))
             self.total_tokens = _.get(modelResponse, self.modelOutputConfig['usage'][0]['total_tokens']) + _.get(funcModelResponse, self.modelOutputConfig['usage'][0]['total_tokens'])
             self.prompt_tokens = _.get(modelResponse, self.modelOutputConfig['usage'][0]['prompt_tokens']) + _.get(funcModelResponse, self.modelOutputConfig['usage'][0]['prompt_tokens'])
             self.completion_tokens = _.get(modelResponse, self.modelOutputConfig['usage'][0]['prompt_tokens']) + _.get(funcModelResponse, self.modelOutputConfig['usage'][0]['completion_tokens'])
