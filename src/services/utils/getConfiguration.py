@@ -6,7 +6,7 @@ from .helper import Helper
 async def getConfiguration(configuration, service, bridge_id, api_key, template_id=None):
     RTLayer = False
     bridge = None
-    result = {} or await ConfigurationService.get_bridges(bridge_id)
+    result = await ConfigurationService.get_bridges(bridge_id)
     if not result['success']:
         return {
             'success': False,
@@ -18,8 +18,7 @@ async def getConfiguration(configuration, service, bridge_id, api_key, template_
     RTLayer = True if configuration and 'RTLayer' in configuration else False 
     bridge = result.get('bridges')
     service = service.lower() if service else ""
-    # template_content = await ConfigurationService.get_template_by_id(template_id) if template_id else None
-    template_content = None
+    template_content = await ConfigurationService.get_template_by_id(template_id) if template_id else None
     return {
         'success': True,
         'configuration': configuration,

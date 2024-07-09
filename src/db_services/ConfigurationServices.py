@@ -4,13 +4,15 @@ import traceback
 
 configurationModel = db["configurations"]
 apiCallModel = db['apicalls']
+templateModel = db['templates']
 
 async def get_bridges(bridge_id):
+    
     try:
         bridges = configurationModel.find_one({'_id': ObjectId(bridge_id)})
         return {
             'success': True,
-            'bridges': bridges,
+            'bridges': bridges or {},
         }
     except Exception as error:
         print(error)
@@ -32,7 +34,15 @@ async def get_api_call_by_id(api_id):
             'success': False,
             'error': "something went wrong!!"
         }
-    
+
+async def get_template_by_id(template_id):
+    try:
+        template_content = templateModel.find_one({'_id' : ObjectId(template_id)})
+        return template_content
+    except Exception as error : 
+        print(f"template id error : {error}")
+        return None
+        
 # async def get_bridge_by_slugname(org_id, slug_name):
 #     try:
 #         print(111,org_id,222,slug_name)
@@ -61,7 +71,6 @@ async def get_api_call_by_id(api_id):
 
 async def get_bridge_by_slugname(org_id, slug_name):
     try:
-        org_id = 'husain_123'
         bridge =  configurationModel.find_one({
             'slugName': slug_name,
             'org_id': org_id

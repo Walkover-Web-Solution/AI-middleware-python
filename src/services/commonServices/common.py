@@ -100,8 +100,10 @@ async def getchat(request: Request, bridge_id):
 @app.post("/prochat")
 async def prochat(request: Request):
     startTime = int(time.time() * 1000)
-    
     body = await request.json()
+    if(hasattr(request.state, "body")):
+        body.update(request.state.body)
+
     apikey = body.get("apikey")
     bridge_id = body.get("bridge_id", None)
     configuration = body.get("configuration")
@@ -237,7 +239,7 @@ async def prochat(request: Request):
             headers= headers or {}
         ))
         if rtlLayer or webhook:
-            return
+            return JSONResponse(status_code=200, content = {"success" : True, "message" : "Your data will be send through the configured means."})
         return JSONResponse(status_code=200, content={"success": True, "response": result["modelResponse"]})
     
     except Exception as error:
@@ -266,13 +268,13 @@ async def prochat(request: Request):
                 "actor": "user"
             }))
         print("prochats common error=>", error)
-        ResponseSender.sendResponse({
+        asyncio.create_task(ResponseSender.sendResponse({
             "rtlLayer": rtlLayer,
             "webhook": webhook,
             "data": {"error": str(error), "success": False},
             "reqBody": body,
             "headers": headers or {}
-        })
+        }))
         if rtlLayer or webhook:
             return
         return JSONResponse(status_code=400, content={"success": False, "error": str(error)})

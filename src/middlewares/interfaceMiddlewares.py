@@ -3,6 +3,8 @@ from ..db_services import ConfigurationServices
 import jwt
 from config import Config
 from ..services.commonServices import common
+import json
+
 async def send_data_middleware(request: Request, botId: str):
     body = await request.json()
     org_id = request.state.org_id
@@ -18,7 +20,6 @@ async def send_data_middleware(request: Request, botId: str):
         channelId = f"{chatBotId}{threadId}"
 
     bridge_response = await ConfigurationServices.get_bridge_by_slugname(org_id, slugName)
-    print("hi how are you")
     bridges = bridge_response['bridges'] if(bridge_response['success']) else {}
 
     actions = []
@@ -40,7 +41,7 @@ async def send_data_middleware(request: Request, botId: str):
         "service": "openai",
         "user": message,
         "thread_id": threadId,
-        "variables": {**body.interfaceContextData, "message": message, "actions": actions, **profile.variables},
+        "variables": {**body['interfaceContextData'], "message": message, "actions": actions, **json.loads(profile.get('variables', "{}"))},
         "RTLayer": True,
         "template_id": Config.TEMPLATE_ID,
         "rtlOptions": {

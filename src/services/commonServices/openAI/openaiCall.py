@@ -49,7 +49,7 @@ class UnifiedOpenAICase:
         # if self.template:
         #     system_prompt = [{"role": "system", "content": self.template}]
         #     prompt = Helper.replace_variables_in_prompt(system_prompt, {"system_prompt": prompt[0].get('content'), **self.variables})
-        self.customConfig["messages"] = prompt + conversation + ([{"role": "user", "content": self.user}] if self.user else self.tool_call) 
+        self.customConfig["messages"] = prompt + conversation + ([{"role": "user", "content": self.user}] if self.user else (self.tool_call or [])) 
         openAIResponse = await chats(self.customConfig, self.apikey)
         modelResponse = openAIResponse.get("modelResponse", {})
         # return {'success': True, 'modelResponse': modelResponse, 'historyParams': historyParams, 'usage': usage}
