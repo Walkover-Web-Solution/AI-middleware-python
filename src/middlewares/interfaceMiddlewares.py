@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, Request, HTTPException, Body
+from fastapi import Request, HTTPException
+from fastapi.responses import JSONResponse
 from ..db_services import ConfigurationServices
 import jwt
 from config import Config
@@ -6,50 +7,57 @@ from ..services.commonServices import common
 import json
 
 async def send_data_middleware(request: Request, botId: str):
-    body = await request.json()
-    org_id = request.state.org_id
-    slugName = body.get("slugName")
-    threadId = body.get("threadId")
-    profile = request.state.profile
-    message = body.get("message")
-    userId = profile.get("userId") 
-    chatBotId = botId
-    
-    channelId = f"{chatBotId}{userId}"
-    if threadId and threadId.strip():
-        channelId = f"{chatBotId}{threadId}"
+    try:
+        body = await request.json()
+        org_id = request.state.org_id
+        slugName = body.get("slugName")
+        threadId = body.get("threadId")
+        profile = request.state.profile
+        message = body.get("message")
+        userId = profile.get("userId") 
+        chatBotId = botId
+        
+        channelId = f"{chatBotId}{userId}"
+        if threadId and threadId.strip():
+            channelId = f"{chatBotId}{threadId}"
 
-    bridge_response = await ConfigurationServices.get_bridge_by_slugname(org_id, slugName)
-    bridges = bridge_response['bridges'] if(bridge_response['success']) else {}
+        bridge_response = await ConfigurationServices.get_bridge_by_slugname(org_id, slugName)
+        bridges = bridge_response['bridges'] if(bridge_response['success']) else {}
 
-    actions = []
-    for actionId, actionDetails in bridges.get('actions', {}).items():
-        description = actionDetails.get('description')
-        action_type = actionDetails.get('type')
-        variable = actionDetails.get('variable')
-        actions.append({"actionId": actionId, "description": description, "type": action_type, "variable": variable})
-    if not actions:
-        actions = "no available action"
+        if not bridges : 
+            raise Exception("Invalid bridge Id")
 
-    if not bridge_response['success']:
-        raise HTTPException(status_code=400, detail="some error occurred")
 
-    request.state.chatbot = True
-    request.state.body = {
-        "org_id": org_id,
-        "bridge_id": bridges.get('_id', '').__str__(),
-        "service": "openai",
-        "user": message,
-        "thread_id": threadId,
-        "variables": {**body['interfaceContextData'], "message": message, "actions": actions, **json.loads(profile.get('variables', "{}"))},
-        "RTLayer": True,
-        "template_id": Config.TEMPLATE_ID,
-        "rtlOptions": {
-            "channel": channelId,
-            "ttl": 1,
-        },
-    }
-    return await common.prochat(request=request)
+        actions = []
+        for actionId, actionDetails in bridges.get('actions', {}).items():
+            description = actionDetails.get('description')
+            action_type = actionDetails.get('type')
+            variable = actionDetails.get('variable')
+            actions.append({"actionId": actionId, "description": description, "type": action_type, "variable": variable})
+        if not actions:
+            actions = "no available action"
+
+        if not bridge_response['success']:
+            raise HTTPException(status_code=400, detail="some error occurred")
+
+        request.state.chatbot = True
+        request.state.body = {
+            "org_id": org_id,
+            "bridge_id": bridges.get('_id', '').__str__(),
+            "service": "openai",
+            "user": message,
+            "thread_id": threadId,
+            "variables": {**body['interfaceContextData'], "message": message, "actions": actions, **json.loads(profile.get('variables', "{}"))},
+            "RTLayer": True,
+            "template_id": Config.TEMPLATE_ID,
+            "rtlOptions": {
+                "channel": channelId,
+                "ttl": 1,
+            },
+        }
+        return await common.prochat(request=request)
+    except Exception as error : 
+        return JSONResponse(status_code=400, content={'error' : error.__str__()})
 
 async def chat_bot_auth(request: Request):
     token = request.headers.get('Authorization')
