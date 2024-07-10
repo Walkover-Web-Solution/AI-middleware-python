@@ -26,7 +26,6 @@ async def createBulk(data):
         raise e
     
 async def insertRawData(data) :
-    print('in insert raw data')
     try:
         pg['session'].execute(
             insert(pg['raw_data']), data
