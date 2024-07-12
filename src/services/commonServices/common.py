@@ -17,8 +17,7 @@ from .Google.geminiCall import GeminiHandler
 
 from ..utils.helper import Helper
 import asyncio
-# import config.prompt as responsePrompt
-
+from prompts import mui_prompt
 app = FastAPI()
 
 # responseSender = ResponseSender()
@@ -26,11 +25,13 @@ app = FastAPI()
 @app.post("/getchat/{bridge_id}")
 async def getchat(request: Request, bridge_id):
     try:
-        body = await request.json()
-        apikey = body.get("apikey")
-        configuration = body.get("configuration")
+        body = await request.json()##
+        apikey = body.get("apikey")##
+        configuration = body.get("configuration")##
         service = body.get("service")
         variables = body.get("variables", {})
+
+
         customConfig = {}
         bridge_id = request.path_params['bridge_id']
         getconfig = await getConfiguration(configuration, service, bridge_id, apikey)
@@ -47,16 +48,16 @@ async def getchat(request: Request, bridge_id):
         if not (service in services and model in services[service]["chat"]):
             return JSONResponse(status_code=400, content={"success": False, "error": "model or service does not exist!"})
 
-        modelname = model.replace("-", "_").replace(".", "_")
-        # modelfunc = ModelsConfig[modelname]
+        modelname = model.replace("-", "_").replace(".", "_") 
         modelfunc = getattr(ModelsConfig, modelname, None)
-        # modelConfig, modelOutputConfig = itemgetter('modelConfig', 'modelOutputConfig')(modelfunc())
+        #modelfunc = ModelsConfig.get(modelname, None) ## does it work the same ? then remove above one
         modelObj = modelfunc()
         modelConfig, modelOutputConfig = modelObj['configuration'], modelObj['outputConfig']
 
 
 
-        for key in modelConfig:
+        for key in modelConfig: ## this code should not work properly, key should be index not value
+            print(key, "key")
             if modelConfig[key]["level"] == 2 or key in configuration:
                 customConfig[key] = configuration.get(key, modelConfig[key]["default"])
         
@@ -68,7 +69,7 @@ async def getchat(request: Request, bridge_id):
             "user": configuration.get("user", ""),
             "startTime": int(time.time() * 1000),
             "org_id": None,
-            "bridge_id": bridge_id,
+            "bridge_id": bridge_id, # bridge_id is not like it is in js code,
             "bridge": bridge,
             "model": model,
             "service": service,
@@ -100,13 +101,13 @@ async def getchat(request: Request, bridge_id):
 @app.post("/prochat")
 async def prochat(request: Request):
     startTime = int(time.time() * 1000)
-    body = await request.json()
-    if(hasattr(request.state, "body")):
-        body.update(request.state.body)
+    body = await request.json()##
+    if(hasattr(request.state, "body")): ##
+        body.update(request.state.body) ##
 
-    apikey = body.get("apikey")
+    apikey = body.get("apikey")##
     bridge_id = body.get("bridge_id", None)
-    configuration = body.get("configuration")
+    configuration = body.get("configuration")##
     thread_id = body.get("thread_id", None)
     org_id = request.state.org_id
     user = body.get("user", None)
@@ -129,7 +130,7 @@ async def prochat(request: Request):
             return JSONResponse(status_code=400, content={"success": False, "error": getconfig["error"]})
 
         configuration = getconfig["configuration"]
-        service = getconfig["service"]
+        service = getconfig["service"] 
         apikey = getconfig["apikey"]
         template = getconfig["template"]
         model = configuration.get("model")
@@ -197,27 +198,27 @@ async def prochat(request: Request):
                     return
                 return JSONResponse(status_code=400, content=result)
 
-    #     if bridgeType:
-    #         parsedJson = Helper.parseJson(result["modelResponse"].get(modelOutputConfig["message"]))
-    #         if not parsedJson.get("json", {}).get("isMarkdown"):
-    #             params["configuration"]["prompt"] = {"role": "system", "content": responsePrompt}
-    #             params["user"] = result["modelResponse"].get(modelOutputConfig["message"])
-    #             params["template"] = None
-    #             openAIInstance = UnifiedOpenAICase(params)
-    #             newresult = await openAIInstance.execute()
-    #             if not newresult["success"]:
-    #                 return
+        if bridgeType:
+            parsedJson = Helper.parseJson(result["modelResponse"].get(modelOutputConfig["message"]))
+            if not parsedJson.get("json", {}).get("isMarkdown"):
+                params["configuration"]["prompt"] = {"role": "system", "content": mui_prompt.responsePrompt}
+                params["user"] = result["modelResponse"].get(modelOutputConfig["message"])
+                params["template"] = None
+                openAIInstance = UnifiedOpenAICase(params)
+                newresult = await openAIInstance.execute()
+                if not newresult["success"]:
+                    return
 
-    #             result["modelResponse"][modelOutputConfig["message"]] = newresult["modelResponse"].get(modelOutputConfig["message"])
-    #             result["modelResponse"][modelOutputConfig["usage"][0]["total_tokens"]] += newresult["modelResponse"].get(modelOutputConfig["usage"][0]["total_tokens"])
-    #             result["modelResponse"][modelOutputConfig["usage"][0]["prompt_tokens"]] += newresult["modelResponse"].get(modelOutputConfig["usage"][0]["prompt_tokens"])
-    #             result["modelResponse"][modelOutputConfig["usage"][0]["completion_tokens"]] += newresult["modelResponse"].get(modelOutputConfig["usage"][0]["completion_tokens"])
-    #             result["historyParams"] = newresult["historyParams"]
-    #             result["usage"]["totalTokens"] += newresult["usage"]["totalTokens"]
-    #             result["usage"]["inputTokens"] += newresult["usage"]["inputTokens"]
-    #             result["usage"]["outputTokens"] += newresult["usage"]["outputTokens"]
-    #             result["usage"]["expectedCost"] += newresult["usage"]["expectedCost"]
-    #             result["historyParams"]["user"] = user
+                result["modelResponse"][modelOutputConfig["message"]] = newresult["modelResponse"].get(modelOutputConfig["message"])
+                result["modelResponse"][modelOutputConfig["usage"][0]["total_tokens"]] += newresult["modelResponse"].get(modelOutputConfig["usage"][0]["total_tokens"])
+                result["modelResponse"][modelOutputConfig["usage"][0]["prompt_tokens"]] += newresult["modelResponse"].get(modelOutputConfig["usage"][0]["prompt_tokens"])
+                result["modelResponse"][modelOutputConfig["usage"][0]["completion_tokens"]] += newresult["modelResponse"].get(modelOutputConfig["usage"][0]["completion_tokens"])
+                result["historyParams"] = newresult["historyParams"]
+                result["usage"]["totalTokens"] += newresult["usage"]["totalTokens"]
+                result["usage"]["inputTokens"] += newresult["usage"]["inputTokens"]
+                result["usage"]["outputTokens"] += newresult["usage"]["outputTokens"]
+                result["usage"]["expectedCost"] += newresult["usage"]["expectedCost"]
+                result["historyParams"]["user"] = user
 
         endTime = int(time.time() * 1000)
         usage.update({
