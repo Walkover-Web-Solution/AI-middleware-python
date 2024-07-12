@@ -19,7 +19,7 @@ async def function_call(data):
         body = data.get('body', {})
         playground = data.get('playground', False)
         tools = data.get('tools', {})
-        api_endpoints = set(bridge['api_endpoints'])
+        api_endpoints =  set(bridge.get('api_endpoints', []))
         api_name = tools_call.get('function', {}).get('name')
 
         if api_name in api_endpoints:

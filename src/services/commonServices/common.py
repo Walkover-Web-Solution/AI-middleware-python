@@ -9,19 +9,12 @@ from ...controllers.conversationController import getThread
 from ..utils.getConfiguration import getConfiguration
 from operator import itemgetter
 from ...db_services import metrics_service as metrics_service
-# from openAI.openaiCall import UnifiedOpenAICase
 from .openAI.openaiCall import UnifiedOpenAICase
-
 from ..utils.customRes import ResponseSender
 from .Google.geminiCall import GeminiHandler
-
-from ..utils.helper import Helper
 import asyncio
-# import config.prompt as responsePrompt
 
 app = FastAPI()
-
-# responseSender = ResponseSender()
 
 @app.post("/getchat/{bridge_id}")
 async def getchat(request: Request, bridge_id):
@@ -48,13 +41,9 @@ async def getchat(request: Request, bridge_id):
             return JSONResponse(status_code=400, content={"success": False, "error": "model or service does not exist!"})
 
         modelname = model.replace("-", "_").replace(".", "_")
-        # modelfunc = ModelsConfig[modelname]
         modelfunc = getattr(ModelsConfig, modelname, None)
-        # modelConfig, modelOutputConfig = itemgetter('modelConfig', 'modelOutputConfig')(modelfunc())
         modelObj = modelfunc()
         modelConfig, modelOutputConfig = modelObj['configuration'], modelObj['outputConfig']
-
-
 
         for key in modelConfig:
             if modelConfig[key]["level"] == 2 or key in configuration:
@@ -91,7 +80,6 @@ async def getchat(request: Request, bridge_id):
         return JSONResponse(status_code=200, content={"success": True, "response": result["modelResponse"]})
     
     except Exception as error:
-        print("hello error!!!")  
         traceback.print_exc()
         print("common error=>", error)
         return JSONResponse(status_code=400, content={"success": False, "error": str(error)})
@@ -132,8 +120,8 @@ async def prochat(request: Request):
         service = getconfig["service"]
         apikey = getconfig["apikey"]
         template = getconfig["template"]
-        model = configuration.get("model")
-        rtlLayer = RTLayer if RTLayer else getconfig["RTLayer"]
+        model = model or configuration.get("model")
+        rtlLayer = RTLayer or getconfig["RTLayer"]
         bridge = getconfig["bridge"]
 
         if not (service in services and model in services[service]["chat"]):
@@ -262,7 +250,7 @@ async def prochat(request: Request):
                 "message": "",
                 "org_id": org_id,
                 "bridge_id": bridge_id,
-                "model": configuration.get("model", None),
+                "model": model or configuration.get("model", None),
                 "channel": 'chat',
                 "type": "error",
                 "actor": "user"

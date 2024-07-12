@@ -52,7 +52,6 @@ class UnifiedOpenAICase:
         self.customConfig["messages"] = prompt + conversation + ([{"role": "user", "content": self.user}] if self.user else (self.tool_call or [])) 
         openAIResponse = await chats(self.customConfig, self.apikey)
         modelResponse = openAIResponse.get("modelResponse", {})
-        # return {'success': True, 'modelResponse': modelResponse, 'historyParams': historyParams, 'usage': usage}
 
         if not openAIResponse.get('success'):
             if not self.playground:
