@@ -16,7 +16,6 @@ DB_HOST = Config.DB_HOST
 DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}/{DB_NAME}"
 engine = sa.create_engine(DATABASE_URL, pool_pre_ping=True)
 Session = sessionmaker(bind=engine)
-session = Session()
 
 retry_strategy = {
     'max_retries': 100,
@@ -54,7 +53,7 @@ for model_name in db:
         model.associate(db)
 
 db['engine'] = engine
-db['session'] = session
+db['session'] = Session
 # db['conversations'] = sa.Table('conversations', sa.MetaData().reflect(bind=engine), autoload_with=engine)
 metadata = sa.MetaData()
 

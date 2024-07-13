@@ -1,5 +1,6 @@
 
 from models.index import combined_models as models
+import sqlalchemy as sa
 from sqlalchemy import func, and_ , insert
 from sqlalchemy.exc import SQLAlchemyError
 import asyncio
@@ -9,50 +10,74 @@ from datetime import datetime
 pg = models['pg']
 
 async def createBulk(data):
+    session = pg['session']()
     try:
         for i in data :
             i['createdAt'] = datetime.now()
             i['updatedAt'] = datetime.now()
-        result = pg['session'].execute(
+        result = session.execute(
             insert(pg['conversations']).returning(pg['conversations'].c.id),
             data
         )
-        models['pg']['session'].commit()
+        session.commit()
         rows = result.fetchall()
         results=list(rows[0])
         return results
     except Exception as e:
-        await models['pg']['session'].rollback()
+        await session.rollback()
         raise e
     
 async def insertRawData(data) :
     print('in insert raw data')
+    session = pg['session']()
     try:
-        pg['session'].execute(
+        session.execute(
             insert(pg['raw_data']), data
         )
-        pg['session'].commit()
+        session.commit()
     except Exception as e:
-        models['pg']['session'].rollback()
+        session.rollback()
         raise e
 
-async def find(org_id, thread_id, bridge_id):
+def find(org_id, thread_id, bridge_id):
     try:
-        conversations = await models['pg'].conversations.find_all(
-            attributes=[('message', 'content'), ('message_by', 'role'), 'createdAt', 'id', 'function'],
-            where=and_(
-                models['pg'].conversations.org_id == org_id,
-                models['pg'].conversations.thread_id == thread_id,
-                models['pg'].conversations.bridge_id == bridge_id
-            ),
-            order=[('id', 'DESC')],
-            limit=6,
-            raw=True
+        session = pg['session']()
+        query = (
+            sa.select(
+                pg['conversations'].c.message,
+                pg['conversations'].c.message_by,
+                pg['conversations'].c.createdAt,
+                pg['conversations'].c.id,
+                pg['conversations'].c.function
+            )
+            .where(
+                and_(
+                    pg['conversations'].c.org_id == org_id,
+                    pg['conversations'].c.thread_id == thread_id,
+                    pg['conversations'].c.bridge_id == bridge_id
+                )
+            )
+            .order_by(pg['conversations'].c.id.desc())
+            .limit(6)
         )
-        conversations = conversations[::-1]
+        result = session.execute(query)
+        conversations = []
+        for row in result.fetchall():
+            conversation = {
+                'content': row[0],
+                'role': row[1],
+                'createdAt': row[2],
+                'id': row[3],
+                'function': row[4]
+            }
+            conversations.append(conversation)
+        conversations.reverse()
         return conversations
     except SQLAlchemyError as e:
+        traceback.print_exc()
         raise e
+    finally:
+        session.close()
 
 async def getHistory(bridge_id, timestamp):
     try:
@@ -118,25 +143,35 @@ async def findMessage(org_id, thread_id, bridge_id):
     except SQLAlchemyError as e:
         raise e
 
-async def deleteLastThread(org_id, thread_id, bridge_id):
+def deleteLastThread(org_id, thread_id, bridge_id):
     try:
-        record_to_delete = await models['pg'].conversations.find_one(
-            where=and_(
-                models['pg'].conversations.org_id == org_id,
-                models['pg'].conversations.thread_id == thread_id,
-                models['pg'].conversations.bridge_id == bridge_id,
-                models['pg'].conversations.message_by == "tool_calls"
-            ),
-            order=[('id', 'DESC')]
+        session = pg['session']()
+        query = (
+            sa.select(pg['conversations'])
+            .where(
+                and_(
+                    pg['conversations'].c.org_id == org_id,
+                    pg['conversations'].c.thread_id == thread_id,
+                    pg['conversations'].c.bridge_id == bridge_id,
+                    pg['conversations'].c.message_by == "tool_calls"
+                )
+            )
+            .order_by(pg['conversations'].c.id.desc())
+            .limit(1)
         )
+        result = session.execute(query)
+        record_to_delete = result.fetchone()
         if record_to_delete:
-            await record_to_delete.delete()
-            await models['pg'].session.commit()
-            return { 'success': True }
-        return { 'success': False }
+            session.delete(record_to_delete)
+            session.commit()
+            return {'success': True}
+        return {'success': False}
+    
     except SQLAlchemyError as e:
-        await models['pg'].session.rollback()
+        session.rollback()
         raise e
+    finally:
+        session.close()
 
 async def findAllThreads(bridge_id, org_id, page, pageSize):
     try:
