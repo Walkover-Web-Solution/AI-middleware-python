@@ -18,6 +18,7 @@ from .Google.geminiCall import GeminiHandler
 from ..utils.helper import Helper
 import asyncio
 from prompts import mui_prompt
+from src.middlewares.staticResponse import staticResponse
 app = FastAPI()
 
 # responseSender = ResponseSender()
@@ -100,6 +101,10 @@ async def getchat(request: Request, bridge_id):
 
 @app.post("/prochat")
 async def prochat(request: Request):
+    staticDataResponse = await staticResponse(request=request)
+    # if staticDataResponse gives true then don't go ahead
+    if staticDataResponse:
+        return 
     startTime = int(time.time() * 1000)
     body = await request.json()##
     if(hasattr(request.state, "body")): ##

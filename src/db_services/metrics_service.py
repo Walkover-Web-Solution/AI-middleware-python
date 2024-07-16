@@ -1,10 +1,11 @@
 from datetime import datetime, timedelta
 from models.index import combined_models
-from sqlalchemy import and_
+from sqlalchemy import func, and_ , insert, update, select
 from ..controllers.conversationController import savehistory
 import traceback
 from .conversationDbService import insertRawData
 import uuid
+import sqlalchemy as sa
 
 postgres = combined_models['pg']
 timescale = combined_models['timescale']
@@ -37,6 +38,53 @@ async def find_one(id):
 async def find_one_pg(id):
     model = postgres.raw_data
     return await model.find_by_pk(id)
+
+
+async def updateOrCreateLastOptionData(thread_id, data):
+    try:
+        session = postgres['session']()
+        try:
+            query = (
+                sa.select(
+                    postgres['last_data_to_show'].c.thread_id,
+                )
+                .where(
+                    postgres['last_data_to_show'].c.thread_id == thread_id
+                )
+            )
+            result = session.execute(query).fetchone()
+            
+            if result:
+                session.execute(
+                    update(postgres['last_data_to_show'])
+                    .where(postgres['last_data_to_show'].c.thread_id == thread_id)
+                    .values(data=data)
+                )
+            else:
+                session.execute(
+                    insert(postgres['last_data_to_show']).values(
+                        thread_id=thread_id,
+                        data=data
+                    )
+                )
+
+            session.commit()
+        except Exception as e:
+            session.rollback()
+            traceback.print_exc()
+            print(f"Error updating or creating last option data: {e}")
+        finally:
+            session.close()
+
+    except Exception as e:
+        # Print the stack trace and error message if an exception occurs
+        traceback.print_exc()
+        print(f"Error updating or creating last option data: {e}")
+
+
+async def findLastOptionData(thread_id):
+    model = postgres.last_data_to_show
+    return await model.find_one({'thread_id': thread_id})
 
 async def create(dataset, history_params):
     try:
@@ -93,4 +141,4 @@ async def create(dataset, history_params):
         print('Error during bulk insert of Ai middleware', error)
 
 # Exporting functions
-__all__ = ["find", "create", "find_one", "find_one_pg"]
+__all__ = ["find", "create", "find_one", "find_one_pg", "updateOrCreateLastOptionData"]

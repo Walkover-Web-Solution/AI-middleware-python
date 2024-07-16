@@ -54,6 +54,7 @@ async def send_data_middleware(request: Request, botId: str):
                 "channel": channelId,
                 "ttl": 1,
             },
+            "configurationData": bridges
         }
         return await common.prochat(request=request)
     except Exception as error : 

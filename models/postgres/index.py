@@ -61,6 +61,7 @@ metadata = sa.MetaData()
 metadata.reflect(bind=engine)
 db['conversations'] = metadata.tables['conversations']
 db['raw_data'] = metadata.tables['raw_data']
+db['last_data_to_show'] = metadata.tables['last_data_to_show']
 
 
 # This dictionary is now ready to be used.

@@ -15,6 +15,9 @@ async def createBulk(data):
         for i in data :
             i['createdAt'] = datetime.now()
             i['updatedAt'] = datetime.now()
+            if not "isstatic" in i:
+                i['isstatic'] = False
+              
         result = session.execute(
             insert(pg['conversations']).returning(pg['conversations'].c.id),
             data
