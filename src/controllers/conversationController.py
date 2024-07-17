@@ -11,10 +11,11 @@ async def getAllThreads(bridge_id, org_id, page, pageSize):
 
 async def getThread(thread_id, org_id, bridge_id):
     try:
-        chats = chatbotDbService.find(org_id, thread_id, bridge_id)
+        chats = await chatbotDbService.find(org_id, thread_id, bridge_id)
         return { 'success': True, 'data': chats }
     except Exception as err:
         print("Error in getting thread:",err)
+        traceback.print_exc()
         return { 'success': False, 'message': str(err) }
 
 async def getChatData(chat_id):
@@ -69,17 +70,17 @@ async def savehistory(thread_id, userMessage, botMessage, org_id, bridge_id, mod
                 'function': botMessage if messageBy == "tool_calls" else {}
             })
 
-        if userRole == "tool":
-            success =  chatbotDbService.deleteLastThread(org_id, thread_id, bridge_id)
-            chatToSave = chatToSave[-1:]
-            if not success:
-                return { 'success': False, 'message': "failed to delete last chat!" }
+        # if userRole == "tool":
+        #     success =  chatbotDbService.deleteLastThread(org_id, thread_id, bridge_id)
+        #     chatToSave = chatToSave[-1:]
+        #     if not success:
+        #         return { 'success': False, 'message': "failed to delete last chat!" }
 
-        result = await chatbotDbService.createBulk(chatToSave)
+        result = chatbotDbService.createBulk(chatToSave)
         return { 'success': True, 'message': "successfully saved chat history", 'result': list(result) }
     except Exception as error:
-        traceback.print_exc()
         print("saveconversation error=>", error)
+        traceback.print_exc()
         return { 'success': False, 'message': str(error) }
 
 # Exporting the functions

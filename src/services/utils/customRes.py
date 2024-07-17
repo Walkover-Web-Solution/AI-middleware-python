@@ -3,7 +3,6 @@ from .request import send_request, send_message
 class ResponseSender:
     @staticmethod
     async def sendResponse(rtl_layer=None, webhook=None, data=None, req_body={}, headers=None):
-        print('webhook', webhook)
         if rtl_layer:
             print('req body', req_body)
             await send_message(data, req_body['rtlOptions'])

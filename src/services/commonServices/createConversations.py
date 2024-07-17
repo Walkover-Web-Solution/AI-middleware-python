@@ -4,7 +4,7 @@ class ConversationService:
     def createOpenAiConversation(conversation):
         try:
             threads = []
-            for message in conversation:
+            for message in conversation or []:
                 if message['role'] != "tools_call" and message['role'] != "tool":
                     threads.append({'role': message['role'], 'content': message['content']})
             return {
