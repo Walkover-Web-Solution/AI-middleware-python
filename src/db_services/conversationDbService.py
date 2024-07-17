@@ -58,7 +58,6 @@ async def find(org_id, thread_id, bridge_id):
             .all()
         )
         conversations.reverse()
-        print("done gettting conversations..", conversations)
         return [conversation._asdict() for conversation in conversations]
     except Exception as e:
         # Handle the exception or log it

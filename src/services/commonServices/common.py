@@ -57,7 +57,6 @@ async def getchat(request: Request, bridge_id):
 
 
         for key in modelConfig: ## this code should not work properly, key should be index not value
-            print(key, "key")
             if modelConfig[key]["level"] == 2 or key in configuration:
                 customConfig[key] = configuration.get(key, modelConfig[key]["default"])
         
@@ -117,7 +116,7 @@ async def prochat(request: Request):
     RTLayer = body.get("RTLayer", None)
     template_id = body.get("template_id", None)
     bridgeType = request.get("chatbot", None)
-
+    print(variables,4444);
     usage = {}
     customConfig = {}
     model = configuration.get("model") if configuration else None
