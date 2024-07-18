@@ -5,7 +5,6 @@ from config import Config
    
         
 async def jwt_middleware(request: Request):
-        return
         token = request.headers.get('Authorization')
         if not token:
             raise HTTPException(status_code=498, detail="invalid token")

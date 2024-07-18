@@ -14,7 +14,7 @@ from .openAI.openaiCall import UnifiedOpenAICase
 
 from ..utils.customRes import ResponseSender
 from .Google.geminiCall import GeminiHandler
-
+import pydash as _
 from ..utils.helper import Helper
 import asyncio
 from prompts import mui_prompt
@@ -115,8 +115,7 @@ async def prochat(request: Request):
     variables = body.get("variables", {})
     RTLayer = body.get("RTLayer", None)
     template_id = body.get("template_id", None)
-    bridgeType = request.get("chatbot", None)
-    print(variables,4444);
+    bridgeType = request.state.chatbot
     usage = {}
     customConfig = {}
     model = configuration.get("model") if configuration else None
@@ -198,26 +197,26 @@ async def prochat(request: Request):
                 return JSONResponse(status_code=400, content=result)
 
         if bridgeType:
-            parsedJson = Helper.parseJson(result["modelResponse"].get(modelOutputConfig["message"]))
+            parsedJson = Helper.parse_json(_.get(result["modelResponse"], modelOutputConfig["message"]))
             if not parsedJson.get("json", {}).get("isMarkdown"):
                 params["configuration"]["prompt"] = {"role": "system", "content": mui_prompt.responsePrompt}
-                params["user"] = result["modelResponse"].get(modelOutputConfig["message"])
+                params["user"] = _.get(result["modelResponse"],(modelOutputConfig["message"]))
                 params["template"] = None
                 openAIInstance = UnifiedOpenAICase(params)
                 newresult = await openAIInstance.execute()
                 if not newresult["success"]:
                     return
 
-                result["modelResponse"][modelOutputConfig["message"]] = newresult["modelResponse"].get(modelOutputConfig["message"])
-                result["modelResponse"][modelOutputConfig["usage"][0]["total_tokens"]] += newresult["modelResponse"].get(modelOutputConfig["usage"][0]["total_tokens"])
-                result["modelResponse"][modelOutputConfig["usage"][0]["prompt_tokens"]] += newresult["modelResponse"].get(modelOutputConfig["usage"][0]["prompt_tokens"])
-                result["modelResponse"][modelOutputConfig["usage"][0]["completion_tokens"]] += newresult["modelResponse"].get(modelOutputConfig["usage"][0]["completion_tokens"])
-                result["historyParams"] = newresult["historyParams"]
-                result["usage"]["totalTokens"] += newresult["usage"]["totalTokens"]
-                result["usage"]["inputTokens"] += newresult["usage"]["inputTokens"]
-                result["usage"]["outputTokens"] += newresult["usage"]["outputTokens"]
-                result["usage"]["expectedCost"] += newresult["usage"]["expectedCost"]
-                result["historyParams"]["user"] = user
+                _.set_(result['modelResponse'], modelOutputConfig['usage'][0]['total_tokens'], _.get(result['modelResponse'], modelOutputConfig['usage'][0]['total_tokens']) + _.get(newresult['modelResponse'], modelOutputConfig['usage'][0]['total_tokens']))
+                _.set_(result['modelResponse'], modelOutputConfig['message'], _.get(newresult['modelResponse'], modelOutputConfig['message']))            
+                _.set_(result['modelResponse'], modelOutputConfig['usage'][0]['prompt_tokens'], _.get(result['modelResponse'], modelOutputConfig['usage'][0]['prompt_tokens']) + _.get(newresult['modelResponse'], modelOutputConfig['usage'][0]['prompt_tokens']))
+                _.set_(result['modelResponse'], modelOutputConfig['usage'][0]['completion_tokens'], _.get(result['modelResponse'], modelOutputConfig['usage'][0]['completion_tokens']) + _.get(newresult['modelResponse'], modelOutputConfig['usage'][0]['completion_tokens']))
+                result['historyParams'] = newresult['historyParams']
+                _.set_(result['usage'], "totalTokens", _.get(result['usage'], "totalTokens") + _.get(newresult['usage'], "totalTokens"))
+                _.set_(result['usage'], "inputTokens", _.get(result['usage'], "inputTokens") + _.get(newresult['usage'], "inputTokens"))
+                _.set_(result['usage'], "outputTokens", _.get(result['usage'], "outputTokens") + _.get(newresult['usage'], "outputTokens"))
+                _.set_(result['usage'], "expectedCost", _.get(result['usage'], "expectedCost") + _.get(newresult['usage'], "expectedCost"))
+                result['historyParams']['user'] = user
 
         endTime = int(time.time() * 1000)
         usage.update({
