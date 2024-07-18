@@ -3,7 +3,7 @@ from fastapi.responses import JSONResponse
 from ..db_services import ConfigurationServices
 import jwt
 from config import Config
-from ..services.commonServices import common
+from ..controllers.modelController import chat_completion
 import json
 
 async def send_data_middleware(request: Request, botId: str):
@@ -55,7 +55,7 @@ async def send_data_middleware(request: Request, botId: str):
                 "ttl": 1,
             },
         }
-        return await common.prochat(request=request)
+        return await chat_completion(request=request)
     except Exception as error : 
         return JSONResponse(status_code=400, content={'error' : error.__str__()})
 

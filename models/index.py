@@ -1,4 +1,4 @@
-from .postgres.index import db
+from .postgres.pg_connection import db
 
 combined_models = {
     'pg': db,

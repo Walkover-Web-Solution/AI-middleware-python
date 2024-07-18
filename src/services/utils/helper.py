@@ -46,13 +46,13 @@ class Helper:
 
     @staticmethod
     def replace_variables_in_prompt(prompt, variables):
-        if variables and variables.keys():
+        if variables and len(variables) > 0:
             for key, value in variables.items():
                 string_value = json.dumps(value)
-                regex = f'\\{{{{{key}}}}}'
-                prompt = [item if not item or "content" not in item else 
-                          {**item, "content": re.sub(regex, string_value, item["content"])} 
-                          for item in prompt]
+                regex = re.compile(r'\{\{' + re.escape(key) + r'\}\}')
+                for item in prompt:
+                    if item and "content" in item:
+                        item["content"] = regex.sub(string_value, item["content"])
         return prompt
 
     @staticmethod

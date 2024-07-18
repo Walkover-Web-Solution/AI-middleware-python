@@ -46,6 +46,7 @@ async def create(dataset, history_params):
             history_params['channel'], history_params['type'], history_params['actor'],
             history_params.get('tools')
         )
+        
         chat_id = result['result'][0]
         dataset[0]['chat_id'] = chat_id
         insert_ai_data = [

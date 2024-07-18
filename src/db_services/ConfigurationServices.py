@@ -1,4 +1,4 @@
-from models.connection import db
+from models.mongo_connection import db
 from bson import ObjectId
 import traceback
 

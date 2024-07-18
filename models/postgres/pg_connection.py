@@ -15,8 +15,7 @@ DB_HOST = Config.DB_HOST
 
 DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}/{DB_NAME}"
 engine = sa.create_engine(DATABASE_URL, pool_pre_ping=True)
-Session = sessionmaker(bind=engine)
-session = Session()
+Session = sessionmaker(bind=engine, autoflush=False)
 
 retry_strategy = {
     'max_retries': 100,
@@ -24,14 +23,14 @@ retry_strategy = {
 }
 
 # Function to sync the database
-def dbservice():
+def init_dbservice():
     try:
         Base.metadata.create_all(engine)
-        # print('Connection has been established successfully.')
+        print('Connected to postgres')
     except Exception as error:
         print('Unable to connect to the database:', error)
 
-dbservice()
+init_dbservice()
 
 def load_models():
     current_dir = os.path.dirname(os.path.realpath(__file__))
@@ -54,14 +53,14 @@ for model_name in db:
         model.associate(db)
 
 db['engine'] = engine
-db['session'] = session
+db['session'] = Session
 # db['conversations'] = sa.Table('conversations', sa.MetaData().reflect(bind=engine), autoload_with=engine)
 metadata = sa.MetaData()
 
 # Reflect the table from the database
 metadata.reflect(bind=engine)
-db['conversations'] = metadata.tables['conversations']
-db['raw_data'] = metadata.tables['raw_data']
+# db['conversations'] = metadata.tables['conversations']
+# db['raw_data'] = metadata.tables['raw_data']
 
 
 # This dictionary is now ready to be used.
