@@ -4,8 +4,7 @@ class ConversationService:
     def createOpenAiConversation(conversation):
         try:
             threads = []
-            print('conversation', conversation)
-            for message in conversation:
+            for message in conversation or []:
                 if message['role'] != "tools_call" and message['role'] != "tool":
                     threads.append({'role': message['role'], 'content': message['content']})
             return {
@@ -13,6 +12,7 @@ class ConversationService:
                 'messages': threads
             }
         except Exception as e:
+            traceback.print_exc()
             print("create conversation error=>", e)
             return {
                 'success': False,

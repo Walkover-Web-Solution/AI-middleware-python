@@ -46,10 +46,11 @@ class UnifiedOpenAICase:
         prompt = prompt if isinstance(prompt, list) else [prompt]
         conversation = ConversationService.createOpenAiConversation(self.configuration.get('conversation')).get('messages', [])
         prompt = Helper.replace_variables_in_prompt(prompt, self.variables)
-        # if self.template:
-        #     system_prompt = [{"role": "system", "content": self.template}]
-        #     prompt = Helper.replace_variables_in_prompt(system_prompt, {"system_prompt": prompt[0].get('content'), **self.variables})
-        self.customConfig["messages"] = prompt + conversation + ([{"role": "user", "content": self.user}] if self.user else self.tool_call) 
+        if self.template:
+            system_prompt = [{"role": "system", "content": self.template}]
+            prompt = Helper.replace_variables_in_prompt(system_prompt, {"system_prompt": prompt[0].get('content'), **self.variables})
+
+        self.customConfig["messages"] = prompt + conversation + ([{"role": "user", "content": self.user}] if self.user else (self.tool_call or [])) 
         openAIResponse = await chats(self.customConfig, self.apikey)
         modelResponse = openAIResponse.get("modelResponse", {})
 
@@ -164,12 +165,12 @@ class UnifiedOpenAICase:
             historyParams = {
                 'thread_id': self.thread_id,
                 'user': self.user if self.user else json.dumps(self.tool_call),
-                'message': modelResponse.get(self.modelOutputConfig['message']) if modelResponse.get(self.modelOutputConfig['message']) else modelResponse.get(self.modelOutputConfig['tools']),
+                'message':_.get(modelResponse, self.modelOutputConfig['message']) == None if _.get(modelResponse, self.modelOutputConfig['tools']) else  _.get(modelResponse, self.modelOutputConfig['message']), #modelResponse.get(self.modelOutputConfig['message']) if modelResponse.get(self.modelOutputConfig['message']) else modelResponse.get(self.modelOutputConfig['tools']),
                 'org_id': self.org_id,
                 'bridge_id': self.bridge_id,
                 'model': self.configuration.get('model'),
                 'channel': 'chat',
-                'type': "assistant" if modelResponse.get(self.modelOutputConfig['message']) else "tool_calls",
+                'type': "assistant" if _.get(modelResponse, self.modelOutputConfig['message']) else "tool_calls",
                 'actor': "user" if self.user else "tool",
                 'tools': tools
             }
