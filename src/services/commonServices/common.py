@@ -100,50 +100,31 @@ async def getchat(request: Request, bridge_id):
 @app.post("/prochat")
 async def prochat(request: Request):
     startTime = int(time.time() * 1000)
-    body = await request.json()##
-    if(hasattr(request.state, "body")): ##
-        body.update(request.state.body) ##
+    body = await request.json()
+    if(hasattr(request.state, 'body')): 
+        body.update(request.state.body) 
 
-    apikey = body.get("apikey")##
-    bridge_id = body.get("bridge_id", None)
-    configuration = body.get("configuration")##
-    thread_id = body.get("thread_id", None)
+    apikey = body.get("apikey")
+    bridge_id = body.get("bridge_id")
+    configuration = body.get("configuration")
+    thread_id = body.get("thread_id")
     org_id = request.state.org_id
-    user = body.get("user", None)
-    tool_call = body.get("tool_call", None)
+    user = body.get("user")
+    tool_call = body.get("tool_call")
     service = body.get("service")
     variables = body.get("variables", {})
-    RTLayer = body.get("RTLayer", None)
-    template_id = body.get("template_id", None)
-    bridgeType = request.state.chatbot
+    RTLayer = body.get("RTLayer")
+    bridgeType = body.get('chatbot')
+    template = body.get('template')
     usage = {}
     customConfig = {}
     model = configuration.get("model") if configuration else None
-    rtlLayer = False
-    webhook = None
-    headers = None
+    rtlLayer = RTLayer if RTLayer else configuration.get("RTLayer")
+    webhook = body.get('webhook')
+    headers = body.get('headers')
+    bridge = body.get('bridge')
+
     try:
-        getconfig = await getConfiguration(configuration, service, bridge_id, apikey, template_id)
-        if not getconfig["success"]:
-            return JSONResponse(status_code=400, content={"success": False, "error": getconfig["error"]})
-
-        configuration = getconfig["configuration"]
-        service = getconfig["service"] 
-        apikey = getconfig["apikey"]
-        template = getconfig["template"]
-        model = configuration.get("model")
-        rtlLayer = RTLayer if RTLayer else getconfig["RTLayer"]
-        bridge = getconfig["bridge"]
-
-        if not (service in services and model in services[service]["chat"]):
-            return JSONResponse(status_code=400, content={"success": False, "error": "model or service does not exist!"})
-
-        webhook = configuration.get("webhook")
-        headers = configuration.get("headers")
-        # if rtlLayer or webhook:
-        #     response = JSONResponse(status_code=200, content={"success": True, "message": "Will got response over your configured means."})
-        #     await response(request.scope, request.receive, request._send)
-
         modelname = model.replace("-", "_").replace(".", "_")
         modelfunc = getattr(ModelsConfig, modelname, None)
         modelObj = modelfunc()
@@ -160,6 +141,7 @@ async def prochat(request: Request):
                 configuration["conversation"] = result.get("data", [])
         else:
             thread_id = str(uuid.uuid1())
+        
         params = {
             "customConfig": customConfig,
             "configuration": configuration,
