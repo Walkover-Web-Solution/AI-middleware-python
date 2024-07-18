@@ -7,7 +7,7 @@ from src.services.commonServices.common import (
     getchat#, proCompletion, getCompletion, proEmbeddings, getEmbeddings
 )
 from ..middlewares.middleware import jwt_middleware
-
+import traceback
 router = APIRouter()
 
 @router.post('/chat/completion', dependencies=[Depends(jwt_middleware)])
@@ -17,9 +17,9 @@ async def chat_completion(request: Request):
         if(hasattr(request.state, 'body')):
             body.update(request.state.body)
         db_config = await getConfiguration(body.get('configuration'), body.get('service'), body.get('bridge_id'), body.get('apikey'), body.get('template_id'))
-        if not db_config["success"]:
+        if not db_config.get("success"):
                 return JSONResponse(status_code=400, content={"success": False, "error": db_config["error"]})
-        db_config['RTLayer'] = body['RTLayer'] or db_config.get('RTLayer')
+        db_config['RTLayer'] = body.get('RTLayer') or db_config.get('RTLayer')
         body.update(db_config)
         request.state.body = body
         if(body.get('webhook') or body.get('RTLayer')):
@@ -29,6 +29,7 @@ async def chat_completion(request: Request):
         return await prochat(request)
     except Exception as e:
         print("Error in chat completion: ", e)
+        traceback.print_exc()
         return JSONResponse(status_code=400, content={"success": False, "error": "Error in chat completion: "+str(e)})
 
 @router.post('/playground/chat/completion/{bridge_id}', dependencies=[Depends(jwt_middleware)])
