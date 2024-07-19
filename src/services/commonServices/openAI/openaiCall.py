@@ -79,7 +79,7 @@ class UnifiedOpenAICase:
                     rtl_layer = self.rtlLayer,
                     webhook= self.webhook,
                     data= {'error': openAIResponse.get('error'), 'success': False},
-                    req_body=  self.req.json if self.req else {},
+                    req_body=  await self.req.json() if self.req else {},
                     headers= self.headers or {}
                 ))
                 if self.rtlLayer or self.webhook:

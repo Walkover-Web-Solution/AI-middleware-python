@@ -161,7 +161,7 @@ async def prochat(request: Request):
         if service == "openai":
             openAIInstance = UnifiedOpenAICase(params)
             result = await openAIInstance.execute()
-            if not result["success"]:
+            if not result.get("success"):
                 if rtlLayer or webhook:
                     return
                 return JSONResponse(status_code=400, content=result)

@@ -1719,6 +1719,116 @@ class ModelsConfig:
         }
     
     @staticmethod
+    def gpt_4o_mini():
+        configuration = {
+            "model": {
+                "field": "dropdown",
+                "default": "gpt-4o-mini",
+                "level": 1
+            },
+            "temperature": {
+                "field": "slider",
+                "min": 0,
+                "max": 2,
+                "step": 0.1,
+                "default": 0,
+                "level": 2
+            },
+            "max_tokens": {
+                "field": "slider",
+                "min": 1,
+                "max": 8192,
+                "step": 1,
+                "default": 256,
+                "level": 2
+            },
+            "top_p": {
+                "field": "slider",
+                "min": 0,
+                "max": 1,
+                "step": 0.1,
+                "default": 1,
+                "level": 2
+            },
+            "logprobs": {
+                "field": "boolean",
+                "default": False,
+                "level": 0
+            },
+            "frequency_penalty": {
+                "field": "slider",
+                "min": 0,
+                "max": 2,
+                "step": 0.01,
+                "default": 0,
+                "level": 2
+            },
+            "presence_penalty": {
+                "field": "slider",
+                "min": 0,
+                "max": 2,
+                "step": 0.01,
+                "default": 0,
+                "level": 2
+            },
+            "n": {
+                "field": "number",
+                "default": 1,
+                "level": 0
+            },
+            "stop": {
+                "field": "text",
+                "default": "",
+                "level": 0
+            },
+            "stream": {
+                "field": "boolean",
+                "default": False,
+                "level": 0
+            },
+            "tools": {
+                "field": "array",
+                "level": 0,
+                "default": []
+            },
+            "tool_choice": {
+                "field": "text",
+                "default": "auto",
+                "level": 0
+            }
+        }
+        outputConfig = {
+            "usage": [{
+                "prompt_tokens": "usage.prompt_tokens",
+                "completion_tokens": "usage.completion_tokens",
+                "total_tokens": "usage.total_tokens",
+                "total_cost": {
+                    "input_cost": 0.03,
+                    "output_cost": 0.06
+                }
+            }],
+            "message": "choices[0].message.content",
+            "tools": "choices[0].message.tool_calls",
+            "assistant": "choices[0].message",
+            "id": "id"
+        }
+        inputConfig = {
+            "system": {
+                "default": {
+                    "role": "system",
+                    "content": ""
+                },
+                "contentKey": "content",
+                "type": "json"
+            },
+            "content_location": "prompt[0].content"
+        }
+        return {
+            "configuration": configuration,
+            "outputConfig": outputConfig,
+            "inputConfig": inputConfig
+        }
+    @staticmethod
     def text_embedding_3_large():
         configuration = {
             "model": {
