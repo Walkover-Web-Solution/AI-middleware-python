@@ -69,6 +69,42 @@ async def get_template_by_id(template_id):
 #             'error': "something went wrong!!"
 #         }
 
+
+async def get_bridges_by_slug_name_and_name(slug_name, name, org_id):
+    try:
+        bridges = configurationModel.find_one({
+            'org_id': org_id,
+            '$or': [
+                {'slugName': slug_name},
+                {'name': name}
+            ]
+        })
+        return {
+            'success': True,
+            'bridges': bridges
+        }
+    except Exception as error:
+        print("error:", error)
+        return {
+            'success': False,
+            'error': "something went wrong!!"
+        }
+    
+async def create_bridge(data):
+    try:
+        result = configurationModel.insert_one(data)
+        bridge = configurationModel.find_one({'_id': result.inserted_id})
+        return {
+            'success': True,
+            'bridge': bridge
+        }
+    except Exception as error:
+        print("error:", error)
+        return {
+            'success': False,
+            'error': "something went wrong!!"
+        }
+
 async def get_bridge_by_slugname(org_id, slug_name):
     try:
         bridge =  configurationModel.find_one({
