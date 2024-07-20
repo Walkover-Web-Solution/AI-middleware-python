@@ -30,6 +30,8 @@ async def healthcheck():
 # Include routers
 app.include_router(model_router, prefix="/api/v1/model")
 app.include_router(chatbot_router, prefix="/chatbot")
+app.include_router()
+# app.use('/api/v1/config', configurationController);
 
 if __name__ == "__main__":
     PORT = int(Config.PORT)
