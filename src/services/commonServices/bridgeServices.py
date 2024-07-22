@@ -1,7 +1,9 @@
 from fastapi import Request
+from fastapi.responses import JSONResponse
 from src.db_services.ConfigurationServices import get_bridges
 from datetime import datetime, timezone
 from src.controllers.configController import create_bridges
+import json
 
 async def duplicate_bridge(request : Request):
     try:
@@ -32,10 +34,12 @@ async def duplicate_bridge(request : Request):
             "defaultQuestions": bridge.get('defaultQuestions'),
             "actions": bridge.get('actions')
         })
-        return {
+        return JSONResponse(status_code=200, content={
             "success": True,
-            "message": "Bridge duplicated successfully"
-        }
+            "message": "Bridge duplicated successfully",
+            "result" : json.loads(json.dumps(res, default=str))
+
+        })
     except Exception as e:
         return {'error': str(e)}
 

@@ -1,5 +1,5 @@
 from fastapi import HTTPException, status
-from src.db_services.ConfigurationServices import get_bridges_by_slug_name_and_name
+# from src.db_services.ConfigurationServices import get_bridges_by_slug_name_and_name
 from src.db_services.ConfigurationServices import create_bridge
 
 async def create_bridges(bridges):
@@ -21,12 +21,12 @@ async def create_bridges(bridges):
         defaultQuestions = bridges.get('defaultQuestions')
         actions= bridges.get('actions')
 
-        bridge_data = await get_bridges_by_slug_name_and_name(slugName,name, org_id)
-        if bridge_data.get("success") and bridge_data.get("bridges"):
-            if bridge_data["bridges"]["name"] == configuration['name']:
-                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Bridge name already exists! Please choose a unique one.")
-            if bridge_data["bridges"]["slugName"] == configuration['slugName']:
-                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Slug name already exists! Please choose a unique one.")
+        # bridge_data = await get_bridges_by_slug_name_and_name(slugName,name, org_id)
+        # if bridge_data.get("success") and bridge_data.get("bridges"):
+        #     if bridge_data["bridges"]["name"] == configuration['name']:
+        #         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Bridge name already exists! Please choose a unique one.")
+        #     if bridge_data["bridges"]["slugName"] == configuration['slugName']:
+        #         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Slug name already exists! Please choose a unique one.")
 
         result = await create_bridge({
             "configuration": configuration,
