@@ -93,10 +93,9 @@ async def get_bridges_by_slug_name_and_name(slug_name, name, org_id):
 async def create_bridge(data):
     try:
         result = configurationModel.insert_one(data)
-        bridge = configurationModel.find_one({'_id': result.inserted_id})
         return {
             'success': True,
-            'bridge': bridge
+            'bridge': {**data, '_id': result.inserted_id}
         }
     except Exception as error:
         print("error:", error)
@@ -104,6 +103,7 @@ async def create_bridge(data):
             'success': False,
             'error': "something went wrong!!"
         }
+
 
 async def get_bridge_by_slugname(org_id, slug_name):
     try:

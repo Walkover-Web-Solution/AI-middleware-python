@@ -7,7 +7,6 @@ import os
 from config import Config
 from src.controllers.modelController import router as model_router
 from src.routes.chatBot_routes import router as chatbot_router
-# from src.controllers import bridgeController as bridgeController
 from src.controllers.bridgeController import router as bridgeController
 # Initialize the FastAPI app
 app = FastAPI(debug=True)
