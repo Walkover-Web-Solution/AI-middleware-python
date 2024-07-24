@@ -3,8 +3,8 @@ from fastapi.responses import JSONResponse
 from ..services.utils.getConfiguration import getConfiguration
 import asyncio
 from src.services.commonServices.common import (
-    prochat,
-    getchat#, proCompletion, getCompletion, proEmbeddings, getEmbeddings
+   chat,
+    #, proCompletion, getCompletion, proEmbeddings, getEmbeddings
 )
 from ..middlewares.middleware import jwt_middleware
 import traceback
@@ -25,8 +25,8 @@ async def chat_completion(request: Request):
         if(body.get('webhook') or body.get('RTLayer')):
             asyncio.create_task(prochat(request))
             return JSONResponse(status_code=200, content={"success": True, "message"  :"Your response will be send through configured means."}) 
-        
-        return await prochat(request)
+        request.state.playgound = False
+        return await chat(request)
     except Exception as e:
         print("Error in chat completion: ", e)
         traceback.print_exc()
@@ -34,4 +34,5 @@ async def chat_completion(request: Request):
 
 @router.post('/playground/chat/completion/{bridge_id}', dependencies=[Depends(jwt_middleware)])
 async def playground_chat_completion(bridge_id: str, request: Request):
-    return await getchat(request, bridge_id)
+    request.state.playgound = True
+    return await chat(request)
