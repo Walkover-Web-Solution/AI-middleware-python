@@ -5,7 +5,8 @@ from .chat import chats
 from ....db_services import ConfigurationServices as ConfigurationService
 import requests
 from ...utils.customRes import ResponseSender
-
+import re
+import js2py
 
 async def function_call(data):
     try:
@@ -24,9 +25,9 @@ async def function_call(data):
 
         if api_name in api_endpoints:
             api_info = bridge['api_call'][api_name]
-            axios_instance = await fetch_axios(api_info)
+            axios_instance, is_python = await fetch_axios(api_info)
             args = json.loads(tools_call['function'].get('arguments', '{}'))
-            api_response = await axios_work(args, axios_instance)
+            api_response = await axios_work(args, axios_instance,is_python)
             print(api_response, 'api response')
             func_response_data = {
                 'tool_call_id': tools_call['id'],
@@ -77,21 +78,36 @@ async def function_call(data):
 
 async def fetch_axios(api_info):
     api_call = await ConfigurationService.get_api_call_by_id(api_info['apiObjectID'])
-    return api_call['apiCall']['axios']
+    axios_instance = api_call['apiCall']['axios']
+    is_python = api_call['apiCall'].get('is_python', False)
+    return axios_instance, is_python
 
-async def axios_work(data, axios_function):
+async def axios_work(data, axios_function, is_python=False):
+    if not is_python:
+        return await axios_work_js(data, axios_function)
     # create_function = eval(f"lambda axios, data: {axios_function}")
     exec_globals = {}
     exec(axios_function, exec_globals)
-    
     # Access the send_data function from the exec_globals dictionary
     send_data = exec_globals.get('send_data')
     print('send_data', send_data)
     try:
         response = send_data(data)
+        print(response.json())
         return response.json()
     except Exception as err:
         logging.error("error", exc_info=err)
+        return {'success': False}
+
+async def axios_work_js(data, axios_function):
+    try:    
+        pattern = r"https:\/\/flow\.sokt\.io\/func\/([a-zA-Z0-9]+)"
+        match = re.search(pattern, axios_function)
+        script_id = match.group(1)
+        response = requests.post(f"https://flow.sokt.io/func/{script_id}", json=data)
+        return response.json()
+    except Exception as err:
+        print("Error calling function=>", err)
         return {'success': False}
 
 # Exporting function_call function
