@@ -12,7 +12,10 @@ async def getConfiguration(configuration, service, bridge_id, api_key, template_
             'success': False,
             'error': "bridge_id does not exist"
         }
-    configuration = configuration if configuration else result.get('bridges', {}).get('configuration')
+    db_configuration = result.get('bridges', {}).get('configuration', {})
+    if configuration:
+        db_configuration.update(configuration)
+    configuration = db_configuration
     service = service or (result.get('bridges', {}).get('service', '').lower())
     api_key = api_key if api_key else Helper.decrypt(result.get('bridges', {}).get('apikey'))
     RTLayer = True if configuration and 'RTLayer' in configuration else False 
