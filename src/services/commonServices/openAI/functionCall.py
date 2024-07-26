@@ -5,7 +5,7 @@ from .chat import chats
 from ....db_services import ConfigurationServices as ConfigurationService
 import requests
 from ...utils.customRes import ResponseSender
-
+import re
 
 async def function_call(data):
     try:
@@ -24,9 +24,9 @@ async def function_call(data):
 
         if api_name in api_endpoints:
             api_info = bridge['api_call'][api_name]
-            axios_instance = await fetch_axios(api_info)
+            axios_instance, is_python = await fetch_axios(api_info)
             args = json.loads(tools_call['function'].get('arguments', '{}'))
-            api_response = await axios_work(args, axios_instance)
+            api_response = await axios_work(args, axios_instance, is_python)
             print(api_response, 'api response')
             func_response_data = {
                 'tool_call_id': tools_call['id'],
@@ -37,7 +37,7 @@ async def function_call(data):
             tools[api_name] = json.dumps(api_response)
             configuration['messages'].append({'role': 'assistant', 'content': None, 'tool_calls': [tools_call]})
             configuration['messages'].append(func_response_data)
-
+            #  todo :: add function name also in the rtlayer          
             if not playground:
                 ResponseSender.sendResponse({
                     'rtlLayer': rtl_layer,
@@ -77,21 +77,37 @@ async def function_call(data):
 
 async def fetch_axios(api_info):
     api_call = await ConfigurationService.get_api_call_by_id(api_info['apiObjectID'])
-    return api_call['apiCall']['axios']
+    axios_instance = api_call['apiCall'].get('code') or api_call['apiCall'].get('axios')  
+    is_python = api_call['apiCall'].get('is_python', False)
+    return axios_instance, is_python
 
-async def axios_work(data, axios_function):
-    # create_function = eval(f"lambda axios, data: {axios_function}")
-    exec_globals = {}
-    exec(axios_function, exec_globals)
-    
-    # Access the send_data function from the exec_globals dictionary
-    send_data = exec_globals.get('send_data')
-    print('send_data', send_data)
+async def axios_work(data, code, is_python=False):
     try:
-        response = send_data(data)
+        if not is_python:
+            return await axios_work_js(data, code)
+        
+         # Append the execution code to the provided code
+        exec_code = code + """
+result =  axios_call(params)
+"""
+        # Prepare the environment for execution
+        local_vars = {'params': data}
+        global_vars = {"requests": requests, "asyncio": __import__('asyncio')}
+
+        exec(exec_code, global_vars, local_vars)
+        return local_vars.get('result')
+    except Exception as err:
+        return {'success': False, "err": str(err)}
+
+async def axios_work_js(data, axios_function):
+    try:    
+        pattern = r"https:\/\/flow\.sokt\.io\/func\/([a-zA-Z0-9]+)"
+        match = re.search(pattern, axios_function)
+        script_id = match.group(1)
+        response = requests.post(f"https://flow.sokt.io/func/{script_id}", json=data)
         return response.json()
     except Exception as err:
-        logging.error("error", exc_info=err)
+        print("Error calling function=>", err)
         return {'success': False}
 
 # Exporting function_call function

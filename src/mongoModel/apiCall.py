@@ -1,21 +1,53 @@
-# import mongoengine as me
-# from datetime import datetime
-
-# class ApiCall(me.Document):
-#     org_id = me.StringField(default="")
-#     bridge_id = me.StringField(default="")
-#     activated = me.BooleanField(default=False)
-#     required_fields = me.ListField(me.StringField(), default=[])
-#     short_description = me.StringField(default='')
-#     axios = me.StringField(default='')
-#     optional_fields = me.ListField(me.StringField(), default=[])
-#     endpoint = me.StringField(default="")
-#     api_description = me.StringField()
-#     created_at = me.DateTimeField(default=datetime.now)
-
-#     meta = {
-#         'collection': 'apicall'
-#     }
-
-# # Assuming you want to export it in a similar way to how ES6 modules work
-# apiCallModel = ApiCall
+# import mongoose from "mongoose";
+# const apiCall = new mongoose.Schema({
+#   org_id: {
+#     type: String,
+#     default: ""
+#   },
+#   bridge_id: {
+#     type: String,
+#     default: ""
+#   },
+#   activated: {
+#     type: Boolean,
+#     default: false
+#   },
+#   required_fields: {
+#     type: [String],
+#     default: []
+#   },
+#   code: {
+#     type: String,
+#     // required: true,
+#     default: ''
+#   },
+#   fields: { // structure is 
+#     type: [Object],
+#     /*  [
+#           {
+#               variable_name:"",
+#               description:"",
+#               enum:""
+#           } 
+#         ]*/
+#     default: []
+#   },
+#   endpoint: {  // name of the flow 
+#     // COMPLETE IT
+#     type: String,
+#     default: ""
+#   },
+#   description: {
+#     type: String
+#   },
+#   created_at: {
+#     type: Date,
+#     default: Date.now
+#   },
+#   name: { // function name, scriptId in case of viasocket function
+#     type: String,
+#     default: ""
+#   }
+# });
+# const apiCallModel = mongoose.model("apicall", apiCall);
+# export default apiCallModel;

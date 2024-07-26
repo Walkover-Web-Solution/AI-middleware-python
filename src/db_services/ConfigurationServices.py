@@ -127,3 +127,26 @@ async def get_bridge_by_slugname(org_id, slug_name):
             'success': False,
             'error': "something went wrong!!"
         }
+    
+
+async def update_tools_calls(bridge_id, org_id, configuration, api_endpoints, api_call):
+    try:
+        configurationModel.find_one_and_update(
+            {'_id': ObjectId(bridge_id), 'org_id': org_id},
+            {'$set': {
+                'configuration': configuration,
+                'api_endpoints': api_endpoints,
+                'api_call': api_call,
+                'is_api_call': True
+            }}
+        )
+        return {
+            'success': True,
+            'message': "bridge updated successfully"
+        }
+    except Exception as error:
+        print(f"error: {error}")
+        return {
+            'success': False,
+            'error': "something went wrong!!"
+        }
