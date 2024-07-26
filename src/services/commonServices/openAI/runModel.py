@@ -6,7 +6,6 @@ async def runModel(configuration, chat=True, apiKey=None):
     try:
         OpenAIConfig = OpenAIInitializer(apiKey)
         openAI = OpenAIConfig.getOpenAIService()
-        print("hihihi",configuration,"hihihihi")
         if chat:
             chat_completion = openAI.chat.completions.create(**configuration)
             response = chat_completion.to_dict()

@@ -46,14 +46,14 @@ async def chat(request: Request):
     model =configuration.get('model')
     IsPlayground = request.state.playground
     bridge = body.get('bridge')
-    # getconfig = await getConfiguration(configuration, service, bridge_id, apikey)
-    # if not getconfig["success"]:
-    #     return JSONResponse(status_code=400, content={"success": False, "error": getconfig["error"]})
-    # configuration = getconfig["configuration"]
-    # service = getconfig["service"]
-    # apikey = getconfig["apikey"]
-    # model = configuration.get("model")
-    # bridge = body.get('bridge') or getconfig["bridge"]
+    getconfig = await getConfiguration(configuration, service, bridge_id, apikey)
+    if not getconfig["success"]:
+        return JSONResponse(status_code=400, content={"success": False, "error": getconfig["error"]})
+    configuration = getconfig["configuration"]
+    service = getconfig["service"]
+    apikey = getconfig["apikey"]
+    model = configuration.get("model")
+    bridge = body.get('bridge') or getconfig["bridge"]
 
     if not (service in services and model in services[service]["chat"]):
         return JSONResponse(status_code=400, content={"success": False, "error": "model or service does not exist!"})
@@ -140,61 +140,62 @@ async def chat(request: Request):
                 result['historyParams']['user'] = user
 
         endTime = int(time.time() * 1000)
-        usage.update({
-            **result.get("usage", {}),
-            "service": service,
-            "model": model,
-            "orgId": org_id,
-            "latency": endTime - startTime,
-            "success": True,
-            "variables": variables,
-            "prompt": configuration["prompt"]
-        })
-        asyncio.create_task(metrics_service.create([usage], result["historyParams"]))
-        asyncio.create_task(ResponseSender.sendResponse(
-            rtl_layer=rtlLayer,
-            webhook=webhook,
-            data={"response": result["modelResponse"], "success": True},
-            req_body=body,
-            headers=headers or {}
-        ))
-        if rtlLayer or webhook:
-            return JSONResponse(status_code=200, content={"success": True, "message": "Your data will be sent through the configured means."})
+        if not IsPlayground:
+            usage.update({
+                **result.get("usage", {}),
+                "service": service,
+                "model": model,
+                "orgId": org_id,
+                "latency": endTime - startTime,
+                "success": True,
+                "variables": variables,
+                "prompt": configuration["prompt"]
+            })
+            asyncio.create_task(metrics_service.create([usage], result["historyParams"]))
+            asyncio.create_task(ResponseSender.sendResponse(
+                rtl_layer=rtlLayer,
+                webhook=webhook,
+                data={"response": result["modelResponse"], "success": True},
+                req_body=body,
+                headers=headers or {}
+            ))
+            if rtlLayer or webhook:
+                return JSONResponse(status_code=200, content={"success": True, "message": "Your data will be sent through the configured means."})
         return JSONResponse(status_code=200, content={"success": True, "response": result["modelResponse"]})
 
     except Exception as error:
         traceback.print_exc()
-
-        endTime = int(time.time() * 1000)
-        latency = endTime - startTime
-        usage.update({
-            **usage,
-            "service": service,
-            "model": model,
-            "orgId": org_id,
-            "latency": latency,
-            "success": False,
-            "error": str(error)
-        })
-        asyncio.create_task(metrics_service.create([usage], {
-            "thread_id": thread_id,
-            "user": user,
-            "message": "",
-            "org_id": org_id,
-            "bridge_id": bridge_id,
-            "model": model or configuration.get("model", None),
-            "channel": 'chat',
-            "type": "error",
-            "actor": "user"
-        }))
-        print("chat common error=>", error)
-        asyncio.create_task(ResponseSender.sendResponse({
-            "rtlLayer": rtlLayer,
-            "webhook": webhook,
-            "data": {"error": str(error), "success": False},
-            "reqBody": body,
-            "headers": headers or {}
-        }))
-        if rtlLayer or webhook:
-            return
+        if not IsPlayground:
+            endTime = int(time.time() * 1000)
+            latency = endTime - startTime
+            usage.update({
+                **usage,
+                "service": service,
+                "model": model,
+                "orgId": org_id,
+                "latency": latency,
+                "success": False,
+                "error": str(error)
+            })
+            asyncio.create_task(metrics_service.create([usage], {
+                "thread_id": thread_id,
+                "user": user,
+                "message": "",
+                "org_id": org_id,
+                "bridge_id": bridge_id,
+                "model": model or configuration.get("model", None),
+                "channel": 'chat',
+                "type": "error",
+                "actor": "user"
+            }))
+            print("chat common error=>", error)
+            asyncio.create_task(ResponseSender.sendResponse({
+                "rtlLayer": rtlLayer,
+                "webhook": webhook,
+                "data": {"error": str(error), "success": False},
+                "reqBody": body,
+                "headers": headers or {}
+            }))
+            if rtlLayer or webhook:
+                return
         return JSONResponse(status_code=400, content={"success": False, "error": str(error)})
