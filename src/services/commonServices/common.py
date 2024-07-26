@@ -31,7 +31,7 @@ async def chat(request: Request):
     configuration = body.get("configuration")
     thread_id = body.get("thread_id")
     org_id = request.state.org_id
-    user = body.get("user") or configuration.get("user", ""),
+    user = body.get("user") or configuration.get("user", "")
     tool_call = body.get("tool_call")
     service = body.get("service")
     variables = body.get("variables", {})
@@ -43,16 +43,17 @@ async def chat(request: Request):
     rtlLayer = RTLayer if RTLayer else configuration.get("RTLayer")
     webhook = body.get('webhook')
     headers = body.get('headers')
+    model =configuration.get('model')
     IsPlayground = request.state.playground
-
-    getconfig = await getConfiguration(configuration, service, bridge_id, apikey)
-    if not getconfig["success"]:
-        return JSONResponse(status_code=400, content={"success": False, "error": getconfig["error"]})
-    configuration = getconfig["configuration"]
-    service = getconfig["service"]
-    apikey = getconfig["apikey"]
-    model = configuration.get("model")
-    bridge = body.get('bridge') or getconfig["bridge"]
+    bridge = body.get('bridge')
+    # getconfig = await getConfiguration(configuration, service, bridge_id, apikey)
+    # if not getconfig["success"]:
+    #     return JSONResponse(status_code=400, content={"success": False, "error": getconfig["error"]})
+    # configuration = getconfig["configuration"]
+    # service = getconfig["service"]
+    # apikey = getconfig["apikey"]
+    # model = configuration.get("model")
+    # bridge = body.get('bridge') or getconfig["bridge"]
 
     if not (service in services and model in services[service]["chat"]):
         return JSONResponse(status_code=400, content={"success": False, "error": "model or service does not exist!"})
