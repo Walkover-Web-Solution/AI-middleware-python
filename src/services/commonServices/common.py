@@ -43,7 +43,7 @@ async def chat(request: Request):
     rtlLayer = RTLayer if RTLayer else configuration.get("RTLayer")
     webhook = body.get('webhook')
     headers = body.get('headers')
-    IsPlayground = request.state.playgound
+    IsPlayground = request.state.playground
 
     getconfig = await getConfiguration(configuration, service, bridge_id, apikey)
     if not getconfig["success"]:

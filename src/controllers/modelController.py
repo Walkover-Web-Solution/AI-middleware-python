@@ -22,10 +22,10 @@ async def chat_completion(request: Request):
         db_config['RTLayer'] = body.get('RTLayer') or db_config.get('RTLayer')
         body.update(db_config)
         request.state.body = body
+        request.state.playground = False
         if(body.get('webhook') or body.get('RTLayer')):
-            asyncio.create_task(prochat(request))
+            asyncio.create_task(chat(request))
             return JSONResponse(status_code=200, content={"success": True, "message"  :"Your response will be send through configured means."}) 
-        request.state.playgound = False
         return await chat(request)
     except Exception as e:
         print("Error in chat completion: ", e)
@@ -34,5 +34,5 @@ async def chat_completion(request: Request):
 
 @router.post('/playground/chat/completion/{bridge_id}', dependencies=[Depends(jwt_middleware)])
 async def playground_chat_completion(bridge_id: str, request: Request):
-    request.state.playgound = True
+    request.state.playground = True
     return await chat(request)
