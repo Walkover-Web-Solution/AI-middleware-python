@@ -23,6 +23,9 @@ app = FastAPI()
 async def chat(request: Request):
     startTime = int(time.time() * 1000)
     body = await request.json()
+    if(hasattr(request.state, 'body')): 
+        body.update(request.state.body) 
+
     apikey = body.get("apikey")
     bridge_id = body.get("bridge_id") or request.path_params.get('bridge_id')
     configuration = body.get("configuration")
@@ -37,13 +40,23 @@ async def chat(request: Request):
     template = body.get('template')
     usage = {}
     customConfig = {}
-    model = configuration.get("model") if configuration else None
     rtlLayer = RTLayer if RTLayer else configuration.get("RTLayer")
     webhook = body.get('webhook')
     headers = body.get('headers')
-    bridge = body.get('bridge')
     IsPlayground = request.state.playgound
-    
+
+    getconfig = await getConfiguration(configuration, service, bridge_id, apikey)
+    if not getconfig["success"]:
+        return JSONResponse(status_code=400, content={"success": False, "error": getconfig["error"]})
+    configuration = getconfig["configuration"]
+    service = getconfig["service"]
+    apikey = getconfig["apikey"]
+    model = configuration.get("model")
+    bridge = body.get('bridge') or getconfig["bridge"]
+
+    if not (service in services and model in services[service]["chat"]):
+        return JSONResponse(status_code=400, content={"success": False, "error": "model or service does not exist!"})
+
     try:
         modelname = model.replace("-", "_").replace(".", "_")
         modelfunc = getattr(ModelsConfig, modelname, None)
@@ -61,6 +74,10 @@ async def chat(request: Request):
                 configuration["conversation"] = result.get("data", [])
         else:
             thread_id = str(uuid.uuid1())
+
+        # Update prompt on the base of varible 
+        configuration['prompt']  = configuration['prompt']  if isinstance(configuration['prompt'] , list) else [configuration['prompt'] ]
+        configuration['prompt']  = Helper.replace_variables_in_prompt(configuration['prompt'] , variables)
 
         params = {
             "customConfig": customConfig,
