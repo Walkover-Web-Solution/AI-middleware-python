@@ -7,21 +7,15 @@ from src.services.commonServices.common import (
     #, proCompletion, getCompletion, proEmbeddings, getEmbeddings
 )
 from ..middlewares.middleware import jwt_middleware
+from ..middlewares.getDataUsingBridgeId import get_data
 import traceback
 router = APIRouter()
 
 @router.post('/chat/completion', dependencies=[Depends(jwt_middleware)])
-async def chat_completion(request: Request):
+async def chat_completion(request: Request,db_config: dict = Depends(get_data)):
     try:
-        body = await request.json()##
-        if(hasattr(request.state, 'body')):
-            body.update(request.state.body)
-        db_config = await getConfiguration(body.get('configuration'), body.get('service'), body.get('bridge_id'), body.get('apikey'), body.get('template_id'))
-        if not db_config.get("success"):
-                return JSONResponse(status_code=400, content={"success": False, "error": db_config["error"]})
+        body = await request.json()
         db_config['RTLayer'] = body.get('RTLayer') or db_config.get('RTLayer')
-        body.update(db_config)
-        request.state.body = body
         request.state.playground = False
         if(body.get('webhook') or body.get('RTLayer')):
             asyncio.create_task(chat(request))
@@ -33,6 +27,6 @@ async def chat_completion(request: Request):
         return JSONResponse(status_code=400, content={"success": False, "error": "Error in chat completion: "+str(e)})
 
 @router.post('/playground/chat/completion/{bridge_id}', dependencies=[Depends(jwt_middleware)])
-async def playground_chat_completion(bridge_id: str, request: Request):
+async def playground_chat_completion(bridge_id: str, request: Request,db_config: dict = Depends(get_data)):
     request.state.playground = True
     return await chat(request)

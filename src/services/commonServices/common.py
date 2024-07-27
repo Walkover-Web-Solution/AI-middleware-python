@@ -46,14 +46,6 @@ async def chat(request: Request):
     model =configuration.get('model')
     IsPlayground = request.state.playground
     bridge = body.get('bridge')
-    getconfig = await getConfiguration(configuration, service, bridge_id, apikey)
-    if not getconfig["success"]:
-        return JSONResponse(status_code=400, content={"success": False, "error": getconfig["error"]})
-    configuration = getconfig["configuration"]
-    service = getconfig["service"]
-    apikey = getconfig["apikey"]
-    model = configuration.get("model")
-    bridge = body.get('bridge') or getconfig["bridge"]
 
     if not (service in services and model in services[service]["chat"]):
         return JSONResponse(status_code=400, content={"success": False, "error": "model or service does not exist!"})
