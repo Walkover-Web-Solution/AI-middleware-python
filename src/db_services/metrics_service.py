@@ -49,21 +49,6 @@ async def create(dataset, history_params):
         
         chat_id = result['result'][0]
         dataset[0]['chat_id'] = chat_id
-        insert_ai_data = [
-            {
-                'org_id': data_object['orgId'],
-                'authkey_name': data_object.get('authkeyName', 'not_found'),
-                'latency': data_object.get('latency', 0),
-                'service': data_object['service'],
-                'status': data_object.get('success', False),
-                'model': data_object['model'],
-                'input_tokens': data_object.get('inputTokens', 0),
-                'output_tokens': data_object.get('outputTokens', 0),
-                'expected_cost': data_object.get('expectedCost', 0),
-                'created_at': datetime.now()
-            }
-            for data_object in dataset
-        ]
 
         insert_ai_data_in_pg = [
             {

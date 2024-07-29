@@ -27,7 +27,6 @@ async def function_call(data):
             axios_instance, is_python = await fetch_axios(api_info)
             args = json.loads(tools_call['function'].get('arguments', '{}'))
             api_response = await axios_work(args, axios_instance, is_python)
-            print(api_response, 'api response')
             func_response_data = {
                 'tool_call_id': tools_call['id'],
                 'role': 'tool',
