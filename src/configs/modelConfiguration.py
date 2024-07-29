@@ -7,7 +7,7 @@ class ModelsConfig:
                 "default": "gpt-3.5-turbo",
                 "level": 1
             },
-            "temperature": {
+            "creativity_level": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -23,7 +23,7 @@ class ModelsConfig:
                 "default": 256,
                 "level": 2
             },
-            "top_p": {
+            "probablity_cutoff": {
                 "field": "slider",
                 "min": 0,
                 "max": 1,
@@ -31,12 +31,12 @@ class ModelsConfig:
                 "default": 1,
                 "level": 2
             },
-            "logprobs": {
+            "log_probablity": {
                 "field": "boolean",
                 "default": False,
                 "level": 0
             },
-            "frequency_penalty": {
+            "repetition_penalty": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -44,7 +44,7 @@ class ModelsConfig:
                 "default": 0,
                 "level": 2
             },
-            "presence_penalty": {
+            "novelty_penalty": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -52,12 +52,12 @@ class ModelsConfig:
                 "default": 0,
                 "level": 2
             },
-            "n": {
+            "response_count": {
                 "field": "number",
                 "default": 1,
                 "level": 0
             },
-            "stop": {
+            "additional_stop_sequences": {
                 "field": "text",
                 "default": "",
                 "level": 0
@@ -107,7 +107,7 @@ class ModelsConfig:
                 "default": "gpt-3.5-turbo-0613",
                 "level": 1
             },
-            "temperature": {
+            "creativity_level": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -123,7 +123,7 @@ class ModelsConfig:
                 "default": 256,
                 "level": 2
             },
-            "top_p": {
+            "probablity_cutoff": {
                 "field": "slider",
                 "min": 0,
                 "max": 1,
@@ -131,12 +131,12 @@ class ModelsConfig:
                 "default": 1,
                 "level": 2
             },
-            "logprobs": {
+            "log_probablity": {
                 "field": "boolean",
                 "default": False,
                 "level": 0
             },
-            "frequency_penalty": {
+            "repetition_penalty": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -144,7 +144,7 @@ class ModelsConfig:
                 "default": 0,
                 "level": 2
             },
-            "presence_penalty": {
+            "novelty_penalty": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -152,12 +152,12 @@ class ModelsConfig:
                 "default": 0,
                 "level": 2
             },
-            "n": {
+            "response_count": {
                 "field": "number",
                 "default": 1,
                 "level": 0
             },
-            "stop": {
+            "additional_stop_sequences": {
                 "field": "text",
                 "default": "",
                 "level": 0
@@ -208,7 +208,7 @@ class ModelsConfig:
                 "default": "gpt-3.5-turbo-0125",
                 "level": 1
             },
-            "temperature": {
+            "creativity_level": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -224,7 +224,7 @@ class ModelsConfig:
                 "default": 256,
                 "level": 2
             },
-            "top_p": {
+            "probablity_cutoff": {
                 "field": "slider",
                 "min": 0,
                 "max": 1,
@@ -232,12 +232,12 @@ class ModelsConfig:
                 "default": 1,
                 "level": 2
             },
-            "logprobs": {
+            "log_probablity": {
                 "field": "boolean",
                 "default": False,
                 "level": 0
             },
-            "frequency_penalty": {
+            "repetition_penalty": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -245,7 +245,7 @@ class ModelsConfig:
                 "default": 0,
                 "level": 2
             },
-            "presence_penalty": {
+            "novelty_penalty": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -253,12 +253,12 @@ class ModelsConfig:
                 "default": 0,
                 "level": 2
             },
-            "n": {
+            "response_count": {
                 "field": "number",
                 "default": 1,
                 "level": 0
             },
-            "stop": {
+            "additional_stop_sequences": {
                 "field": "text",
                 "default": "",
                 "level": 0
@@ -326,7 +326,7 @@ class ModelsConfig:
                 "default": "gpt-3.5-turbo-0301",
                 "level": 1
             },
-            "temperature": {
+            "creativity_level": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -342,7 +342,7 @@ class ModelsConfig:
                 "default": 256,
                 "level": 2
             },
-            "top_p": {
+            "probablity_cutoff": {
                 "field": "slider",
                 "min": 0,
                 "max": 1,
@@ -350,12 +350,12 @@ class ModelsConfig:
                 "default": 1,
                 "level": 2
             },
-            "logprobs": {
+            "log_probablity": {
                 "field": "boolean",
                 "default": False,
                 "level": 0
             },
-            "frequency_penalty": {
+            "repetition_penalty": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -363,7 +363,7 @@ class ModelsConfig:
                 "default": 0,
                 "level": 2
             },
-            "presence_penalty": {
+            "novelty_penalty": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -371,12 +371,12 @@ class ModelsConfig:
                 "default": 0,
                 "level": 2
             },
-            "n": {
+            "response_count": {
                 "field": "number",
                 "default": 1,
                 "level": 0
             },
-            "stop": {
+            "additional_stop_sequences": {
                 "field": "text",
                 "default": "",
                 "level": 0
@@ -440,7 +440,7 @@ class ModelsConfig:
                 "default": "gpt-3.5-turbo-1106",
                 "level": 1
             },
-            "temperature": {
+            "creativity_level": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -456,7 +456,7 @@ class ModelsConfig:
                 "default": 256,
                 "level": 2
             },
-            "top_p": {
+            "probablity_cutoff": {
                 "field": "slider",
                 "min": 0,
                 "max": 1,
@@ -464,12 +464,12 @@ class ModelsConfig:
                 "default": 1,
                 "level": 2
             },
-            "logprobs": {
+            "log_probablity": {
                 "field": "boolean",
                 "default": False,
                 "level": 0
             },
-            "frequency_penalty": {
+            "repetition_penalty": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -477,7 +477,7 @@ class ModelsConfig:
                 "default": 0,
                 "level": 2
             },
-            "presence_penalty": {
+            "novelty_penalty": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -485,12 +485,12 @@ class ModelsConfig:
                 "default": 0,
                 "level": 2
             },
-            "n": {
+            "response_count": {
                 "field": "number",
                 "default": 1,
                 "level": 0
             },
-            "stop": {
+            "additional_stop_sequences": {
                 "field": "text",
                 "default": "",
                 "level": 0
@@ -558,7 +558,7 @@ class ModelsConfig:
                 "default": "gpt-3.5-turbo-16k",
                 "level": 1
             },
-            "temperature": {
+            "creativity_level": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -574,7 +574,7 @@ class ModelsConfig:
                 "default": 256,
                 "level": 2
             },
-            "top_p": {
+            "probablity_cutoff": {
                 "field": "slider",
                 "min": 0,
                 "max": 1,
@@ -582,12 +582,12 @@ class ModelsConfig:
                 "default": 1,
                 "level": 2
             },
-            "logprobs": {
+            "log_probablity": {
                 "field": "boolean",
                 "default": False,
                 "level": 0
             },
-            "frequency_penalty": {
+            "repetition_penalty": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -595,7 +595,7 @@ class ModelsConfig:
                 "default": 0,
                 "level": 2
             },
-            "presence_penalty": {
+            "novelty_penalty": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -603,12 +603,12 @@ class ModelsConfig:
                 "default": 0,
                 "level": 2
             },
-            "n": {
+            "response_count": {
                 "field": "number",
                 "default": 1,
                 "level": 0
             },
-            "stop": {
+            "additional_stop_sequences": {
                 "field": "text",
                 "default": "",
                 "level": 0
@@ -672,7 +672,7 @@ class ModelsConfig:
                 "default": "gpt-3.5-turbo-16k-0613",
                 "level": 1
             },
-            "temperature": {
+            "creativity_level": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -688,7 +688,7 @@ class ModelsConfig:
                 "default": 256,
                 "level": 2
             },
-            "top_p": {
+            "probablity_cutoff": {
                 "field": "slider",
                 "min": 0,
                 "max": 1,
@@ -696,12 +696,12 @@ class ModelsConfig:
                 "default": 1,
                 "level": 2
             },
-            "logprobs": {
+            "log_probablity": {
                 "field": "boolean",
                 "default": False,
                 "level": 0
             },
-            "frequency_penalty": {
+            "repetition_penalty": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -709,7 +709,7 @@ class ModelsConfig:
                 "default": 0,
                 "level": 2
             },
-            "presence_penalty": {
+            "novelty_penalty": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -717,12 +717,12 @@ class ModelsConfig:
                 "default": 0,
                 "level": 2
             },
-            "n": {
+            "response_count": {
                 "field": "number",
                 "default": 1,
                 "level": 0
             },
-            "stop": {
+            "additional_stop_sequences": {
                 "field": "text",
                 "default": "",
                 "level": 0
@@ -750,6 +750,7 @@ class ModelsConfig:
                 "level": 0
             }
         }
+
         outputConfig = {
             "usage": [{
                 "prompt_tokens": "usage.prompt_tokens",
@@ -786,7 +787,7 @@ class ModelsConfig:
                 "default": "gpt-4",
                 "level": 1
             },
-            "temperature": {
+            "creativity_level": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -802,7 +803,7 @@ class ModelsConfig:
                 "default": 256,
                 "level": 2
             },
-            "top_p": {
+            "probablity_cutoff": {
                 "field": "slider",
                 "min": 0,
                 "max": 1,
@@ -810,12 +811,12 @@ class ModelsConfig:
                 "default": 1,
                 "level": 2
             },
-            "logprobs": {
+            "log_probablity": {
                 "field": "boolean",
                 "default": False,
                 "level": 0
             },
-            "frequency_penalty": {
+            "repetition_penalty": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -823,7 +824,7 @@ class ModelsConfig:
                 "default": 0,
                 "level": 2
             },
-            "presence_penalty": {
+            "novelty_penalty": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -831,12 +832,12 @@ class ModelsConfig:
                 "default": 0,
                 "level": 2
             },
-            "n": {
+            "response_count": {
                 "field": "number",
                 "default": 1,
                 "level": 0
             },
-            "stop": {
+            "additional_stop_sequences": {
                 "field": "text",
                 "default": "",
                 "level": 0
@@ -897,7 +898,7 @@ class ModelsConfig:
                 "default": "gpt-4-0613",
                 "level": 1
             },
-            "temperature": {
+            "creativity_level": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -913,7 +914,7 @@ class ModelsConfig:
                 "default": 256,
                 "level": 2
             },
-            "top_p": {
+            "probablity_cutoff": {
                 "field": "slider",
                 "min": 0,
                 "max": 1,
@@ -921,12 +922,12 @@ class ModelsConfig:
                 "default": 1,
                 "level": 2
             },
-            "logprobs": {
+            "log_probablity": {
                 "field": "boolean",
                 "default": False,
                 "level": 0
             },
-            "frequency_penalty": {
+            "repetition_penalty": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -934,7 +935,7 @@ class ModelsConfig:
                 "default": 0,
                 "level": 2
             },
-            "presence_penalty": {
+            "novelty_penalty": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -1008,7 +1009,7 @@ class ModelsConfig:
                 "default": "gpt-4-1106-preview",
                 "level": 1
             },
-            "temperature": {
+            "creativity_level": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -1024,7 +1025,7 @@ class ModelsConfig:
                 "default": 256,
                 "level": 2
             },
-            "top_p": {
+            "probablity_cutoff": {
                 "field": "slider",
                 "min": 0,
                 "max": 1,
@@ -1032,12 +1033,12 @@ class ModelsConfig:
                 "default": 1,
                 "level": 2
             },
-            "logprobs": {
+            "log_probablity": {
                 "field": "boolean",
                 "default": False,
                 "level": 0
             },
-            "frequency_penalty": {
+            "repetition_penalty": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -1045,7 +1046,7 @@ class ModelsConfig:
                 "default": 0,
                 "level": 2
             },
-            "presence_penalty": {
+            "novelty_penalty": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -1126,7 +1127,7 @@ class ModelsConfig:
                 "default": "gpt-4-turbo-preview",
                 "level": 1
             },
-            "temperature": {
+            "creativity_level": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -1142,7 +1143,7 @@ class ModelsConfig:
                 "default": 256,
                 "level": 2
             },
-            "top_p": {
+            "probablity_cutoff": {
                 "field": "slider",
                 "min": 0,
                 "max": 1,
@@ -1150,12 +1151,12 @@ class ModelsConfig:
                 "default": 1,
                 "level": 2
             },
-            "logprobs": {
+            "log_probablity": {
                 "field": "boolean",
                 "default": False,
                 "level": 0
             },
-            "frequency_penalty": {
+            "repetition_penalty": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -1163,7 +1164,7 @@ class ModelsConfig:
                 "default": 0,
                 "level": 2
             },
-            "presence_penalty": {
+            "novelty_penalty": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -1244,7 +1245,7 @@ class ModelsConfig:
                 "default": "gpt-4-0125-preview",
                 "level": 1
             },
-            "temperature": {
+            "creativity_level": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -1260,7 +1261,7 @@ class ModelsConfig:
                 "default": 256,
                 "level": 2
             },
-            "top_p": {
+            "probablity_cutoff": {
                 "field": "slider",
                 "min": 0,
                 "max": 1,
@@ -1268,12 +1269,12 @@ class ModelsConfig:
                 "default": 1,
                 "level": 2
             },
-            "logprobs": {
+            "log_probablity": {
                 "field": "boolean",
                 "default": False,
                 "level": 0
             },
-            "frequency_penalty": {
+            "repetition_penalty": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -1281,7 +1282,7 @@ class ModelsConfig:
                 "default": 0,
                 "level": 2
             },
-            "presence_penalty": {
+            "novelty_penalty": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -1362,7 +1363,7 @@ class ModelsConfig:
                 "default": "gpt-4-turbo-2024-04-09",
                 "level": 1
             },
-            "temperature": {
+            "creativity_level": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -1378,7 +1379,7 @@ class ModelsConfig:
                 "default": 256,
                 "level": 2
             },
-            "top_p": {
+            "probablity_cutoff": {
                 "field": "slider",
                 "min": 0,
                 "max": 1,
@@ -1386,13 +1387,13 @@ class ModelsConfig:
                 "default": 1,
                 "level": 2
             },
-            "logprobs": {
+            "log_probablity": {
                 "field": "boolean",
                 "default": False,
                 "level": 0,
                 "typeOf": "boolean"
             },
-            "frequency_penalty": {
+            "repetition_penalty": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -1400,7 +1401,7 @@ class ModelsConfig:
                 "default": 0,
                 "level": 2
             },
-            "presence_penalty": {
+            "novelty_penalty": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -1485,7 +1486,7 @@ class ModelsConfig:
                 "default": "gpt-4-turbo",
                 "level": 1
             },
-            "temperature": {
+            "creativity_level": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -1501,7 +1502,7 @@ class ModelsConfig:
                 "default": 256,
                 "level": 2
             },
-            "top_p": {
+            "probablity_cutoff": {
                 "field": "slider",
                 "min": 0,
                 "max": 1,
@@ -1509,13 +1510,13 @@ class ModelsConfig:
                 "default": 1,
                 "level": 2
             },
-            "logprobs": {
+            "log_probablity": {
                 "field": "boolean",
                 "default": False,
                 "level": 0,
                 "typeOf": "boolean"
             },
-            "frequency_penalty": {
+            "repetition_penalty": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -1523,7 +1524,7 @@ class ModelsConfig:
                 "default": 0,
                 "level": 2
             },
-            "presence_penalty": {
+            "novelty_penalty": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -1605,7 +1606,7 @@ class ModelsConfig:
                 "default": "gpt-4-turbo",
                 "level": 1
             },
-            "temperature": {
+            "creativity_level": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -1621,7 +1622,7 @@ class ModelsConfig:
                 "default": 256,
                 "level": 2
             },
-            "top_p": {
+            "probablity_cutoff": {
                 "field": "slider",
                 "min": 0,
                 "max": 1,
@@ -1629,13 +1630,13 @@ class ModelsConfig:
                 "default": 1,
                 "level": 2
             },
-            "logprobs": {
+            "log_probablity": {
                 "field": "boolean",
                 "default": False,
                 "level": 0,
                 "typeOf": "boolean"
             },
-            "frequency_penalty": {
+            "repetition_penalty": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -1643,7 +1644,7 @@ class ModelsConfig:
                 "default": 0,
                 "level": 2
             },
-            "presence_penalty": {
+            "novelty_penalty": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -1680,7 +1681,7 @@ class ModelsConfig:
                 "level": 0,
                 "typeOf": "string"
             },
-            "response_format": {
+            "json_mode": {
                 "field": "boolean",
                 "default": {
                     "type": "text"
@@ -1726,7 +1727,7 @@ class ModelsConfig:
                 "default": "gpt-4o-mini",
                 "level": 1
             },
-            "temperature": {
+            "creativity_level": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -1742,7 +1743,7 @@ class ModelsConfig:
                 "default": 256,
                 "level": 2
             },
-            "top_p": {
+            "probablity_cutoff": {
                 "field": "slider",
                 "min": 0,
                 "max": 1,
@@ -1750,12 +1751,12 @@ class ModelsConfig:
                 "default": 1,
                 "level": 2
             },
-            "logprobs": {
+            "log_probablity": {
                 "field": "boolean",
                 "default": False,
                 "level": 0
             },
-            "frequency_penalty": {
+            "repetition_penalty": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -1763,7 +1764,7 @@ class ModelsConfig:
                 "default": 0,
                 "level": 2
             },
-            "presence_penalty": {
+            "novelty_penalty": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -1953,7 +1954,7 @@ class ModelsConfig:
                 "default": "gpt-3.5-turbo-instruct",
                 "level": 1
             },
-            "best_of": {
+            "additional_stop_sequences": {
                 "field": "slider",
                 "min": 1,
                 "max": 20,
@@ -1961,13 +1962,13 @@ class ModelsConfig:
                 "level": 2,
                 "step": 1
             },
-            "echo": {
+            "echo_input": {
                 "field": "text",
                 "default": False,
                 "typeOf": "boolean",
                 "level": 2
             },
-            "frequency_penalty": {
+            "repetition_penalty": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -1975,7 +1976,7 @@ class ModelsConfig:
                 "default": 0,
                 "level": 2
             },
-            "logprobs": {
+            "log_probablity": {
                 "field": "boolean",
                 "default": False,
                 "level": 0
@@ -1993,7 +1994,7 @@ class ModelsConfig:
                 "default": 1,
                 "level": 0
             },
-            "presence_penalty": {
+            "novelty_penalty": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -2016,12 +2017,12 @@ class ModelsConfig:
                 "default": False,
                 "level": 0
             },
-            "suffix": {
+            "response_suffix": {
                 "field": "text",
                 "default": "",
                 "level": 2
             },
-            "temperature": {
+            "creativity_level": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -2029,7 +2030,7 @@ class ModelsConfig:
                 "default": 0,
                 "level": 2
             },
-            "top_p": {
+            "probablity_cutoff": {
                 "field": "slider",
                 "min": 0,
                 "max": 1,
@@ -2082,7 +2083,7 @@ class ModelsConfig:
                 "default": "gemini-1.5-pro",
                 "level": 1
             },
-            "temperature": {
+            "creativity_level": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -2090,7 +2091,7 @@ class ModelsConfig:
                 "default": 1,
                 "level": 2
             },
-            "topK": {
+            "token_selection_limit": {
                 "field": "slider",
                 "min": 1,
                 "max": 40,
@@ -2114,7 +2115,7 @@ class ModelsConfig:
                 "default": 2048,
                 "level": 0
             },
-            "stopSequences": {
+            "additional_stop_sequences": {
                 "field": "text",
                 "default": "",
                 "level": 0
@@ -2195,7 +2196,7 @@ class ModelsConfig:
                 "default": "gemini-pro",
                 "level": 1
             },
-            "temperature": {
+            "creativity_level": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -2203,7 +2204,7 @@ class ModelsConfig:
                 "default": 1,
                 "level": 2
             },
-            "topK": {
+            "token_selection_limit": {
                 "field": "slider",
                 "min": 1,
                 "max": 40,
@@ -2227,7 +2228,7 @@ class ModelsConfig:
                 "default": 2048,
                 "level": 0
             },
-            "stopSequences": {
+            "additional_stop_sequences": {
                 "field": "text",
                 "default": "",
                 "level": 0
@@ -2270,7 +2271,7 @@ class ModelsConfig:
                 "default": "gemini-1.5-Flash",
                 "level": 1
             },
-            "temperature": {
+            "creativity_level": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -2278,7 +2279,7 @@ class ModelsConfig:
                 "default": 1,
                 "level": 2
             },
-            "topK": {
+            "token_selection_limit": {
                 "field": "slider",
                 "min": 1,
                 "max": 40,
@@ -2302,7 +2303,7 @@ class ModelsConfig:
                 "default": 2048,
                 "level": 0
             },
-            "stopSequences": {
+            "additional_stop_sequences": {
                 "field": "text",
                 "default": "",
                 "level": 0
@@ -2345,7 +2346,7 @@ class ModelsConfig:
                 "default": "gemini-1.0-pro",
                 "level": 1
             },
-            "temperature": {
+            "creativity_level": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -2353,7 +2354,7 @@ class ModelsConfig:
                 "default": 1,
                 "level": 2
             },
-            "topK": {
+            "token_selection_limit": {
                 "field": "slider",
                 "min": 1,
                 "max": 40,
@@ -2377,7 +2378,7 @@ class ModelsConfig:
                 "default": 2048,
                 "level": 0
             },
-            "stopSequences": {
+            "additional_stop_sequences": {
                 "field": "text",
                 "default": "",
                 "level": 0
@@ -2420,7 +2421,7 @@ class ModelsConfig:
                 "default": "gemini-1.0-pro-vision",
                 "level": 1
             },
-            "temperature": {
+            "creativity_level": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -2428,7 +2429,7 @@ class ModelsConfig:
                 "default": 1,
                 "level": 2
             },
-            "topK": {
+            "token_selection_limit": {
                 "field": "slider",
                 "min": 1,
                 "max": 40,
@@ -2452,7 +2453,7 @@ class ModelsConfig:
                 "default": 2048,
                 "level": 0
             },
-            "stopSequences": {
+            "additional_stop_sequences": {
                 "field": "text",
                 "default": "",
                 "level": 0
