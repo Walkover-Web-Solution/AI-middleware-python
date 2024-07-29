@@ -1,8 +1,31 @@
 from fastapi import HTTPException, status
 # from src.db_services.ConfigurationServices import get_bridges_by_slug_name_and_name
 from src.db_services.ConfigurationServices import create_bridge
+from src.configs.modelConfiguration import ModelsConfig as model_configuration
 
-async def create_bridges(bridges):
+
+
+async def create_bridge(bridges):
+    try:
+        service = bridges.get('service')
+        model = bridges.get('model')
+        name = bridges.get('name')
+        slugName = bridges.get('slugName')
+        configuration = getattr(model_configuration,model,None)
+        print(configuration,"hello configuration")
+        # result = await create_bridge({
+        #     "configuration": configuration,
+        #     "name": name,
+        #     "slugName": slugName,
+        #     "service": service,
+        # })
+        return {
+            "success": True
+        }
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid request body!")    
+
+async def duplicate_create_bridges(bridges):
     try:
 
         org_id = bridges.get('org_id')
