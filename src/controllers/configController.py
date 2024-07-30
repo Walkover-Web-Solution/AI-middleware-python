@@ -171,12 +171,13 @@ async def get_all_service_models_controller(service):
 async def update_bridge_controller(request,bridge_id):
     try:
         body = await request.json()
+        org_id = request.state.profile['org']['id']
         slugName = body.get('slugName')
         service = body.get('service')
         bridgeType = body.get('bridgeType')
         new_configuration = body.get('configuration')
         apikey = body.get('apikey')
-        bridge = await get_bridge_by_id(body.get('org_id'), bridge_id)
+        bridge = await get_bridge_by_id(org_id, bridge_id)
         current_configuration = bridge.get('configuration', {})
         apikey = bridge.get('apikey') if apikey is None else helper.encrypt(apikey)
         update_fields = {}
