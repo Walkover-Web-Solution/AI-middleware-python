@@ -126,3 +126,40 @@ async def get_all_bridges(request):
         return bridges
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+async def get_all_service_models_controller(service):
+    try:
+        service = service.lower()
+        if(service == 'openai'):
+            return {
+                    "gpt_3_5_turbo": model_configuration.gpt_3_5_turbo()['configuration'],
+                    "gpt_3_5_turbo_0613": model_configuration.gpt_3_5_turbo_0613()['configuration'],
+                    "gpt_3_5_turbo_0125": model_configuration.gpt_3_5_turbo_0125()['configuration'],
+                    "gpt_3_5_turbo_0301": model_configuration.gpt_3_5_turbo_0301()['configuration'],
+                    "gpt_3_5_turbo_1106": model_configuration.gpt_3_5_turbo_1106()['configuration'],
+                    "gpt_3_5_turbo_16k": model_configuration.gpt_3_5_turbo_16k()['configuration'],
+                    "gpt_3_5_turbo_16k_0613": model_configuration.gpt_3_5_turbo_16k_0613()['configuration'],
+                    "gpt_4": model_configuration.gpt_4()['configuration'],
+                    "gpt_4_0613": model_configuration.gpt_4_0613()['configuration'],
+                    "gpt_4_1106_preview": model_configuration.gpt_4_1106_preview()['configuration'],
+                    "gpt_4_turbo_preview": model_configuration.gpt_4_turbo_preview()['configuration'],
+                    "gpt_4_0125_preview": model_configuration.gpt_4_0125_preview()['configuration'],
+                    "gpt_4_turbo_2024_04_09": model_configuration.gpt_4_turbo_2024_04_09()['configuration'],
+                    "gpt_4_turbo": model_configuration.gpt_4_turbo()['configuration'],
+                    "gpt_4o": model_configuration.gpt_4o()['configuration'],
+                    "gpt_4o_mini": model_configuration.gpt_4o_mini()['configuration'],
+                    "text_embedding_3_large": model_configuration.text_embedding_3_large()['configuration'],
+                    "text_embedding_3_small": model_configuration.text_embedding_3_small()['configuration'],
+                    "text_embedding_ada_002": model_configuration.text_embedding_ada_002()['configuration'],
+                    "gpt_3_5_turbo_instruct": model_configuration.gpt_3_5_turbo_instruct()['configuration']
+                }
+        elif(service == 'google'):
+            return{
+                "gemini_1_5_pro":model_configuration.gemini_1_5_pro()['configuration'],
+                "gemini_pro":model_configuration.gemini_pro()['configuration'],
+                "gemini_1_5_Flash":model_configuration.gemini_1_5_Flash()['configuration'],
+                "gemini_1_0_pro":model_configuration.gemini_1_0_pro()['configuration'],
+                "gemini_1_0_pro_vision":model_configuration.gemini_1_0_pro_vision()['configuration']
+            }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
