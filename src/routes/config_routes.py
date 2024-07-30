@@ -18,7 +18,7 @@ async def get_bridge(request: Request,bridge_id: str):
     return await get_bridge_controller(request,bridge_id)
     
 @router.get('/service/models/{service}',dependencies=[Depends(jwt_middleware)])
-async def get_all_service_models(request: Request, service: str):
+async def get_all_service_models(service: str):
     return await get_all_service_models_controller(service)
 
 @router.post('/update_bridge/{bridge_id}',dependencies=[Depends(jwt_middleware)])
