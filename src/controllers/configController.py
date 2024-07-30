@@ -20,14 +20,8 @@ async def create_bridges_controller(request):
         configuration = getattr(model_configuration,modelname,None)
         configurations = configuration()['configuration']
         keys_to_update = [
-        'creativity_level',
-        'max_tokens',
-        'probablity_cutoff',
-        'log_probablity',
-        'repetition_penalty',
-        'novelty_penalty',
-        'n',
-        'stop'
+            'model',
+            'type'
         ]
         model_data = {}
         for key in keys_to_update:
