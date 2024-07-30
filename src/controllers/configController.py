@@ -6,14 +6,15 @@ from src.configs.modelConfiguration import ModelsConfig as model_configuration
 import json
 
 
-async def create_bridges(bridges):
+async def create_bridges_controller(request):
     try:
+        bridges = await request.json()
+        org_id = request.state.profile['org']['id']
         service = bridges.get('service')
         model = bridges.get('model')
         name = bridges.get('name')
         slugName = bridges.get('slugName')
         bridgeType = bridges.get('bridgeType')
-        org_id = bridges.get('org_id')
         modelname = model.replace("-", "_").replace(".", "_")
         configuration = getattr(model_configuration,modelname,None)
         configurations = configuration()['configuration']
