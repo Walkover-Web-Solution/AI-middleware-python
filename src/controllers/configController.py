@@ -1,6 +1,6 @@
 from fastapi import HTTPException, status
 # from src.db_services.ConfigurationServices import get_bridges_by_slug_name_and_name
-from src.db_services.ConfigurationServices import create_bridge
+from src.db_services.ConfigurationServices import create_bridge, get_bridge_by_id, get_all_bridges_in_org
 from src.configs.modelConfiguration import ModelsConfig as model_configuration
 
 
@@ -80,3 +80,19 @@ async def duplicate_create_bridges(bridges):
     except Exception as error:
         print(f"common error=> {error}")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="An unexpected error occurred while creating the bridge. Please try again later.")
+
+async def get_bridge(request,bridge_id: str):
+    try:
+        org_id = request.state.profile['org']['id']
+        bridge = await get_bridge_by_id(org_id,bridge_id)
+        return bridge
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid request body!")
+
+async def get_all_bridges(request):
+    try:
+        org_id = request.state.profile['org']['id']
+        bridges = await get_all_bridges_in_org(org_id)
+        return bridges
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

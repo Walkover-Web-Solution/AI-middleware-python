@@ -104,6 +104,31 @@ async def create_bridge(data):
             'error': "something went wrong!!"
         }
 
+async def get_all_bridges_in_org(org_id):
+    bridges = configurationModel.find({"org_id": org_id}, {
+      "bridge_id": 1,
+      "_id": 1,
+      "name": 1,
+      "service": 1,
+      "org_id": 1,
+      "configuration.model": 1,
+      "configuration.prompt": 1,
+      "configuration.input": 1,
+      "bridgeType": 1,
+      "slugName":1,
+    })
+    bridges_list = []
+    for bridge in bridges:
+        bridge['_id'] = str(bridge['_id'])  # Convert ObjectId to string
+        bridges_list.append(bridge)
+    return {"bridges": bridges_list}
+
+async def get_bridge_by_id(org_id, bridge_id):
+    bridge = configurationModel.find_one({'_id': ObjectId(bridge_id), 'org_id': org_id})
+    if bridge:
+        bridge['_id'] = str(bridge['_id'])  # Convert ObjectId to string
+    return bridge
+
 
 async def get_bridge_by_slugname(org_id, slug_name):
     try:

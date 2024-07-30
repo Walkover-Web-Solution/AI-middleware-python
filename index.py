@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
@@ -25,6 +25,7 @@ app.add_middleware(
 # Healthcheck route
 @app.get("/healthcheck")
 async def healthcheck():
+    return { 'success': False, 'message': "hi" }
     return JSONResponse(status_code=200, content="OK running good...")
 
 # Include routers
