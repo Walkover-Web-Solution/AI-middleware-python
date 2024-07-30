@@ -101,7 +101,7 @@ async def create_bridge(data):
         print("error:", error)
         return {
             'success': False,
-            'error': "something went wrong!!"
+            'error': error
         }
 
 async def get_all_bridges_in_org(org_id):

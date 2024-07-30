@@ -1,29 +1,58 @@
 from fastapi import HTTPException, status
+from fastapi.responses import JSONResponse
 # from src.db_services.ConfigurationServices import get_bridges_by_slug_name_and_name
 from src.db_services.ConfigurationServices import create_bridge, get_bridge_by_id, get_all_bridges_in_org
 from src.configs.modelConfiguration import ModelsConfig as model_configuration
+import json
 
 
-
-async def create_bridge(bridges):
+async def create_bridges(bridges):
     try:
         service = bridges.get('service')
         model = bridges.get('model')
         name = bridges.get('name')
         slugName = bridges.get('slugName')
-        configuration = getattr(model_configuration,model,None)
-        print(configuration,"hello configuration")
-        # result = await create_bridge({
-        #     "configuration": configuration,
-        #     "name": name,
-        #     "slugName": slugName,
-        #     "service": service,
-        # })
-        return {
-            "success": True
-        }
+        bridgeType = bridges.get('bridgeType')
+        org_id = bridges.get('org_id')
+        modelname = model.replace("-", "_").replace(".", "_")
+        configuration = getattr(model_configuration,modelname,None)
+        configurations = configuration()['configuration']
+        keys_to_update = [
+        'creativity_level',
+        'max_tokens',
+        'probablity_cutoff',
+        'log_probablity',
+        'repetition_penalty',
+        'novelty_penalty',
+        'n',
+        'stop'
+        ]
+        model_data = {}
+        for key in keys_to_update:
+            if key in configurations:
+                model_data[key] = configurations[key]['default']
+        result = await create_bridge({
+            "configuration": model_data,
+            "name": name,
+            "slugName": slugName,
+            "service": service,
+            "bridgeType": bridgeType,
+            "org_id" : org_id
+        })
+        if result.get("success"):
+            return JSONResponse(status_code=200, content={
+                "success": True,
+                "message": "Bridge created successfully",
+                "result" : json.loads(json.dumps(result.get('bridge'), default=str))
+
+            })
+        else:
+            return JSONResponse(status_code=400, content={
+                "success": False,
+                "message": json.loads(json.dumps(result.get('error'), default=str))
+            })
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid request body!")    
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e)    
 
 async def duplicate_create_bridges(bridges):
     try:
