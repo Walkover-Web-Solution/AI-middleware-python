@@ -7,6 +7,7 @@ import traceback
 from functools import reduce
 import operator
 import re
+from src.configs.modelConfiguration import ModelsConfig as model_configuration
 
 class Helper:
     @staticmethod
@@ -72,3 +73,15 @@ class Helper:
         except Exception as e:
             traceback.print_exc()
             return None
+        
+
+    def response_middleware_for_bridge(response):
+        model_name = response['configuration']['model'].replace("-", "_").replace(".", "_")
+        configuration = getattr(model_configuration,model_name,None)
+        configurations = configuration()['configuration']
+        db_config = response['configuration']
+        config = {}
+        for key in configurations.keys():
+            config[key] = db_config.get(key, configurations[key]['default'])
+        response['configuration'] = config
+        return response
