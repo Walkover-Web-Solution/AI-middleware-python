@@ -150,3 +150,34 @@ async def get_bridge_by_slugname(org_id, slug_name):
             'success': False,
             'error': "something went wrong!!"
         }
+
+async def update_bridge(bridge_id, update_fields):
+    try:
+        existing_bridge = configurationModel.find_one({'_id': ObjectId(bridge_id)})
+        if not existing_bridge:
+            return {
+                'success': False,
+                'error': 'Bridge not found'
+            }
+        result = configurationModel.update_one(
+            {'_id': ObjectId(bridge_id)},
+            {'$set': update_fields}
+        )
+
+        if result.matched_count == 0:
+            return {
+                'success': False,
+                'error': 'No records updated'
+            }
+        
+        return {
+            'success': True,
+            'message': 'Bridge updated successfully'
+        }
+
+    except Exception as error:
+        print(error)
+        return {
+            'success': False,
+            'error': 'Something went wrong!'
+        }

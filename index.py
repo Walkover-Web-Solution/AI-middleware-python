@@ -25,7 +25,6 @@ app.add_middleware(
 # Healthcheck route
 @app.get("/healthcheck")
 async def healthcheck():
-    return { 'success': False, 'message': "hi" }
     return JSONResponse(status_code=200, content="OK running good...")
 
 # Include routers

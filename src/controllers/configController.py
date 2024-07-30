@@ -1,10 +1,11 @@
 from fastapi import HTTPException, status
 from fastapi.responses import JSONResponse
 # from src.db_services.ConfigurationServices import get_bridges_by_slug_name_and_name
-from src.db_services.ConfigurationServices import create_bridge, get_bridge_by_id, get_all_bridges_in_org
+from src.db_services.ConfigurationServices import create_bridge, get_bridge_by_id, get_all_bridges_in_org,update_bridge
 from src.configs.modelConfiguration import ModelsConfig as model_configuration
 from src.services.utils.helper import Helper
 import json
+from src.services.utils.helper import Helper as helper
 
 
 async def create_bridges_controller(request):
@@ -20,8 +21,16 @@ async def create_bridges_controller(request):
         configuration = getattr(model_configuration,modelname,None)
         configurations = configuration()['configuration']
         keys_to_update = [
-            'model',
-            'type'
+        'type'
+        'model'
+        'creativity_level',
+        'max_tokens',
+        'probablity_cutoff',
+        'log_probablity',
+        'repetition_penalty',
+        'novelty_penalty',
+        'n',
+        'stop'
         ]
         model_data = {}
         for key in keys_to_update:
@@ -158,3 +167,35 @@ async def get_all_service_models_controller(service):
             }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+async def update_bridge_controller(request,bridge_id):
+    try:
+        body = await request.json()
+        slugName = body.get('slugName')
+        service = body.get('service')
+        bridgeType = body.get('bridgeType')
+        new_configuration = body.get('configuration')
+        apikey = body.get('apikey')
+        bridge = await get_bridge_by_id(body.get('org_id'), bridge_id)
+        current_configuration = bridge.get('configuration', {})
+        apikey = bridge.get('apikey') if apikey is None else helper.encrypt(apikey)
+        update_fields = {}
+        if slugName is not None:
+            update_fields['slugName'] = slugName
+        if service is not None:
+            update_fields['service'] = service
+        if bridgeType is not None:
+            update_fields['bridgeType'] = bridgeType
+        if new_configuration is not None:
+            updated_configuration = {**current_configuration, **new_configuration}
+            update_fields['configuration'] = updated_configuration
+        if apikey is not None:
+            update_fields['apikey'] = apikey
+        result = await update_bridge(bridge_id, update_fields)
+        if result.get('success'):
+            return result
+
+    except Exception as e:
+        raise HTTPException(status_code=400, detail="Invalid request body!")
+
+
