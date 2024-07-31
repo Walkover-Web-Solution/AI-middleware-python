@@ -209,7 +209,7 @@ async def update_bridge_controller(request,bridge_id):
             return JSONResponse(status_code=200, content={
                 "success": True,
                 "message": "Bridge Updated successfully",
-                "result" : json.loads(json.dumps(result.get('result'), default=str))
+                "bridges" : json.loads(json.dumps(result.get('result'), default=str))
 
             })
     except ValidationError as e:
