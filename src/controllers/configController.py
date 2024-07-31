@@ -1,11 +1,13 @@
 from fastapi import HTTPException, status
 from fastapi.responses import JSONResponse
+from pydantic import ValidationError
 # from src.db_services.ConfigurationServices import get_bridges_by_slug_name_and_name
 from src.db_services.ConfigurationServices import create_bridge, get_bridge_by_id, get_all_bridges_in_org,update_bridge
 from src.configs.modelConfiguration import ModelsConfig as model_configuration
 from src.services.utils.helper import Helper
 import json
 from src.services.utils.helper import Helper as helper
+from validations.validation import Bridge_update as bridge_validation
 
 
 async def create_bridges_controller(request):
@@ -29,7 +31,6 @@ async def create_bridges_controller(request):
             if key in configurations:
                 model_data[key] = configurations[key]['default']
 
-        print(model_data,23232323)
         result = await create_bridge({
             "configuration": model_data,
             "name": name,
@@ -181,7 +182,7 @@ async def get_all_service_models_controller(service):
 
 async def update_bridge_controller(request,bridge_id):
     try:
-        body = await request.json()
+        body  = await request.json()
         org_id = request.state.profile['org']['id']
         slugName = body.get('slugName')
         service = body.get('service')
@@ -211,8 +212,10 @@ async def update_bridge_controller(request,bridge_id):
                 "result" : json.loads(json.dumps(result.get('result'), default=str))
 
             })
-
+    except ValidationError as e:
+        raise HTTPException(status_code=400, detail=f"Validation error: {e.json()}")
     except Exception as e:
+        print(e)
         raise HTTPException(status_code=400, detail="Invalid request body!")
 
 

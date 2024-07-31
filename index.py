@@ -1,7 +1,10 @@
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import ValidationError
 import uvicorn
+from starlette.exceptions import HTTPException as StarletteHTTPException
 import os
 
 from config import Config
@@ -26,6 +29,13 @@ app.add_middleware(
 @app.get("/healthcheck")
 async def healthcheck():
     return JSONResponse(status_code=200, content="OK running good...")
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    return JSONResponse(
+        status_code=422,
+        content={"detail": "Custom error message", "errors": exc.errors()},
+    )
 
 # Include routers
 app.include_router(model_router, prefix="/api/v1/model")
