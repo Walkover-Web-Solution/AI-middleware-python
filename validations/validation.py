@@ -43,5 +43,5 @@ class Bridge_update(BaseModel):
     slugName: Optional[str] = None
     service: Optional[str] = None
     bridgeType: Optional[str] = None
-    configuration: Optional[str] = None
+    configuration: Optional[object] = None
     apikey: Optional[str] = None
