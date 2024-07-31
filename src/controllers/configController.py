@@ -21,21 +21,15 @@ async def create_bridges_controller(request):
         configuration = getattr(model_configuration,modelname,None)
         configurations = configuration()['configuration']
         keys_to_update = [
-        'type'
+        'type',
         'model'
-        'creativity_level',
-        'max_tokens',
-        'probablity_cutoff',
-        'log_probablity',
-        'repetition_penalty',
-        'novelty_penalty',
-        'n',
-        'stop'
         ]
         model_data = {}
         for key in keys_to_update:
             if key in configurations:
                 model_data[key] = configurations[key]['default']
+
+        print(model_data,23232323)
         result = await create_bridge({
             "configuration": model_data,
             "name": name,
@@ -48,7 +42,7 @@ async def create_bridges_controller(request):
             return JSONResponse(status_code=200, content={
                 "success": True,
                 "message": "Bridge created successfully",
-                "result" : json.loads(json.dumps(result.get('bridge'), default=str))
+                "bridge" : json.loads(json.dumps(result.get('bridge'), default=str))
 
             })
         else:

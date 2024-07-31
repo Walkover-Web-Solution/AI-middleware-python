@@ -1603,7 +1603,7 @@ class ModelsConfig:
         configuration = {
             "model": {
                 "field": "drop",
-                "default": "gpt-4-turbo",
+                "default": "gpt-4o",
                 "level": 1
             },
             "creativity_level": {
