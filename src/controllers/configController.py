@@ -140,7 +140,7 @@ async def get_all_service_models_controller(service):
             return {
                 "configuration": {
                     "model": model_field,
-                    "additional_parameter": additional_parameters
+                    "additional_parameters": additional_parameters
                 }
             }
         
