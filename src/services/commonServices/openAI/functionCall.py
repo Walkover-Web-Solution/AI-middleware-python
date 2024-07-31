@@ -6,6 +6,7 @@ from ....db_services import ConfigurationServices as ConfigurationService
 import requests
 from ...utils.customRes import ResponseSender
 import re
+import pydash as _
 
 async def function_call(data):
     try:
@@ -51,8 +52,7 @@ async def function_call(data):
 
             if not open_ai_response.get('success'):
                 return {'success': False, 'error': open_ai_response.get('error')}
-
-            if model_response.get(output_config['tools']) and l <= 3:
+            if _.get(model_response, output_config['tools']) and l <= 3:
                 if not playground:
                     ResponseSender.sendResponse({
                         'rtlLayer': rtl_layer,
@@ -62,7 +62,7 @@ async def function_call(data):
                     })
 
                 data['l'] = data['l'] + 1
-                data['tools_call'] = model_response[output_config['tools']][0]
+                data['tools_call'] = _.get(model_response, output_config['tools'])[0]
                 data['tools'] = tools
                 return await function_call(data)
 
@@ -94,20 +94,42 @@ result =  axios_call(params)
         global_vars = {"requests": requests, "asyncio": __import__('asyncio')}
 
         exec(exec_code, global_vars, local_vars)
-        return local_vars.get('result')
+        return {
+            'response': local_vars.get('result'),
+            'status': 1
+        }
     except Exception as err:
-        return {'success': False, "err": str(err)}
+        return {
+            'response': '',
+            'metadata':{
+                'error': str(err),
+            },
+            'status': 0
+        }
 
 async def axios_work_js(data, axios_function):
     try:    
-        pattern = r"https:\/\/flow\.sokt\.io\/func\/([a-zA-Z0-9]+)"
+        pattern = pattern = r"https?:\/\/(flow\.sokt\.io|prod-flow-vm\.viasocket\.com)\/func\/([a-zA-Z0-9]+)"
         match = re.search(pattern, axios_function)
-        script_id = match.group(1)
+        script_id = match.group(2)
         response = requests.post(f"https://flow.sokt.io/func/{script_id}", json=data)
-        return response.json()
+        return {
+            'response': response.json(),
+            'metadata':{
+                'flowHitId': response.headers.get('flowHitId'),
+            },
+            'status': 1
+        }
+        
     except Exception as err:
         print("Error calling function=>", err)
-        return {'success': False}
+        return {
+            'response': '',
+            'metadata':{
+                'error': str(err),
+            },
+            'status': 0
+        }
 
 # Exporting function_call function
 __all__ = ["function_call"]
