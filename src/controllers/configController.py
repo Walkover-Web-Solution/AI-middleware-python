@@ -121,7 +121,13 @@ async def get_all_bridges(request):
     try:
         org_id = request.state.profile['org']['id']
         bridges = await get_all_bridges_in_org(org_id)
-        return bridges
+        return JSONResponse(status_code=200, content={
+                "success": True,
+                "message": "Get all bridges successfully",
+                "bridges" : bridges,
+                "org_id": org_id
+
+            })
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 async def get_all_service_models_controller(service):

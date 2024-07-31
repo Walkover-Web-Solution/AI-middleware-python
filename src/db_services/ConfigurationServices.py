@@ -119,7 +119,7 @@ async def get_all_bridges_in_org(org_id):
     for bridge in bridges:
         bridge['_id'] = str(bridge['_id'])  # Convert ObjectId to string
         bridges_list.append(bridge)
-    return {"bridges": bridges_list}
+    return bridges_list
 
 async def get_bridge_by_id(org_id, bridge_id):
     bridge = configurationModel.find_one({'_id': ObjectId(bridge_id), 'org_id': org_id})
