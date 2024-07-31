@@ -108,7 +108,6 @@ class UnifiedOpenAICase:
                 'playground': self.playground,
                 'tools': {}
             })
-            print('functionCall', functionCallRes)
             funcModelResponse = functionCallRes.get("modelResponse", {})
             tools = functionCallRes.get("tools", {})
 
