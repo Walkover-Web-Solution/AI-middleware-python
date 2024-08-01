@@ -42,7 +42,3 @@ async def duplicate_bridge(request : Request):
         })
     except Exception as e:
         return {'error': str(e)}
-
-
-
-

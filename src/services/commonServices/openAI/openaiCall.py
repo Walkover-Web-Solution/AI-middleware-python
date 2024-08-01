@@ -42,15 +42,8 @@ class UnifiedOpenAICase:
         historyParams = {}
         usage = {}
         tools = {}
-        prompt = self.configuration.get('prompt', [])
-        prompt = prompt if isinstance(prompt, list) else [prompt]
         conversation = ConversationService.createOpenAiConversation(self.configuration.get('conversation')).get('messages', [])
-        prompt = Helper.replace_variables_in_prompt(prompt, self.variables)
-        if self.template:
-            system_prompt = [{"role": "system", "content": self.template}]
-            prompt = Helper.replace_variables_in_prompt(system_prompt, {"system_prompt": prompt[0].get('content'), **self.variables})
-
-        self.customConfig["messages"] = prompt + conversation + ([{"role": "user", "content": self.user}] if self.user else (self.tool_call or [])) 
+        self.customConfig["messages"] = self.configuration['prompt'] + conversation + ([{"role": "user", "content": self.user}] if self.user else (self.tool_call or [])) 
         openAIResponse = await chats(self.customConfig, self.apikey)
         modelResponse = openAIResponse.get("modelResponse", {})
 
@@ -108,7 +101,6 @@ class UnifiedOpenAICase:
                 'playground': self.playground,
                 'tools': {}
             })
-            print('functionCall', functionCallRes)
             funcModelResponse = functionCallRes.get("modelResponse", {})
             tools = functionCallRes.get("tools", {})
 

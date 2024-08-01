@@ -17,7 +17,7 @@ class Conversation(Base):
     message = Column(Text)
     message_by = Column(String)
     function = Column(JSON)
-    type = Column(Enum('chat', 'completion', 'embedding', name='type_enum'), nullable=False)
+    type = Column(Enum('chat', 'completion', 'embedding', name='enum_conversations_type'), nullable=False)
     createdAt = Column(DateTime, default=func.now())
     updatedAt = Column(DateTime, default=func.now(), onupdate=func.now())
 
