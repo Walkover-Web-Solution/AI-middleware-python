@@ -8,7 +8,7 @@ from functools import reduce
 import operator
 import re
 from src.configs.modelConfiguration import ModelsConfig as model_configuration
-
+import jwt
 class Helper:
     @staticmethod
     def encrypt(text):
@@ -73,7 +73,8 @@ class Helper:
         except Exception as e:
             traceback.print_exc()
             return None
-        
+    def generate_token(payload, accesskey):
+        return jwt.encode(payload, accesskey)
 
     def response_middleware_for_bridge(response):
         model_name = response['configuration']['model'].replace("-", "_").replace(".", "_")
@@ -82,6 +83,11 @@ class Helper:
         db_config = response['configuration']
         config = {}
         for key in configurations.keys():
-            config[key] = db_config.get(key, configurations[key]['default'])
+            config[key] = db_config.get(key, response['configuration'].get(key, configurations[key]['default']))
+        for key in ['apikey','response_format',]:
+            config[key] = db_config.get(key, response['configuration'].get(key, {"type":'default',"cred":{}} if key is 'response_format' else 'else'))
         response['configuration'] = config
+        response['apikey'] = Helper.decrypt(response['apikey'])
+        embed_token = Helper.generate_token({ "org_id": Config.ORG_ID, "project_id": Config.PROJECT_ID, "user_id": response['_id'] },Config.Access_key )
+        response['embed_token'] = embed_token
         return response
