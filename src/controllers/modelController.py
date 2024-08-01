@@ -12,7 +12,7 @@ async def chat_completion(request: Request, db_config: dict = Depends(add_config
     try:
         body = await request.json()
         request.state.playground = False
-        if(body.get('webhook') or body.get('RTLayer')):
+        if(body.get('webhook') or body.get('RTLayer')): # add inside  add_configuration_data_to_body
             asyncio.create_task(chat(request))
             return JSONResponse(status_code=200, content={"success": True, "message"  :"Your response will be send through configured means."}) 
         return await chat(request)

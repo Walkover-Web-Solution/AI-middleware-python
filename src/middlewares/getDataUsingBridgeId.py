@@ -3,7 +3,7 @@ from fastapi.responses import JSONResponse
 from ..services.utils.getConfiguration import getConfiguration
 from src.configs.models import services
 from src.services.commonServices.common import chat
-
+import asyncio
 async def add_configuration_data_to_body(request: Request):
 
     try:
@@ -12,13 +12,16 @@ async def add_configuration_data_to_body(request: Request):
         db_config = await getConfiguration(body.get('configuration'), body.get('service'), bridge_id, body.get('apikey'), body.get('template_id'))
         if not db_config.get("success"):
                 return JSONResponse(status_code=400, content={"success": False, "error": db_config["error"]}) 
-        db_config['RTLayer'] = body.get('RTLayer') or db_config.get('RTLayer')
+        response_format = db_config.get("response_format")
         body.update(db_config)
         request.state.body = body
         service = body.get("service")
         model = body.get("configuration").get('model')
         if not (service in services and model in services[service]["chat"]):
             raise HTTPException(status_code=400, detail={"success": False, "error": "model or service does not exist!"})
+        if(response_format.get('type') != 'default'): # add inside  add_configuration_data_to_body
+            asyncio.create_task(chat(request))
+            return JSONResponse(status_code=200, content={"success": True, "message"  :"Your response will be send through configured means."}) 
         return db_config
     except HTTPException as he:
          raise he

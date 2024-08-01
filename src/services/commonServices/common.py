@@ -30,18 +30,19 @@ async def chat(request: Request):
     configuration = body.get("configuration")
     thread_id = body.get("thread_id")
     org_id = request.state.org_id
-    user = body.get("user") or configuration.get("user", "")
-    tool_call = body.get("tool_call")
+    user = body.get("user") # user oustide configuration for playground
+    tools =  configuration.get('tools') # change name to tools and location inside configuration
     service = body.get("service")
     variables = body.get("variables", {})
-    RTLayer = body.get("RTLayer")
+    # RTLayer = body.get("RTLayer") # in resposponse format inside configuration
     bridgeType = body.get('chatbot')
     template = body.get('template')
     usage = {}
     customConfig = {}
-    rtlLayer = RTLayer if RTLayer else configuration.get("RTLayer", False)
-    webhook = body.get('webhook')
-    headers = body.get('headers')
+    response_format = configuration.get("response_format")
+    # rtlLayer = RTLayer if RTLayer else configuration.get("RTLayer", False) # in resposponse format inside configuration
+    # webhook = body.get('webhook') # same
+    # headers = body.get('headers') #
     model =configuration.get('model')
     if hasattr(request.state, 'playground'):
         is_playground = request.state.playground
@@ -55,7 +56,7 @@ async def chat(request: Request):
 
         # todo :: not working correctly
         for key in modelConfig:
-            if modelConfig[key]["level"] == 2 or key in configuration:
+            if modelConfig[key]["level"] == 2 or key in configuration: # may be not required
                 customConfig[key] = configuration.get(key, modelConfig[key]["default"])
 
         if thread_id:
@@ -67,7 +68,7 @@ async def chat(request: Request):
             thread_id = str(uuid.uuid1())
 
         # Update prompt on the base of variable 
-        configuration['prompt']  = configuration['prompt']  if isinstance(configuration['prompt'] , list) else [configuration['prompt'] ]
+        configuration['prompt']  = configuration['prompt']  if isinstance(configuration['prompt'] , list) else [configuration['prompt'] ] #to check
         configuration['prompt']  = Helper.replace_variables_in_prompt(configuration['prompt'] , variables)
 
         if template:
@@ -80,7 +81,7 @@ async def chat(request: Request):
             "apikey": apikey,
             "variables": variables,
             "user": user,
-            "tool_call": tool_call,
+            "tools": tools, # change name
             "startTime": startTime,
             "org_id": org_id if is_playground else None,
             "bridge_id": bridge_id,
@@ -88,26 +89,28 @@ async def chat(request: Request):
             "thread_id": thread_id,
             "model": model,
             "service": service,
-            "req": request,
+            "req": request, # review required or not 
             "modelOutputConfig": modelOutputConfig,
             "playground": is_playground,
-            "rtlayer": rtlLayer,
-            "webhook": webhook,
+            # "rtlayer": rtlLayer, 
+            # "webhook": webhook,
             "template": template,
+            # "headers" : headers,
+            "response_format" : response_format,
         }
 
         if service == "openai":
             openAIInstance = UnifiedOpenAICase(params)
             result = await openAIInstance.execute()
             if not result["success"]:
-                if rtlLayer or webhook:
+                if response_format['type'] != 'default':
                     return
                 return JSONResponse(status_code=400, content=result)
         elif service == "google":
             geminiHandler = GeminiHandler(params)
             result = await geminiHandler.handle_gemini()
             if not result["success"]:
-                if rtlLayer or webhook:
+                if response_format['type'] != 'default':
                     return
                 return JSONResponse(status_code=400, content=result)
 
