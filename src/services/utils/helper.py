@@ -76,7 +76,8 @@ class Helper:
     def generate_token(payload, accesskey):
         return jwt.encode(payload, accesskey)
 
-    def response_middleware_for_bridge(response):
+    def response_middleware_for_bridge(finalResponse):
+        response = finalResponse['bridge']
         model_name = response['configuration']['model'].replace("-", "_").replace(".", "_")
         configuration = getattr(model_configuration,model_name,None)
         configurations = configuration()['configuration']
@@ -90,4 +91,5 @@ class Helper:
         response['apikey'] = Helper.decrypt(response['apikey'])
         embed_token = Helper.generate_token({ "org_id": Config.ORG_ID, "project_id": Config.PROJECT_ID, "user_id": response['_id'] },Config.Access_key )
         response['embed_token'] = embed_token
-        return response
+        finalResponse['bridge'] = response
+        return finalResponse
