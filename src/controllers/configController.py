@@ -13,6 +13,7 @@ from validations.validation import Bridge_update as bridge_validation
 async def create_bridges_controller(request):
     try:
         bridges = await request.json()
+        type = bridges.get('type')
         org_id = request.state.profile['org']['id']
         service = bridges.get('service')
         model = bridges.get('model')
@@ -23,14 +24,29 @@ async def create_bridges_controller(request):
         configuration = getattr(model_configuration,modelname,None)
         configurations = configuration()['configuration']
         keys_to_update = [
-        'type',
-        'model'
+        'model',
+        'creativity_level',
+        'max_tokens',
+        'probablity_cutoff',
+        'log_probablity'
+        'repetition_penalty',
+        'novelty_penalty',
+        'n',
+        'response_count',
+        'additional_stop_sequences',
+        'stream',
+        'stop',
+        'json_mode'
         ]
         model_data = {}
         for key in keys_to_update:
             if key in configurations:
                 model_data[key] = configurations[key]['default']
-
+        model_data['type'] = type
+        model_data['response_format'] = {
+        "type": "default", # need changes
+        "cred": {}
+        } 
         result = await create_bridge({
             "configuration": model_data,
             "name": name,
