@@ -66,6 +66,9 @@ class ModelsConfig:
                 "field": "boolean",
                 "default": False,
                 "level": 0
+            },
+            "type" : {
+                "default" : ["chat"]
             }
         }
         outputConfig = {
@@ -166,6 +169,9 @@ class ModelsConfig:
                 "field": "boolean",
                 "default": False,
                 "level": 0
+            },
+             "type" : {
+                "default" : ["chat"]
             }
         }
         outputConfig = {
@@ -284,6 +290,9 @@ class ModelsConfig:
                     "type": "text"
                 },
                 "level": 0
+            },
+             "type" : {
+                "default" : ["chat"]
             }
         }
         outputConfig = {
@@ -402,6 +411,9 @@ class ModelsConfig:
                     "type": "text"
                 },
                 "level": 0
+            },
+             "type" : {
+                "default" : ["chat"]
             }
         }
         outputConfig = {
@@ -516,6 +528,9 @@ class ModelsConfig:
                     "type": "text"
                 },
                 "level": 0
+            },
+             "type" : {
+                "default" : ["chat"]
             }
         }
         outputConfig = {
@@ -634,6 +649,9 @@ class ModelsConfig:
                     "type": "text"
                 },
                 "level": 0
+            },
+             "type" : {
+                "default" : ["chat"]
             }
         }
         outputConfig = {
@@ -748,6 +766,9 @@ class ModelsConfig:
                     "type": "text"
                 },
                 "level": 0
+            },
+             "type" : {
+                "default" : ["chat"]
             }
         }
 
@@ -856,6 +877,9 @@ class ModelsConfig:
                 "field": "text",
                 "default": "auto",
                 "level": 0
+            },
+             "type" : {
+                "default" : ["chat"]
             }
         }
         outputConfig = {
@@ -967,6 +991,9 @@ class ModelsConfig:
                 "field": "text",
                 "default": "auto",
                 "level": 0
+            },
+             "type" : {
+                "default" : ["chat"]
             }
         }
         outputConfig = {
@@ -1085,6 +1112,9 @@ class ModelsConfig:
                     "type": "text"
                 },
                 "level": 0
+            },
+             "type" : {
+                "default" : ["chat"]
             }
         }
         outputConfig = {
@@ -1203,6 +1233,9 @@ class ModelsConfig:
                     "type": "text"
                 },
                 "level": 0
+            },
+             "type" : {
+                "default" : ["chat"]
             }
         }
         outputConfig = {
@@ -1321,6 +1354,9 @@ class ModelsConfig:
                     "type": "text"
                 },
                 "level": 0
+            },
+             "type" : {
+                "default" : ["chat"]
             }
         }
         outputConfig = {
@@ -1444,6 +1480,9 @@ class ModelsConfig:
                     "type": "text"
                 },
                 "level": 0
+            },
+             "type" : {
+                "default" : ["chat"]
             }
         }
         outputConfig = {
@@ -1567,6 +1606,9 @@ class ModelsConfig:
                     "type": "text"
                 },
                 "level": 0
+            },
+             "type" : {
+                "default" : ["chat"]
             }
         }
         outputConfig = {
@@ -1683,10 +1725,12 @@ class ModelsConfig:
             },
             "json_mode": {
                 "field": "boolean",
-                "default": {
-                    "type": "text"
-                },
+                "default": "false",
+                "type" : "text",
                 "level": 0
+            },
+             "type" : {
+                "default" : ["chat"]
             }
         }
         outputConfig = {
@@ -1796,6 +1840,9 @@ class ModelsConfig:
                 "field": "text",
                 "default": "auto",
                 "level": 0
+            },
+             "type" : {
+                "default" : ["chat"]
             }
         }
         outputConfig = {
@@ -1845,6 +1892,9 @@ class ModelsConfig:
             "dimensions": {
                 "field": "number",
                 "level": 0
+            },
+             "type" : {
+                "default" : ["embedding"]
             }
         }
         outputConfig = {
@@ -1886,6 +1936,9 @@ class ModelsConfig:
             "dimensions": {
                 "field": "number",
                 "level": 0
+            },
+            "type" : {
+                "default" : ["embedding"]
             }
         }
         outputConfig = {
@@ -1923,6 +1976,9 @@ class ModelsConfig:
                 "values": ["float", "base64"],
                 "default": "float",
                 "level": 2
+            },
+            "type" : {
+                "default" : ["embedding"]
             }
         }
         outputConfig = {
@@ -2037,6 +2093,9 @@ class ModelsConfig:
                 "step": 0.1,
                 "default": 1,
                 "level": 2
+            },
+            "type" :  {
+                "default" : ["completion"]
             }
         }
         outputConfig = {
@@ -2119,6 +2178,9 @@ class ModelsConfig:
                 "field": "text",
                 "default": "",
                 "level": 0
+            },
+            "type" : {
+                "default" : ["completion","chat"]
             }
         }
         outputConfig = {
@@ -2157,6 +2219,9 @@ class ModelsConfig:
                 "field": "drop",
                 "default": "embedding-001",
                 "level": 1
+            },
+             "type" : {
+                "default" : ["embedding"]
             }
         }
         outputConfig = {
@@ -2232,6 +2297,9 @@ class ModelsConfig:
                 "field": "text",
                 "default": "",
                 "level": 0
+            },
+             "type" : {
+                "default" : ["completion","chat"]
             }
         }
         outputConfig = {
@@ -2307,6 +2375,9 @@ class ModelsConfig:
                 "field": "text",
                 "default": "",
                 "level": 0
+            },
+             "type" : {
+                "default" : ["completion","chat"]
             }
         }
         outputConfig = {
@@ -2382,6 +2453,9 @@ class ModelsConfig:
                 "field": "text",
                 "default": "",
                 "level": 0
+            },
+             "type" : {
+                "default" : ["completion","chat"]
             }
         }
         outputConfig = {
@@ -2457,6 +2531,9 @@ class ModelsConfig:
                 "field": "text",
                 "default": "",
                 "level": 0
+            },
+             "type" : {
+                "default" : ["completion","chat"]
             }
         }
         outputConfig = {
