@@ -165,7 +165,8 @@ async def update_bridge(bridge_id, update_fields):
                 'success': False,
                 'error': 'No records updated or bridge not found'
             }
-
+        if updated_bridge:
+            updated_bridge['_id'] = str(updated_bridge['_id'])  # Convert ObjectId to string
         return {
             'success': True,
             'result': updated_bridge

@@ -18,6 +18,7 @@ env3.*
 docs_build
 site_build
 venv
+hks
 docs.zip
 archive.zip
 
