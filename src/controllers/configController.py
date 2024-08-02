@@ -140,7 +140,7 @@ async def get_all_bridges(request):
         return JSONResponse(status_code=200, content={
                 "success": True,
                 "message": "Get all bridges successfully",
-                "bridges" : bridges,
+                "bridge" : bridges,
                 "org_id": org_id
 
             })
@@ -221,7 +221,7 @@ async def update_bridge_controller(request,bridge_id):
         apikey = body.get('apikey')
         bridge = await get_bridge_by_id(org_id, bridge_id)
         current_configuration = bridge.get('configuration', {})
-        apikey = bridge.get('apikey') if apikey is None else helper.encrypt(apikey)
+        apikey = bridge.get('apikey') if apikey is None else Helper.encrypt(apikey)
         update_fields = {}
         if slugName is not None:
             update_fields['slugName'] = slugName
@@ -236,10 +236,10 @@ async def update_bridge_controller(request,bridge_id):
             update_fields['apikey'] = apikey
         result = await update_bridge(bridge_id, update_fields)
         if result.get("success"):
-            return JSONResponse(status_code=200, content={
+            return Helper.response_middleware_for_bridge({
                 "success": True,
                 "message": "Bridge Updated successfully",
-                "bridges" : json.loads(json.dumps(result.get('result'), default=str))
+                "bridge" : result.get('result')
 
             })
     except ValidationError as e:
