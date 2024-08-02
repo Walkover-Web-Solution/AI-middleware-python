@@ -166,44 +166,44 @@ async def get_all_service_models_controller(service):
                     "gpt_3_5_turbo_instruct": restructure_configuration(model_configuration.gpt_3_5_turbo_instruct()['configuration'])
                 },
                 "chat": {
-                    "gpt_3_5_turbo": restructure_configuration(model_configuration.gpt_3_5_turbo()['configuration']),
-                    "gpt_3_5_turbo_0613": restructure_configuration(model_configuration.gpt_3_5_turbo_0613()['configuration']),
-                    "gpt_3_5_turbo_0125": restructure_configuration(model_configuration.gpt_3_5_turbo_0125()['configuration']),
-                    "gpt_3_5_turbo_0301": restructure_configuration(model_configuration.gpt_3_5_turbo_0301()['configuration']),
-                    "gpt_3_5_turbo_1106": restructure_configuration(model_configuration.gpt_3_5_turbo_1106()['configuration']),
-                    "gpt_3_5_turbo_16k": restructure_configuration(model_configuration.gpt_3_5_turbo_16k()['configuration']),
-                    "gpt_3_5_turbo_16k_0613": restructure_configuration(model_configuration.gpt_3_5_turbo_16k_0613()['configuration']),
-                    "gpt_4": restructure_configuration(model_configuration.gpt_4()['configuration']),
-                    "gpt_4_0613": restructure_configuration(model_configuration.gpt_4_0613()['configuration']),
-                    "gpt_4_1106_preview": restructure_configuration(model_configuration.gpt_4_1106_preview()['configuration']),
-                    "gpt_4_turbo_preview": restructure_configuration(model_configuration.gpt_4_turbo_preview()['configuration']),
-                    "gpt_4_0125_preview": restructure_configuration(model_configuration.gpt_4_0125_preview()['configuration']),
-                    "gpt_4_turbo_2024_04_09": restructure_configuration(model_configuration.gpt_4_turbo_2024_04_09()['configuration']),
-                    "gpt_4_turbo": restructure_configuration(model_configuration.gpt_4_turbo()['configuration']),
-                    "gpt_4o": restructure_configuration(model_configuration.gpt_4o()['configuration']),
-                    "gpt_4o_mini": restructure_configuration(model_configuration.gpt_4o_mini()['configuration']),
+                    "gpt-3.5-turbo": restructure_configuration(model_configuration.gpt_3_5_turbo()['configuration']),
+                    "gpt-3.5-turbo-0613": restructure_configuration(model_configuration.gpt_3_5_turbo_0613()['configuration']),
+                    "gpt-3.5-turbo-0125": restructure_configuration(model_configuration.gpt_3_5_turbo_0125()['configuration']),
+                    "gpt-3.5-turbo_0301": restructure_configuration(model_configuration.gpt_3_5_turbo_0301()['configuration']),
+                    "gpt-3.5-turbo-1106": restructure_configuration(model_configuration.gpt_3_5_turbo_1106()['configuration']),
+                    "gpt-3.5-turbo-16k": restructure_configuration(model_configuration.gpt_3_5_turbo_16k()['configuration']),
+                    "gpt-3.5-turbo-16k-0613": restructure_configuration(model_configuration.gpt_3_5_turbo_16k_0613()['configuration']),
+                    "gpt-4": restructure_configuration(model_configuration.gpt_4()['configuration']),
+                    "gpt-4-0613": restructure_configuration(model_configuration.gpt_4_0613()['configuration']),
+                    "gpt-4-1106-preview": restructure_configuration(model_configuration.gpt_4_1106_preview()['configuration']),
+                    "gpt-4-turbo-preview": restructure_configuration(model_configuration.gpt_4_turbo_preview()['configuration']),
+                    "gpt-4-0125-preview": restructure_configuration(model_configuration.gpt_4_0125_preview()['configuration']),
+                    "gpt-4-turbo-2024_04_09": restructure_configuration(model_configuration.gpt_4_turbo_2024_04_09()['configuration']),
+                    "gpt-4-turbo": restructure_configuration(model_configuration.gpt_4_turbo()['configuration']),
+                    "gpt-4o": restructure_configuration(model_configuration.gpt_4o()['configuration']),
+                    "gpt-4o-mini": restructure_configuration(model_configuration.gpt_4o_mini()['configuration']),
                 },
                 "embedding": {
-                    "text_embedding_3_large": restructure_configuration(model_configuration.text_embedding_3_large()['configuration']),
-                    "text_embedding_3_small": restructure_configuration(model_configuration.text_embedding_3_small()['configuration']),
-                    "text_embedding_ada_002": restructure_configuration(model_configuration.text_embedding_ada_002()['configuration']),
+                    "text-embedding-3-large": restructure_configuration(model_configuration.text_embedding_3_large()['configuration']),
+                    "text-embedding-3-small": restructure_configuration(model_configuration.text_embedding_3_small()['configuration']),
+                    "text-embedding-ada-002": restructure_configuration(model_configuration.text_embedding_ada_002()['configuration']),
                 }
             }
         elif service == 'google':
             return {
                 "completion": {
-                    "gemini_1_5_pro": restructure_configuration(model_configuration.gemini_1_5_pro()['configuration']),
-                    "gemini_pro": restructure_configuration(model_configuration.gemini_pro()['configuration']),
-                    "gemini_1_5_Flash": restructure_configuration(model_configuration.gemini_1_5_Flash()['configuration']),
-                    "gemini_1_0_pro": restructure_configuration(model_configuration.gemini_1_0_pro()['configuration']),
-                    "gemini_1_0_pro_vision": restructure_configuration(model_configuration.gemini_1_0_pro_vision()['configuration'])
+                    "gemini-1.5-pro": restructure_configuration(model_configuration.gemini_1_5_pro()['configuration']),
+                    "gemini-pro": restructure_configuration(model_configuration.gemini_pro()['configuration']),
+                    "gemini-1.5-Flash": restructure_configuration(model_configuration.gemini_1_5_Flash()['configuration']),
+                    "gemini-1.0-pro": restructure_configuration(model_configuration.gemini_1_0_pro()['configuration']),
+                    "gemini-1.0-pro-vision": restructure_configuration(model_configuration.gemini_1_0_pro_vision()['configuration'])
                 },
                 "chat": {
-                    "gemini_1_5_pro": restructure_configuration(model_configuration.gemini_1_5_pro()['configuration']),
-                    "gemini_pro": restructure_configuration(model_configuration.gemini_pro()['configuration']),
-                    "gemini_1_5_Flash": restructure_configuration(model_configuration.gemini_1_5_Flash()['configuration']),
-                    "gemini_1_0_pro": restructure_configuration(model_configuration.gemini_1_0_pro()['configuration']),
-                    "gemini_1_0_pro_vision": restructure_configuration(model_configuration.gemini_1_0_pro_vision()['configuration'])
+                    "gemini-1.5-pro": restructure_configuration(model_configuration.gemini_1_5_pro()['configuration']),
+                    "gemini-pro": restructure_configuration(model_configuration.gemini_pro()['configuration']),
+                    "gemini-1.5-Flash": restructure_configuration(model_configuration.gemini_1_5_Flash()['configuration']),
+                    "gemini-1.0-pro": restructure_configuration(model_configuration.gemini_1_0_pro()['configuration']),
+                    "gemini-1.0-pro-vision": restructure_configuration(model_configuration.gemini_1_0_pro_vision()['configuration'])
                 }
             }
     except Exception as e:
