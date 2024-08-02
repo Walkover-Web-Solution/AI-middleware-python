@@ -10,12 +10,8 @@ router = APIRouter()
 @router.post('/chat/completion', dependencies=[Depends(jwt_middleware)])
 async def chat_completion(request: Request, db_config: dict = Depends(add_configuration_data_to_body)):
     try:
-        body = await request.json()
-        request.state.playground = False
-        if(body.get('webhook') or body.get('RTLayer')): # add inside  add_configuration_data_to_body
-            asyncio.create_task(chat(request))
-            return JSONResponse(status_code=200, content={"success": True, "message"  :"Your response will be send through configured means."}) 
-        return await chat(request)
+        request.state.playground = False # yaha se remove karna hai
+        return await chat(request) # confirm karna ki ui kaise bhejega playground
     except Exception as e:
         print("Error in chat completion: ", e)
         traceback.print_exc()
@@ -23,5 +19,5 @@ async def chat_completion(request: Request, db_config: dict = Depends(add_config
 
 @router.post('/playground/chat/completion/{bridge_id}', dependencies=[Depends(jwt_middleware)])
 async def playground_chat_completion(request: Request, db_config: dict = Depends(add_configuration_data_to_body)):
-    request.state.playground = True
+    request.state.playground = True # yaha se remove karna hai
     return await chat(request)

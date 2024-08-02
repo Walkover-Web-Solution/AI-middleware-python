@@ -5,6 +5,7 @@ from .runModel import runModel
 
 
 async def chats(configuration, apikey):
+    print('configuration', configuration)
     try:
         response = await runModel(configuration, True, apikey)
         if not response['success']:

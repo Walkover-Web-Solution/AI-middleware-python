@@ -50,9 +50,10 @@ class Helper:
             for key, value in variables.items():
                 string_value = json.dumps(value)
                 regex = re.compile(r'\{\{' + re.escape(key) + r'\}\}')
-                for item in prompt:
-                    if item and "content" in item:
-                        item["content"] = regex.sub(string_value, item["content"])
+                prompt = regex.sub(string_value,prompt)
+                # for item in prompt:
+                #     if item and "content" in item:
+                #         item["content"] = regex.sub(string_value, item["content"])
         return prompt
 
     @staticmethod

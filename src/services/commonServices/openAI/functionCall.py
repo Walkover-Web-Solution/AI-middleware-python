@@ -16,8 +16,7 @@ async def function_call(data):
         tools_call = data.get('tools_call')
         output_config = data.get('outputConfig')
         l = data.get('l', 0)
-        rtl_layer = data.get('rtlLayer', False)
-        body = data.get('body', {})
+        response_format = data.get('response_format')
         playground = data.get('playground', False)
         tools = data.get('tools', {})
         api_endpoints =  set(bridge.get('api_endpoints', []))
@@ -39,12 +38,7 @@ async def function_call(data):
             configuration['messages'].append(func_response_data)
             #  todo :: add function name also in the rtlayer          
             if not playground:
-                ResponseSender.sendResponse({
-                    'rtlLayer': rtl_layer,
-                    'data': {'function_call': False, 'success': True, 'message': 'Going to GPT'},
-                    'reqBody': body,
-                    'headers': {}
-                })
+                ResponseSender.sendResponse(response_format, data = {'function_call': True, 'success': True, 'message': 'Going to GPT'}, success=True)
 
             open_ai_response = await chats(configuration, apikey)
             model_response = open_ai_response.get('modelResponse', {})
@@ -54,12 +48,7 @@ async def function_call(data):
                 return {'success': False, 'error': open_ai_response.get('error')}
             if _.get(model_response, output_config['tools']) and l <= 3:
                 if not playground:
-                    ResponseSender.sendResponse({
-                        'rtlLayer': rtl_layer,
-                        'data': {'function_call': True, 'success': True, 'message': 'sending the next function call'},
-                        'reqBody': body,
-                        'headers': {}
-                    })
+                    ResponseSender.sendResponse(response_format, data = {'function_call': True, 'success': True, 'message': 'sending the next function call'}, success=True)
 
                 data['l'] = data['l'] + 1
                 data['tools_call'] = _.get(model_response, output_config['tools'])[0]
