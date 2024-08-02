@@ -2,7 +2,7 @@ from fastapi import Request
 from fastapi.responses import JSONResponse
 from src.db_services.ConfigurationServices import get_bridges
 from datetime import datetime, timezone
-from src.controllers.configController import create_bridges
+from src.controllers.configController import duplicate_create_bridges
 import json
 
 async def duplicate_bridge(request : Request):
@@ -17,7 +17,7 @@ async def duplicate_bridge(request : Request):
         slugname = bridge.get('slugName')
         new_slugName = f"{slugname}_{timestamp}"
         new_created_at = datetime.now(timezone.utc)
-        res = await create_bridges({
+        res = await duplicate_create_bridges({
             "org_id": bridge.get('org_id'),
             "service": bridge.get('service'),
             "bridgeType": bridge.get('bridgeType'),

@@ -3,7 +3,7 @@ from .helper import Helper
 # from src.services.commonServices.generateToken import generateToken
 # from src.configs.modelConfiguration import ModelsConfig
 
-async def getConfiguration(configuration, service, bridge_id, api_key, template_id=None):
+async def getConfiguration(configuration, service, bridge_id, apikey, template_id=None):
     RTLayer = False
     bridge = None
     result = await ConfigurationService.get_bridges(bridge_id)
@@ -17,7 +17,10 @@ async def getConfiguration(configuration, service, bridge_id, api_key, template_
         db_configuration.update(configuration)
     configuration = db_configuration
     service = service or (result.get('bridges', {}).get('service', '').lower())
-    api_key = api_key if api_key else Helper.decrypt(result.get('bridges', {}).get('apikey'))
+    db_api_key = result.get('bridges', {}).get('apikey')
+    if not (apikey or db_api_key): 
+        raise Exception('Could not find api key')
+    apikey = apikey if apikey else Helper.decrypt(db_api_key)
     RTLayer = True if configuration and 'RTLayer' in configuration else False 
     bridge = result.get('bridges')
     service = service.lower() if service else ""
@@ -27,7 +30,7 @@ async def getConfiguration(configuration, service, bridge_id, api_key, template_
         'configuration': configuration,
         'bridge': bridge,
         'service': service,
-        'apikey': api_key,
+        'apikey': apikey,
         'RTLayer': RTLayer,
         'template': template_content.get('template') if template_content else None
     }

@@ -26,25 +26,23 @@ async def chat(request: Request):
         body.update(request.state.body) 
 
     apikey = body.get("apikey")
-    bridge_id = body.get("bridge_id") or request.path_params.get('bridge_id')
+    bridge_id = request.path_params.get('bridge_id') or body.get("bridge_id")
     configuration = body.get("configuration")
     thread_id = body.get("thread_id")
     org_id = request.state.org_id
-    user = body.get("user") or configuration.get("user", "")
-    tool_call = body.get("tool_call")
+    user = body.get("user")
+    tools =  configuration.get('tools')
     service = body.get("service")
     variables = body.get("variables", {})
-    RTLayer = body.get("RTLayer")
     bridgeType = body.get('chatbot')
     template = body.get('template')
     usage = {}
     customConfig = {}
-    rtlLayer = RTLayer if RTLayer else configuration.get("RTLayer", False)
-    webhook = body.get('webhook')
-    headers = body.get('headers')
-    model =configuration.get('model')
-    if hasattr(request.state, 'playground'):
-        is_playground = request.state.playground
+    response_format = configuration.get("response_format")
+    model = configuration.get('model')
+    # if hasattr(request.state, 'playground'): # change according to ui ka playground
+    #     is_playground = request.state.playground
+    is_playground = body.get('is_playground', False)
     bridge = body.get('bridge')
 
     try:
@@ -53,7 +51,7 @@ async def chat(request: Request):
         modelObj = modelfunc()
         modelConfig, modelOutputConfig = modelObj['configuration'], modelObj['outputConfig']
 
-        # todo :: not working correctly
+        #todo :: will not work if level is nor present in key
         for key in modelConfig:
             if modelConfig[key]["level"] == 2 or key in configuration:
                 customConfig[key] = configuration.get(key, modelConfig[key]["default"])
@@ -65,9 +63,6 @@ async def chat(request: Request):
                 configuration["conversation"] = result.get("data", [])
         else:
             thread_id = str(uuid.uuid1())
-
-        # Update prompt on the base of variable 
-        configuration['prompt']  = configuration['prompt']  if isinstance(configuration['prompt'] , list) else [configuration['prompt'] ]
         configuration['prompt']  = Helper.replace_variables_in_prompt(configuration['prompt'] , variables)
 
         if template:
@@ -80,7 +75,7 @@ async def chat(request: Request):
             "apikey": apikey,
             "variables": variables,
             "user": user,
-            "tool_call": tool_call,
+            "tools": tools,
             "startTime": startTime,
             "org_id": org_id if is_playground else None,
             "bridge_id": bridge_id,
@@ -88,26 +83,25 @@ async def chat(request: Request):
             "thread_id": thread_id,
             "model": model,
             "service": service,
-            "req": request,
+            "req": request, 
             "modelOutputConfig": modelOutputConfig,
             "playground": is_playground,
-            "rtlayer": rtlLayer,
-            "webhook": webhook,
             "template": template,
+            "response_format" : response_format,
         }
 
         if service == "openai":
             openAIInstance = UnifiedOpenAICase(params)
             result = await openAIInstance.execute()
             if not result["success"]:
-                if rtlLayer or webhook:
+                if response_format['type'] != 'default':
                     return
                 return JSONResponse(status_code=400, content=result)
         elif service == "google":
             geminiHandler = GeminiHandler(params)
             result = await geminiHandler.handle_gemini()
             if not result["success"]:
-                if rtlLayer or webhook:
+                if response_format['type'] != 'default':
                     return
                 return JSONResponse(status_code=400, content=result)
 
@@ -146,15 +140,9 @@ async def chat(request: Request):
                 "prompt": configuration["prompt"]
             })
             asyncio.create_task(metrics_service.create([usage], result["historyParams"]))
-            asyncio.create_task(ResponseSender.sendResponse(
-                rtl_layer=rtlLayer,
-                webhook=webhook,
-                data={"response": result["modelResponse"], "success": True},
-                req_body=body,
-                headers=headers or {}
-            ))
-            if rtlLayer or webhook:
-                return JSONResponse(status_code=200, content={"success": True, "message": "Your data will be sent through the configured means."})
+            asyncio.create_task(ResponseSender.sendResponse(response_format, result["modelResponse"],success=True))
+            if response_format['type'] != 'default':
+                return
         return JSONResponse(status_code=200, content={"success": True, "response": result["modelResponse"]})
 
     except Exception as error:
@@ -183,13 +171,7 @@ async def chat(request: Request):
                 "actor": "user"
             }))
             print("chat common error=>", error)
-            asyncio.create_task(ResponseSender.sendResponse({
-                "rtlLayer": rtlLayer,
-                "webhook": webhook,
-                "data": {"error": str(error), "success": False},
-                "reqBody": body,
-                "headers": headers or {}
-            }))
-            if rtlLayer or webhook:
+            asyncio.create_task(ResponseSender.sendResponse(response_format, result["modelResponse"]))
+            if response_format['type'] != 'default':
                 return
         return JSONResponse(status_code=400, content={"success": False, "error": str(error)})

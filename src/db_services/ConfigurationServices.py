@@ -101,8 +101,31 @@ async def create_bridge(data):
         print("error:", error)
         return {
             'success': False,
-            'error': "something went wrong!!"
+            'error': error
         }
+
+async def get_all_bridges_in_org(org_id):
+    bridges = configurationModel.find({"org_id": org_id}, {
+      "_id": 1,
+      "name": 1,
+      "service": 1,
+      "org_id": 1,
+      "configuration.model": 1,
+      "configuration.prompt": 1,
+      "bridgeType": 1,
+      "slugName":1,
+    })
+    bridges_list = []
+    for bridge in bridges:
+        bridge['_id'] = str(bridge['_id'])  # Convert ObjectId to string
+        bridges_list.append(bridge)
+    return bridges_list
+
+async def get_bridge_by_id(org_id, bridge_id):
+    bridge = configurationModel.find_one({'_id': ObjectId(bridge_id), 'org_id': org_id})
+    if bridge:
+        bridge['_id'] = str(bridge['_id'])  # Convert ObjectId to string
+    return bridge
 
 
 async def get_bridge_by_slugname(org_id, slug_name):
@@ -127,7 +150,34 @@ async def get_bridge_by_slugname(org_id, slug_name):
             'success': False,
             'error': "something went wrong!!"
         }
-    
+
+async def update_bridge(bridge_id, update_fields):
+    try:
+        updated_bridge = configurationModel.find_one_and_update(
+            {'_id': ObjectId(bridge_id)},
+            {'$set': update_fields},
+            return_document=True,
+            upsert=True
+        )
+
+        if not updated_bridge:
+            return {
+                'success': False,
+                'error': 'No records updated or bridge not found'
+            }
+        if updated_bridge:
+            updated_bridge['_id'] = str(updated_bridge['_id'])  # Convert ObjectId to string
+        return {
+            'success': True,
+            'result': updated_bridge
+        }
+
+    except Exception as error:
+        print(error)
+        return {
+            'success': False,
+            'error': 'Something went wrong!'
+        }
 
 async def update_tools_calls(bridge_id, org_id, configuration, api_endpoints, api_call):
     try:

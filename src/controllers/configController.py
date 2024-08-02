@@ -1,8 +1,75 @@
 from fastapi import HTTPException, status
+from fastapi.responses import JSONResponse
+from pydantic import ValidationError
+# from src.db_services.ConfigurationServices import get_bridges_by_slug_name_and_name
+from src.db_services.ConfigurationServices import create_bridge, get_bridge_by_id, get_all_bridges_in_org,update_bridge, get_bridges, update_tools_calls
+from src.configs.modelConfiguration import ModelsConfig as model_configuration
 from src.services.utils.helper import Helper
-from src.db_services.ConfigurationServices import create_bridge, get_bridges, update_tools_calls
+import json
+from validations.validation import Bridge_update as bridge_validation
 
-async def create_bridges(bridges):
+
+async def create_bridges_controller(request):
+    try:
+        bridges = await request.json()
+        type = bridges.get('type')
+        org_id = request.state.profile['org']['id']
+        service = bridges.get('service')
+        model = bridges.get('model')
+        name = bridges.get('name')
+        slugName = bridges.get('slugName')
+        bridgeType = bridges.get('bridgeType')
+        modelname = model.replace("-", "_").replace(".", "_")
+        configuration = getattr(model_configuration,modelname,None)
+        configurations = configuration()['configuration']
+        keys_to_update = [
+        'model',
+        'creativity_level',
+        'max_tokens',
+        'probablity_cutoff',
+        'log_probablity'
+        'repetition_penalty',
+        'novelty_penalty',
+        'n',
+        'response_count',
+        'additional_stop_sequences',
+        'stream',
+        'stop',
+        'json_mode'
+        ]
+        model_data = {}
+        for key in keys_to_update:
+            if key in configurations:
+                model_data[key] = configurations[key]['default']
+        model_data['type'] = type
+        model_data['response_format'] = {
+        "type": "default", # need changes
+        "cred": {}
+        } 
+        result = await create_bridge({
+            "configuration": model_data,
+            "name": name,
+            "slugName": slugName,
+            "service": service,
+            "bridgeType": bridgeType,
+            "org_id" : org_id
+        })
+        if result.get("success"):
+            return JSONResponse(status_code=200, content={
+                "success": True,
+                "message": "Bridge created successfully",
+                "bridge" : json.loads(json.dumps(result.get('bridge'), default=str))
+
+            })
+        else:
+            return JSONResponse(status_code=400, content={
+                "success": False,
+                "message": json.loads(json.dumps(result.get('error'), default=str))
+            })
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e)    
+
+async def duplicate_create_bridges(bridges):
     try:
 
         org_id = bridges.get('org_id')
@@ -57,6 +124,130 @@ async def create_bridges(bridges):
     except Exception as error:
         print(f"common error=> {error}")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="An unexpected error occurred while creating the bridge. Please try again later.")
+
+async def get_bridge(request, bridge_id: str):
+    try:
+        org_id = request.state.profile['org']['id']
+        bridge = await get_bridge_by_id(org_id, bridge_id)
+        return Helper.response_middleware_for_bridge({"succcess": True,"message": "bridge get successfully","bridge":bridge})
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e,)
+
+async def get_all_bridges(request):
+    try:
+        org_id = request.state.profile['org']['id']
+        bridges = await get_all_bridges_in_org(org_id)
+        return JSONResponse(status_code=200, content={
+                "success": True,
+                "message": "Get all bridges successfully",
+                "bridges" : bridges,
+                "org_id": org_id
+
+            })
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+async def get_all_service_models_controller(service):
+    try:
+        service = service.lower()
+        def restructure_configuration(config):
+            model_field = config.get("model", {})
+            additional_parameters = {k: v for k, v in config.items() if k != "model"}
+            
+            return {
+                "configuration": {
+                    "model": model_field,
+                    "additional_parameters": additional_parameters
+                }
+            }
+        
+        if service == 'openai':
+            return {
+                "completion": {
+                    "gpt_3_5_turbo_instruct": restructure_configuration(model_configuration.gpt_3_5_turbo_instruct()['configuration'])
+                },
+                "chat": {
+                    "gpt_3_5_turbo": restructure_configuration(model_configuration.gpt_3_5_turbo()['configuration']),
+                    "gpt_3_5_turbo_0613": restructure_configuration(model_configuration.gpt_3_5_turbo_0613()['configuration']),
+                    "gpt_3_5_turbo_0125": restructure_configuration(model_configuration.gpt_3_5_turbo_0125()['configuration']),
+                    "gpt_3_5_turbo_0301": restructure_configuration(model_configuration.gpt_3_5_turbo_0301()['configuration']),
+                    "gpt_3_5_turbo_1106": restructure_configuration(model_configuration.gpt_3_5_turbo_1106()['configuration']),
+                    "gpt_3_5_turbo_16k": restructure_configuration(model_configuration.gpt_3_5_turbo_16k()['configuration']),
+                    "gpt_3_5_turbo_16k_0613": restructure_configuration(model_configuration.gpt_3_5_turbo_16k_0613()['configuration']),
+                    "gpt_4": restructure_configuration(model_configuration.gpt_4()['configuration']),
+                    "gpt_4_0613": restructure_configuration(model_configuration.gpt_4_0613()['configuration']),
+                    "gpt_4_1106_preview": restructure_configuration(model_configuration.gpt_4_1106_preview()['configuration']),
+                    "gpt_4_turbo_preview": restructure_configuration(model_configuration.gpt_4_turbo_preview()['configuration']),
+                    "gpt_4_0125_preview": restructure_configuration(model_configuration.gpt_4_0125_preview()['configuration']),
+                    "gpt_4_turbo_2024_04_09": restructure_configuration(model_configuration.gpt_4_turbo_2024_04_09()['configuration']),
+                    "gpt_4_turbo": restructure_configuration(model_configuration.gpt_4_turbo()['configuration']),
+                    "gpt_4o": restructure_configuration(model_configuration.gpt_4o()['configuration']),
+                    "gpt_4o_mini": restructure_configuration(model_configuration.gpt_4o_mini()['configuration']),
+                },
+                "embedding": {
+                    "text_embedding_3_large": restructure_configuration(model_configuration.text_embedding_3_large()['configuration']),
+                    "text_embedding_3_small": restructure_configuration(model_configuration.text_embedding_3_small()['configuration']),
+                    "text_embedding_ada_002": restructure_configuration(model_configuration.text_embedding_ada_002()['configuration']),
+                }
+            }
+        elif service == 'google':
+            return {
+                "completion": {
+                    "gemini_1_5_pro": restructure_configuration(model_configuration.gemini_1_5_pro()['configuration']),
+                    "gemini_pro": restructure_configuration(model_configuration.gemini_pro()['configuration']),
+                    "gemini_1_5_Flash": restructure_configuration(model_configuration.gemini_1_5_Flash()['configuration']),
+                    "gemini_1_0_pro": restructure_configuration(model_configuration.gemini_1_0_pro()['configuration']),
+                    "gemini_1_0_pro_vision": restructure_configuration(model_configuration.gemini_1_0_pro_vision()['configuration'])
+                },
+                "chat": {
+                    "gemini_1_5_pro": restructure_configuration(model_configuration.gemini_1_5_pro()['configuration']),
+                    "gemini_pro": restructure_configuration(model_configuration.gemini_pro()['configuration']),
+                    "gemini_1_5_Flash": restructure_configuration(model_configuration.gemini_1_5_Flash()['configuration']),
+                    "gemini_1_0_pro": restructure_configuration(model_configuration.gemini_1_0_pro()['configuration']),
+                    "gemini_1_0_pro_vision": restructure_configuration(model_configuration.gemini_1_0_pro_vision()['configuration'])
+                }
+            }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+async def update_bridge_controller(request,bridge_id):
+    try:
+        body  = await request.json()
+        org_id = request.state.profile['org']['id']
+        slugName = body.get('slugName')
+        service = body.get('service')
+        bridgeType = body.get('bridgeType')
+        new_configuration = body.get('configuration')
+        apikey = body.get('apikey')
+        bridge = await get_bridge_by_id(org_id, bridge_id)
+        current_configuration = bridge.get('configuration', {})
+        apikey = bridge.get('apikey') if apikey is None else helper.encrypt(apikey)
+        update_fields = {}
+        if slugName is not None:
+            update_fields['slugName'] = slugName
+        if service is not None:
+            update_fields['service'] = service
+        if bridgeType is not None:
+            update_fields['bridgeType'] = bridgeType
+        if new_configuration is not None:
+            updated_configuration = {**current_configuration, **new_configuration}
+            update_fields['configuration'] = updated_configuration
+        if apikey is not None:
+            update_fields['apikey'] = apikey
+        result = await update_bridge(bridge_id, update_fields)
+        if result.get("success"):
+            return JSONResponse(status_code=200, content={
+                "success": True,
+                "message": "Bridge Updated successfully",
+                "bridges" : json.loads(json.dumps(result.get('result'), default=str))
+
+            })
+    except ValidationError as e:
+        raise HTTPException(status_code=400, detail=f"Validation error: {e.json()}")
+    except Exception as e:
+        print(e)
+        raise HTTPException(status_code=400, detail="Invalid request body!")
+
 
 # todo :: change the way tool calls are getting saved in the db
 async def get_and_update(api_object_id, bridge_id, org_id, open_api_format, function_name, required_params, status="add"):

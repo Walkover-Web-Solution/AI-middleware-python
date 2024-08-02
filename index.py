@@ -1,8 +1,8 @@
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
-import os
 
 from config import Config
 from src.controllers.modelController import router as model_router
@@ -26,6 +26,13 @@ app.add_middleware(
 @app.get("/healthcheck")
 async def healthcheck():
     return JSONResponse(status_code=200, content="OK running good...")
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(exc: RequestValidationError):
+    return JSONResponse(
+        status_code=400,
+        content={"detail": "Custom error message", "errors": exc.errors()},
+    )
 
 # Include routers
 app.include_router(model_router, prefix="/api/v1/model")

@@ -9,6 +9,7 @@ from ...utils.customRes import ResponseSender
 from datetime import datetime
 import json
 from ...utils.helper import Helper
+from ...utils.formatter.openaiFormatter import format_for_openai
 
 class UnifiedOpenAICase:
     def __init__(self, params):
@@ -17,7 +18,7 @@ class UnifiedOpenAICase:
         self.apikey = params.get('apikey')
         self.variables = params.get('variables')
         self.user = params.get('user')
-        self.tool_call = params.get('tool_call')
+        self.tool_call = params.get('tools')
         self.startTime = params.get('startTime')
         self.org_id = params.get('org_id')
         self.bridge_id = params.get('bridge_id')
@@ -25,25 +26,21 @@ class UnifiedOpenAICase:
         self.thread_id = params.get('thread_id')
         self.model = params.get('model')
         self.service = params.get('service')
-        self.rtlLayer = params.get('rtlayer')
         self.req = params.get('req')
         self.modelOutputConfig = params.get('modelOutputConfig')
         self.bridge = params.get('bridge')
         self.apiCallavailable = True #bridge.get('is_api_call', False) if bridge is not None else False
         self.playground = params.get('playground')
-        self.RTLayer = params.get('RTLayer')
-        self.webhook = params.get('webhook')
-        self.headers = params.get('headers')
         self.template = params.get('template')
-        self.prompt = params.get('prompt')
-        self.input = params.get('input')
+        self.response_format = params.get('response_format')
 
     async def execute(self):
         historyParams = {}
         usage = {}
         tools = {}
         conversation = ConversationService.createOpenAiConversation(self.configuration.get('conversation')).get('messages', [])
-        self.customConfig["messages"] = self.configuration['prompt'] + conversation + ([{"role": "user", "content": self.user}] if self.user else (self.tool_call or [])) 
+        self.customConfig["messages"] = [{"role": "system", "content": self.configuration['prompt']}] + conversation + ([{"role": "user", "content": self.user}] if self.user else (self.tool_call or [])) 
+        self.customConfig = format_for_openai(self.customConfig)
         openAIResponse = await chats(self.customConfig, self.apikey)
         modelResponse = openAIResponse.get("modelResponse", {})
 
@@ -68,26 +65,14 @@ class UnifiedOpenAICase:
                     'type': "error",
                     'actor': "user" if self.user else "tool"
                 }))
-                asyncio.create_task(ResponseSender.sendResponse(
-                    rtl_layer = self.rtlLayer,
-                    webhook= self.webhook,
-                    data= {'error': openAIResponse.get('error'), 'success': False},
-                    req_body=  await self.req.json() if self.req else {},
-                    headers= self.headers or {}
-                ))
+                asyncio.create_task(ResponseSender.sendResponse(self.response_format,data = openAIResponse.get('error')))
                 if self.rtlLayer or self.webhook:
                     return
 
             return {'success': False, 'error': openAIResponse.get('error')}
         if _.get(modelResponse, self.modelOutputConfig.get('tools')) and self.apiCallavailable:
             if not self.playground:
-                ResponseSender.sendResponse({
-                    'rtlLayer': self.rtlLayer,
-                    'webhook': self.webhook,
-                    'data': {'function_call': True, 'success': True},
-                    'reqBody': self.req.json if self.req else {},
-                    'headers': self.headers or {}
-                })
+                ResponseSender.sendResponse(self.response_format, data = {'function_call': True}, success = True)
 
             functionCallRes = await function_call({
                 'configuration': self.customConfig,
@@ -96,8 +81,7 @@ class UnifiedOpenAICase:
                 'tools_call' : _.get(modelResponse, self.modelOutputConfig.get('tools'))[0],
                 'outputConfig': self.modelOutputConfig,
                 'l': 0,
-                'rtlLayer': self.rtlLayer,
-                'body': self.req.json if self.req else {},
+                'response_format' : self.response_format,
                 'playground': self.playground,
                 'tools': {}
             })
@@ -125,14 +109,8 @@ class UnifiedOpenAICase:
                     'actor': "user" if self.user else "tool"
                 }))
 
-                asyncio.create_task(ResponseSender.sendResponse(
-                    rtl_layer = self.rtlLayer,
-                    webhook= self.webhook,
-                    data=  {'error': functionCallRes.get('error'), 'success': False},
-                    req_body=  self.req.json if self.req else {},
-                    headers= self.headers or {}
-                ))
-                if self.rtlLayer or self.webhook:
+                asyncio.create_task(ResponseSender.sendResponse(self.response_format, data = functionCallRes.get('error')))
+                if self.response_format['type'] != 'default':
                     return
 
                 return {'success': False, 'error': functionCallRes.get('error')}
