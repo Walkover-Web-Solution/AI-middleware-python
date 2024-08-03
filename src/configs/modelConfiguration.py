@@ -23,7 +23,7 @@ class ModelsConfig:
                 "default": 256,
                 "level": 2
             },
-            "probablity_cutoff": {
+            "probability_cutoff": {
                 "field": "slider",
                 "min": 0,
                 "max": 1,
@@ -31,7 +31,7 @@ class ModelsConfig:
                 "default": 1,
                 "level": 2
             },
-            "log_probablity": {
+            "log_probability": {
                 "field": "boolean",
                 "default": False,
                 "level": 0
@@ -126,7 +126,7 @@ class ModelsConfig:
                 "default": 256,
                 "level": 2
             },
-            "probablity_cutoff": {
+            "probability_cutoff": {
                 "field": "slider",
                 "min": 0,
                 "max": 1,
@@ -134,7 +134,7 @@ class ModelsConfig:
                 "default": 1,
                 "level": 2
             },
-            "log_probablity": {
+            "log_probability": {
                 "field": "boolean",
                 "default": False,
                 "level": 0
@@ -230,7 +230,7 @@ class ModelsConfig:
                 "default": 256,
                 "level": 2
             },
-            "probablity_cutoff": {
+            "probability_cutoff": {
                 "field": "slider",
                 "min": 0,
                 "max": 1,
@@ -238,7 +238,7 @@ class ModelsConfig:
                 "default": 1,
                 "level": 2
             },
-            "log_probablity": {
+            "log_probability": {
                 "field": "boolean",
                 "default": False,
                 "level": 0
@@ -284,11 +284,10 @@ class ModelsConfig:
                 "default": "auto",
                 "level": 0
             },
-            "json_mode": {
+            "response_type": {
                 "field": "boolean",
-                "default": {
-                    "type": "text"
-                },
+                "default": "false",
+                "type" : "text",
                 "level": 0
             },
              "type" : {
@@ -351,7 +350,7 @@ class ModelsConfig:
                 "default": 256,
                 "level": 2
             },
-            "probablity_cutoff": {
+            "probability_cutoff": {
                 "field": "slider",
                 "min": 0,
                 "max": 1,
@@ -359,7 +358,7 @@ class ModelsConfig:
                 "default": 1,
                 "level": 2
             },
-            "log_probablity": {
+            "log_probability": {
                 "field": "boolean",
                 "default": False,
                 "level": 0
@@ -405,14 +404,13 @@ class ModelsConfig:
                 "default": "auto",
                 "level": 0
             },
-            "json_mode": {
+            "response_type": {
                 "field": "boolean",
-                "default": {
-                    "type": "text"
-                },
+                "default": "false",
+                "type" : "text",
                 "level": 0
             },
-             "type" : {
+            "type" : {
                 "default" : ["chat"]
             }
         }
@@ -468,7 +466,7 @@ class ModelsConfig:
                 "default": 256,
                 "level": 2
             },
-            "probablity_cutoff": {
+            "probability_cutoff": {
                 "field": "slider",
                 "min": 0,
                 "max": 1,
@@ -476,7 +474,7 @@ class ModelsConfig:
                 "default": 1,
                 "level": 2
             },
-            "log_probablity": {
+            "log_probability": {
                 "field": "boolean",
                 "default": False,
                 "level": 0
@@ -522,14 +520,13 @@ class ModelsConfig:
                 "default": "auto",
                 "level": 0
             },
-            "json_mode": {
+            "response_type": {
                 "field": "boolean",
-                "default": {
-                    "type": "text"
-                },
+                "default": "false",
+                "type" : "text",
                 "level": 0
             },
-             "type" : {
+            "type" : {
                 "default" : ["chat"]
             }
         }
@@ -589,7 +586,7 @@ class ModelsConfig:
                 "default": 256,
                 "level": 2
             },
-            "probablity_cutoff": {
+            "probability_cutoff": {
                 "field": "slider",
                 "min": 0,
                 "max": 1,
@@ -597,7 +594,7 @@ class ModelsConfig:
                 "default": 1,
                 "level": 2
             },
-            "log_probablity": {
+            "log_probability": {
                 "field": "boolean",
                 "default": False,
                 "level": 0
@@ -643,14 +640,13 @@ class ModelsConfig:
                 "default": "auto",
                 "level": 0
             },
-            "json_mode": {
+            "response_type": {
                 "field": "boolean",
-                "default": {
-                    "type": "text"
-                },
+                "default": "false",
+                "type" : "text",
                 "level": 0
             },
-             "type" : {
+            "type" : {
                 "default" : ["chat"]
             }
         }
@@ -706,7 +702,7 @@ class ModelsConfig:
                 "default": 256,
                 "level": 2
             },
-            "probablity_cutoff": {
+            "probability_cutoff": {
                 "field": "slider",
                 "min": 0,
                 "max": 1,
@@ -714,7 +710,7 @@ class ModelsConfig:
                 "default": 1,
                 "level": 2
             },
-            "log_probablity": {
+            "log_probability": {
                 "field": "boolean",
                 "default": False,
                 "level": 0
@@ -760,14 +756,13 @@ class ModelsConfig:
                 "default": "auto",
                 "level": 0
             },
-            "json_mode": {
+            "response_type": {
                 "field": "boolean",
-                "default": {
-                    "type": "text"
-                },
+                "default": "false",
+                "type" : "text",
                 "level": 0
             },
-             "type" : {
+            "type" : {
                 "default" : ["chat"]
             }
         }
@@ -824,7 +819,7 @@ class ModelsConfig:
                 "default": 256,
                 "level": 2
             },
-            "probablity_cutoff": {
+            "probability_cutoff": {
                 "field": "slider",
                 "min": 0,
                 "max": 1,
@@ -832,7 +827,7 @@ class ModelsConfig:
                 "default": 1,
                 "level": 2
             },
-            "log_probablity": {
+            "log_probability": {
                 "field": "boolean",
                 "default": False,
                 "level": 0
@@ -938,7 +933,7 @@ class ModelsConfig:
                 "default": 256,
                 "level": 2
             },
-            "probablity_cutoff": {
+            "probability_cutoff": {
                 "field": "slider",
                 "min": 0,
                 "max": 1,
@@ -946,7 +941,7 @@ class ModelsConfig:
                 "default": 1,
                 "level": 2
             },
-            "log_probablity": {
+            "log_probability": {
                 "field": "boolean",
                 "default": False,
                 "level": 0
@@ -1052,7 +1047,7 @@ class ModelsConfig:
                 "default": 256,
                 "level": 2
             },
-            "probablity_cutoff": {
+            "probability_cutoff": {
                 "field": "slider",
                 "min": 0,
                 "max": 1,
@@ -1060,7 +1055,7 @@ class ModelsConfig:
                 "default": 1,
                 "level": 2
             },
-            "log_probablity": {
+            "log_probability": {
                 "field": "boolean",
                 "default": False,
                 "level": 0
@@ -1106,14 +1101,13 @@ class ModelsConfig:
                 "default": "auto",
                 "level": 0
             },
-            "json_mode": {
+            "response_type": {
                 "field": "boolean",
-                "default": {
-                    "type": "text"
-                },
+                "default": "false",
+                "type" : "text",
                 "level": 0
             },
-             "type" : {
+            "type" : {
                 "default" : ["chat"]
             }
         }
@@ -1173,7 +1167,7 @@ class ModelsConfig:
                 "default": 256,
                 "level": 2
             },
-            "probablity_cutoff": {
+            "probability_cutoff": {
                 "field": "slider",
                 "min": 0,
                 "max": 1,
@@ -1181,7 +1175,7 @@ class ModelsConfig:
                 "default": 1,
                 "level": 2
             },
-            "log_probablity": {
+            "log_probability": {
                 "field": "boolean",
                 "default": False,
                 "level": 0
@@ -1227,14 +1221,13 @@ class ModelsConfig:
                 "default": "auto",
                 "level": 0
             },
-            "json_mode": {
+            "response_type": {
                 "field": "boolean",
-                "default": {
-                    "type": "text"
-                },
+                "default": "false",
+                "type" : "text",
                 "level": 0
             },
-             "type" : {
+            "type" : {
                 "default" : ["chat"]
             }
         }
@@ -1294,7 +1287,7 @@ class ModelsConfig:
                 "default": 256,
                 "level": 2
             },
-            "probablity_cutoff": {
+            "probability_cutoff": {
                 "field": "slider",
                 "min": 0,
                 "max": 1,
@@ -1302,7 +1295,7 @@ class ModelsConfig:
                 "default": 1,
                 "level": 2
             },
-            "log_probablity": {
+            "log_probability": {
                 "field": "boolean",
                 "default": False,
                 "level": 0
@@ -1348,14 +1341,13 @@ class ModelsConfig:
                 "default": "auto",
                 "level": 0
             },
-            "json_mode": {
+            "response_type": {
                 "field": "boolean",
-                "default": {
-                    "type": "text"
-                },
+                "default": "false",
+                "type" : "text",
                 "level": 0
             },
-             "type" : {
+            "type" : {
                 "default" : ["chat"]
             }
         }
@@ -1415,7 +1407,7 @@ class ModelsConfig:
                 "default": 256,
                 "level": 2
             },
-            "probablity_cutoff": {
+            "probability_cutoff": {
                 "field": "slider",
                 "min": 0,
                 "max": 1,
@@ -1423,7 +1415,7 @@ class ModelsConfig:
                 "default": 1,
                 "level": 2
             },
-            "log_probablity": {
+            "log_probability": {
                 "field": "boolean",
                 "default": False,
                 "level": 0,
@@ -1474,14 +1466,13 @@ class ModelsConfig:
                 "level": 0,
                 "typeOf": "string"
             },
-            "json_mode": {
+            "response_type": {
                 "field": "boolean",
-                "default": {
-                    "type": "text"
-                },
+                "default": "false",
+                "type" : "text",
                 "level": 0
             },
-             "type" : {
+            "type" : {
                 "default" : ["chat"]
             }
         }
@@ -1541,7 +1532,7 @@ class ModelsConfig:
                 "default": 256,
                 "level": 2
             },
-            "probablity_cutoff": {
+            "probability_cutoff": {
                 "field": "slider",
                 "min": 0,
                 "max": 1,
@@ -1549,7 +1540,7 @@ class ModelsConfig:
                 "default": 1,
                 "level": 2
             },
-            "log_probablity": {
+            "log_probability": {
                 "field": "boolean",
                 "default": False,
                 "level": 0,
@@ -1600,14 +1591,13 @@ class ModelsConfig:
                 "level": 0,
                 "typeOf": "string"
             },
-            "json_mode": {
+            "response_type": {
                 "field": "boolean",
-                "default": {
-                    "type": "text"
-                },
+                "default": "false",
+                "type" : "text",
                 "level": 0
             },
-             "type" : {
+            "type" : {
                 "default" : ["chat"]
             }
         }
@@ -1664,7 +1654,7 @@ class ModelsConfig:
                 "default": 256,
                 "level": 2
             },
-            "probablity_cutoff": {
+            "probability_cutoff": {
                 "field": "slider",
                 "min": 0,
                 "max": 1,
@@ -1672,7 +1662,7 @@ class ModelsConfig:
                 "default": 1,
                 "level": 2
             },
-            "log_probablity": {
+            "log_probability": {
                 "field": "boolean",
                 "default": False,
                 "level": 0,
@@ -1784,7 +1774,7 @@ class ModelsConfig:
                 "default": 256,
                 "level": 2
             },
-            "probablity_cutoff": {
+            "probability_cutoff": {
                 "field": "slider",
                 "min": 0,
                 "max": 1,
@@ -1792,7 +1782,7 @@ class ModelsConfig:
                 "default": 1,
                 "level": 2
             },
-            "log_probablity": {
+            "log_probability": {
                 "field": "boolean",
                 "default": False,
                 "level": 0
@@ -2029,7 +2019,7 @@ class ModelsConfig:
                 "default": 0,
                 "level": 2
             },
-            "log_probablity": {
+            "log_probability": {
                 "field": "boolean",
                 "default": False,
                 "level": 0
@@ -2083,7 +2073,7 @@ class ModelsConfig:
                 "default": 0,
                 "level": 2
             },
-            "probablity_cutoff": {
+            "probability_cutoff": {
                 "field": "slider",
                 "min": 0,
                 "max": 1,
@@ -3065,7 +3055,7 @@ class ModelsConfig:
                 "default": 256,
                 "level": 2
             },
-            "probablity_cutoff": {
+            "probability_cutoff": {
                 "field": "slider",
                 "min": 0,
                 "max": 1,
@@ -3073,7 +3063,7 @@ class ModelsConfig:
                 "default": 1,
                 "level": 2
             },
-            "log_probablity": {
+            "log_probability": {
                 "field": "boolean",
                 "default": False,
                 "level": 0,
@@ -3185,7 +3175,7 @@ class ModelsConfig:
                 "default": 256,
                 "level": 2
             },
-            "probablity_cutoff": {
+            "probability_cutoff": {
                 "field": "slider",
                 "min": 0,
                 "max": 1,
@@ -3193,7 +3183,7 @@ class ModelsConfig:
                 "default": 1,
                 "level": 2
             },
-            "log_probablity": {
+            "log_probability": {
                 "field": "boolean",
                 "default": False,
                 "level": 0,
@@ -3305,7 +3295,7 @@ class ModelsConfig:
                 "default": 256,
                 "level": 2
             },
-            "probablity_cutoff": {
+            "probability_cutoff": {
                 "field": "slider",
                 "min": 0,
                 "max": 1,
@@ -3313,7 +3303,7 @@ class ModelsConfig:
                 "default": 1,
                 "level": 2
             },
-            "log_probablity": {
+            "log_probability": {
                 "field": "boolean",
                 "default": False,
                 "level": 0,
@@ -3425,7 +3415,7 @@ class ModelsConfig:
                 "default": 256,
                 "level": 2
             },
-            "probablity_cutoff": {
+            "probability_cutoff": {
                 "field": "slider",
                 "min": 0,
                 "max": 1,
@@ -3433,7 +3423,7 @@ class ModelsConfig:
                 "default": 1,
                 "level": 2
             },
-            "log_probablity": {
+            "log_probability": {
                 "field": "boolean",
                 "default": False,
                 "level": 0,
@@ -3545,7 +3535,7 @@ class ModelsConfig:
                 "default": 256,
                 "level": 2
             },
-            "probablity_cutoff": {
+            "probability_cutoff": {
                 "field": "slider",
                 "min": 0,
                 "max": 1,
@@ -3553,7 +3543,7 @@ class ModelsConfig:
                 "default": 1,
                 "level": 2
             },
-            "log_probablity": {
+            "log_probability": {
                 "field": "boolean",
                 "default": False,
                 "level": 0,
@@ -3665,7 +3655,7 @@ class ModelsConfig:
                 "default": 256,
                 "level": 2
             },
-            "probablity_cutoff": {
+            "probability_cutoff": {
                 "field": "slider",
                 "min": 0,
                 "max": 1,
@@ -3673,7 +3663,7 @@ class ModelsConfig:
                 "default": 1,
                 "level": 2
             },
-            "log_probablity": {
+            "log_probability": {
                 "field": "boolean",
                 "default": False,
                 "level": 0,
@@ -3793,7 +3783,7 @@ class ModelsConfig:
             #     "default": 1,
             #     "level": 2
             # },
-            "log_probablity": {
+            "log_probability": {
                 "field": "boolean",
                 "default": False,
                 "level": 0,
@@ -3905,7 +3895,7 @@ class ModelsConfig:
                 "default": 256,
                 "level": 2
             },
-            "probablity_cutoff": {
+            "probability_cutoff": {
                 "field": "slider",
                 "min": 0,
                 "max": 1,
@@ -3913,7 +3903,7 @@ class ModelsConfig:
                 "default": 1,
                 "level": 2
             },
-            "log_probablity": {
+            "log_probability": {
                 "field": "boolean",
                 "default": False,
                 "level": 0,
@@ -4025,7 +4015,7 @@ class ModelsConfig:
                 "default": 256,
                 "level": 2
             },
-            "probablity_cutoff": {
+            "probability_cutoff": {
                 "field": "slider",
                 "min": 0,
                 "max": 1,
@@ -4033,7 +4023,7 @@ class ModelsConfig:
                 "default": 1,
                 "level": 2
             },
-            "log_probablity": {
+            "log_probability": {
                 "field": "boolean",
                 "default": False,
                 "level": 0,
@@ -4145,7 +4135,7 @@ class ModelsConfig:
                 "default": 256,
                 "level": 2
             },
-            "probablity_cutoff": {
+            "probability_cutoff": {
                 "field": "slider",
                 "min": 0,
                 "max": 1,
@@ -4153,7 +4143,7 @@ class ModelsConfig:
                 "default": 1,
                 "level": 2
             },
-            "log_probablity": {
+            "log_probability": {
                 "field": "boolean",
                 "default": False,
                 "level": 0,
@@ -4265,7 +4255,7 @@ class ModelsConfig:
                 "default": 256,
                 "level": 2
             },
-            "probablity_cutoff": {
+            "probability_cutoff": {
                 "field": "slider",
                 "min": 0,
                 "max": 1,
@@ -4273,7 +4263,7 @@ class ModelsConfig:
                 "default": 1,
                 "level": 2
             },
-            "log_probablity": {
+            "log_probability": {
                 "field": "boolean",
                 "default": False,
                 "level": 0,
