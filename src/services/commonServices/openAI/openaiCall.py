@@ -42,6 +42,7 @@ class UnifiedOpenAICase:
         conversation = ConversationService.createOpenAiConversation(self.configuration.get('conversation')).get('messages', [])
         self.customConfig["messages"] = [{"role": "system", "content": self.configuration['prompt']}] + conversation + ([{"role": "user", "content": self.user}] if self.user else (self.tool_call or [])) 
         self.customConfig = service_formatter(self.customConfig, service_name['openai'])
+        del self.customConfig['tools'] # to remove
         openAIResponse = await chats(self.customConfig, self.apikey, service_name['openai'])
         modelResponse = openAIResponse.get("modelResponse", {})
 

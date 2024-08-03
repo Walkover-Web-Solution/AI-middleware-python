@@ -1,7 +1,7 @@
 service_name = {
     'openai': 'openai',
     'gemini': 'gemini',
-    'antrhopic': 'anthropic',
-    'grokk': 'grokk'
+    'anthropic': 'anthropic',
+    'groq': 'groq'
 }
 __all__ = ['service_name']

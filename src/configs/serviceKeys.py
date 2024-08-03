@@ -22,7 +22,7 @@ ServiceKeys = {
         "additional_stop_sequences": "stop_sequence",
         "max_tokens": "max_tokens"
     },
-    'groq_keys': {
+    service_name['groq']: {
         "creativity_level": "temperature",
         "probability_cutoff": "top_p",
         "repetition_penalty": "frequency_penalty",
