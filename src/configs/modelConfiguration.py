@@ -3785,71 +3785,71 @@ class ModelsConfig:
                 "default": 256,
                 "level": 2
             },
-            "probablity_cutoff": {
-                "field": "slider",
-                "min": 0,
-                "max": 1,
-                "step": 0.1,
-                "default": 1,
-                "level": 2
-            },
+            # "probablity_cutoff": {
+            #     "field": "slider",
+            #     "min": 0,
+            #     "max": 1,
+            #     "step": 0.1,
+            #     "default": 1,
+            #     "level": 2
+            # },
             "log_probablity": {
                 "field": "boolean",
                 "default": False,
                 "level": 0,
                 "typeOf": "boolean"
             },
-            "repetition_penalty": {
-                "field": "slider",
-                "min": 0,
-                "max": 2,
-                "step": 0.01,
-                "default": 0,
-                "level": 2
-            },
-            "novelty_penalty": {
-                "field": "slider",
-                "min": 0,
-                "max": 2,
-                "step": 0.01,
-                "default": 0,
-                "level": 2
-            },
-            "n": {
-                "field": "number",
-                "default": 1,
-                "typeOf": "number",
-                "level": 0
-            },
-            "stop": {
-                "field": "text",
-                "default": "",
-                "level": 0
-            },
-            "stream": {
-                "field": "boolean",
-                "default": False,
-                "level": 0,
-                "typeOf": "boolean"
-            },
-            "tools": {
-                "field": "array",
-                "level": 0,
-                "default": [],
-                "typeOf": "array"
-            },
-            "tool_choice": {
-                "field": "text",
-                "default": "auto",
-                "level": 0,
-                "typeOf": "string"
-            },
-            "response_type": {
-                "field": "boolean",
-                "default": "false",
-                "type" : "text",
-                "level": 0
-            }
+            # "repetition_penalty": {
+            #     "field": "slider",
+            #     "min": 0,
+            #     "max": 2,
+            #     "step": 0.01,
+            #     "default": 0,
+            #     "level": 2
+            # },
+            # "novelty_penalty": {
+            #     "field": "slider",
+            #     "min": 0,
+            #     "max": 2,
+            #     "step": 0.01,
+            #     "default": 0,
+            #     "level": 2
+            # },
+            # "n": {
+            #     "field": "number",
+            #     "default": 1,
+            #     "typeOf": "number",
+            #     "level": 0
+            # },
+            # "stop": {
+            #     "field": "text",
+            #     "default": "",
+            #     "level": 0
+            # },
+            # "stream": {
+            #     "field": "boolean",
+            #     "default": False,
+            #     "level": 0,
+            #     "typeOf": "boolean"
+            # },
+            # "tools": {
+            #     "field": "array",
+            #     "level": 0,
+            #     "default": [],
+            #     "typeOf": "array"
+            # },
+            # "tool_choice": {
+            #     "field": "text",
+            #     "default": "auto",
+            #     "level": 0,
+            #     "typeOf": "string"
+            # },
+            # "response_type": {
+            #     "field": "boolean",
+            #     "default": "false",
+            #     "type" : "text",
+            #     "level": 0
+            # }
         }
         outputConfig = {
             "usage": [{

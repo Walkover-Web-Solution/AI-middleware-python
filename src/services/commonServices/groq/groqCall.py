@@ -42,6 +42,7 @@ class Groq:
         self.customConfig = service_formatter(self.customConfig, 'gpt_keys')
         groq_response = await groq_chats(self.customConfig, self.apikey)
         modelResponse = groq_response.get("modelResponse", {})
+        print(modelResponse,"hiii this is groq")
         if not groq_response.get('success'):
             if not self.playground:
                 usage = {
@@ -68,5 +69,24 @@ class Groq:
                     return
 
             return {'success': False, 'error': groq_response.get('error')}
-        return
+        
+        usage = {}
+        usage["totalTokens"] = _.get(modelResponse, self.modelOutputConfig['usage'][0]['total_tokens'])
+        usage["inputTokens"] = _.get(modelResponse, self.modelOutputConfig['usage'][0]['prompt_tokens'])
+        usage["outputTokens"] = _.get(modelResponse, self.modelOutputConfig['usage'][0]['completion_tokens'])
+        usage["expectedCost"] = (usage['inputTokens'] / 1000 * self.modelOutputConfig['usage'][0]['total_cost']['input_cost']) + (usage['outputTokens'] / 1000 * self.modelOutputConfig['usage'][0]['total_cost']['output_cost'])
 
+        if not self.playground:
+            historyParams = {
+                'thread_id': self.thread_id,
+                'user': self.user if self.user else json.dumps(self.tool_call),
+                'message':_.get(modelResponse, self.modelOutputConfig['message']) == None if _.get(modelResponse, self.modelOutputConfig['tools']) else  _.get(modelResponse, self.modelOutputConfig['message']), #modelResponse.get(self.modelOutputConfig['message']) if modelResponse.get(self.modelOutputConfig['message']) else modelResponse.get(self.modelOutputConfig['tools']),
+                'org_id': self.org_id,
+                'bridge_id': self.bridge_id,
+                'model': self.configuration.get('model'),
+                'channel': 'chat',
+                'type': "assistant" if _.get(modelResponse, self.modelOutputConfig['message']) else "tool_calls",
+                'actor': "user" if self.user else "tool",
+                'tools': tools
+            }
+        return {'success': True, 'modelResponse': modelResponse, 'historyParams': historyParams, 'usage': usage}
