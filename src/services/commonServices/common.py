@@ -16,6 +16,7 @@ import pydash as _
 from ..utils.helper import Helper
 import asyncio
 from .anthrophic.antrophicCall import Antrophic
+from .groq.groqCall import Groq
 from prompts import mui_prompt
 app = FastAPI()
 
@@ -100,6 +101,9 @@ async def chat(request: Request):
         elif service == "antrophic":
             antrophic = Antrophic(params)
             result = await antrophic.antrophic_handler()
+        elif service == "groq":
+            groq = Groq(params)
+            result = await groq.groq_handler()
     
         if not result["success"]:
                 if response_format['type'] != 'default':
