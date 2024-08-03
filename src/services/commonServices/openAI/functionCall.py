@@ -1,5 +1,6 @@
 import pydash as _
 from src.configs.modelConfiguration import ModelsConfig
+from src.services.commonServices.openAI.chat import chats
 from ...utils.customRes import ResponseSender
 import asyncio
 import json
@@ -102,71 +103,32 @@ async def get_tool_configuration(response, modelOutputConfig, service):
 
 
 
-async def function_call(configuration, service, response, l=0):
-    modelfunc = getattr(ModelsConfig, configuration['model'], None)
+async def function_call(configuration,sensitive_config, service, response, l=0, tools={}):
+    if not response.get('success'):
+        return {'success': False, 'error': response.get('error')}
+    modelfunc = getattr(ModelsConfig, configuration['model'].replace('-',"_").replace('.',"_"), None)
     modelObj = modelfunc()
     modelOutputConfig = modelObj['outputConfig']
+    model_response = response.get('modelResponse', {})
+    response_format=sensitive_config['response_format']
+    playground=sensitive_config['playground']
+    apikey = sensitive_config['apikey']
 
-    if not (validate_tool_call(modelOutputConfig, service, response)):
+
+    if not (validate_tool_call(modelOutputConfig, service, model_response) and l <= 3):
        return response
-    l+=1
-    if not configuration['playground']:
-        ResponseSender.sendResponse(configuration['response_format'], data = {'function_call': True}, success = True)
     
-    func_response_data = await get_tool_configuration(response,modelOutputConfig, service)
-    configuration['tools'][func_response_data['name']] = json.dumps(func_response_data['content'])
-    configuration['messages'].append({'role': 'assistant', 'content': None, 'tool_calls': [_.get(response, modelOutputConfig.get('tools'))[0]]})
+    l+=1
+
+    if not playground:
+        ResponseSender.sendResponse(response_format, data = {'function_call': True}, success = True)
+    
+    func_response_data = await get_tool_configuration(model_response, modelOutputConfig, service)
+    tools[func_response_data['name']] = func_response_data['content']
+    configuration['messages'].append({'role': 'assistant', 'content': None, 'tool_calls': [_.get(model_response, modelOutputConfig.get('tools'))[0]]})
     configuration['messages'].append(func_response_data)
-    return func_response_data
-
-    # try:
-    #     configuration = data.get('configuration')
-    #     apikey = data.get('apikey')
-    #     bridge = data.get('bridge')
-    #     tools_call = data.get('tools_call')
-    #     output_config = data.get('outputConfig')
-    #     playground = data.get('playground', False)
-    #     tools = data.get('tools', {})
-    #     api_endpoints =  set(bridge.get('api_endpoints', []))
-    #     api_name = tools_call.get('function', {}).get('name')
-
-    #     if api_name in api_endpoints:
-    #         api_info = bridge['api_call'][api_name]
-    #         axios_instance, is_python = await fetch_axios(api_info)
-    #         args = json.loads(tools_call['function'].get('arguments', '{}'))
-    #         api_response = await axios_work(args, axios_instance, is_python)
-    #         func_response_data = {
-    #             'tool_call_id': tools_call['id'],
-    #             'role': 'tool',
-    #             'name': api_name,
-    #             'content': json.dumps(api_response),
-    #         }
-    #         tools[api_name] = json.dumps(api_response)
-    #         configuration['messages'].append({'role': 'assistant', 'content': None, 'tool_calls': [tools_call]})
-    #         configuration['messages'].append(func_response_data)
-    #         #  todo :: add function name also in the rtlayer          
-    #         if not playground:
-    #             ResponseSender.sendResponse(response_format, data = {'function_call': True, 'success': True, 'message': 'Going to GPT'}, success=True)
-
-    #         open_ai_response = await chats(configuration, apikey)
-    #         model_response = open_ai_response.get('modelResponse', {})
-    #         open_ai_response['tools'] = tools
-
-    #         if not open_ai_response.get('success'):
-    #             return {'success': False, 'error': open_ai_response.get('error')}
-    #         if _.get(model_response, output_config['tools']) and l <= 3:
-    #             if not playground:
-    #                 ResponseSender.sendResponse(response_format, data = {'function_call': True, 'success': True, 'message': 'sending the next function call'}, success=True)
-
-    #             data['l'] = data['l'] + 1
-    #             data['tools_call'] = _.get(model_response, output_config['tools'])[0]
-    #             data['tools'] = tools
-    #             return await function_call(data)
-
-    #         return open_ai_response
-
-    #     return {'success': False, 'error': 'endpoint does not exist'}
-
-    # except Exception as error:
-    #     logging.error("function call error:", exc_info=error)
-    #     return {'success': False, 'error': str(error)}
+    if not playground:
+        ResponseSender.sendResponse(response_format, data = {'function_call': True, 'success': True, 'message': 'Going to GPT'}, success=True)
+    ai_response = await chats(configuration, apikey, service)
+    ai_response['tools'] = tools
+    return await function_call(configuration, sensitive_config, service, ai_response, l, tools)

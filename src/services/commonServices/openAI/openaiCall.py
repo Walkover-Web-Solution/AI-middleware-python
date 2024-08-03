@@ -39,12 +39,11 @@ class UnifiedOpenAICase:
         usage = {}
         tools = {}
         conversation = ConversationService.createOpenAiConversation(self.configuration.get('conversation')).get('messages', [])
-        self.customConfig["messages"] = [{"role": "system", "content": self.configuration['prompt']}] + conversation + ([{"role": "user", "content": self.user}] if self.user else (self.tool_call or [])) 
+        self.customConfig["messages"] = [ self.configuration['prompt']] + conversation + ([{"role": "user", "content": self.user}] if self.user else (self.tool_call or [])) 
         self.customConfig = service_formatter(self.customConfig, service_name['openai'])
-        del self.customConfig['tools'] # to remove
+        # del self.customConfig['tools'] # to remove
         openAIResponse = await chats(self.customConfig, self.apikey, service_name['openai'])
         modelResponse = openAIResponse.get("modelResponse", {})
-
         if not openAIResponse.get('success'):
             if not self.playground:
                 usage = {
@@ -75,17 +74,11 @@ class UnifiedOpenAICase:
             if not self.playground:
                 ResponseSender.sendResponse(self.response_format, data = {'function_call': True}, success = True)
 
-            functionCallRes = await function_call({
-                'configuration': self.customConfig,
+            functionCallRes = await function_call(self.customConfig,{
                 'apikey': self.apikey,
-                'bridge': self.bridge,
-                'tools_call' : _.get(modelResponse, self.modelOutputConfig.get('tools'))[0],
-                'outputConfig': self.modelOutputConfig,
-                'l': 0,
                 'response_format' : self.response_format,
                 'playground': self.playground,
-                'tools': {}
-            })
+            },service_name['openai'], openAIResponse)
             funcModelResponse = functionCallRes.get("modelResponse", {})
             tools = functionCallRes.get("tools", {})
 

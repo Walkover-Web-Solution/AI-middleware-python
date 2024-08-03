@@ -5,11 +5,12 @@ def tool_call_formatter(configuration: dict, service: str) -> dict:
     if service == service_name['openai']:
         return  [
             {
-                'type': transformed_tool['type'],
+                'type': 'function',
                 'function': {
                     'name': transformed_tool['name'],
                     'description': transformed_tool['description'],
                     'parameters': {
+                        'type': 'object',
                         'properties': transformed_tool.get('properties', {}),
                         'required': transformed_tool.get('required', [])
                     }
