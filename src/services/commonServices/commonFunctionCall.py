@@ -1,13 +1,13 @@
 import pydash as _
 from src.configs.modelConfiguration import ModelsConfig
-from ...utils.customRes import ResponseSender
+from ..utils.customRes import ResponseSender
 import asyncio
 import json
 import logging
 import requests
 import re
 import pydash as _
-from ....db_services import ConfigurationServices as ConfigurationService
+from ...db_services import ConfigurationServices as ConfigurationService
 def validate_tool_call(modelOutputConfig, service, response):
     match service:
         case 'openai':
@@ -102,7 +102,7 @@ async def get_tool_configuration(response, modelOutputConfig, service):
 
 
 
-async def function_call(configuration, service, response, l=0):
+async def function_call(configuration, service, response,l=0):
     modelfunc = getattr(ModelsConfig, configuration['model'], None)
     modelObj = modelfunc()
     modelOutputConfig = modelObj['outputConfig']

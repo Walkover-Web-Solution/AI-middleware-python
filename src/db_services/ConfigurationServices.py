@@ -21,9 +21,9 @@ async def get_bridges(bridge_id):
             'error': "something went wrong!!"
         }
     
-async def get_api_call_by_id(api_id):
+async def get_api_call_by_name(name):
     try:
-        api_call = apiCallModel.find_one({'_id': ObjectId(api_id)})
+        api_call = apiCallModel.find_one({'name': name})
         return {
             'success': True,
             'apiCall': api_call

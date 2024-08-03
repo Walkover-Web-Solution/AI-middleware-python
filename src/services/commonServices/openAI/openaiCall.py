@@ -30,7 +30,6 @@ class UnifiedOpenAICase:
         self.req = params.get('req')
         self.modelOutputConfig = params.get('modelOutputConfig')
         self.bridge = params.get('bridge')
-        self.apiCallavailable = True #bridge.get('is_api_call', False) if bridge is not None else False
         self.playground = params.get('playground')
         self.template = params.get('template')
         self.response_format = params.get('response_format')
