@@ -278,7 +278,7 @@ class ModelsConfig:
                 "default": "auto",
                 "level": 0
             },
-            "response_format": {
+            "json_mode": {
                 "field": "boolean",
                 "default": {
                     "type": "text"
@@ -396,7 +396,7 @@ class ModelsConfig:
                 "default": "auto",
                 "level": 0
             },
-            "response_format": {
+            "json_mode": {
                 "field": "boolean",
                 "default": {
                     "type": "text"
@@ -510,7 +510,7 @@ class ModelsConfig:
                 "default": "auto",
                 "level": 0
             },
-            "response_format": {
+            "json_mode": {
                 "field": "boolean",
                 "default": {
                     "type": "text"
@@ -628,7 +628,7 @@ class ModelsConfig:
                 "default": "auto",
                 "level": 0
             },
-            "response_format": {
+            "json_mode": {
                 "field": "boolean",
                 "default": {
                     "type": "text"
@@ -742,7 +742,7 @@ class ModelsConfig:
                 "default": "auto",
                 "level": 0
             },
-            "response_format": {
+            "json_mode": {
                 "field": "boolean",
                 "default": {
                     "type": "text"
@@ -1078,7 +1078,7 @@ class ModelsConfig:
                 "default": "auto",
                 "level": 0
             },
-            "response_format": {
+            "json_mode": {
                 "field": "boolean",
                 "default": {
                     "type": "text"
@@ -1196,7 +1196,7 @@ class ModelsConfig:
                 "default": "auto",
                 "level": 0
             },
-            "response_format": {
+            "json_mode": {
                 "field": "boolean",
                 "default": {
                     "type": "text"
@@ -1314,7 +1314,7 @@ class ModelsConfig:
                 "default": "auto",
                 "level": 0
             },
-            "response_format": {
+            "json_mode": {
                 "field": "boolean",
                 "default": {
                     "type": "text"
@@ -1437,7 +1437,7 @@ class ModelsConfig:
                 "level": 0,
                 "typeOf": "string"
             },
-            "response_format": {
+            "json_mode": {
                 "field": "boolean",
                 "default": {
                     "type": "text"
@@ -1560,7 +1560,7 @@ class ModelsConfig:
                 "level": 0,
                 "typeOf": "string"
             },
-            "response_format": {
+            "json_mode": {
                 "field": "boolean",
                 "default": {
                     "type": "text"

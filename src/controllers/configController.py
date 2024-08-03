@@ -221,7 +221,7 @@ async def update_bridge_controller(request,bridge_id):
         apikey = body.get('apikey')
         bridge = await get_bridge_by_id(org_id, bridge_id)
         current_configuration = bridge.get('configuration', {})
-        apikey = bridge.get('apikey') if apikey is None else helper.encrypt(apikey)
+        apikey = bridge.get('apikey') if apikey is None else Helper.encrypt(apikey)
         update_fields = {}
         if slugName is not None:
             update_fields['slugName'] = slugName
@@ -236,10 +236,10 @@ async def update_bridge_controller(request,bridge_id):
             update_fields['apikey'] = apikey
         result = await update_bridge(bridge_id, update_fields)
         if result.get("success"):
-            return JSONResponse(status_code=200, content={
+            return Helper.response_middleware_for_bridge({
                 "success": True,
                 "message": "Bridge Updated successfully",
-                "bridges" : json.loads(json.dumps(result.get('result'), default=str))
+                "bridge" : result.get('result')
 
             })
     except ValidationError as e:
@@ -250,30 +250,19 @@ async def update_bridge_controller(request,bridge_id):
 
 
 # todo :: change the way tool calls are getting saved in the db
-async def get_and_update(api_object_id, bridge_id, org_id, open_api_format, function_name, required_params, status="add"):
+async def get_and_update( bridge_id, org_id, open_api_format, function_name, status="add"):
     try:
         model_config = await get_bridges(bridge_id)
         tools_call = model_config.get('bridges', {}).get('configuration', {}).get('tools', [])
-        api_endpoints = model_config.get('bridges', {}).get('api_endpoints', [])
-        api_call = model_config.get('bridges', {}).get('api_call', {})
 
-        if function_name not in api_call:
-            api_endpoints.append(function_name)
-
-        updated_tools_call = [tool for tool in tools_call if tool['function']['name'] != function_name]
+        updated_tools_call = [tool for tool in tools_call if tool['name'] != function_name]
 
         if status == "add":
             updated_tools_call.append(open_api_format)
-            api_call[function_name] = {
-                "apiObjectID": api_object_id,
-                "requiredParams": required_params,
-                "functioName": function_name
-            }
 
-        if status == "delete":
-            api_endpoints = [item for item in api_endpoints if item != function_name]
-            if function_name in api_call:
-                del api_call[function_name]
+        # todo :: add delete from tool call   
+        # if status == "delete":
+        #     api_endpoints = [item for item in api_endpoints if item != function_name]
 
         tools_call = updated_tools_call
         configuration = {
@@ -281,7 +270,7 @@ async def get_and_update(api_object_id, bridge_id, org_id, open_api_format, func
         }
 
         new_configuration = Helper.update_configuration(model_config['bridges']['configuration'], configuration)
-        result = await update_tools_calls(bridge_id, org_id, new_configuration, api_endpoints, api_call)
+        result = await update_tools_calls(bridge_id, org_id, new_configuration)
         result['tools_call'] = tools_call
         return result
 

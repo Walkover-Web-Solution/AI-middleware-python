@@ -40,7 +40,7 @@ class UnifiedOpenAICase:
         tools = {}
         conversation = ConversationService.createOpenAiConversation(self.configuration.get('conversation')).get('messages', [])
         self.customConfig["messages"] = [{"role": "system", "content": self.configuration['prompt']}] + conversation + ([{"role": "user", "content": self.user}] if self.user else (self.tool_call or [])) 
-        self.customConfig = format_for_openai(self.customConfig)
+        self.customConfig = format_for_openai(self.customConfig,'openai')
         openAIResponse = await chats(self.customConfig, self.apikey)
         modelResponse = openAIResponse.get("modelResponse", {})
 

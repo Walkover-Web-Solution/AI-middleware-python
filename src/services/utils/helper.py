@@ -80,8 +80,8 @@ class Helper:
         config = {}
         for key in configurations.keys():
             config[key] = db_config.get(key, response['configuration'].get(key, configurations[key]['default']))
-        for key in ['prompt','response_format',]:
-            config[key] = db_config.get(key, response['configuration'].get(key, {"type":'default',"cred":{}} if key is 'response_format' else 'else'))
+        for key in ['prompt','response_format','type']:
+            config[key] = db_config.get(key, response['configuration'].get(key, {"type":'default',"cred":{}} if key == 'response_format' else ''))
         response['configuration'] = config
         response['apikey'] = Helper.decrypt(response['apikey'])
         embed_token = Helper.generate_token({ "org_id": Config.ORG_ID, "project_id": Config.PROJECT_ID, "user_id": response['_id'] },Config.Access_key )

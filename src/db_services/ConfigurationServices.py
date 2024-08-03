@@ -42,33 +42,6 @@ async def get_template_by_id(template_id):
     except Exception as error : 
         print(f"template id error : {error}")
         return None
-        
-# async def get_bridge_by_slugname(org_id, slug_name):
-#     try:
-#         print(111,org_id,222,slug_name)
-#         bridges = configurationModel.find_one({
-#             'slugName': slug_name,
-#             'org_id': 'husain_123'
-#         })
-#         print("hii hello", bridges)
-#         if bridges and 'responseRef' in bridges:
-#             # Populate 'responseRef' if it's a reference to another collection
-#             print("hii 3")
-#             response_ref = await db['responses'].find_one({'_id': bridges['responseRef']})
-#             bridges['responseRef'] = response_ref
-        
-#         return {
-#             'success': True,
-#             'bridges': bridges
-#         }
-#     except Exception as error:
-#         traceback.print_exc()
-#         print(f"error: {error}")
-#         return {
-#             'success': False,
-#             'error': "something went wrong!!"
-#         }
-
 
 async def get_bridges_by_slug_name_and_name(slug_name, name, org_id):
     try:
@@ -179,15 +152,13 @@ async def update_bridge(bridge_id, update_fields):
             'error': 'Something went wrong!'
         }
 
-async def update_tools_calls(bridge_id, org_id, configuration, api_endpoints, api_call):
+async def update_tools_calls(bridge_id, org_id, configuration):
     try:
         configurationModel.find_one_and_update(
             {'_id': ObjectId(bridge_id), 'org_id': org_id},
             {'$set': {
                 'configuration': configuration,
-                'api_endpoints': api_endpoints,
-                'api_call': api_call,
-                'is_api_call': True
+
             }}
         )
         return {
