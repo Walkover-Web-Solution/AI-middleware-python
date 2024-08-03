@@ -55,7 +55,9 @@ async def chat(request: Request):
 
         #todo :: will not work if level is nor present in key
         for key in modelConfig:
-            if modelConfig[key]["level"] == 2 or (key in configuration and key != 'type'):
+            if key == 'type' and key in configuration:
+                continue
+            if  modelConfig[key]["level"] == 2 or key in configuration:
                 customConfig[key] = configuration.get(key, modelConfig[key]["default"])
 
         if thread_id:
