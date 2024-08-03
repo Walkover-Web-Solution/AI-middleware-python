@@ -57,7 +57,7 @@ async def create(dataset, history_params):
                 'latency': data_object.get('latency', 0),
                 'service': data_object['service'],
                 'status': data_object.get('success', False),
-                'error': data_object.get('error', 'No error') if not data_object.get('success', False) else 'No error',
+                'error': data_object.get('error', '') if not data_object.get('success', False) else '',
                 'model': data_object['model'],
                 'input_tokens': data_object.get('inputTokens', 0),
                 'output_tokens': data_object.get('outputTokens', 0),

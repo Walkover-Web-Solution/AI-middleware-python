@@ -9,7 +9,7 @@ from ...utils.customRes import ResponseSender
 from datetime import datetime
 import json
 from ...utils.helper import Helper
-from ...utils.formatter.openaiFormatter import format_for_openai
+from ...utils.formatter.openaiFormatter import service_formatter
 
 class UnifiedOpenAICase:
     def __init__(self, params):
@@ -40,7 +40,7 @@ class UnifiedOpenAICase:
         tools = {}
         conversation = ConversationService.createOpenAiConversation(self.configuration.get('conversation')).get('messages', [])
         self.customConfig["messages"] = [{"role": "system", "content": self.configuration['prompt']}] + conversation + ([{"role": "user", "content": self.user}] if self.user else (self.tool_call or [])) 
-        self.customConfig = format_for_openai(self.customConfig,'openai')
+        self.customConfig = service_formatter(self.customConfig, 'gpt_keys')
         openAIResponse = await chats(self.customConfig, self.apikey)
         modelResponse = openAIResponse.get("modelResponse", {})
 
@@ -66,7 +66,7 @@ class UnifiedOpenAICase:
                     'actor': "user" if self.user else "tool"
                 }))
                 asyncio.create_task(ResponseSender.sendResponse(self.response_format,data = openAIResponse.get('error')))
-                if self.rtlLayer or self.webhook:
+                if self.response_format['type'] != 'default':
                     return
 
             return {'success': False, 'error': openAIResponse.get('error')}

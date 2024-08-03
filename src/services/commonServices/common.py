@@ -15,6 +15,7 @@ from .Google.geminiCall import GeminiHandler
 import pydash as _
 from ..utils.helper import Helper
 import asyncio
+from .anthrophic.antrophicCall import Antrophic
 from prompts import mui_prompt
 app = FastAPI()
 
@@ -53,7 +54,7 @@ async def chat(request: Request):
 
         #todo :: will not work if level is nor present in key
         for key in modelConfig:
-            if modelConfig[key]["level"] == 2 or key in configuration:
+            if modelConfig[key]["level"] == 2 or (key in configuration and key != 'type'):
                 customConfig[key] = configuration.get(key, modelConfig[key]["default"])
 
         if thread_id:
@@ -93,14 +94,14 @@ async def chat(request: Request):
         if service == "openai":
             openAIInstance = UnifiedOpenAICase(params)
             result = await openAIInstance.execute()
-            if not result["success"]:
-                if response_format['type'] != 'default':
-                    return
-                return JSONResponse(status_code=400, content=result)
         elif service == "google":
             geminiHandler = GeminiHandler(params)
             result = await geminiHandler.handle_gemini()
-            if not result["success"]:
+        elif service == "antrophic":
+            antrophic = Antrophic(params)
+            result = await antrophic.antrophic_handler()
+    
+        if not result["success"]:
                 if response_format['type'] != 'default':
                     return
                 return JSONResponse(status_code=400, content=result)

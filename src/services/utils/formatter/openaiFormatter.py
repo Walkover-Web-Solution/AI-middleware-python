@@ -1,12 +1,8 @@
 from src.configs.serviceKeys import ServiceKeys
 
-def format_for_openai(configuration: dict, service: str) -> dict:
-    new_config = {}
-    for key in configuration:
-        new_config[ServiceKeys.gpt_keys.get(key, key)] = configuration[key]
-    
+def tool_call_formatter(configuration: dict, service: str) -> dict:
     if service == 'openai':
-        new_config['tools'] = [
+        return  [
             {
                 'type': transformed_tool['type'],
                 'function': {
@@ -19,15 +15,8 @@ def format_for_openai(configuration: dict, service: str) -> dict:
                 }
             } for transformed_tool in configuration.get('tools', [])
         ]
-        
-        # Clean up parameters if properties and required are empty
-        for tool in new_config['tools']:
-            parameters = tool['function']['parameters']
-            if not parameters['properties'] and not parameters['required']:
-                del tool['function']['parameters']
-   
     elif service == 'Claude':
-        new_config['tools'] = [
+        return  [
             {
                 'name': transformed_tool['name'],
                 'description': transformed_tool['description'],
@@ -39,4 +28,14 @@ def format_for_openai(configuration: dict, service: str) -> dict:
             } for transformed_tool in configuration.get('tools', [])
         ]
 
-    return new_config
+def service_formatter(configuration : object, service : str ):
+    try:
+        new_config = {ServiceKeys[service].get(key, key): value for key, value in configuration.items()}
+        new_config['tools'] = tool_call_formatter(configuration, service)
+        return new_config
+    except KeyError as e:
+        print(f"Service key error: {e}")
+        return {}
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return {}
