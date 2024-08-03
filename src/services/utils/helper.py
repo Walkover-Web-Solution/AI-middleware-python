@@ -20,18 +20,22 @@ class Helper:
 
     @staticmethod
     def decrypt(encrypted_text):
-        encryption_key = Config.Encreaption_key
-        secret_iv = Config.Secret_IV
-    
-        iv = hashlib.sha512(secret_iv.encode()).hexdigest()[:16]
-        key = hashlib.sha512(encryption_key.encode()).hexdigest()[:32]
+        try:
+            encryption_key = Config.Encreaption_key
+            secret_iv = Config.Secret_IV
+        
+            iv = hashlib.sha512(secret_iv.encode()).hexdigest()[:16]
+            key = hashlib.sha512(encryption_key.encode()).hexdigest()[:32]
 
-        encrypted_text_bytes = bytes.fromhex(encrypted_text)
+            encrypted_text_bytes = bytes.fromhex(encrypted_text)
 
-        cipher = AES.new(key.encode(), AES.MODE_CFB, iv.encode())
-        decrypted_bytes = cipher.decrypt(encrypted_text_bytes)
-        return decrypted_bytes.decode('utf-8')
-
+            cipher = AES.new(key.encode(), AES.MODE_CFB, iv.encode())
+            decrypted_bytes = cipher.decrypt(encrypted_text_bytes)
+            return decrypted_bytes.decode('utf-8')
+        except Exception as e:
+            print(f"An error occurred during decryption: {e}")
+            return None
+        
     @staticmethod
     def update_configuration(prev_configuration, configuration):
         for key in prev_configuration:
@@ -72,19 +76,22 @@ class Helper:
         return jwt.encode(payload, accesskey)
 
     def response_middleware_for_bridge(finalResponse):
-        response = finalResponse['bridge']
-        model_name = response['configuration']['model'].replace("-", "_").replace(".", "_")
-        configuration = getattr(model_configuration,model_name,None)
-        configurations = configuration()['configuration']
-        db_config = response['configuration']
-        config = {}
-        for key in configurations.keys():
-            config[key] = db_config.get(key, response['configuration'].get(key, configurations[key]['default']))
-        for key in ['prompt','response_format','type']:
-            config[key] = db_config.get(key, response['configuration'].get(key, {"type":'default',"cred":{}} if key == 'response_format' else ''))
-        response['configuration'] = config
-        response['apikey'] = Helper.decrypt(response['apikey'])
-        embed_token = Helper.generate_token({ "org_id": Config.ORG_ID, "project_id": Config.PROJECT_ID, "user_id": response['_id'] },Config.Access_key )
-        response['embed_token'] = embed_token
-        finalResponse['bridge'] = response
-        return finalResponse
+        try:
+            response = finalResponse['bridge']
+            model_name = response['configuration']['model'].replace("-", "_").replace(".", "_")
+            configuration = getattr(model_configuration,model_name,None)
+            configurations = configuration()['configuration']
+            db_config = response['configuration']
+            config = {}
+            for key in configurations.keys():
+                config[key] = db_config.get(key, response['configuration'].get(key, configurations[key]['default']))
+            for key in ['prompt','response_format','type']:
+                config[key] = db_config.get(key, response['configuration'].get(key, {"type":'default',"cred":{}} if key is 'response_format' else ''))
+            response['configuration'] = config
+            response['apikey'] = Helper.decrypt(response['apikey']) if response.get('apikey') else ""
+            embed_token = Helper.generate_token({ "org_id": Config.ORG_ID, "project_id": Config.PROJECT_ID, "user_id": response['_id'] },Config.Access_key )
+            response['embed_token'] = embed_token
+            finalResponse['bridge'] = response
+            return finalResponse
+        except json.JSONDecodeError as error:
+            return {"success": False, "error": str(error)}
