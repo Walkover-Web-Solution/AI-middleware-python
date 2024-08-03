@@ -10,6 +10,7 @@ from datetime import datetime
 import json
 from ...utils.helper import Helper
 from ...utils.formatter.openaiFormatter import service_formatter
+from src.configs.constant import service_name
 
 class UnifiedOpenAICase:
     def __init__(self, params):
@@ -40,8 +41,8 @@ class UnifiedOpenAICase:
         tools = {}
         conversation = ConversationService.createOpenAiConversation(self.configuration.get('conversation')).get('messages', [])
         self.customConfig["messages"] = [{"role": "system", "content": self.configuration['prompt']}] + conversation + ([{"role": "user", "content": self.user}] if self.user else (self.tool_call or [])) 
-        self.customConfig = service_formatter(self.customConfig, 'gpt_keys')
-        openAIResponse = await chats(self.customConfig, self.apikey)
+        self.customConfig = service_formatter(self.customConfig, service_name['openai'])
+        openAIResponse = await chats(self.customConfig, self.apikey, service_name['openai'])
         modelResponse = openAIResponse.get("modelResponse", {})
 
         if not openAIResponse.get('success'):
@@ -70,7 +71,7 @@ class UnifiedOpenAICase:
                     return
 
             return {'success': False, 'error': openAIResponse.get('error')}
-        if _.get(modelResponse, self.modelOutputConfig.get('tools')) and self.apiCallavailable:
+        if _.get(modelResponse, self.modelOutputConfig.get('tools')):
             if not self.playground:
                 ResponseSender.sendResponse(self.response_format, data = {'function_call': True}, success = True)
 

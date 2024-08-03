@@ -19,6 +19,7 @@ from .anthrophic.antrophicCall import Antrophic
 from .groq.groqCall import Groq
 from prompts import mui_prompt
 app = FastAPI()
+from ..utils.common import common
 
 @app.post("/chat/{bridge_id}")
 async def chat(request: Request):
@@ -49,6 +50,7 @@ async def chat(request: Request):
 
     try:
         modelname = model.replace("-", "_").replace(".", "_")
+        # modelfunc = common.get_func_name(service, modelname)
         modelfunc = getattr(ModelsConfig, modelname, None)
         modelObj = modelfunc()
         modelConfig, modelOutputConfig = modelObj['configuration'], modelObj['outputConfig']

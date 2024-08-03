@@ -6,6 +6,7 @@ from datetime import datetime
 from ....db_services import metrics_service
 import json
 from ...utils.customRes import ResponseSender
+from src.configs.constant import service_name
 
 class Antrophic:
     def __init__(self, params):
@@ -38,7 +39,7 @@ class Antrophic:
         self.customConfig['system'] = self.configuration.get('prompt')
         self.customConfig["messages"] = [{"role": "user", "content":[{ "type": "text","text": self.user }]  }] + conversation
         self.customConfig['tools'] = self.tool_call
-        self.customConfig = service_formatter(self.customConfig, "anthropic_keys")
+        self.customConfig = service_formatter(self.customConfig, service_name['anthropic'])
         antrophic_response = await chats(self.customConfig, self.apikey)
         modelResponse = antrophic_response.get("modelResponse", {})
         print(modelResponse,"antrophic_response")

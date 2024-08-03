@@ -1,7 +1,8 @@
 from src.configs.serviceKeys import ServiceKeys
+from src.configs.constant import service_name
 
 def tool_call_formatter(configuration: dict, service: str) -> dict:
-    if service == 'openai':
+    if service == service_name['openai']:
         return  [
             {
                 'type': transformed_tool['type'],
@@ -15,7 +16,7 @@ def tool_call_formatter(configuration: dict, service: str) -> dict:
                 }
             } for transformed_tool in configuration.get('tools', [])
         ]
-    elif service == 'Claude':
+    elif service == service_name['anthropic']:
         return  [
             {
                 'name': transformed_tool['name'],

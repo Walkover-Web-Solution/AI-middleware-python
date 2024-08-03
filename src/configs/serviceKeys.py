@@ -1,5 +1,6 @@
+from .constant import service_name
 ServiceKeys = {
-    'gpt_keys': {
+    service_name['openai']: {
         "creativity_level": "temperature",
         "probability_cutoff": "top_p",
         "repetition_penalty": "frequency_penalty",
@@ -14,7 +15,7 @@ ServiceKeys = {
         "response_suffix": "suffix",
         "response_type": "response_format"
     },
-    'anthropic_keys': {
+    service_name['anthropic']: {
         "creativity_level": "temperature",
         "probability_cutoff": "top_p",
         "token_selection_limit": "top_k",

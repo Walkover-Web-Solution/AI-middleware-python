@@ -2,11 +2,17 @@ import asyncio
 import traceback
 # from services.run_model import run_model
 from .runModel import runModel
+from ..anthrophic.antrophicModelRun import anthropic_runmodel
+from ....configs.constant import service_name
 
 
-async def chats(configuration, apikey):
+async def chats(configuration, apikey, service):
     try:
-        response = await runModel(configuration, True, apikey)
+        response = {}
+        if service == service_name['openai']:
+            response = await runModel(configuration, True, apikey)
+        elif service == service_name['anthropic']:
+            response = await anthropic_runmodel(configuration, apikey)
         if not response['success']:
             return {
                 'success': False,
