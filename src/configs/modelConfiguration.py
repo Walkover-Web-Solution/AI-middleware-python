@@ -853,11 +853,6 @@ class ModelsConfig:
                 "default": 1,
                 "level": 0
             },
-            "additional_stop_sequences": {
-                "field": "text",
-                "default": "",
-                "level": 0
-            },
             "stream": {
                 "field": "boolean",
                 "default": False,
