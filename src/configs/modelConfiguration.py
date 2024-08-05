@@ -2623,12 +2623,12 @@ class ModelsConfig:
                 "default": [],
                 "typeOf": "array"
             },
-            "tool_choice": {
-                "field": "text",
-                "default": "auto",
-                "level": 0,
-                "typeOf": "string"
-            }
+            # "tool_choice": {
+            #     "field": "text",
+            #     "default": "auto",
+            #     "level": 0,
+            #     "typeOf": "string"
+            # }
             # "response_format": {
             #     "field": "boolean",
             #     "default": {
@@ -2743,12 +2743,12 @@ class ModelsConfig:
                 "default": [],
                 "typeOf": "array"
             },
-            "tool_choice": {
-                "field": "text",
-                "default": "auto",
-                "level": 0,
-                "typeOf": "string"
-            },
+            # "tool_choice": {
+            #     "field": "text",
+            #     "default": "auto",
+            #     "level": 0,
+            #     "typeOf": "string"
+            # },
             # "response_format": {
             #     "field": "boolean",
             #     "default": {
@@ -2863,13 +2863,13 @@ class ModelsConfig:
                 "default": [],
                 "typeOf": "array"
             },
-            "tool_choice": {
-                "field": "text",
-                "default": "auto",
-                "level": 0,
-                "typeOf": "string"
-            },
-            # "response_format": {
+            # "tool_choice": {
+            #     "field": "text",
+            #     "default": "auto",
+            #     "level": 0,
+            #     "typeOf": "string"
+            # },
+            # # "response_format": {
             #     "field": "boolean",
             #     "default": {
             #         "type": "text"
@@ -2983,12 +2983,12 @@ class ModelsConfig:
                 "default": [],
                 "typeOf": "array"
             },
-            "tool_choice": {
-                "field": "text",
-                "default": "auto",
-                "level": 0,
-                "typeOf": "string"
-            },
+            # "tool_choice": {
+            #     "field": "text",
+            #     "default": "auto",
+            #     "level": 0,
+            #     "typeOf": "string"
+            # },
             # "response_format": {
             #     "field": "boolean",
             #     "default": {
