@@ -164,42 +164,42 @@ async def get_all_service_models_controller(service):
         
         if service == 'openai':
             return {
-                "completion": {
-                    "gpt_3_5_turbo_instruct": restructure_configuration(model_configuration.gpt_3_5_turbo_instruct())
-                },
+                # "completion": {
+                #     "gpt_3_5_turbo_instruct": restructure_configuration(model_configuration.gpt_3_5_turbo_instruct())
+                # },
                 "chat": {
                     "gpt-3.5-turbo": restructure_configuration(model_configuration.gpt_3_5_turbo()),
-                    "gpt-3.5-turbo-0613": restructure_configuration(model_configuration.gpt_3_5_turbo_0613()),
-                    "gpt-3.5-turbo-0125": restructure_configuration(model_configuration.gpt_3_5_turbo_0125()),
-                    "gpt-3.5-turbo_0301": restructure_configuration(model_configuration.gpt_3_5_turbo_0301()),
-                    "gpt-3.5-turbo-1106": restructure_configuration(model_configuration.gpt_3_5_turbo_1106()),
-                    "gpt-3.5-turbo-16k": restructure_configuration(model_configuration.gpt_3_5_turbo_16k()),
-                    "gpt-3.5-turbo-16k-0613": restructure_configuration(model_configuration.gpt_3_5_turbo_16k_0613()),
+                    # "gpt-3.5-turbo-0613": restructure_configuration(model_configuration.gpt_3_5_turbo_0613()),
+                    # "gpt-3.5-turbo-0125": restructure_configuration(model_configuration.gpt_3_5_turbo_0125()),
+                    # "gpt-3.5-turbo_0301": restructure_configuration(model_configuration.gpt_3_5_turbo_0301()),
+                    # "gpt-3.5-turbo-1106": restructure_configuration(model_configuration.gpt_3_5_turbo_1106()),
+                    # "gpt-3.5-turbo-16k": restructure_configuration(model_configuration.gpt_3_5_turbo_16k()),
+                    # "gpt-3.5-turbo-16k-0613": restructure_configuration(model_configuration.gpt_3_5_turbo_16k_0613()),
                     "gpt-4": restructure_configuration(model_configuration.gpt_4()),
-                    "gpt-4-0613": restructure_configuration(model_configuration.gpt_4_0613()),
-                    "gpt-4-1106-preview": restructure_configuration(model_configuration.gpt_4_1106_preview()),
-                    "gpt-4-turbo-preview": restructure_configuration(model_configuration.gpt_4_turbo_preview()),
-                    "gpt-4-0125-preview": restructure_configuration(model_configuration.gpt_4_0125_preview()),
-                    "gpt-4-turbo-2024_04_09": restructure_configuration(model_configuration.gpt_4_turbo_2024_04_09()),
+                    # "gpt-4-0613": restructure_configuration(model_configuration.gpt_4_0613()),
+                    # "gpt-4-1106-preview": restructure_configuration(model_configuration.gpt_4_1106_preview()),
+                    # "gpt-4-turbo-preview": restructure_configuration(model_configuration.gpt_4_turbo_preview()),
+                    # "gpt-4-0125-preview": restructure_configuration(model_configuration.gpt_4_0125_preview()),
+                    # "gpt-4-turbo-2024-04-09": restructure_configuration(model_configuration.gpt_4_turbo_2024_04_09()),
                     "gpt-4-turbo": restructure_configuration(model_configuration.gpt_4_turbo()),
                     "gpt-4o": restructure_configuration(model_configuration.gpt_4o()),
                     "gpt-4o-mini": restructure_configuration(model_configuration.gpt_4o_mini()),
-                },
-                "embedding": {
-                    "text-embedding-3-large": restructure_configuration(model_configuration.text_embedding_3_large()),
-                    "text-embedding-3-small": restructure_configuration(model_configuration.text_embedding_3_small()),
-                    "text-embedding-ada-002": restructure_configuration(model_configuration.text_embedding_ada_002()),
                 }
+                # "embedding": {
+                #     "text-embedding-3-large": restructure_configuration(model_configuration.text_embedding_3_large()),
+                #     "text-embedding-3-small": restructure_configuration(model_configuration.text_embedding_3_small()),
+                #     "text-embedding-ada-002": restructure_configuration(model_configuration.text_embedding_ada_002()),
+                # }
             }
         elif service == 'google':
             return {
-                "completion": {
-                    "gemini-1.5-pro": restructure_configuration(model_configuration.gemini_1_5_pro()),
-                    "gemini-pro": restructure_configuration(model_configuration.gemini_pro()),
-                    "gemini-1.5-Flash": restructure_configuration(model_configuration.gemini_1_5_Flash()),
-                    "gemini-1.0-pro": restructure_configuration(model_configuration.gemini_1_0_pro()),
-                    "gemini-1.0-pro-vision": restructure_configuration(model_configuration.gemini_1_0_pro_vision())
-                },
+                # "completion": {
+                #     "gemini-1.5-pro": restructure_configuration(model_configuration.gemini_1_5_pro()),
+                #     "gemini-pro": restructure_configuration(model_configuration.gemini_pro()),
+                #     "gemini-1.5-Flash": restructure_configuration(model_configuration.gemini_1_5_Flash()),
+                #     "gemini-1.0-pro": restructure_configuration(model_configuration.gemini_1_0_pro()),
+                #     "gemini-1.0-pro-vision": restructure_configuration(model_configuration.gemini_1_0_pro_vision())
+                # },
                 "chat": {
                     "gemini-1.5-pro": restructure_configuration(model_configuration.gemini_1_5_pro()),
                     "gemini-pro": restructure_configuration(model_configuration.gemini_pro()),
@@ -208,6 +208,34 @@ async def get_all_service_models_controller(service):
                     "gemini-1.0-pro-vision": restructure_configuration(model_configuration.gemini_1_0_pro_vision())
                 }
             }
+        
+        elif service == 'anthropic':
+            return {
+                "chat" : {
+                    "claude-3-5-sonnet-20240620" : restructure_configuration(model_configuration.claude_3_5_sonnet_20240620()), 
+                    "claude-3-opus-20240229" : restructure_configuration(model_configuration.claude_3_opus_20240229()), 
+                    "claude-3-sonnet-20240229" : restructure_configuration(model_configuration.claude_3_sonnet_20240229()), 
+                    "claude-3-haiku-20240307" : restructure_configuration(model_configuration.claude_3_haiku_20240307()) 
+                }
+            }
+        
+        elif service == 'groq':
+            return {
+                "chat" : {
+                    "llama-3.1-405b-reasoning" : restructure_configuration(model_configuration.llama_3_1_405b_reasoning()),
+                    "llama-3.1-70b-versatile" : restructure_configuration(model_configuration.llama_3_1_70b_versatile()),
+                    "llama-3.1-8b-instant" : restructure_configuration(model_configuration.llama_3_1_8b_instant()),
+                    "llama3-groq-70b-8192-tool-use-preview" : restructure_configuration(model_configuration.llama3_groq_70b_8192_tool_use_preview()),
+                    "llama3-groq-8b-8192-tool-use-preview" : restructure_configuration(model_configuration.llama3_groq_8b_8192_tool_use_preview()),
+                    "llama3-70b-8192" : restructure_configuration(model_configuration.llama3_70b_8192()),
+                    "llama3-8b-8192" : restructure_configuration(model_configuration.llama3_8b_8192()),
+                    "mixtral-8x7b-32768" : restructure_configuration(model_configuration.mixtral_8x7b_32768()),
+                    "gemma-7b-it" : restructure_configuration(model_configuration.gemma_7b_it()),
+                    "gemma2-9b-it" : restructure_configuration(model_configuration.gemma2_9b_it())
+                }
+            }
+
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
