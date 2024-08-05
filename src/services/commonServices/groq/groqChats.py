@@ -11,7 +11,7 @@ async def groq_chats(configuration, apikey):
             }
         return {
             'success': True,
-            'modelResponse': response['response']
+            'response': response['response']
         }
     except Exception as e:
         traceback.print_exc()

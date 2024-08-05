@@ -17,7 +17,7 @@ async def jwt_middleware(request: Request):
                     check_token['org']['id'] = str(check_token['org']['id'])
                     request.state.profile = check_token
                     request.state.org_id = str(check_token.get('org', {}).get('id'))
-                    return
+                    return 
                 
                 raise HTTPException(status_code=404, detail="unauthorized user")
             

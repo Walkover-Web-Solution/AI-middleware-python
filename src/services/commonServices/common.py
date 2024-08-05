@@ -10,7 +10,7 @@ from ..utils.getConfiguration import getConfiguration
 from operator import itemgetter
 from ...db_services import metrics_service as metrics_service
 from .openAI.openaiCall import UnifiedOpenAICase
-from ..utils.customRes import ResponseSender
+from .baseService.baseService import BaseService
 from .Google.geminiCall import GeminiHandler
 import pydash as _
 from ..utils.helper import Helper
@@ -47,6 +47,7 @@ async def chat(request: Request):
     #     is_playground = request.state.playground
     is_playground = body.get('is_playground', False)
     bridge = body.get('bridge')
+    base_service_instance = {}
 
     try:
         modelname = model.replace("-", "_").replace(".", "_")
@@ -97,16 +98,16 @@ async def chat(request: Request):
         }
 
         if service == "openai":
-            openAIInstance = UnifiedOpenAICase(params)
+            base_service_instance = openAIInstance = UnifiedOpenAICase(params)
             result = await openAIInstance.execute()
         elif service == "google":
-            geminiHandler = GeminiHandler(params)
+            base_service_instance = geminiHandler = GeminiHandler(params)
             result = await geminiHandler.handle_gemini()
         elif service == "anthropic":
-            antrophic = Antrophic(params)
+            base_service_instance = antrophic = Antrophic(params)
             result = await antrophic.antrophic_handler()
         elif service == "groq":
-            groq = Groq(params)
+            base_service_instance = groq = Groq(params)
             result = await groq.groq_handler()
     
         if not result["success"]:
@@ -149,7 +150,7 @@ async def chat(request: Request):
                 "prompt": configuration["prompt"]
             })
             asyncio.create_task(metrics_service.create([usage], result["historyParams"]))
-            asyncio.create_task(ResponseSender.sendResponse(response_format, result["modelResponse"],success=True))
+            asyncio.create_task(base_service_instance.sendResponse(response_format, result["modelResponse"],success=True))
             if response_format['type'] != 'default':
                 return
         return JSONResponse(status_code=200, content={"success": True, "response": result["modelResponse"]})
@@ -180,7 +181,7 @@ async def chat(request: Request):
                 "actor": "user"
             }))
             print("chat common error=>", error)
-            asyncio.create_task(ResponseSender.sendResponse(response_format, result["modelResponse"]))
+            asyncio.create_task(base_service_instance.sendResponse(response_format, result["modelResponse"]))
             if response_format['type'] != 'default':
                 return
         return JSONResponse(status_code=400, content={"success": False, "error": str(error)})

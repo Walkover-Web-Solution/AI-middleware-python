@@ -4,7 +4,7 @@ import traceback
 from .runModel import runModel
 from ..anthrophic.antrophicModelRun import anthropic_runmodel
 from ....configs.constant import service_name
-
+from ..groq.groqChats import groq_chats
 
 async def chats(configuration, apikey, service):
     try:
@@ -13,6 +13,8 @@ async def chats(configuration, apikey, service):
             response = await runModel(configuration, True, apikey)
         elif service == service_name['anthropic']:
             response = await anthropic_runmodel(configuration, apikey)
+        elif service == service_name['groq']:
+            response = await groq_chats(configuration, apikey)
         if not response['success']:
             return {
                 'success': False,

@@ -1,12 +1,7 @@
 import asyncio
 from .gemini import run_chat
-
-# from commonService.create_conversation import create_gemini_conversation
-# from db_services.metrics_services import metrics_services
-# from utils.custom_res import ResponseSender
 from ...commonServices.createConversations import ConversationService
 from ....db_services import metrics_service
-from ...utils.customRes import ResponseSender
 import time
 import copy
 import pydash as _

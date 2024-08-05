@@ -52,6 +52,24 @@ class ConversationService:
                 'messages': []
             }
 
+    @staticmethod
+    def createAnthropicConversation(conversation):
+        try:
+            threads = []
+            for message in conversation or []:
+                if message['role'] != "tools":
+                    threads.append({'role': message['role'], 'content':[{ "type" : "text", "text" : message['content']}]})
+            return {
+                'success': True,
+                'messages': threads
+            }
+        except Exception as e:
+            print("create conversation error=>", e)
+            return {
+                'success': False,
+                'error': str(e),
+                'messages': []
+            }
 # Example usage:
 # result = ConversationService.create_openai_conversation(conversation)
 # result = ConversationService.create_gemini_conversation(conversation)
