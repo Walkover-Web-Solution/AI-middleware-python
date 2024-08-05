@@ -17,8 +17,8 @@ def validate_tool_call(modelOutputConfig, service, response):
             return False
         case 'gemini':
             return False
-        case 'Claude':
-            return False
+        case 'anthropic':
+            return True if response['stop_reason']=='tool_use'  else False
 
 
 async def fetch_axios(name):
@@ -78,7 +78,7 @@ async def axios_work_js(data, axios_function):
             'status': 0
         }
 
-async def get_tool_configuration(response, modelOutputConfig, service):
+async def run_tool(response, modelOutputConfig, service):
     axios_instance, is_python, args = '', False, {}
     
     match service:
@@ -87,7 +87,12 @@ async def get_tool_configuration(response, modelOutputConfig, service):
             name = tools_call.get('function', {}).get('name')
             axios_instance, is_python = await fetch_axios(name)
             args = json.loads(tools_call['function'].get('arguments', '{}'))
-        case 'groq' | 'gemini' | 'Claude':
+        case 'anthropic':
+            tools_call = response['content'][1]
+            name = tools_call.get('name')
+            axios_instance, is_python = await fetch_axios(name)
+            args = tools_call.get('input', {})
+        case 'groq' | 'gemini':
             return False
     
     api_response = await axios_work(args, axios_instance, is_python)
@@ -99,9 +104,20 @@ async def get_tool_configuration(response, modelOutputConfig, service):
             }
     return func_response_data
 
-# async def update_configration(configration,func_response_data,service):
-
-
+def update_configration(response, function_response, configuration, modelOutputConfig, service):    
+    match service:
+        case 'openai':
+            configuration['messages'].append({'role': 'assistant', 'content': None, 'tool_calls': [_.get(response, modelOutputConfig.get('tools'))[0]]})
+            configuration['messages'].append(function_response)
+        case 'anthropic':
+            configuration['messages'].append({'role': 'assistant', 'content': response['content']})
+            configuration['messages'].append({'role': 'user','content':[{"type":"tool_result",  
+                                             "tool_use_id": function_response['tool_call_id'],
+                                             "content": function_response['content']}]})
+        case 'groq' | 'gemini':
+            configuration['messages'].append({'role': 'assistant', 'content': None, 'tool_calls': [_.get(response, modelOutputConfig.get('tools'))[0]]})
+            configuration['messages'].append(function_response)
+    return configuration
 
 async def function_call(configuration,sensitive_config, service, response, l=0, tools={}):
     if not response.get('success'):
@@ -123,10 +139,9 @@ async def function_call(configuration,sensitive_config, service, response, l=0, 
     if not playground:
         ResponseSender.sendResponse(response_format, data = {'function_call': True}, success = True)
     
-    func_response_data = await get_tool_configuration(model_response, modelOutputConfig, service)
+    func_response_data = await run_tool(model_response, modelOutputConfig, service)
     tools[func_response_data['name']] = func_response_data['content']
-    configuration['messages'].append({'role': 'assistant', 'content': None, 'tool_calls': [_.get(model_response, modelOutputConfig.get('tools'))[0]]})
-    configuration['messages'].append(func_response_data)
+    configuration = update_configration(model_response, func_response_data, configuration, modelOutputConfig, service)
     if not playground:
         ResponseSender.sendResponse(response_format, data = {'function_call': True, 'success': True, 'message': 'Going to GPT'}, success=True)
     ai_response = await chats(configuration, apikey, service)

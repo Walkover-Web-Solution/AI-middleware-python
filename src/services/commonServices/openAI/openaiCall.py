@@ -70,9 +70,6 @@ class UnifiedOpenAICase:
 
             return {'success': False, 'error': openAIResponse.get('error')}
         if _.get(modelResponse, self.modelOutputConfig.get('tools')):
-            if not self.playground:
-                ResponseSender.sendResponse(self.response_format, data = {'function_call': True}, success = True)
-
             functionCallRes = await function_call(self.customConfig,{
                 'apikey': self.apikey,
                 'response_format' : self.response_format,

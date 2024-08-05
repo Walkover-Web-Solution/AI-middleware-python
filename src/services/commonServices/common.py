@@ -102,7 +102,7 @@ async def chat(request: Request):
         elif service == "google":
             geminiHandler = GeminiHandler(params)
             result = await geminiHandler.handle_gemini()
-        elif service == "antrophic":
+        elif service == "anthropic":
             antrophic = Antrophic(params)
             result = await antrophic.antrophic_handler()
         elif service == "groq":

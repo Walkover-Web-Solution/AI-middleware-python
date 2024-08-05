@@ -7,6 +7,7 @@ from ....db_services import metrics_service
 import json
 from ...utils.customRes import ResponseSender
 from src.configs.constant import service_name
+from ..openAI.functionCall import function_call
 
 class Antrophic:
     def __init__(self, params):
@@ -69,6 +70,41 @@ class Antrophic:
                     return
 
             return {'success': False, 'error': antrophic_response.get('error')}
+        
+        functionCallRes = await function_call(self.customConfig,{
+                'apikey': self.apikey,
+                'response_format' : self.response_format,
+                'playground': self.playground,
+            },service_name['anthropic'], antrophic_response)
+        funcModelResponse = functionCallRes.get("modelResponse", {})
+        tools = functionCallRes.get("tools", {})
+
+        if not functionCallRes.get('success'):
+                usage = {
+                    'service': self.service,
+                    'model': self.model,
+                    'orgId': self.org_id,
+                    'latency': datetime.now().timestamp() - self.startTime,
+                    'success': False,
+                    'error': functionCallRes.get('error')
+                }
+                asyncio.create_task(metrics_service.create([usage], {
+                    'thread_id': self.thread_id,
+                    'user': self.user if self.user else json.dumps(self.tool_call),
+                    'message': "",
+                    'org_id': self.org_id,
+                    'bridge_id': self.bridge_id,
+                    'model': self.configuration.get('model'),
+                    'channel': 'chat',
+                    'type': "error",
+                    'actor': "user" if self.user else "tool"
+                }))
+
+                asyncio.create_task(ResponseSender.sendResponse(self.response_format, data = functionCallRes.get('error')))
+                if self.response_format['type'] != 'default':
+                    return
+
+                return {'success': False, 'error': functionCallRes.get('error')}
         
         usage = {}
         usage["inputTokens"] = _.get(modelResponse, self.modelOutputConfig['usage'][0]['prompt_tokens'])
