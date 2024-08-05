@@ -33,7 +33,8 @@ def tool_call_formatter(configuration: dict, service: str) -> dict:
 def service_formatter(configuration : object, service : str ):
     try:
         new_config = {ServiceKeys[service].get(key, key): value for key, value in configuration.items()}
-        new_config['tools'] = tool_call_formatter(configuration, service)
+        if configuration.get('tools', ''):
+            new_config['tools'] = tool_call_formatter(configuration, service)
         return new_config
     except KeyError as e:
         print(f"Service key error: {e}")
