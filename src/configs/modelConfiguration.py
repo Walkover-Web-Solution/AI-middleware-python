@@ -2565,7 +2565,7 @@ class ModelsConfig:
             "max_tokens": {
                 "field": "slider",
                 "min": 1,
-                "max": 4096,
+                "max": 8192,
                 "step": 1,
                 "default": 1046,
                 "level": 2

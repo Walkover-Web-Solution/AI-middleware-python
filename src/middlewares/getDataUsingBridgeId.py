@@ -18,8 +18,8 @@ async def add_configuration_data_to_body(request: Request):
         request.state.body = body
         service = body.get("service")
         model = body.get("configuration").get('model')
-        # if not (service in services and model in services[service]["chat"]):
-        #     raise HTTPException(status_code=400, detail={"success": False, "error": "model or service does not exist!"})
+        if not (service in services and model in services[service]["chat"]):
+            raise HTTPException(status_code=400, detail={"success": False, "error": "model or service does not exist!"})
         if(response_format != None and response_format.get('type') != 'default'):
             asyncio.create_task(chat(request))
             raise HTTPException(status_code=200, detail={"success": True, "message"  :"Your response will be send through configured means."}) 
