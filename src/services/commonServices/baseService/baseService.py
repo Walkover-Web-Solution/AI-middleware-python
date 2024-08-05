@@ -11,7 +11,7 @@ from src.configs.modelConfiguration import ModelsConfig
 from ..openAI.runModel import runModel
 from ..anthrophic.antrophicModelRun import anthropic_runmodel
 from ....configs.constant import service_name
-from ..groq.groqChats import groq_chats
+from ..groq.groqModelRun import groq_runmodel
 
 class BaseService:
     def __init__(self, params):
@@ -211,10 +211,10 @@ result =  axios_call(params)
             return new_config
         except KeyError as e:
             print(f"Service key error: {e}")
-            return {}
+            raise "Service key error: {e}"
         except Exception as e:
             print(f"An error occurred: {e}")
-            return {}
+            raise "Service key error: {e}"
         
     async def chats(self, configuration, apikey, service):
         try:
@@ -224,7 +224,7 @@ result =  axios_call(params)
             elif service == service_name['anthropic']:
                 response = await anthropic_runmodel(configuration, apikey)
             elif service == service_name['groq']:
-                response = await groq_chats(configuration, apikey)
+                response = await groq_runmodel(configuration, True, apikey)
             if not response['success']:
                 return {
                     'success': False,

@@ -1,6 +1,5 @@
 import pydash as _
 from ..baseService.baseService import BaseService
-from .antrophicChats import chats
 from src.configs.constant import service_name
 from ..createConversations import ConversationService
 
@@ -13,9 +12,9 @@ class Antrophic(BaseService):
         conversation = ConversationService.createAnthropicConversation(self.configuration.get('conversation')).get('messages', [])        
         self.customConfig['system'] = self.configuration.get('prompt')
         self.customConfig["messages"] =conversation + [{"role": "user", "content":[{ "type": "text","text": self.user }]  }]
-        self.customConfig['tools'] = self.tool_call
+        self.customConfig['tools'] = self.tool_call if self.tool_call and len(self.tool_call) != 0 else []
         self.customConfig =self.service_formatter(self.customConfig, service_name['anthropic'])
-        antrophic_response = await chats(self.customConfig, self.apikey)
+        antrophic_response = await self.chats(self.customConfig, self.apikey, service_name['anthropic'])
         modelResponse = antrophic_response.get("modelResponse", {})
         if not antrophic_response.get('success'):
             if not self.playground:

@@ -215,8 +215,8 @@ def create_open_api(function_name, desc,api_object_id, required_params=None):
         format = {
             "type": "function",
             "id":api_object_id,
-                "name": function_name,
-                "description": desc
+            "name": function_name,
+            "description": desc
         }
         properties = {}
         for field in required_params:

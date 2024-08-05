@@ -1,6 +1,5 @@
 import pydash as _
 from ..baseService.baseService import BaseService
-from .chat import chats
 from ..createConversations import ConversationService
 from src.configs.constant import service_name
 
@@ -12,7 +11,7 @@ class UnifiedOpenAICase(BaseService):
         conversation = ConversationService.createOpenAiConversation(self.configuration.get('conversation')).get('messages', [])
         self.customConfig["messages"] = [ {"role": "system", "content": self.configuration['prompt']}] + conversation + ([{"role": "user", "content": self.user}] if self.user else (self.tool_call or [])) 
         self.customConfig =self.service_formatter(self.customConfig, service_name['openai'])
-        openAIResponse = await chats(self.customConfig, self.apikey, service_name['openai'])
+        openAIResponse = await self.chats(self.customConfig, self.apikey, service_name['openai'])
         modelResponse = openAIResponse.get("modelResponse", {})
         if not openAIResponse.get('success'):
             if not self.playground:
