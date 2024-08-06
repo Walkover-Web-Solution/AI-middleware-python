@@ -57,7 +57,7 @@ class ConversationService:
     def createAnthropicConversation(conversation):
         try:
             threads = []
-            expected_role = 'assistant'
+            expected_role = 'user'
 
             for i, message in enumerate(conversation):
                 if message['role'] not in ['assistant', 'user']:
