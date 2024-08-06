@@ -45,3 +45,4 @@ class Bridge_update(BaseModel):
     bridgeType: Optional[str] = None
     configuration: Optional[object] = None
     apikey: Optional[str] = None
+    name: Optional[str] = None
