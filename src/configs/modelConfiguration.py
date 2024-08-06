@@ -69,6 +69,14 @@ class ModelsConfig:
             },
             "type" : {
                 "default" : ["chat"]
+            },
+            "response_type": {
+                "field": "select",
+                "options" : [{"type" : "text"},{"type" : "json_object"}],
+                "default": {
+                "type" : "text",
+                },
+                "level": 0
             }
         }
         outputConfig = {
@@ -1595,11 +1603,12 @@ class ModelsConfig:
                 "level": 0,
                 "typeOf": "string"
             },
-            "response_type": {
-                "field": "boolean",
+           "response_type": {
+                "field": "select",
+                "options" : [{"type" : "text"},{"type" : "json_object"}],
                 "default": {
-                    "type" : "text",
-                 },
+                "type" : "text",
+                },
                 "level": 0
             },
             "type" : {
@@ -1719,8 +1728,9 @@ class ModelsConfig:
                 "typeOf": "string"
             },
             "response_type": {
-                "field": "boolean",
-               "default": {
+                "field": "select",
+                "options" : [{"type" : "text"},{"type" : "json_object"}],
+                "default": {
                 "type" : "text",
                 },
                 "level": 0
@@ -1836,6 +1846,14 @@ class ModelsConfig:
             },
              "type" : {
                 "default" : ["chat"]
+            },
+            "response_type": {
+                "field": "select",
+                "options" : [{"type" : "text"},{"type" : "json_object"}],
+                "default": {
+                "type" : "text",
+                },
+                "level": 0
             }
         }
         outputConfig = {
@@ -2086,6 +2104,14 @@ class ModelsConfig:
                 "step": 0.1,
                 "default": 1,
                 "level": 2
+            },
+            "response_type": {
+                "field": "select",
+                "options" : [{"type" : "text"},{"type" : "json_object"}],
+                "default": {
+                "type" : "text",
+                },
+                "level": 0
             },
             "type" :  {
                 "default" : ["completion"]
