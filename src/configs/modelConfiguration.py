@@ -2678,13 +2678,10 @@ class ModelsConfig:
             "usage": [{
                 "prompt_tokens": "usage.input_tokens",
                 "completion_tokens": "usage.output_tokens",
-                "total_cost": {
-                    "input_cost": 0,
-                    "output_cost": 0
-                }
+                "total_cost": { "usage.total_cost" }
             }],
-            "message": "content[0].text",
-            "tools": "content[1].type",
+            "message": "content[0].text", # find from modelResponse
+            "tools": "content[1].text", # find from functionResponse.modelResposne
             "assistant": "role",
             "id": "id"
         }

@@ -149,11 +149,11 @@ result =  axios_call(params)
             'actor': "user" if self.user else "tool"
         }))
         asyncio.create_task(self.sendResponse(self.response_format, data=response.get('error')))
-
+# todo
     def update_model_response(self, model_response, functionCallRes):
+        funcModelResponse = functionCallRes.get("modelResponse", {})
         match self.service:
             case 'openai' | 'groq' :
-                funcModelResponse = functionCallRes.get("modelResponse", {})
                 self.total_tokens = _.get(model_response, self.modelOutputConfig['usage'][0]['total_tokens']) + _.get(funcModelResponse, self.modelOutputConfig['usage'][0]['total_tokens'])
                 self.prompt_tokens = _.get(model_response, self.modelOutputConfig['usage'][0]['prompt_tokens']) + _.get(funcModelResponse, self.modelOutputConfig['usage'][0]['prompt_tokens'])
                 self.completion_tokens = _.get(model_response, self.modelOutputConfig['usage'][0]['prompt_tokens']) + _.get(funcModelResponse, self.modelOutputConfig['usage'][0]['completion_tokens'])
@@ -164,11 +164,15 @@ result =  axios_call(params)
                 _.set_(model_response, self.modelOutputConfig['usage'][0]['prompt_tokens'], self.prompt_tokens)
                 _.set_(model_response, self.modelOutputConfig['usage'][0]['completion_tokens'], self.completion_tokens)
             case 'anthropic':
-                pass
-                # configuration['messages'].append({'role': 'assistant', 'content': response['content']})
-                # configuration['messages'].append({'role': 'user','content':[{"type":"tool_result",  
-                #                                  "tool_use_id": function_response['tool_call_id'],
-                #                                  "content": function_response['content']}]})
+                self.prompt_tokens = _.get(model_response, self.modelOutputConfig['usage'][0]['prompt_tokens']) + _.get(funcModelResponse, self.modelOutputConfig['usage'][0]['prompt_tokens'])
+                self.completion_tokens = _.get(model_response, self.modelOutputConfig['usage'][0]['prompt_tokens']) + _.get(funcModelResponse, self.modelOutputConfig['usage'][0]['completion_tokens'])
+                self.total_tokens = self.prompt_tokens + self.completion_tokens
+
+                _.set_(model_response, self.modelOutputConfig['message'], _.get(funcModelResponse, self.modelOutputConfig['message']))
+                # _.set_(model_response, 'content[1].text', _.get(funcModelResponse, 'content[0].text'))
+                _.set_(model_response, self.modelOutputConfig['usage'][0]['prompt_tokens'], self.prompt_tokens)
+                _.set_(model_response, self.modelOutputConfig['usage'][0]['completion_tokens'], self.completion_tokens)
+                # _.set_(model_response, self.modelOutputConfig['usage'][0]['total_tokens'], self.total_tokens)
             case  _:
                 pass
 
@@ -185,7 +189,7 @@ result =  axios_call(params)
                 usage["inputTokens"] = _.get(model_response, self.modelOutputConfig['usage'][0]['prompt_tokens'])
                 usage["outputTokens"] = _.get(model_response, self.modelOutputConfig['usage'][0]['completion_tokens'])
                 usage["totalTokens"] = usage["inputTokens"] + usage["outputTokens"]
-                usage["expectedCost"] = (usage['inputTokens'] / 1000 * self.modelOutputConfig['usage'][0]['total_cost']['input_cost']) + (usage['outputTokens'] / 1000 * self.modelOutputConfig['usage'][0]['total_cost']['output_cost'])
+                # usage["expectedCost"] = (usage['inputTokens'] / 1000 * self.modelOutputConfig['usage'][0]['total_cost']['input_cost']) + (usage['outputTokens'] / 1000 * self.modelOutputConfig['usage'][0]['total_cost']['output_cost'])
             case  _:
                 pass
         return usage
