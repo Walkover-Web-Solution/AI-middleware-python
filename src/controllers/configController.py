@@ -78,22 +78,15 @@ async def duplicate_create_bridges(bridges):
         name = bridges.get('name')
         configuration = bridges.get('configuration') 
         apikey = bridges.get('apikey') 
-        created_at = bridges.get('created_at') 
-        api_call  = bridges.get('api_call') 
-        api_endpoints = bridges.get('api_endpoints')
-        is_api_call = bridges.get('is_api_call')
         slugName = bridges.get('slugName') 
-        responseIds = bridges.get('responseIds')
-        responseRef = bridges.get('responseRef')
-        defaultQuestions = bridges.get('defaultQuestions')
-        actions= bridges.get('actions')
-
-        # bridge_data = await get_bridges_by_slug_name_and_name(slugName,name, org_id)
-        # if bridge_data.get("success") and bridge_data.get("bridges"):
-        #     if bridge_data["bridges"]["name"] == configuration['name']:
-        #         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Bridge name already exists! Please choose a unique one.")
-        #     if bridge_data["bridges"]["slugName"] == configuration['slugName']:
-        #         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Slug name already exists! Please choose a unique one.")
+        # created_at = bridges.get('created_at') 
+        # api_call  = bridges.get('api_call') 
+        # api_endpoints = bridges.get('api_endpoints')
+        # is_api_call = bridges.get('is_api_call')
+        # # responseIds = bridges.get('responseIds')
+        # # responseRef = bridges.get('responseRef')
+        # # defaultQuestions = bridges.get('defaultQuestions')
+        # # actions= bridges.get('actions')
 
         result = await create_bridge({
             "configuration": configuration,
@@ -102,15 +95,7 @@ async def duplicate_create_bridges(bridges):
             "slugName": slugName,
             "service": service,
             "apikey": apikey,
-            "bridgeType": bridgeType,
-            "created_at": created_at,
-            "api_call" : api_call,
-            "api_endpoints": api_endpoints,
-            "is_api_call" : is_api_call,
-            "responseIds" : responseIds,
-            "responseRef" : responseRef,
-            "defaultQuestions" : defaultQuestions,
-            "actions" : actions
+            "bridgeType": bridgeType
         })
 
         if result.get("success"):
