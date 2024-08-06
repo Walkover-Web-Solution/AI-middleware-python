@@ -8,7 +8,7 @@ class Antrophic(BaseService):
         historyParams = {}
         usage = {}
         tools = {}
-        conversation = [] # create conversation according to claude models
+        conversation = []
         conversation = ConversationService.createAnthropicConversation(self.configuration.get('conversation')).get('messages', [])        
         self.customConfig['system'] = self.configuration.get('prompt')
         self.customConfig["messages"] =conversation + [{"role": "user", "content":[{ "type": "text","text": self.user }]  }]

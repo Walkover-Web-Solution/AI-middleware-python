@@ -1,4 +1,5 @@
 import traceback
+from fastapi import HTTPException
 class ConversationService:
     @staticmethod
     def createOpenAiConversation(conversation):
@@ -56,20 +57,31 @@ class ConversationService:
     def createAnthropicConversation(conversation):
         try:
             threads = []
-            for message in conversation or []:
-                if message['role'] != "tools":
-                    threads.append({'role': message['role'], 'content':[{ "type" : "text", "text" : message['content']}]})
+            expected_role = 'assistant'
+
+            for i, message in enumerate(conversation):
+                if message['role'] not in ['assistant', 'user']:
+                    raise ValueError(f"Invalid role '{message['role']}' at index {i}. Allowed roles are 'assistant' and 'user'.")
+                if message['role'] != expected_role:
+                    raise ValueError(f"Conversation format is not correct at index {i}. Expected role: {expected_role}")
+                
+                threads.append({
+                    'role': message['role'], 
+                    'content': [{"type": "text", "text": message['content']}]
+                })
+                expected_role = 'user' if expected_role == 'assistant' else 'assistant'
+            if len(threads) % 2 != 0:
+                raise ValueError("Conversation format is not correct. Mismatched number of 'assistant' and 'user' messages.")
+
             return {
                 'success': True,
                 'messages': threads
             }
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e))
         except Exception as e:
             print("create conversation error=>", e)
-            return {
-                'success': False,
-                'error': str(e),
-                'messages': []
-            }
+            raise HTTPException(status_code=500, detail="Internal Server Error")
 # Example usage:
 # result = ConversationService.create_openai_conversation(conversation)
 # result = ConversationService.create_gemini_conversation(conversation)

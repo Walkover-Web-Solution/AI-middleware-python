@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import JSONResponse
 import traceback
 import uuid
@@ -154,7 +154,8 @@ async def chat(request: Request):
             if response_format['type'] != 'default':
                 return
         return JSONResponse(status_code=200, content={"success": True, "response": result["modelResponse"]})
-
+    except HTTPException as e: 
+        raise e
     except Exception as error:
         traceback.print_exc()
         if not is_playground:
