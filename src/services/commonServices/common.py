@@ -95,6 +95,7 @@ async def chat(request: Request):
             "playground": is_playground,
             "template": template,
             "response_format" : response_format,
+            "org_id" : org_id
         }
 
         if service == "openai":
