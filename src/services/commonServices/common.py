@@ -73,8 +73,8 @@ async def chat(request: Request):
         configuration['prompt']  = Helper.replace_variables_in_prompt(configuration['prompt'] , variables)
 
         if template:
-            system_prompt = [{"role": "system", "content": template}]
-            configuration['prompt'] = Helper.replace_variables_in_prompt(system_prompt, {"system_prompt": configuration['prompt'][0].get('content'), **variables})
+            system_prompt = template;
+            configuration['prompt'] = Helper.replace_variables_in_prompt(system_prompt, {"system_prompt": configuration['prompt'], **variables})
 
         params = {
             "customConfig": customConfig,
@@ -183,7 +183,7 @@ async def chat(request: Request):
                 "actor": "user"
             }))
             print("chat common error=>", error)
-            asyncio.create_task(base_service_instance.sendResponse(response_format, result["modelResponse"]))
+            asyncio.create_task(base_service_instance.sendResponse(response_format,result["modelResponse"], True))
             if response_format['type'] != 'default':
                 return
         return JSONResponse(status_code=400, content={"success": False, "error": str(error)})

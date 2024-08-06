@@ -250,12 +250,12 @@ result =  axios_call(params)
 
     async def sendResponse(self, response_format, data, success = False):
         data_to_send = {
-            'data' if success else 'error': data,
+            'response' if success else 'error': data,
             'success': success
         }
 
         match response_format['type']:
-            case 'rtlayer' : 
+            case 'RTLayer' : 
                 return await send_message(cred = response_format['cred'], data=data_to_send)
             case 'webhook':
                 return await send_request(**response_format['cred'], method='POST', data=data_to_send)

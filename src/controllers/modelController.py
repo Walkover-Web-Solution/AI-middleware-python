@@ -11,6 +11,9 @@ router = APIRouter()
 async def chat_completion(request: Request, db_config: dict = Depends(add_configuration_data_to_body)):
     try:
         request.state.playground = False # yaha se remove karna hai
+        if(request.state.body.get('configuration',{}).get('response_format',{}) != None and request.state.body.get('configuration',{}).get('response_format',{}).get('type') != 'default'):
+            asyncio.create_task(chat(request))
+            return {"success": True, "message"  :"Your response will be send through configured means."}
         return await chat(request) # confirm karna ki ui kaise bhejega playground
     except Exception as e:
         print("Error in chat completion: ", e)

@@ -23,7 +23,7 @@ async def get_bridges(bridge_id):
     
 async def get_api_call_by_name(name):
     try:
-        api_call = apiCallModel.find_one({'function_name': name})
+        api_call = apiCallModel.find_one({'$or': [{'function_name': name}, {'endpoint': name}]})
         return {
             'success': True,
             'apiCall': api_call
