@@ -1109,13 +1109,13 @@ class ModelsConfig:
                 "default": "auto",
                 "level": 0
             },
-            "response_type": {
-                "field": "boolean",
-                "default": {
-                    "type" : "text",
-                 },
-                "level": 0
-            },
+            # "response_type": {
+            #     "field": "boolean",
+            #     "default": {
+            #         "type" : "text",
+            #      },
+            #     "level": 0
+            # },
             "type" : {
                 "default" : ["chat"]
             }
@@ -1230,13 +1230,13 @@ class ModelsConfig:
                 "default": "auto",
                 "level": 0
             },
-            "response_type": {
-                "field": "boolean",
-                "default": {
-                    "type" : "text",
-                 },
-                "level": 0
-            },
+            # "response_type": {
+            #     "field": "boolean",
+            #     "default": {
+            #         "type" : "text",
+            #      },
+            #     "level": 0
+            # },
             "type" : {
                 "default" : ["chat"]
             }
@@ -1351,13 +1351,13 @@ class ModelsConfig:
                 "default": "auto",
                 "level": 0
             },
-            "response_type": {
-                "field": "boolean",
-                "default": {
-                    "type" : "text",
-                 },
-                "level": 0
-            },
+            # "response_type": {
+            #     "field": "boolean",
+            #     "default": {
+            #         "type" : "text",
+            #      },
+            #     "level": 0
+            # },
             "type" : {
                 "default" : ["chat"]
             }
@@ -1477,13 +1477,13 @@ class ModelsConfig:
                 "level": 0,
                 "typeOf": "string"
             },
-            "response_type": {
-                "field": "boolean",
-                "default": {
-                    "type" : "text",
-                 },
-                "level": 0
-            },
+            # "response_type": {
+            #     "field": "boolean",
+            #     "default": {
+            #         "type" : "text",
+            #      },
+            #     "level": 0
+            # },
             "type" : {
                 "default" : ["chat"]
             }
@@ -3146,13 +3146,13 @@ class ModelsConfig:
                 "level": 0,
                 "typeOf": "string"
             },
-            "response_type": {
-                "field": "boolean",
-                "default": {
-                    "type" : "text",
-                 },
-                "level": 0
-            }
+            # "response_type": {
+            #     "field": "boolean",
+            #     "default": {
+            #         "type" : "text",
+            #      },
+            #     "level": 0
+            # }
         }
         outputConfig = {
             "usage": [{
@@ -3267,13 +3267,13 @@ class ModelsConfig:
                 "level": 0,
                 "typeOf": "string"
             },
-            "response_type": {
-                "field": "boolean",
-                "default": {
-                    "type" : "text",
-                 },
-                "level": 0
-            }
+            # "response_type": {
+            #     "field": "boolean",
+            #     "default": {
+            #         "type" : "text",
+            #      },
+            #     "level": 0
+            # }
         }
         outputConfig = {
             "usage": [{
@@ -3388,13 +3388,13 @@ class ModelsConfig:
                 "level": 0,
                 "typeOf": "string"
             },
-            "response_type": {
-                "field": "boolean",
-               "default": {
-                    "type" : "text",
-                 },
-                "level": 0
-            }
+            # "response_type": {
+            #     "field": "boolean",
+            #    "default": {
+            #         "type" : "text",
+            #      },
+            #     "level": 0
+            # }
         }
         outputConfig = {
             "usage": [{
@@ -3509,13 +3509,13 @@ class ModelsConfig:
                 "level": 0,
                 "typeOf": "string"
             },
-            "response_type": {
-                "field": "boolean",
-                 "default": {
-                    "type" : "text",
-                 },
-                "level": 0
-            }
+            # "response_type": {
+            #     "field": "boolean",
+            #      "default": {
+            #         "type" : "text",
+            #      },
+            #     "level": 0
+            # }
         }
         outputConfig = {
             "usage": [{
@@ -3630,13 +3630,13 @@ class ModelsConfig:
                 "level": 0,
                 "typeOf": "string"
             },
-            "response_type": {
-                "field": "boolean",
-                "default": {
-                    "type" : "text",
-                 },
-                "level": 0
-            }
+            # "response_type": {
+            #     "field": "boolean",
+            #     "default": {
+            #         "type" : "text",
+            #      },
+            #     "level": 0
+            # }
         }
         outputConfig = {
             "usage": [{
@@ -3751,13 +3751,13 @@ class ModelsConfig:
                 "level": 0,
                 "typeOf": "string"
             },
-            "response_type": {
-                "field": "boolean",
-                "default": {
-                    "type" : "text",
-                 },
-                "level": 0
-            }
+            # "response_type": {
+            #     "field": "boolean",
+            #     "default": {
+            #         "type" : "text",
+            #      },
+            #     "level": 0
+            # }
         }
         outputConfig = {
             "usage": [{
@@ -3864,13 +3864,13 @@ class ModelsConfig:
                 "level": 0,
                 "typeOf": "string"
             },
-            "response_type": {
-                "field": "boolean",
-                "default": {
-                    "type" : "text",
-                 },
-                "level": 0
-            }
+            # "response_type": {
+            #     "field": "boolean",
+            #     "default": {
+            #         "type" : "text",
+            #      },
+            #     "level": 0
+            # }
         }
         outputConfig = {
             "usage": [{
@@ -3985,13 +3985,13 @@ class ModelsConfig:
                 "level": 0,
                 "typeOf": "string"
             },
-            "response_type": {
-                "field": "boolean",
-                 "default": {
-                    "type" : "text",
-                 },
-                "level": 0
-            }
+            # "response_type": {
+            #     "field": "boolean",
+            #      "default": {
+            #         "type" : "text",
+            #      },
+            #     "level": 0
+            # }
         }
         outputConfig = {
             "usage": [{
@@ -4106,13 +4106,13 @@ class ModelsConfig:
                 "level": 0,
                 "typeOf": "string"
             },
-            "response_type": {
-                "field": "boolean",
-                "default": {
-                    "type" : "text",
-                 },
-                "level": 0
-            }
+            # "response_type": {
+            #     "field": "boolean",
+            #     "default": {
+            #         "type" : "text",
+            #      },
+            #     "level": 0
+            # }
         }
         outputConfig = {
             "usage": [{
@@ -4227,13 +4227,13 @@ class ModelsConfig:
                 "level": 0,
                 "typeOf": "string"
             },
-            "response_type": {
-                "field": "boolean",
-                "default": {
-                "type" : "text",
-                },
-                "level": 0
-            }
+            # "response_type": {
+            #     "field": "boolean",
+            #     "default": {
+            #     "type" : "text",
+            #     },
+            #     "level": 0
+            # }
         }
         outputConfig = {
             "usage": [{
