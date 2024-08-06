@@ -56,6 +56,8 @@ class ConversationService:
     @staticmethod
     def createAnthropicConversation(conversation):
         try:
+            if conversation == None:
+                conversation = []
             threads = []
             expected_role = 'user'
 
