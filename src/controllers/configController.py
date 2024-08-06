@@ -234,6 +234,7 @@ async def update_bridge_controller(request,bridge_id):
         bridgeType = body.get('bridgeType')
         new_configuration = body.get('configuration')
         apikey = body.get('apikey')
+        name = body.get('name')
         bridge = await get_bridge_by_id(org_id, bridge_id)
         current_configuration = bridge.get('configuration', {})
         apikey = bridge.get('apikey') if apikey is None else Helper.encrypt(apikey)
@@ -249,6 +250,8 @@ async def update_bridge_controller(request,bridge_id):
             update_fields['configuration'] = updated_configuration
         if apikey is not None:
             update_fields['apikey'] = apikey
+        if name is not None:
+            update_fields['name'] = name
         result = await update_bridge(bridge_id, update_fields)
         
         if result.get("success"):
