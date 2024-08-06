@@ -1,4 +1,5 @@
 import asyncio
+from fastapi import HTTPException
 import pydash as _
 from datetime import datetime
 import json
