@@ -293,7 +293,8 @@ class ModelsConfig:
                 "level": 0
             },
             "response_type": {
-                "field": "boolean",
+                "field": "select",
+                "options" : [{"type" : "text"},{"type" : "json_object"}],
                 "default": {
                 "type" : "text",
                 },
@@ -414,10 +415,11 @@ class ModelsConfig:
                 "level": 0
             },
             "response_type": {
-                "field": "boolean",
+                "field": "select",
+                "options" : [{"type" : "text"},{"type" : "json_object"}],
                 "default": {
-                    "type" : "text",
-                 },
+                "type" : "text",
+                },
                 "level": 0
             },
             "type" : {
@@ -531,10 +533,11 @@ class ModelsConfig:
                 "level": 0
             },
             "response_type": {
-                "field": "boolean",
+                "field": "select",
+                "options" : [{"type" : "text"},{"type" : "json_object"}],
                 "default": {
-                    "type" : "text",
-                 },
+                "type" : "text",
+                },
                 "level": 0
             },
             "type" : {
@@ -652,10 +655,11 @@ class ModelsConfig:
                 "level": 0
             },
             "response_type": {
-                "field": "boolean",
+                "field": "select",
+                "options" : [{"type" : "text"},{"type" : "json_object"}],
                 "default": {
-                    "type" : "text",
-                 },
+                "type" : "text",
+                },
                 "level": 0
             },
             "type" : {
@@ -769,10 +773,11 @@ class ModelsConfig:
                 "level": 0
             },
             "response_type": {
-                "field": "boolean",
+                "field": "select",
+                "options" : [{"type" : "text"},{"type" : "json_object"}],
                 "default": {
-                    "type" : "text",
-                 },
+                "type" : "text",
+                },
                 "level": 0
             },
             "type" : {
