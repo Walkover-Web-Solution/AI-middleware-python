@@ -69,8 +69,8 @@ async def creates_api(request: Request, bridge_id: str):
                 raise HTTPException(status_code=400, detail="Something went wrong!")
 
             api_object_id = response.get('api_object_id')
-            open_api_format = create_open_api(function_name, desc, required_params)
-            result = await get_and_update(api_object_id, bridge_id, org_id, open_api_format['format'], function_name, required_params)
+            open_api_format = create_open_api(function_name, desc, api_object_id, required_params )
+            result = await get_and_update(bridge_id, org_id, open_api_format['format'], function_name)
 
             if result.get('success'):
                 return JSONResponse(status_code=200, content={
@@ -175,7 +175,7 @@ async def save_api(desc, org_id, bridge_id, api_id=None, code="", required_param
                 if saved_api.modified_count == 1:
                     return {
                         "success": True,
-                        "api_object_id": api_id,
+                        "api_object_id": str(api_id),
                         "required_params": api_data['required_params'],
                         "optional_fields": api_data.get('optional_fields', [])
                     }
@@ -208,28 +208,22 @@ async def save_api(desc, org_id, bridge_id, api_id=None, code="", required_param
     
 
 
-def create_open_api(function_name, desc, required_params=None):
+def create_open_api(function_name, desc,api_object_id, required_params=None):
     if required_params is None:
         required_params = []
     try:
         format = {
             "type": "function",
-            "function": {
-                "name": function_name,
-                "description": desc
-            }
-        }
-        parameters = {
-            "type": "object",
-            "properties": {},
-            "required": required_params,
+            "id":api_object_id,
+            "name": function_name,
+            "description": desc
         }
         properties = {}
         for field in required_params:
             properties[field] = {"type": "string"}
         if required_params:
-            format["function"]["parameters"] = parameters
-            format["function"]["parameters"]["properties"] = properties
+            format["required"] = required_params
+            format["properties"] = properties
         return {"success": True, "format": format}
     except Exception as error:
         return {"success": False, "error": str(error)}

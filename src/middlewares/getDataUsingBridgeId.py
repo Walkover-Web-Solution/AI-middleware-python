@@ -3,16 +3,19 @@ from fastapi.responses import JSONResponse
 from ..services.utils.getConfiguration import getConfiguration
 from src.configs.models import services
 from src.services.commonServices.common import chat
-
+import asyncio
+import traceback
 async def add_configuration_data_to_body(request: Request):
 
     try:
         body = await request.json()
-        bridge_id = body.get("bridge_id") or request.path_params.get('bridge_id')
+        chatbotData = getattr(request.state, "chatbot", None)
+        if chatbotData:
+            body.update(chatbotData)
+        bridge_id = body.get("bridge_id") or request.path_params.get('bridge_id') or request.state.chatbot.get('bridge_id','')
         db_config = await getConfiguration(body.get('configuration'), body.get('service'), bridge_id, body.get('apikey'), body.get('template_id'))
         if not db_config.get("success"):
                 return JSONResponse(status_code=400, content={"success": False, "error": db_config["error"]}) 
-        db_config['RTLayer'] = body.get('RTLayer') or db_config.get('RTLayer')
         body.update(db_config)
         request.state.body = body
         service = body.get("service")
@@ -24,6 +27,7 @@ async def add_configuration_data_to_body(request: Request):
          raise he
     except Exception as e:
         print("Error in get_data: ", e)
-        raise HTTPException(status_code=400, detail={"success": False, "error": "Error in get_data: "+ str(e)})
+        traceback.print_exc()
+        raise HTTPException(status_code=400, detail={"success": False, "error": "Error in getting data: "+ str(e)})
 
 

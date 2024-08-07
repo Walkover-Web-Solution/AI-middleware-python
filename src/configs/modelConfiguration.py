@@ -7,7 +7,7 @@ class ModelsConfig:
                 "default": "gpt-3.5-turbo",
                 "level": 1
             },
-            "temperature": {
+            "creativity_level": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -23,7 +23,7 @@ class ModelsConfig:
                 "default": 256,
                 "level": 2
             },
-            "top_p": {
+            "probability_cutoff": {
                 "field": "slider",
                 "min": 0,
                 "max": 1,
@@ -31,12 +31,12 @@ class ModelsConfig:
                 "default": 1,
                 "level": 2
             },
-            "logprobs": {
+            "log_probability": {
                 "field": "boolean",
                 "default": False,
                 "level": 0
             },
-            "frequency_penalty": {
+            "repetition_penalty": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -44,7 +44,7 @@ class ModelsConfig:
                 "default": 0,
                 "level": 2
             },
-            "presence_penalty": {
+            "novelty_penalty": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -52,12 +52,12 @@ class ModelsConfig:
                 "default": 0,
                 "level": 2
             },
-            "n": {
+            "response_count": {
                 "field": "number",
                 "default": 1,
                 "level": 0
             },
-            "stop": {
+            "additional_stop_sequences": {
                 "field": "text",
                 "default": "",
                 "level": 0
@@ -65,6 +65,17 @@ class ModelsConfig:
             "stream": {
                 "field": "boolean",
                 "default": False,
+                "level": 0
+            },
+            "type" : {
+                "default" : ["chat"]
+            },
+            "response_type": {
+                "field": "select",
+                "options" : [{"type" : "text"},{"type" : "json_object"}],
+                "default": {
+                "type" : "text",
+                },
                 "level": 0
             }
         }
@@ -107,7 +118,7 @@ class ModelsConfig:
                 "default": "gpt-3.5-turbo-0613",
                 "level": 1
             },
-            "temperature": {
+            "creativity_level": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -123,7 +134,7 @@ class ModelsConfig:
                 "default": 256,
                 "level": 2
             },
-            "top_p": {
+            "probability_cutoff": {
                 "field": "slider",
                 "min": 0,
                 "max": 1,
@@ -131,12 +142,12 @@ class ModelsConfig:
                 "default": 1,
                 "level": 2
             },
-            "logprobs": {
+            "log_probability": {
                 "field": "boolean",
                 "default": False,
                 "level": 0
             },
-            "frequency_penalty": {
+            "repetition_penalty": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -144,7 +155,7 @@ class ModelsConfig:
                 "default": 0,
                 "level": 2
             },
-            "presence_penalty": {
+            "novelty_penalty": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -152,12 +163,12 @@ class ModelsConfig:
                 "default": 0,
                 "level": 2
             },
-            "n": {
+            "response_count": {
                 "field": "number",
                 "default": 1,
                 "level": 0
             },
-            "stop": {
+            "additional_stop_sequences": {
                 "field": "text",
                 "default": "",
                 "level": 0
@@ -166,6 +177,9 @@ class ModelsConfig:
                 "field": "boolean",
                 "default": False,
                 "level": 0
+            },
+            "type" : {
+                "default" : ["chat"]
             }
         }
         outputConfig = {
@@ -208,7 +222,7 @@ class ModelsConfig:
                 "default": "gpt-3.5-turbo-0125",
                 "level": 1
             },
-            "temperature": {
+            "creativity_level": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -224,7 +238,7 @@ class ModelsConfig:
                 "default": 256,
                 "level": 2
             },
-            "top_p": {
+            "probability_cutoff": {
                 "field": "slider",
                 "min": 0,
                 "max": 1,
@@ -232,12 +246,12 @@ class ModelsConfig:
                 "default": 1,
                 "level": 2
             },
-            "logprobs": {
+            "log_probability": {
                 "field": "boolean",
                 "default": False,
                 "level": 0
             },
-            "frequency_penalty": {
+            "repetition_penalty": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -245,7 +259,7 @@ class ModelsConfig:
                 "default": 0,
                 "level": 2
             },
-            "presence_penalty": {
+            "novelty_penalty": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -253,12 +267,12 @@ class ModelsConfig:
                 "default": 0,
                 "level": 2
             },
-            "n": {
+            "response_count": {
                 "field": "number",
                 "default": 1,
                 "level": 0
             },
-            "stop": {
+            "additional_stop_sequences": {
                 "field": "text",
                 "default": "",
                 "level": 0
@@ -278,12 +292,16 @@ class ModelsConfig:
                 "default": "auto",
                 "level": 0
             },
-            "response_format": {
-                "field": "boolean",
+            "response_type": {
+                "field": "select",
+                "options" : [{"type" : "text"},{"type" : "json_object"}],
                 "default": {
-                    "type": "text"
+                "type" : "text",
                 },
                 "level": 0
+            },
+             "type" : {
+                "default" : ["chat"]
             }
         }
         outputConfig = {
@@ -326,7 +344,7 @@ class ModelsConfig:
                 "default": "gpt-3.5-turbo-0301",
                 "level": 1
             },
-            "temperature": {
+            "creativity_level": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -342,7 +360,7 @@ class ModelsConfig:
                 "default": 256,
                 "level": 2
             },
-            "top_p": {
+            "probability_cutoff": {
                 "field": "slider",
                 "min": 0,
                 "max": 1,
@@ -350,12 +368,12 @@ class ModelsConfig:
                 "default": 1,
                 "level": 2
             },
-            "logprobs": {
+            "log_probability": {
                 "field": "boolean",
                 "default": False,
                 "level": 0
             },
-            "frequency_penalty": {
+            "repetition_penalty": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -363,7 +381,7 @@ class ModelsConfig:
                 "default": 0,
                 "level": 2
             },
-            "presence_penalty": {
+            "novelty_penalty": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -371,12 +389,12 @@ class ModelsConfig:
                 "default": 0,
                 "level": 2
             },
-            "n": {
+            "response_count": {
                 "field": "number",
                 "default": 1,
                 "level": 0
             },
-            "stop": {
+            "additional_stop_sequences": {
                 "field": "text",
                 "default": "",
                 "level": 0
@@ -396,12 +414,16 @@ class ModelsConfig:
                 "default": "auto",
                 "level": 0
             },
-            "response_format": {
-                "field": "boolean",
+            "response_type": {
+                "field": "select",
+                "options" : [{"type" : "text"},{"type" : "json_object"}],
                 "default": {
-                    "type": "text"
+                "type" : "text",
                 },
                 "level": 0
+            },
+            "type" : {
+                "default" : ["chat"]
             }
         }
         outputConfig = {
@@ -440,7 +462,7 @@ class ModelsConfig:
                 "default": "gpt-3.5-turbo-1106",
                 "level": 1
             },
-            "temperature": {
+            "creativity_level": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -456,7 +478,7 @@ class ModelsConfig:
                 "default": 256,
                 "level": 2
             },
-            "top_p": {
+            "probability_cutoff": {
                 "field": "slider",
                 "min": 0,
                 "max": 1,
@@ -464,12 +486,12 @@ class ModelsConfig:
                 "default": 1,
                 "level": 2
             },
-            "logprobs": {
+            "log_probability": {
                 "field": "boolean",
                 "default": False,
                 "level": 0
             },
-            "frequency_penalty": {
+            "repetition_penalty": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -477,7 +499,7 @@ class ModelsConfig:
                 "default": 0,
                 "level": 2
             },
-            "presence_penalty": {
+            "novelty_penalty": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -485,12 +507,12 @@ class ModelsConfig:
                 "default": 0,
                 "level": 2
             },
-            "n": {
+            "response_count": {
                 "field": "number",
                 "default": 1,
                 "level": 0
             },
-            "stop": {
+            "additional_stop_sequences": {
                 "field": "text",
                 "default": "",
                 "level": 0
@@ -510,12 +532,16 @@ class ModelsConfig:
                 "default": "auto",
                 "level": 0
             },
-            "response_format": {
-                "field": "boolean",
+            "response_type": {
+                "field": "select",
+                "options" : [{"type" : "text"},{"type" : "json_object"}],
                 "default": {
-                    "type": "text"
+                "type" : "text",
                 },
                 "level": 0
+            },
+            "type" : {
+                "default" : ["chat"]
             }
         }
         outputConfig = {
@@ -558,7 +584,7 @@ class ModelsConfig:
                 "default": "gpt-3.5-turbo-16k",
                 "level": 1
             },
-            "temperature": {
+            "creativity_level": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -574,7 +600,7 @@ class ModelsConfig:
                 "default": 256,
                 "level": 2
             },
-            "top_p": {
+            "probability_cutoff": {
                 "field": "slider",
                 "min": 0,
                 "max": 1,
@@ -582,12 +608,12 @@ class ModelsConfig:
                 "default": 1,
                 "level": 2
             },
-            "logprobs": {
+            "log_probability": {
                 "field": "boolean",
                 "default": False,
                 "level": 0
             },
-            "frequency_penalty": {
+            "repetition_penalty": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -595,7 +621,7 @@ class ModelsConfig:
                 "default": 0,
                 "level": 2
             },
-            "presence_penalty": {
+            "novelty_penalty": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -603,12 +629,12 @@ class ModelsConfig:
                 "default": 0,
                 "level": 2
             },
-            "n": {
+            "response_count": {
                 "field": "number",
                 "default": 1,
                 "level": 0
             },
-            "stop": {
+            "additional_stop_sequences": {
                 "field": "text",
                 "default": "",
                 "level": 0
@@ -628,12 +654,16 @@ class ModelsConfig:
                 "default": "auto",
                 "level": 0
             },
-            "response_format": {
-                "field": "boolean",
+            "response_type": {
+                "field": "select",
+                "options" : [{"type" : "text"},{"type" : "json_object"}],
                 "default": {
-                    "type": "text"
+                "type" : "text",
                 },
                 "level": 0
+            },
+            "type" : {
+                "default" : ["chat"]
             }
         }
         outputConfig = {
@@ -672,7 +702,7 @@ class ModelsConfig:
                 "default": "gpt-3.5-turbo-16k-0613",
                 "level": 1
             },
-            "temperature": {
+            "creativity_level": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -688,7 +718,7 @@ class ModelsConfig:
                 "default": 256,
                 "level": 2
             },
-            "top_p": {
+            "probability_cutoff": {
                 "field": "slider",
                 "min": 0,
                 "max": 1,
@@ -696,12 +726,12 @@ class ModelsConfig:
                 "default": 1,
                 "level": 2
             },
-            "logprobs": {
+            "log_probability": {
                 "field": "boolean",
                 "default": False,
                 "level": 0
             },
-            "frequency_penalty": {
+            "repetition_penalty": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -709,7 +739,7 @@ class ModelsConfig:
                 "default": 0,
                 "level": 2
             },
-            "presence_penalty": {
+            "novelty_penalty": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -717,12 +747,12 @@ class ModelsConfig:
                 "default": 0,
                 "level": 2
             },
-            "n": {
+            "response_count": {
                 "field": "number",
                 "default": 1,
                 "level": 0
             },
-            "stop": {
+            "additional_stop_sequences": {
                 "field": "text",
                 "default": "",
                 "level": 0
@@ -742,14 +772,19 @@ class ModelsConfig:
                 "default": "auto",
                 "level": 0
             },
-            "response_format": {
-                "field": "boolean",
+            "response_type": {
+                "field": "select",
+                "options" : [{"type" : "text"},{"type" : "json_object"}],
                 "default": {
-                    "type": "text"
+                "type" : "text",
                 },
                 "level": 0
+            },
+            "type" : {
+                "default" : ["chat"]
             }
         }
+
         outputConfig = {
             "usage": [{
                 "prompt_tokens": "usage.prompt_tokens",
@@ -786,7 +821,7 @@ class ModelsConfig:
                 "default": "gpt-4",
                 "level": 1
             },
-            "temperature": {
+            "creativity_level": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -802,7 +837,7 @@ class ModelsConfig:
                 "default": 256,
                 "level": 2
             },
-            "top_p": {
+            "probability_cutoff": {
                 "field": "slider",
                 "min": 0,
                 "max": 1,
@@ -810,12 +845,12 @@ class ModelsConfig:
                 "default": 1,
                 "level": 2
             },
-            "logprobs": {
+            "log_probability": {
                 "field": "boolean",
                 "default": False,
                 "level": 0
             },
-            "frequency_penalty": {
+            "repetition_penalty": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -823,7 +858,7 @@ class ModelsConfig:
                 "default": 0,
                 "level": 2
             },
-            "presence_penalty": {
+            "novelty_penalty": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -831,14 +866,9 @@ class ModelsConfig:
                 "default": 0,
                 "level": 2
             },
-            "n": {
+            "response_count": {
                 "field": "number",
                 "default": 1,
-                "level": 0
-            },
-            "stop": {
-                "field": "text",
-                "default": "",
                 "level": 0
             },
             "stream": {
@@ -855,6 +885,9 @@ class ModelsConfig:
                 "field": "text",
                 "default": "auto",
                 "level": 0
+            },
+             "type" : {
+                "default" : ["chat"]
             }
         }
         outputConfig = {
@@ -897,7 +930,7 @@ class ModelsConfig:
                 "default": "gpt-4-0613",
                 "level": 1
             },
-            "temperature": {
+            "creativity_level": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -913,7 +946,7 @@ class ModelsConfig:
                 "default": 256,
                 "level": 2
             },
-            "top_p": {
+            "probability_cutoff": {
                 "field": "slider",
                 "min": 0,
                 "max": 1,
@@ -921,12 +954,12 @@ class ModelsConfig:
                 "default": 1,
                 "level": 2
             },
-            "logprobs": {
+            "log_probability": {
                 "field": "boolean",
                 "default": False,
                 "level": 0
             },
-            "frequency_penalty": {
+            "repetition_penalty": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -934,7 +967,7 @@ class ModelsConfig:
                 "default": 0,
                 "level": 2
             },
-            "presence_penalty": {
+            "novelty_penalty": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -942,7 +975,7 @@ class ModelsConfig:
                 "default": 0,
                 "level": 2
             },
-            "n": {
+            "response_count": {
                 "field": "number",
                 "default": 1,
                 "level": 0
@@ -966,6 +999,9 @@ class ModelsConfig:
                 "field": "text",
                 "default": "auto",
                 "level": 0
+            },
+             "type" : {
+                "default" : ["chat"]
             }
         }
         outputConfig = {
@@ -1008,7 +1044,7 @@ class ModelsConfig:
                 "default": "gpt-4-1106-preview",
                 "level": 1
             },
-            "temperature": {
+            "creativity_level": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -1024,7 +1060,7 @@ class ModelsConfig:
                 "default": 256,
                 "level": 2
             },
-            "top_p": {
+            "probability_cutoff": {
                 "field": "slider",
                 "min": 0,
                 "max": 1,
@@ -1032,12 +1068,12 @@ class ModelsConfig:
                 "default": 1,
                 "level": 2
             },
-            "logprobs": {
+            "log_probability": {
                 "field": "boolean",
                 "default": False,
                 "level": 0
             },
-            "frequency_penalty": {
+            "repetition_penalty": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -1045,7 +1081,7 @@ class ModelsConfig:
                 "default": 0,
                 "level": 2
             },
-            "presence_penalty": {
+            "novelty_penalty": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -1053,7 +1089,7 @@ class ModelsConfig:
                 "default": 0,
                 "level": 2
             },
-            "n": {
+            "response_count": {
                 "field": "number",
                 "default": 1,
                 "level": 0
@@ -1078,12 +1114,15 @@ class ModelsConfig:
                 "default": "auto",
                 "level": 0
             },
-            "response_format": {
-                "field": "boolean",
-                "default": {
-                    "type": "text"
-                },
-                "level": 0
+            # "response_type": {
+            #     "field": "boolean",
+            #     "default": {
+            #         "type" : "text",
+            #      },
+            #     "level": 0
+            # },
+            "type" : {
+                "default" : ["chat"]
             }
         }
         outputConfig = {
@@ -1126,7 +1165,7 @@ class ModelsConfig:
                 "default": "gpt-4-turbo-preview",
                 "level": 1
             },
-            "temperature": {
+            "creativity_level": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -1142,7 +1181,7 @@ class ModelsConfig:
                 "default": 256,
                 "level": 2
             },
-            "top_p": {
+            "probability_cutoff": {
                 "field": "slider",
                 "min": 0,
                 "max": 1,
@@ -1150,12 +1189,12 @@ class ModelsConfig:
                 "default": 1,
                 "level": 2
             },
-            "logprobs": {
+            "log_probability": {
                 "field": "boolean",
                 "default": False,
                 "level": 0
             },
-            "frequency_penalty": {
+            "repetition_penalty": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -1163,7 +1202,7 @@ class ModelsConfig:
                 "default": 0,
                 "level": 2
             },
-            "presence_penalty": {
+            "novelty_penalty": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -1171,7 +1210,7 @@ class ModelsConfig:
                 "default": 0,
                 "level": 2
             },
-            "n": {
+            "response_count": {
                 "field": "number",
                 "default": 1,
                 "level": 0
@@ -1196,12 +1235,15 @@ class ModelsConfig:
                 "default": "auto",
                 "level": 0
             },
-            "response_format": {
-                "field": "boolean",
-                "default": {
-                    "type": "text"
-                },
-                "level": 0
+            # "response_type": {
+            #     "field": "boolean",
+            #     "default": {
+            #         "type" : "text",
+            #      },
+            #     "level": 0
+            # },
+            "type" : {
+                "default" : ["chat"]
             }
         }
         outputConfig = {
@@ -1244,7 +1286,7 @@ class ModelsConfig:
                 "default": "gpt-4-0125-preview",
                 "level": 1
             },
-            "temperature": {
+            "creativity_level": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -1260,7 +1302,7 @@ class ModelsConfig:
                 "default": 256,
                 "level": 2
             },
-            "top_p": {
+            "probability_cutoff": {
                 "field": "slider",
                 "min": 0,
                 "max": 1,
@@ -1268,12 +1310,12 @@ class ModelsConfig:
                 "default": 1,
                 "level": 2
             },
-            "logprobs": {
+            "log_probability": {
                 "field": "boolean",
                 "default": False,
                 "level": 0
             },
-            "frequency_penalty": {
+            "repetition_penalty": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -1281,7 +1323,7 @@ class ModelsConfig:
                 "default": 0,
                 "level": 2
             },
-            "presence_penalty": {
+            "novelty_penalty": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -1289,7 +1331,7 @@ class ModelsConfig:
                 "default": 0,
                 "level": 2
             },
-            "n": {
+            "response_count": {
                 "field": "number",
                 "default": 1,
                 "level": 0
@@ -1314,12 +1356,15 @@ class ModelsConfig:
                 "default": "auto",
                 "level": 0
             },
-            "response_format": {
-                "field": "boolean",
-                "default": {
-                    "type": "text"
-                },
-                "level": 0
+            # "response_type": {
+            #     "field": "boolean",
+            #     "default": {
+            #         "type" : "text",
+            #      },
+            #     "level": 0
+            # },
+            "type" : {
+                "default" : ["chat"]
             }
         }
         outputConfig = {
@@ -1362,7 +1407,7 @@ class ModelsConfig:
                 "default": "gpt-4-turbo-2024-04-09",
                 "level": 1
             },
-            "temperature": {
+            "creativity_level": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -1378,7 +1423,7 @@ class ModelsConfig:
                 "default": 256,
                 "level": 2
             },
-            "top_p": {
+            "probability_cutoff": {
                 "field": "slider",
                 "min": 0,
                 "max": 1,
@@ -1386,13 +1431,13 @@ class ModelsConfig:
                 "default": 1,
                 "level": 2
             },
-            "logprobs": {
+            "log_probability": {
                 "field": "boolean",
                 "default": False,
                 "level": 0,
                 "typeOf": "boolean"
             },
-            "frequency_penalty": {
+            "repetition_penalty": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -1400,7 +1445,7 @@ class ModelsConfig:
                 "default": 0,
                 "level": 2
             },
-            "presence_penalty": {
+            "novelty_penalty": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -1408,7 +1453,7 @@ class ModelsConfig:
                 "default": 0,
                 "level": 2
             },
-            "n": {
+            "response_count": {
                 "field": "number",
                 "default": 1,
                 "typeOf": "number",
@@ -1437,12 +1482,15 @@ class ModelsConfig:
                 "level": 0,
                 "typeOf": "string"
             },
-            "response_format": {
-                "field": "boolean",
-                "default": {
-                    "type": "text"
-                },
-                "level": 0
+            # "response_type": {
+            #     "field": "boolean",
+            #     "default": {
+            #         "type" : "text",
+            #      },
+            #     "level": 0
+            # },
+            "type" : {
+                "default" : ["chat"]
             }
         }
         outputConfig = {
@@ -1485,7 +1533,7 @@ class ModelsConfig:
                 "default": "gpt-4-turbo",
                 "level": 1
             },
-            "temperature": {
+            "creativity_level": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -1501,7 +1549,7 @@ class ModelsConfig:
                 "default": 256,
                 "level": 2
             },
-            "top_p": {
+            "probability_cutoff": {
                 "field": "slider",
                 "min": 0,
                 "max": 1,
@@ -1509,13 +1557,13 @@ class ModelsConfig:
                 "default": 1,
                 "level": 2
             },
-            "logprobs": {
+            "log_probability": {
                 "field": "boolean",
                 "default": False,
                 "level": 0,
                 "typeOf": "boolean"
             },
-            "frequency_penalty": {
+            "repetition_penalty": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -1523,7 +1571,7 @@ class ModelsConfig:
                 "default": 0,
                 "level": 2
             },
-            "presence_penalty": {
+            "novelty_penalty": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -1531,7 +1579,7 @@ class ModelsConfig:
                 "default": 0,
                 "level": 2
             },
-            "n": {
+            "response_count": {
                 "field": "number",
                 "default": 1,
                 "typeOf": "number",
@@ -1560,12 +1608,16 @@ class ModelsConfig:
                 "level": 0,
                 "typeOf": "string"
             },
-            "response_format": {
-                "field": "boolean",
+           "response_type": {
+                "field": "select",
+                "options" : [{"type" : "text"},{"type" : "json_object"}],
                 "default": {
-                    "type": "text"
+                "type" : "text",
                 },
                 "level": 0
+            },
+            "type" : {
+                "default" : ["chat"]
             }
         }
         outputConfig = {
@@ -1602,10 +1654,10 @@ class ModelsConfig:
         configuration = {
             "model": {
                 "field": "drop",
-                "default": "gpt-4-turbo",
+                "default": "gpt-4o",
                 "level": 1
             },
-            "temperature": {
+            "creativity_level": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -1621,7 +1673,7 @@ class ModelsConfig:
                 "default": 256,
                 "level": 2
             },
-            "top_p": {
+            "probability_cutoff": {
                 "field": "slider",
                 "min": 0,
                 "max": 1,
@@ -1629,13 +1681,13 @@ class ModelsConfig:
                 "default": 1,
                 "level": 2
             },
-            "logprobs": {
+            "log_probability": {
                 "field": "boolean",
                 "default": False,
                 "level": 0,
                 "typeOf": "boolean"
             },
-            "frequency_penalty": {
+            "repetition_penalty": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -1643,7 +1695,7 @@ class ModelsConfig:
                 "default": 0,
                 "level": 2
             },
-            "presence_penalty": {
+            "novelty_penalty": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -1651,7 +1703,7 @@ class ModelsConfig:
                 "default": 0,
                 "level": 2
             },
-            "n": {
+            "response_count": {
                 "field": "number",
                 "default": 1,
                 "typeOf": "number",
@@ -1680,10 +1732,11 @@ class ModelsConfig:
                 "level": 0,
                 "typeOf": "string"
             },
-            "response_format": {
-                "field": "boolean",
+            "response_type": {
+                "field": "select",
+                "options" : [{"type" : "text"},{"type" : "json_object"}],
                 "default": {
-                    "type": "text"
+                "type" : "text",
                 },
                 "level": 0
             }
@@ -1726,7 +1779,7 @@ class ModelsConfig:
                 "default": "gpt-4o-mini",
                 "level": 1
             },
-            "temperature": {
+            "creativity_level": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -1742,7 +1795,7 @@ class ModelsConfig:
                 "default": 256,
                 "level": 2
             },
-            "top_p": {
+            "probability_cutoff": {
                 "field": "slider",
                 "min": 0,
                 "max": 1,
@@ -1750,12 +1803,12 @@ class ModelsConfig:
                 "default": 1,
                 "level": 2
             },
-            "logprobs": {
+            "log_probability": {
                 "field": "boolean",
                 "default": False,
                 "level": 0
             },
-            "frequency_penalty": {
+            "repetition_penalty": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -1763,7 +1816,7 @@ class ModelsConfig:
                 "default": 0,
                 "level": 2
             },
-            "presence_penalty": {
+            "novelty_penalty": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -1771,7 +1824,7 @@ class ModelsConfig:
                 "default": 0,
                 "level": 2
             },
-            "n": {
+            "response_count": {
                 "field": "number",
                 "default": 1,
                 "level": 0
@@ -1794,6 +1847,17 @@ class ModelsConfig:
             "tool_choice": {
                 "field": "text",
                 "default": "auto",
+                "level": 0
+            },
+             "type" : {
+                "default" : ["chat"]
+            },
+            "response_type": {
+                "field": "select",
+                "options" : [{"type" : "text"},{"type" : "json_object"}],
+                "default": {
+                "type" : "text",
+                },
                 "level": 0
             }
         }
@@ -1844,6 +1908,9 @@ class ModelsConfig:
             "dimensions": {
                 "field": "number",
                 "level": 0
+            },
+             "type" : {
+                "default" : ["embedding"]
             }
         }
         outputConfig = {
@@ -1885,6 +1952,9 @@ class ModelsConfig:
             "dimensions": {
                 "field": "number",
                 "level": 0
+            },
+            "type" : {
+                "default" : ["embedding"]
             }
         }
         outputConfig = {
@@ -1922,6 +1992,9 @@ class ModelsConfig:
                 "values": ["float", "base64"],
                 "default": "float",
                 "level": 2
+            },
+            "type" : {
+                "default" : ["embedding"]
             }
         }
         outputConfig = {
@@ -1953,7 +2026,7 @@ class ModelsConfig:
                 "default": "gpt-3.5-turbo-instruct",
                 "level": 1
             },
-            "best_of": {
+            "additional_stop_sequences": {
                 "field": "slider",
                 "min": 1,
                 "max": 20,
@@ -1961,13 +2034,13 @@ class ModelsConfig:
                 "level": 2,
                 "step": 1
             },
-            "echo": {
+            "echo_input": {
                 "field": "text",
                 "default": False,
                 "typeOf": "boolean",
                 "level": 2
             },
-            "frequency_penalty": {
+            "repetition_penalty": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -1975,7 +2048,7 @@ class ModelsConfig:
                 "default": 0,
                 "level": 2
             },
-            "logprobs": {
+            "log_probability": {
                 "field": "boolean",
                 "default": False,
                 "level": 0
@@ -1988,12 +2061,12 @@ class ModelsConfig:
                 "default": 256,
                 "level": 2
             },
-            "n": {
+            "response_count": {
                 "field": "number",
                 "default": 1,
                 "level": 0
             },
-            "presence_penalty": {
+            "novelty_penalty": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -2016,12 +2089,12 @@ class ModelsConfig:
                 "default": False,
                 "level": 0
             },
-            "suffix": {
+            "response_suffix": {
                 "field": "text",
                 "default": "",
                 "level": 2
             },
-            "temperature": {
+            "creativity_level": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -2029,13 +2102,24 @@ class ModelsConfig:
                 "default": 0,
                 "level": 2
             },
-            "top_p": {
+            "probability_cutoff": {
                 "field": "slider",
                 "min": 0,
                 "max": 1,
                 "step": 0.1,
                 "default": 1,
                 "level": 2
+            },
+            "response_type": {
+                "field": "select",
+                "options" : [{"type" : "text"},{"type" : "json_object"}],
+                "default": {
+                "type" : "text",
+                },
+                "level": 0
+            },
+            "type" :  {
+                "default" : ["completion"]
             }
         }
         outputConfig = {
@@ -2082,7 +2166,7 @@ class ModelsConfig:
                 "default": "gemini-1.5-pro",
                 "level": 1
             },
-            "temperature": {
+            "creativity_level": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -2090,7 +2174,7 @@ class ModelsConfig:
                 "default": 1,
                 "level": 2
             },
-            "topK": {
+            "token_selection_limit": {
                 "field": "slider",
                 "min": 1,
                 "max": 40,
@@ -2114,10 +2198,13 @@ class ModelsConfig:
                 "default": 2048,
                 "level": 0
             },
-            "stopSequences": {
+            "additional_stop_sequences": {
                 "field": "text",
                 "default": "",
                 "level": 0
+            },
+            "type" : {
+                "default" : ["completion","chat"]
             }
         }
         outputConfig = {
@@ -2156,6 +2243,9 @@ class ModelsConfig:
                 "field": "drop",
                 "default": "embedding-001",
                 "level": 1
+            },
+             "type" : {
+                "default" : ["embedding"]
             }
         }
         outputConfig = {
@@ -2195,7 +2285,7 @@ class ModelsConfig:
                 "default": "gemini-pro",
                 "level": 1
             },
-            "temperature": {
+            "creativity_level": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -2203,7 +2293,7 @@ class ModelsConfig:
                 "default": 1,
                 "level": 2
             },
-            "topK": {
+            "token_selection_limit": {
                 "field": "slider",
                 "min": 1,
                 "max": 40,
@@ -2227,10 +2317,13 @@ class ModelsConfig:
                 "default": 2048,
                 "level": 0
             },
-            "stopSequences": {
+            "additional_stop_sequences": {
                 "field": "text",
                 "default": "",
                 "level": 0
+            },
+             "type" : {
+                "default" : ["completion","chat"]
             }
         }
         outputConfig = {
@@ -2270,7 +2363,7 @@ class ModelsConfig:
                 "default": "gemini-1.5-Flash",
                 "level": 1
             },
-            "temperature": {
+            "creativity_level": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -2278,7 +2371,7 @@ class ModelsConfig:
                 "default": 1,
                 "level": 2
             },
-            "topK": {
+            "token_selection_limit": {
                 "field": "slider",
                 "min": 1,
                 "max": 40,
@@ -2302,10 +2395,13 @@ class ModelsConfig:
                 "default": 2048,
                 "level": 0
             },
-            "stopSequences": {
+            "additional_stop_sequences": {
                 "field": "text",
                 "default": "",
                 "level": 0
+            },
+             "type" : {
+                "default" : ["completion","chat"]
             }
         }
         outputConfig = {
@@ -2345,7 +2441,7 @@ class ModelsConfig:
                 "default": "gemini-1.0-pro",
                 "level": 1
             },
-            "temperature": {
+            "creativity_level": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -2353,7 +2449,7 @@ class ModelsConfig:
                 "default": 1,
                 "level": 2
             },
-            "topK": {
+            "token_selection_limit": {
                 "field": "slider",
                 "min": 1,
                 "max": 40,
@@ -2377,10 +2473,13 @@ class ModelsConfig:
                 "default": 2048,
                 "level": 0
             },
-            "stopSequences": {
+            "additional_stop_sequences": {
                 "field": "text",
                 "default": "",
                 "level": 0
+            },
+             "type" : {
+                "default" : ["completion","chat"]
             }
         }
         outputConfig = {
@@ -2420,7 +2519,7 @@ class ModelsConfig:
                 "default": "gemini-1.0-pro-vision",
                 "level": 1
             },
-            "temperature": {
+            "creativity_level": {
                 "field": "slider",
                 "min": 0,
                 "max": 2,
@@ -2428,7 +2527,7 @@ class ModelsConfig:
                 "default": 1,
                 "level": 2
             },
-            "topK": {
+            "token_selection_limit": {
                 "field": "slider",
                 "min": 1,
                 "max": 40,
@@ -2452,10 +2551,13 @@ class ModelsConfig:
                 "default": 2048,
                 "level": 0
             },
-            "stopSequences": {
+            "additional_stop_sequences": {
                 "field": "text",
                 "default": "",
                 "level": 0
+            },
+             "type" : {
+                "default" : ["completion","chat"]
             }
         }
         outputConfig = {
@@ -2486,4 +2588,1801 @@ class ModelsConfig:
             "outputConfig": outputConfig,
             "inputConfig": inputConfig
         }
+    @staticmethod
+    def claude_3_5_sonnet_20240620():
+        configuration = {
+            "model": {
+                "field": "drop",
+                "default": "claude-3-5-sonnet-20240620",
+                "level": 1
+            },
+            "creativity_level": {
+                "field": "slider",
+                "min": 0,
+                "max": 1,
+                "step": 0.1,
+                "default": 0,
+                "level": 2
+            },
+            "max_tokens": {
+                "field": "slider",
+                "min": 1,
+                "max": 8192,
+                "step": 1,
+                "default": 1046,
+                "level": 2
+            },
+            "top_p": {
+                "field": "slider",
+                "min": 0,
+                "max": 1,
+                "step": 0.1,
+                "default": 1,
+                "level": 2
+            },
+            # "logprobs": {
+            #     "field": "boolean",
+            #     "default": False,
+            #     "level": 0,
+            #     "typeOf": "boolean"
+            # },
+            # "frequency_penalty": {
+            #     "field": "slider",
+            #     "min": 0,
+            #     "max": 2,
+            #     "step": 0.01,
+            #     "default": 0,
+            #     "level": 2
+            # },
+            # "presence_penalty": {
+            #     "field": "slider",
+            #     "min": 0,
+            #     "max": 2,
+            #     "step": 0.01,
+            #     "default": 0,
+            #     "level": 2
+            # },
+            # "response_count": {
+            #     "field": "number",
+            #     "default": 1,
+            #     "typeOf": "number",
+            #     "level": 0
+            # },
+            # "stop": {
+            #     "field": "text",
+            #     "default": "",
+            #     "level": 0
+            # },
+            "stream": {
+                "field": "boolean",
+                "default": False,
+                "level": 0,
+                "typeOf": "boolean"
+            },
+            "tools": {
+                "field": "array",
+                "level": 0,
+                "default": [],
+                "typeOf": "array"
+            },
+            # "tool_choice": {
+            #     "field": "text",
+            #     "default": "auto",
+            #     "level": 0,
+            #     "typeOf": "string"
+            # }
+            # "response_format": {
+            #     "field": "boolean",
+            #     "default": {
+            #         "type": "text"
+            #     },
+            #     "level": 0
+            # }
+        }
+        outputConfig = {
+            "usage": [{
+                "prompt_tokens": "usage.input_tokens",
+                "completion_tokens": "usage.output_tokens",
+                "total_cost": { "usage.total_cost" }
+            }],
+            "message": "content[0].text", # find from modelResponse
+            "tools": "content[1].text", # find from functionResponse.modelResposne
+            "assistant": "role",
+            "id": "id"
+        }
+        inputConfig = {
+            "system": {
+                "role": "system",
+                "content": "",
+                "contentKey": "content",
+                "type": "json"
+            },
+            "content_location": "prompt[0].content"
+        }
+        return {
+            "configuration": configuration,
+            "outputConfig": outputConfig,
+            "inputConfig": inputConfig
+        }
+        
+    @staticmethod
+    def claude_3_opus_20240229(): 
+        configuration = {
+            "model": {
+                "field": "drop",
+                "default": "claude-3-opus-20240229",
+                "level": 1
+            },
+            "creativity_level": {
+                "field": "slider",
+                "min": 0,
+                "max": 1,
+                "step": 0.1,
+                "default": 0,
+                "level": 2
+            },
+            "max_tokens": {
+                "field": "slider",
+                "min": 1,
+                "max": 4096,
+                "step": 1,
+                "default": 1046,
+                "level": 2
+            },
+            "top_p": {
+                "field": "slider",
+                "min": 0,
+                "max": 1,
+                "step": 0.1,
+                "default": 1,
+                "level": 2
+            },
+            # "logprobs": {
+            #     "field": "boolean",
+            #     "default": False,
+            #     "level": 0,
+            #     "typeOf": "boolean"
+            # },
+            # "frequency_penalty": {
+            #     "field": "slider",
+            #     "min": 0,
+            #     "max": 2,
+            #     "step": 0.01,
+            #     "default": 0,
+            #     "level": 2
+            # },
+            # "presence_penalty": {
+            #     "field": "slider",
+            #     "min": 0,
+            #     "max": 2,
+            #     "step": 0.01,
+            #     "default": 0,
+            #     "level": 2
+            # },
+            # "response_count": {
+            #     "field": "number",
+            #     "default": 1,
+            #     "typeOf": "number",
+            #     "level": 0
+            # },
+            # "stop": {
+            #     "field": "text",
+            #     "default": "",
+            #     "level": 0
+            # },
+            "stream": {
+                "field": "boolean",
+                "default": False,
+                "level": 0,
+                "typeOf": "boolean"
+            },
+            "tools": {
+                "field": "array",
+                "level": 0,
+                "default": [],
+                "typeOf": "array"
+            },
+            # "tool_choice": {
+            #     "field": "text",
+            #     "default": "auto",
+            #     "level": 0,
+            #     "typeOf": "string"
+            # },
+            # "response_format": {
+            #     "field": "boolean",
+            #     "default": {
+            #         "type": "text"
+            #     },
+            #     "level": 0
+            # }
+        }
+        outputConfig = {
+        "usage": [{
+                "prompt_tokens": "usage.input_tokens",
+                "completion_tokens": "usage.output_tokens",
+                "total_cost": {
+                    "input_cost": 0,
+                    "output_cost": 0
+                }
+            }],
+            "message": "content[0].text",
+            "tools": "content[1].type",
+            "assistant": "role",
+            "id": "id"
+        }
+        inputConfig = {
+            "system": {
+                "role": "system",
+                "content": "",
+                "contentKey": "content",
+                "type": "json"
+            },
+            "content_location": "prompt[0].content"
+        }
+        return {
+            "configuration": configuration,
+            "outputConfig": outputConfig,
+            "inputConfig": inputConfig
+        }
+        
+    @staticmethod
+    def claude_3_sonnet_20240229(): 
+        configuration = {
+            "model": {
+                "field": "drop",
+                "default": "claude-3-sonnet-20240229",
+                "level": 1
+            },
+            "creativity_level": {
+                "field": "slider",
+                "min": 0,
+                "max": 1,
+                "step": 0.1,
+                "default": 0,
+                "level": 2
+            },
+            "max_tokens": {
+                "field": "slider",
+                "min": 1,
+                "max": 4096,
+                "step": 1,
+                "default": 1046,
+                "level": 2
+            },
+            "top_p": {
+                "field": "slider",
+                "min": 0,
+                "max": 1,
+                "step": 0.1,
+                "default": 1,
+                "level": 2
+            },
+            # "logprobs": {
+            #     "field": "boolean",
+            #     "default": False,
+            #     "level": 0,
+            #     "typeOf": "boolean"
+            # },
+            # "frequency_penalty": {
+            #     "field": "slider",
+            #     "min": 0,
+            #     "max": 2,
+            #     "step": 0.01,
+            #     "default": 0,
+            #     "level": 2
+            # },
+            # "presence_penalty": {
+            #     "field": "slider",
+            #     "min": 0,
+            #     "max": 2,
+            #     "step": 0.01,
+            #     "default": 0,
+            #     "level": 2
+            # },
+            # "response_count": {
+            #     "field": "number",
+            #     "default": 1,
+            #     "typeOf": "number",
+            #     "level": 0
+            # },
+            # "stop": {
+            #     "field": "text",
+            #     "default": "",
+            #     "level": 0
+            # },
+            "stream": {
+                "field": "boolean",
+                "default": False,
+                "level": 0,
+                "typeOf": "boolean"
+            },
+            "tools": {
+                "field": "array",
+                "level": 0,
+                "default": [],
+                "typeOf": "array"
+            },
+            # "tool_choice": {
+            #     "field": "text",
+            #     "default": "auto",
+            #     "level": 0,
+            #     "typeOf": "string"
+            # },
+            # # "response_format": {
+            #     "field": "boolean",
+            #     "default": {
+            #         "type": "text"
+            #     },
+            #     "level": 0
+            # }
+        }
+        outputConfig = {
+            "usage": [{
+                "prompt_tokens": "usage.input_tokens",
+                "completion_tokens": "usage.output_tokens",
+                "total_cost": {
+                    "input_cost": 0,
+                    "output_cost": 0
+                }
+            }],
+            "message": "content[0].text",
+            "tools": "content[1].type",
+            "assistant": "role",
+            "id": "id"
+        }
+        inputConfig = {
+            "system": {
+                "role": "system",
+                "content": "",
+                "contentKey": "content",
+                "type": "json"
+            },
+            "content_location": "prompt[0].content"
+        }
+        return {
+            "configuration": configuration,
+            "outputConfig": outputConfig,
+            "inputConfig": inputConfig
+        }
     
+    @staticmethod
+    def claude_3_haiku_20240307(): 
+        configuration = {
+            "model": {
+                "field": "drop",
+                "default": "claude-3-haiku-20240307",
+                "level": 1
+            },
+            "creativity_level": {
+                "field": "slider",
+                "min": 0,
+                "max": 1,
+                "step": 0.1,
+                "default": 0,
+                "level": 2
+            },
+            "max_tokens": {
+                "field": "slider",
+                "min": 1,
+                "max": 4096,
+                "step": 1,
+                "default": 1046,
+                "level": 2
+            },
+            "top_p": {
+                "field": "slider",
+                "min": 0,
+                "max": 1,
+                "step": 0.1,
+                "default": 1,
+                "level": 2
+            },
+            # "logprobs": {
+            #     "field": "boolean",
+            #     "default": False,
+            #     "level": 0,
+            #     "typeOf": "boolean"
+            # },
+            # "frequency_penalty": {
+            #     "field": "slider",
+            #     "min": 0,
+            #     "max": 2,
+            #     "step": 0.01,
+            #     "default": 0,
+            #     "level": 2
+            # },
+            # "presence_penalty": {
+            #     "field": "slider",
+            #     "min": 0,
+            #     "max": 2,
+            #     "step": 0.01,
+            #     "default": 0,
+            #     "level": 2
+            # },
+            # "response_count": {
+            #     "field": "number",
+            #     "default": 1,
+            #     "typeOf": "number",
+            #     "level": 0
+            # },
+            # "stop": {
+            #     "field": "text",
+            #     "default": "",
+            #     "level": 0
+            # },
+            "stream": {
+                "field": "boolean",
+                "default": False,
+                "level": 0,
+                "typeOf": "boolean"
+            },
+            "tools": {
+                "field": "array",
+                "level": 0,
+                "default": [],
+                "typeOf": "array"
+            },
+            # "tool_choice": {
+            #     "field": "text",
+            #     "default": "auto",
+            #     "level": 0,
+            #     "typeOf": "string"
+            # },
+            # "response_format": {
+            #     "field": "boolean",
+            #     "default": {
+            #         "type": "text"
+            #     },
+            #     "level": 0
+            # }
+        }
+        outputConfig = {
+            "usage": [{
+                "prompt_tokens": "usage.input_tokens",
+                "completion_tokens": "usage.output_tokens",
+                "total_cost": {
+                    "input_cost": 0,
+                    "output_cost": 0
+                }
+            }],
+            "message": "content[0].text",
+            "tools": "content[1].type",
+            "assistant": "role",
+            "id": "id"
+        }
+        inputConfig = {
+            "system": {
+                "role": "system",
+                "content": "",
+                "contentKey": "content",
+                "type": "json"
+            },
+            "content_location": "prompt[0].content"
+        }
+        return {
+            "configuration": configuration,
+            "outputConfig": outputConfig,
+            "inputConfig": inputConfig
+        }
+
+    @staticmethod
+    def llama_3_1_405b_reasoning():
+        configuration = {
+            "model": {
+                "field": "drop",
+                "default": "llama-3.1-405b-reasoning",
+                "level": 1
+            },
+            "creativity_level": {
+                "field": "slider",
+                "min": 0,
+                "max": 2,
+                "step": 0.1,
+                "default": 0,
+                "level": 2
+            },
+            "max_tokens": {
+                "field": "slider",
+                "min": 1,
+                "max": 4096,
+                "step": 1,
+                "default": 256,
+                "level": 2
+            },
+            "probability_cutoff": {
+                "field": "slider",
+                "min": 0,
+                "max": 1,
+                "step": 0.1,
+                "default": 1,
+                "level": 2
+            },
+            "log_probability": {
+                "field": "boolean",
+                "default": False,
+                "level": 0,
+                "typeOf": "boolean"
+            },
+            "repetition_penalty": {
+                "field": "slider",
+                "min": 0,
+                "max": 2,
+                "step": 0.01,
+                "default": 0,
+                "level": 2
+            },
+            "novelty_penalty": {
+                "field": "slider",
+                "min": 0,
+                "max": 2,
+                "step": 0.01,
+                "default": 0,
+                "level": 2
+            },
+            "response_count": {
+                "field": "number",
+                "default": 1,
+                "typeOf": "number",
+                "level": 0
+            },
+            "stop": {
+                "field": "text",
+                "default": "",
+                "level": 0
+            },
+            "stream": {
+                "field": "boolean",
+                "default": False,
+                "level": 0,
+                "typeOf": "boolean"
+            },
+            "tools": {
+                "field": "array",
+                "level": 0,
+                "default": [],
+                "typeOf": "array"
+            },
+            "tool_choice": {
+                "field": "text",
+                "default": "auto",
+                "level": 0,
+                "typeOf": "string"
+            },
+            # "response_type": {
+            #     "field": "boolean",
+            #     "default": {
+            #         "type" : "text",
+            #      },
+            #     "level": 0
+            # }
+        }
+        outputConfig = {
+            "usage": [{
+                "prompt_tokens": "usage.prompt_tokens",
+                "completion_tokens": "usage.completion_tokens",
+                "total_tokens": "usage.total_tokens",
+                "total_cost": {
+                    "input_cost": 0.01,
+                    "output_cost": 0.03
+                }
+            }],
+            "message": "choices[0].message.content",
+            "tools": "choices[0].message.tool_calls",
+            "assistant": "choices[0].message",
+            "id": "id"
+        }
+        inputConfig = {
+            "system": {
+                "role": "system",
+                "content": "",
+                "contentKey": "content",
+                "type": "json"
+            },
+            "content_location": "prompt[0].content"
+        }
+        return {
+            "configuration": configuration,
+            "outputConfig": outputConfig,
+            "inputConfig": inputConfig
+        }
+
+    @staticmethod
+    def llama_3_1_70b_versatile():
+        configuration = {
+            "model": {
+                "field": "drop",
+                "default": "llama-3.1-70b-versatile",
+                "level": 1
+            },
+            "creativity_level": {
+                "field": "slider",
+                "min": 0,
+                "max": 2,
+                "step": 0.1,
+                "default": 0,
+                "level": 2
+            },
+            "max_tokens": {
+                "field": "slider",
+                "min": 1,
+                "max": 4096,
+                "step": 1,
+                "default": 256,
+                "level": 2
+            },
+            "probability_cutoff": {
+                "field": "slider",
+                "min": 0,
+                "max": 1,
+                "step": 0.1,
+                "default": 1,
+                "level": 2
+            },
+            "log_probability": {
+                "field": "boolean",
+                "default": False,
+                "level": 0,
+                "typeOf": "boolean"
+            },
+            "repetition_penalty": {
+                "field": "slider",
+                "min": 0,
+                "max": 2,
+                "step": 0.01,
+                "default": 0,
+                "level": 2
+            },
+            "novelty_penalty": {
+                "field": "slider",
+                "min": 0,
+                "max": 2,
+                "step": 0.01,
+                "default": 0,
+                "level": 2
+            },
+            "response_count": {
+                "field": "number",
+                "default": 1,
+                "typeOf": "number",
+                "level": 0
+            },
+            "stop": {
+                "field": "text",
+                "default": "",
+                "level": 0
+            },
+            "stream": {
+                "field": "boolean",
+                "default": False,
+                "level": 0,
+                "typeOf": "boolean"
+            },
+            "tools": {
+                "field": "array",
+                "level": 0,
+                "default": [],
+                "typeOf": "array"
+            },
+            "tool_choice": {
+                "field": "text",
+                "default": "auto",
+                "level": 0,
+                "typeOf": "string"
+            },
+            # "response_type": {
+            #     "field": "boolean",
+            #     "default": {
+            #         "type" : "text",
+            #      },
+            #     "level": 0
+            # }
+        }
+        outputConfig = {
+            "usage": [{
+                "prompt_tokens": "usage.prompt_tokens",
+                "completion_tokens": "usage.completion_tokens",
+                "total_tokens": "usage.total_tokens",
+                "total_cost": {
+                    "input_cost": 0.01,
+                    "output_cost": 0.03
+                }
+            }],
+            "message": "choices[0].message.content",
+            "tools": "choices[0].message.tool_calls",
+            "assistant": "choices[0].message",
+            "id": "id"
+        }
+        inputConfig = {
+            "system": {
+                "role": "system",
+                "content": "",
+                "contentKey": "content",
+                "type": "json"
+            },
+            "content_location": "prompt[0].content"
+        }
+        return {
+            "configuration": configuration,
+            "outputConfig": outputConfig,
+            "inputConfig": inputConfig
+        }
+    
+    @staticmethod
+    def llama_3_1_8b_instant():
+        configuration = {
+            "model": {
+                "field": "drop",
+                "default": "llama-3.1-8b-instant",
+                "level": 1
+            },
+            "creativity_level": {
+                "field": "slider",
+                "min": 0,
+                "max": 2,
+                "step": 0.1,
+                "default": 0,
+                "level": 2
+            },
+            "max_tokens": {
+                "field": "slider",
+                "min": 1,
+                "max": 4096,
+                "step": 1,
+                "default": 256,
+                "level": 2
+            },
+            "probability_cutoff": {
+                "field": "slider",
+                "min": 0,
+                "max": 1,
+                "step": 0.1,
+                "default": 1,
+                "level": 2
+            },
+            "log_probability": {
+                "field": "boolean",
+                "default": False,
+                "level": 0,
+                "typeOf": "boolean"
+            },
+            "repetition_penalty": {
+                "field": "slider",
+                "min": 0,
+                "max": 2,
+                "step": 0.01,
+                "default": 0,
+                "level": 2
+            },
+            "novelty_penalty": {
+                "field": "slider",
+                "min": 0,
+                "max": 2,
+                "step": 0.01,
+                "default": 0,
+                "level": 2
+            },
+            "response_count": {
+                "field": "number",
+                "default": 1,
+                "typeOf": "number",
+                "level": 0
+            },
+            "stop": {
+                "field": "text",
+                "default": "",
+                "level": 0
+            },
+            "stream": {
+                "field": "boolean",
+                "default": False,
+                "level": 0,
+                "typeOf": "boolean"
+            },
+            "tools": {
+                "field": "array",
+                "level": 0,
+                "default": [],
+                "typeOf": "array"
+            },
+            "tool_choice": {
+                "field": "text",
+                "default": "auto",
+                "level": 0,
+                "typeOf": "string"
+            },
+            # "response_type": {
+            #     "field": "boolean",
+            #    "default": {
+            #         "type" : "text",
+            #      },
+            #     "level": 0
+            # }
+        }
+        outputConfig = {
+            "usage": [{
+                "prompt_tokens": "usage.prompt_tokens",
+                "completion_tokens": "usage.completion_tokens",
+                "total_tokens": "usage.total_tokens",
+                "total_cost": {
+                    "input_cost": 0.01,
+                    "output_cost": 0.03
+                }
+            }],
+            "message": "choices[0].message.content",
+            "tools": "choices[0].message.tool_calls",
+            "assistant": "choices[0].message",
+            "id": "id"
+        }
+        inputConfig = {
+            "system": {
+                "role": "system",
+                "content": "",
+                "contentKey": "content",
+                "type": "json"
+            },
+            "content_location": "prompt[0].content"
+        }
+        return {
+            "configuration": configuration,
+            "outputConfig": outputConfig,
+            "inputConfig": inputConfig
+        }
+    
+    @staticmethod
+    def llama3_groq_70b_8192_tool_use_preview():
+        configuration = {
+            "model": {
+                "field": "drop",
+                "default": "llama3-groq-70b-8192-tool-use-preview",
+                "level": 1
+            },
+            "creativity_level": {
+                "field": "slider",
+                "min": 0,
+                "max": 2,
+                "step": 0.1,
+                "default": 0,
+                "level": 2
+            },
+            "max_tokens": {
+                "field": "slider",
+                "min": 1,
+                "max": 4096,
+                "step": 1,
+                "default": 256,
+                "level": 2
+            },
+            "probability_cutoff": {
+                "field": "slider",
+                "min": 0,
+                "max": 1,
+                "step": 0.1,
+                "default": 1,
+                "level": 2
+            },
+            "log_probability": {
+                "field": "boolean",
+                "default": False,
+                "level": 0,
+                "typeOf": "boolean"
+            },
+            "repetition_penalty": {
+                "field": "slider",
+                "min": 0,
+                "max": 2,
+                "step": 0.01,
+                "default": 0,
+                "level": 2
+            },
+            "novelty_penalty": {
+                "field": "slider",
+                "min": 0,
+                "max": 2,
+                "step": 0.01,
+                "default": 0,
+                "level": 2
+            },
+            "response_count": {
+                "field": "number",
+                "default": 1,
+                "typeOf": "number",
+                "level": 0
+            },
+            "stop": {
+                "field": "text",
+                "default": "",
+                "level": 0
+            },
+            "stream": {
+                "field": "boolean",
+                "default": False,
+                "level": 0,
+                "typeOf": "boolean"
+            },
+            "tools": {
+                "field": "array",
+                "level": 0,
+                "default": [],
+                "typeOf": "array"
+            },
+            "tool_choice": {
+                "field": "text",
+                "default": "auto",
+                "level": 0,
+                "typeOf": "string"
+            },
+            # "response_type": {
+            #     "field": "boolean",
+            #      "default": {
+            #         "type" : "text",
+            #      },
+            #     "level": 0
+            # }
+        }
+        outputConfig = {
+            "usage": [{
+                "prompt_tokens": "usage.prompt_tokens",
+                "completion_tokens": "usage.completion_tokens",
+                "total_tokens": "usage.total_tokens",
+                "total_cost": {
+                    "input_cost": 0.01,
+                    "output_cost": 0.03
+                }
+            }],
+            "message": "choices[0].message.content",
+            "tools": "choices[0].message.tool_calls",
+            "assistant": "choices[0].message",
+            "id": "id"
+        }
+        inputConfig = {
+            "system": {
+                "role": "system",
+                "content": "",
+                "contentKey": "content",
+                "type": "json"
+            },
+            "content_location": "prompt[0].content"
+        }
+        return {
+            "configuration": configuration,
+            "outputConfig": outputConfig,
+            "inputConfig": inputConfig
+        }
+    
+    @staticmethod
+    def llama3_groq_8b_8192_tool_use_preview():
+        configuration = {
+            "model": {
+                "field": "drop",
+                "default": "llama3-groq-8b-8192-tool-use-preview",
+                "level": 1
+            },
+            "creativity_level": {
+                "field": "slider",
+                "min": 0,
+                "max": 2,
+                "step": 0.1,
+                "default": 0,
+                "level": 2
+            },
+            "max_tokens": {
+                "field": "slider",
+                "min": 1,
+                "max": 4096,
+                "step": 1,
+                "default": 256,
+                "level": 2
+            },
+            "probability_cutoff": {
+                "field": "slider",
+                "min": 0,
+                "max": 1,
+                "step": 0.1,
+                "default": 1,
+                "level": 2
+            },
+            "log_probability": {
+                "field": "boolean",
+                "default": False,
+                "level": 0,
+                "typeOf": "boolean"
+            },
+            "repetition_penalty": {
+                "field": "slider",
+                "min": 0,
+                "max": 2,
+                "step": 0.01,
+                "default": 0,
+                "level": 2
+            },
+            "novelty_penalty": {
+                "field": "slider",
+                "min": 0,
+                "max": 2,
+                "step": 0.01,
+                "default": 0,
+                "level": 2
+            },
+            "response_count": {
+                "field": "number",
+                "default": 1,
+                "typeOf": "number",
+                "level": 0
+            },
+            "stop": {
+                "field": "text",
+                "default": "",
+                "level": 0
+            },
+            "stream": {
+                "field": "boolean",
+                "default": False,
+                "level": 0,
+                "typeOf": "boolean"
+            },
+            "tools": {
+                "field": "array",
+                "level": 0,
+                "default": [],
+                "typeOf": "array"
+            },
+            "tool_choice": {
+                "field": "text",
+                "default": "auto",
+                "level": 0,
+                "typeOf": "string"
+            },
+            # "response_type": {
+            #     "field": "boolean",
+            #     "default": {
+            #         "type" : "text",
+            #      },
+            #     "level": 0
+            # }
+        }
+        outputConfig = {
+            "usage": [{
+                "prompt_tokens": "usage.prompt_tokens",
+                "completion_tokens": "usage.completion_tokens",
+                "total_tokens": "usage.total_tokens",
+                "total_cost": {
+                    "input_cost": 0.01,
+                    "output_cost": 0.03
+                }
+            }],
+            "message": "choices[0].message.content",
+            "tools": "choices[0].message.tool_calls",
+            "assistant": "choices[0].message",
+            "id": "id"
+        }
+        inputConfig = {
+            "system": {
+                "role": "system",
+                "content": "",
+                "contentKey": "content",
+                "type": "json"
+            },
+            "content_location": "prompt[0].content"
+        }
+        return {
+            "configuration": configuration,
+            "outputConfig": outputConfig,
+            "inputConfig": inputConfig
+        }
+    
+    @staticmethod
+    def llama3_70b_8192():
+        configuration = {
+            "model": {
+                "field": "drop",
+                "default": "llama3-70b-8192",
+                "level": 1
+            },
+            "creativity_level": {
+                "field": "slider",
+                "min": 0,
+                "max": 2,
+                "step": 0.1,
+                "default": 0,
+                "level": 2
+            },
+            "max_tokens": {
+                "field": "slider",
+                "min": 1,
+                "max": 4096,
+                "step": 1,
+                "default": 256,
+                "level": 2
+            },
+            "probability_cutoff": {
+                "field": "slider",
+                "min": 0,
+                "max": 1,
+                "step": 0.1,
+                "default": 1,
+                "level": 2
+            },
+            "log_probability": {
+                "field": "boolean",
+                "default": False,
+                "level": 0,
+                "typeOf": "boolean"
+            },
+            "repetition_penalty": {
+                "field": "slider",
+                "min": 0,
+                "max": 2,
+                "step": 0.01,
+                "default": 0,
+                "level": 2
+            },
+            "novelty_penalty": {
+                "field": "slider",
+                "min": 0,
+                "max": 2,
+                "step": 0.01,
+                "default": 0,
+                "level": 2
+            },
+            "response_count": {
+                "field": "number",
+                "default": 1,
+                "typeOf": "number",
+                "level": 0
+            },
+            "stop": {
+                "field": "text",
+                "default": "",
+                "level": 0
+            },
+            "stream": {
+                "field": "boolean",
+                "default": False,
+                "level": 0,
+                "typeOf": "boolean"
+            },
+            "tools": {
+                "field": "array",
+                "level": 0,
+                "default": [],
+                "typeOf": "array"
+            },
+            "tool_choice": {
+                "field": "text",
+                "default": "auto",
+                "level": 0,
+                "typeOf": "string"
+            },
+            # "response_type": {
+            #     "field": "boolean",
+            #     "default": {
+            #         "type" : "text",
+            #      },
+            #     "level": 0
+            # }
+        }
+        outputConfig = {
+            "usage": [{
+                "prompt_tokens": "usage.prompt_tokens",
+                "completion_tokens": "usage.completion_tokens",
+                "total_tokens": "usage.total_tokens",
+                "total_cost": {
+                    "input_cost": 0.01,
+                    "output_cost": 0.03
+                }
+            }],
+            "message": "choices[0].message.content",
+            "tools": "choices[0].message.tool_calls",
+            "assistant": "choices[0].message",
+            "id": "id"
+        }
+        inputConfig = {
+            "system": {
+                "role": "system",
+                "content": "",
+                "contentKey": "content",
+                "type": "json"
+            },
+            "content_location": "prompt[0].content"
+        }
+        return {
+            "configuration": configuration,
+            "outputConfig": outputConfig,
+            "inputConfig": inputConfig
+        }
+    
+    @staticmethod
+    def llama3_8b_8192():
+        configuration = {
+            "model": {
+                "field": "drop",
+                "default": "llama3-8b-8192",
+                "level": 1
+            },
+            "creativity_level": {
+                "field": "slider",
+                "min": 0,
+                "max": 2,
+                "step": 0.1,
+                "default": 0,
+                "level": 2
+            },
+            "max_tokens": {
+                "field": "slider",
+                "min": 1,
+                "max": 4096,
+                "step": 1,
+                "default": 256,
+                "level": 2
+            },
+            "log_probability": {
+                "field": "boolean",
+                "default": False,
+                "level": 0,
+                "typeOf": "boolean"
+            },
+            "repetition_penalty": {
+                "field": "slider",
+                "min": 0,
+                "max": 2,
+                "step": 0.01,
+                "default": 0,
+                "level": 2
+            },
+            "novelty_penalty": {
+                "field": "slider",
+                "min": 0,
+                "max": 2,
+                "step": 0.01,
+                "default": 0,
+                "level": 2
+            },
+            "response_count": {
+                "field": "number",
+                "default": 1,
+                "typeOf": "number",
+                "level": 0
+            },
+            "stop": {
+                "field": "text",
+                "default": "",
+                "level": 0
+            },
+            "stream": {
+                "field": "boolean",
+                "default": False,
+                "level": 0,
+                "typeOf": "boolean"
+            },
+            "tools": {
+                "field": "array",
+                "level": 0,
+                "default": [],
+                "typeOf": "array"
+            },
+            "tool_choice": {
+                "field": "text",
+                "default": "auto",
+                "level": 0,
+                "typeOf": "string"
+            },
+            # "response_type": {
+            #     "field": "boolean",
+            #     "default": {
+            #         "type" : "text",
+            #      },
+            #     "level": 0
+            # }
+        }
+        outputConfig = {
+            "usage": [{
+                "prompt_tokens": "usage.prompt_tokens",
+                "completion_tokens": "usage.completion_tokens",
+                "total_tokens": "usage.total_tokens",
+                "total_cost": {
+                    "input_cost": 0.01,
+                    "output_cost": 0.03
+                }
+            }],
+            "message": "choices[0].message.content",
+            "tools": "choices[0].message.tool_calls",
+            "assistant": "choices[0].message",
+            "id": "id"
+        }
+        inputConfig = {
+            "system": {
+                "role": "system",
+                "content": "",
+                "contentKey": "content",
+                "type": "json"
+            },
+            "content_location": "prompt[0].content"
+        }
+        return {
+            "configuration": configuration,
+            "outputConfig": outputConfig,
+            "inputConfig": inputConfig
+        }
+    
+    @staticmethod
+    def mixtral_8x7b_32768():
+        configuration = {
+            "model": {
+                "field": "drop",
+                "default": "mixtral-8x7b-32768",
+                "level": 1
+            },
+            "creativity_level": {
+                "field": "slider",
+                "min": 0,
+                "max": 2,
+                "step": 0.1,
+                "default": 0,
+                "level": 2
+            },
+            "max_tokens": {
+                "field": "slider",
+                "min": 1,
+                "max": 4096,
+                "step": 1,
+                "default": 256,
+                "level": 2
+            },
+            "probability_cutoff": {
+                "field": "slider",
+                "min": 0,
+                "max": 1,
+                "step": 0.1,
+                "default": 1,
+                "level": 2
+            },
+            "log_probability": {
+                "field": "boolean",
+                "default": False,
+                "level": 0,
+                "typeOf": "boolean"
+            },
+            "repetition_penalty": {
+                "field": "slider",
+                "min": 0,
+                "max": 2,
+                "step": 0.01,
+                "default": 0,
+                "level": 2
+            },
+            "novelty_penalty": {
+                "field": "slider",
+                "min": 0,
+                "max": 2,
+                "step": 0.01,
+                "default": 0,
+                "level": 2
+            },
+            "response_count": {
+                "field": "number",
+                "default": 1,
+                "typeOf": "number",
+                "level": 0
+            },
+            "stop": {
+                "field": "text",
+                "default": "",
+                "level": 0
+            },
+            "stream": {
+                "field": "boolean",
+                "default": False,
+                "level": 0,
+                "typeOf": "boolean"
+            },
+            "tools": {
+                "field": "array",
+                "level": 0,
+                "default": [],
+                "typeOf": "array"
+            },
+            "tool_choice": {
+                "field": "text",
+                "default": "auto",
+                "level": 0,
+                "typeOf": "string"
+            },
+            # "response_type": {
+            #     "field": "boolean",
+            #      "default": {
+            #         "type" : "text",
+            #      },
+            #     "level": 0
+            # }
+        }
+        outputConfig = {
+            "usage": [{
+                "prompt_tokens": "usage.prompt_tokens",
+                "completion_tokens": "usage.completion_tokens",
+                "total_tokens": "usage.total_tokens",
+                "total_cost": {
+                    "input_cost": 0.01,
+                    "output_cost": 0.03
+                }
+            }],
+            "message": "choices[0].message.content",
+            "tools": "choices[0].message.tool_calls",
+            "assistant": "choices[0].message",
+            "id": "id"
+        }
+        inputConfig = {
+            "system": {
+                "role": "system",
+                "content": "",
+                "contentKey": "content",
+                "type": "json"
+            },
+            "content_location": "prompt[0].content"
+        }
+        return {
+            "configuration": configuration,
+            "outputConfig": outputConfig,
+            "inputConfig": inputConfig
+        }
+    
+    @staticmethod
+    def gemma_7b_it():
+        configuration = {
+            "model": {
+                "field": "drop",
+                "default": "gemma-7b-it",
+                "level": 1
+            },
+            "creativity_level": {
+                "field": "slider",
+                "min": 0,
+                "max": 2,
+                "step": 0.1,
+                "default": 0,
+                "level": 2
+            },
+            "max_tokens": {
+                "field": "slider",
+                "min": 1,
+                "max": 4096,
+                "step": 1,
+                "default": 256,
+                "level": 2
+            },
+            "probability_cutoff": {
+                "field": "slider",
+                "min": 0,
+                "max": 1,
+                "step": 0.1,
+                "default": 1,
+                "level": 2
+            },
+            "log_probability": {
+                "field": "boolean",
+                "default": False,
+                "level": 0,
+                "typeOf": "boolean"
+            },
+            "repetition_penalty": {
+                "field": "slider",
+                "min": 0,
+                "max": 2,
+                "step": 0.01,
+                "default": 0,
+                "level": 2
+            },
+            "novelty_penalty": {
+                "field": "slider",
+                "min": 0,
+                "max": 2,
+                "step": 0.01,
+                "default": 0,
+                "level": 2
+            },
+            "response_count": {
+                "field": "number",
+                "default": 1,
+                "typeOf": "number",
+                "level": 0
+            },
+            "stop": {
+                "field": "text",
+                "default": "",
+                "level": 0
+            },
+            "stream": {
+                "field": "boolean",
+                "default": False,
+                "level": 0,
+                "typeOf": "boolean"
+            },
+            "tools": {
+                "field": "array",
+                "level": 0,
+                "default": [],
+                "typeOf": "array"
+            },
+            "tool_choice": {
+                "field": "text",
+                "default": "auto",
+                "level": 0,
+                "typeOf": "string"
+            },
+            # "response_type": {
+            #     "field": "boolean",
+            #     "default": {
+            #         "type" : "text",
+            #      },
+            #     "level": 0
+            # }
+        }
+        outputConfig = {
+            "usage": [{
+                "prompt_tokens": "usage.prompt_tokens",
+                "completion_tokens": "usage.completion_tokens",
+                "total_tokens": "usage.total_tokens",
+                "total_cost": {
+                    "input_cost": 0.01,
+                    "output_cost": 0.03
+                }
+            }],
+            "message": "choices[0].message.content",
+            "tools": "choices[0].message.tool_calls",
+            "assistant": "choices[0].message",
+            "id": "id"
+        }
+        inputConfig = {
+            "system": {
+                "role": "system",
+                "content": "",
+                "contentKey": "content",
+                "type": "json"
+            },
+            "content_location": "prompt[0].content"
+        }
+        return {
+            "configuration": configuration,
+            "outputConfig": outputConfig,
+            "inputConfig": inputConfig
+        }
+    
+    @staticmethod
+    def gemma2_9b_it():
+        configuration = {
+            "model": {
+                "field": "drop",
+                "default": "gemma2-9b-it",
+                "level": 1
+            },
+            "creativity_level": {
+                "field": "slider",
+                "min": 0,
+                "max": 2,
+                "step": 0.1,
+                "default": 0,
+                "level": 2
+            },
+            "max_tokens": {
+                "field": "slider",
+                "min": 1,
+                "max": 4096,
+                "step": 1,
+                "default": 256,
+                "level": 2
+            },
+            "probability_cutoff": {
+                "field": "slider",
+                "min": 0,
+                "max": 1,
+                "step": 0.1,
+                "default": 1,
+                "level": 2
+            },
+            "log_probability": {
+                "field": "boolean",
+                "default": False,
+                "level": 0,
+                "typeOf": "boolean"
+            },
+            "repetition_penalty": {
+                "field": "slider",
+                "min": 0,
+                "max": 2,
+                "step": 0.01,
+                "default": 0,
+                "level": 2
+            },
+            "novelty_penalty": {
+                "field": "slider",
+                "min": 0,
+                "max": 2,
+                "step": 0.01,
+                "default": 0,
+                "level": 2
+            },
+            "response_count": {
+                "field": "number",
+                "default": 1,
+                "typeOf": "number",
+                "level": 0
+            },
+            "stop": {
+                "field": "text",
+                "default": "",
+                "level": 0
+            },
+            "stream": {
+                "field": "boolean",
+                "default": False,
+                "level": 0,
+                "typeOf": "boolean"
+            },
+            "tools": {
+                "field": "array",
+                "level": 0,
+                "default": [],
+                "typeOf": "array"
+            },
+            "tool_choice": {
+                "field": "text",
+                "default": "auto",
+                "level": 0,
+                "typeOf": "string"
+            },
+            # "response_type": {
+            #     "field": "boolean",
+            #     "default": {
+            #     "type" : "text",
+            #     },
+            #     "level": 0
+            # }
+        }
+        outputConfig = {
+            "usage": [{
+                "prompt_tokens": "usage.prompt_tokens",
+                "completion_tokens": "usage.completion_tokens",
+                "total_tokens": "usage.total_tokens",
+                "total_cost": {
+                    "input_cost": 0.01,
+                    "output_cost": 0.03
+                }
+            }],
+            "message": "choices[0].message.content",
+            "tools": "choices[0].message.tool_calls",
+            "assistant": "choices[0].message",
+            "id": "id"
+        }
+        inputConfig = {
+            "system": {
+                "role": "system",
+                "content": "",
+                "contentKey": "content",
+                "type": "json"
+            },
+            "content_location": "prompt[0].content"
+        }
+        return {
+            "configuration": configuration,
+            "outputConfig": outputConfig,
+            "inputConfig": inputConfig
+        }
+    
+    # @staticmethod
+    # def whisper_large_v3():
+    #     configuration = {
+    #         "model": {
+    #             "field": "drop",
+    #             "default": "whisper-large-v3",
+    #             "level": 1
+    #         },
+    #         "creativity_level": {
+    #             "field": "slider",
+    #             "min": 0,
+    #             "max": 2,
+    #             "step": 0.1,
+    #             "default": 0,
+    #             "level": 2
+    #         },
+    #         "max_tokens": {
+    #             "field": "slider",
+    #             "min": 1,
+    #             "max": 4096,
+    #             "step": 1,
+    #             "default": 256,
+    #             "level": 2
+    #         },
+    #         "probability_cutoff": {
+    #             "field": "slider",
+    #             "min": 0,
+    #             "max": 1,
+    #             "step": 0.1,
+    #             "default": 1,
+    #             "level": 2
+    #         },
+    #         "log_probability": {
+    #             "field": "boolean",
+    #             "default": False,
+    #             "level": 0,
+    #             "typeOf": "boolean"
+    #         },
+    #         "repetition_penalty": {
+    #             "field": "slider",
+    #             "min": 0,
+    #             "max": 2,
+    #             "step": 0.01,
+    #             "default": 0,
+    #             "level": 2
+    #         },
+    #         "novelty_penalty": {
+    #             "field": "slider",
+    #             "min": 0,
+    #             "max": 2,
+    #             "step": 0.01,
+    #             "default": 0,
+    #             "level": 2
+    #         },
+    #         "response_count": {
+    #             "field": "number",
+    #             "default": 1,
+    #             "typeOf": "number",
+    #             "level": 0
+    #         },
+    #         "stop": {
+    #             "field": "text",
+    #             "default": "",
+    #             "level": 0
+    #         },
+    #         "stream": {
+    #             "field": "boolean",
+    #             "default": False,
+    #             "level": 0,
+    #             "typeOf": "boolean"
+    #         },
+    #         "tools": {
+    #             "field": "array",
+    #             "level": 0,
+    #             "default": [],
+    #             "typeOf": "array"
+    #         },
+    #         "tool_choice": {
+    #             "field": "text",
+    #             "default": "auto",
+    #             "level": 0,
+    #             "typeOf": "string"
+    #         },
+    #         "response_type": {
+    #             "field": "boolean",
+    #             "default": "false",
+    #             "type" : "text",
+    #             "level": 0
+    #         }
+    #     }
+    #     outputConfig = {
+    #         "usage": [{
+    #             "prompt_tokens": "usage.prompt_tokens",
+    #             "completion_tokens": "usage.completion_tokens",
+    #             "total_tokens": "usage.total_tokens",
+    #             "total_cost": {
+    #                 "input_cost": 0.01,
+    #                 "output_cost": 0.03
+    #             }
+    #         }],
+    #         "message": "choices[0].message.content",
+    #         "tools": "choices[0].message.tool_calls",
+    #         "assistant": "choices[0].message",
+    #         "id": "id"
+    #     }
+    #     inputConfig = {
+    #         "system": {
+    #             "role": "system",
+    #             "content": "",
+    #             "contentKey": "content",
+    #             "type": "json"
+    #         },
+    #         "content_location": "prompt[0].content"
+    #     }
+    #     return {
+    #         "configuration": configuration,
+    #         "outputConfig": outputConfig,
+    #         "inputConfig": inputConfig
+    #     }

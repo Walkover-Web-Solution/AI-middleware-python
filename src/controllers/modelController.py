@@ -10,11 +10,10 @@ router = APIRouter()
 @router.post('/chat/completion', dependencies=[Depends(jwt_middleware)])
 async def chat_completion(request: Request, db_config: dict = Depends(add_configuration_data_to_body)):
     try:
-        body = await request.json()
         request.state.playground = False
-        if(body.get('webhook') or body.get('RTLayer')):
+        if(request.state.body.get('configuration',{}).get('response_format',{}) != None and request.state.body.get('configuration',{}).get('response_format',{}).get('type') != 'default'):
             asyncio.create_task(chat(request))
-            return JSONResponse(status_code=200, content={"success": True, "message"  :"Your response will be send through configured means."}) 
+            return {"success": True, "message"  :"Your response will be send through configured means."}
         return await chat(request)
     except Exception as e:
         print("Error in chat completion: ", e)

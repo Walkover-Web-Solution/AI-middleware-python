@@ -5,6 +5,7 @@ import jwt
 from config import Config
 from ..controllers.modelController import chat_completion
 import json
+from .getDataUsingBridgeId import add_configuration_data_to_body
 
 async def send_data_middleware(request: Request, botId: str):
     try:
@@ -29,32 +30,34 @@ async def send_data_middleware(request: Request, botId: str):
 
 
         actions = []
-        for actionId, actionDetails in bridges.get('actions', {}).items():
-            description = actionDetails.get('description')
-            action_type = actionDetails.get('type')
-            variable = actionDetails.get('variable')
-            actions.append({"actionId": actionId, "description": description, "type": action_type, "variable": variable})
-        if not actions:
-            actions = "no available action"
+
+        if bridges.get('actions', {}):
+            for actionId, actionDetails in bridges.get('actions', {}).items():
+                description = actionDetails.get('description')
+                action_type = actionDetails.get('type')
+                variable = actionDetails.get('variable')
+                actions.append({"actionId": actionId, "description": description, "type": action_type, "variable": variable})
 
         if not bridge_response['success']:
             raise HTTPException(status_code=400, detail="some error occurred")
 
         request.state.chatbot = True
-        request.state.body = {
-            "org_id": org_id,
+        request.state.chatbot = {
             "bridge_id": bridges.get('_id', '').__str__(),
-            "service": "openai",
             "user": message,
+
             "thread_id": threadId,
             "variables": {**body['interfaceContextData'], "message": message, "actions": actions, **json.loads(profile.get('variables', "{}"))},
-            "RTLayer": True,
             "template_id": Config.TEMPLATE_ID,
-            "rtlOptions": {
+            "configuration": {"response_format": {
+                "type": "RTLayer",
+                "cred": {
                 "channel": channelId,
                 "ttl": 1,
-            },
+                'apikey': Config.RTLAYER_AUTH
+            }},}
         }
+        await add_configuration_data_to_body(request=request)
         return await chat_completion(request=request)
     except Exception as error : 
         return JSONResponse(status_code=400, content={'error' : error.__str__()})
