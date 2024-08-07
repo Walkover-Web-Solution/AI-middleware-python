@@ -23,7 +23,7 @@ class UnifiedOpenAICase(BaseService):
                 'response_format' : self.response_format,
                 'playground': self.playground,
             },service_name['openai'], openAIResponse)
-            if not functionCallRes.get('success'):
+            if functionCallRes and not functionCallRes.get('success'):
                 await self.handle_failure(functionCallRes)
                 return {'success': False, 'error': functionCallRes.get('error')}
             self.update_model_response(modelResponse, functionCallRes)

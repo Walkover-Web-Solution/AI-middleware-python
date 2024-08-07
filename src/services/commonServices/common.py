@@ -43,20 +43,16 @@ async def chat(request: Request):
     customConfig = {}
     response_format = configuration.get("response_format")
     model = configuration.get('model')
-    # if hasattr(request.state, 'playground'): # change according to ui ka playground
-    #     is_playground = request.state.playground
     is_playground = body.get('is_playground', False)
     bridge = body.get('bridge')
     base_service_instance = {}
 
     try:
         modelname = model.replace("-", "_").replace(".", "_")
-        # modelfunc = common.get_func_name(service, modelname)
         modelfunc = getattr(ModelsConfig, modelname, None)
         modelObj = modelfunc()
         modelConfig, modelOutputConfig = modelObj['configuration'], modelObj['outputConfig']
 
-        #todo :: will not work if level is nor present in key
         for key in modelConfig:
             if key == 'type' and key in configuration:
                 continue

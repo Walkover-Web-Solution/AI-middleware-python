@@ -112,7 +112,7 @@ result =  axios_call(params)
         apikey = sensitive_config['apikey']
 
         if not (validate_tool_call(modelOutputConfig, service, model_response) and l <= 3):
-            return response
+            return response if l != 0 else None
         
         l+=1
 
@@ -150,7 +150,7 @@ result =  axios_call(params)
         }))
         asyncio.create_task(self.sendResponse(self.response_format, data=response.get('error')))
 # todo
-    def update_model_response(self, model_response, functionCallRes):
+    def update_model_response(self, model_response, functionCallRes={}):
         funcModelResponse = functionCallRes.get("modelResponse", {})
         match self.service:
             case 'openai' | 'groq' :
@@ -211,7 +211,7 @@ result =  axios_call(params)
     def service_formatter(self, configuration : object, service : str ):
         try:
             new_config = {ServiceKeys[service].get(key, key): value for key, value in configuration.items()}
-            if configuration.get('tools', ''):
+            if configuration.get('tools', '') and configuration.get('tools',{}).get('function', False):
                 new_config['tools'] = tool_call_formatter(configuration, service)
             return new_config
         except KeyError as e:
