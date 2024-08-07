@@ -26,7 +26,7 @@ class Antrophic(BaseService):
                 'response_format' : self.response_format,
                 'playground': self.playground,
             },service_name['anthropic'], antrophic_response)
-        if functionCallRes and not functionCallRes.get('success'):
+        if not functionCallRes.get('success'):
             await self.handle_failure(functionCallRes)
             return {'success': False, 'error': functionCallRes.get('error')}
         

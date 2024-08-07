@@ -112,7 +112,7 @@ result =  axios_call(params)
         apikey = sensitive_config['apikey']
 
         if not (validate_tool_call(modelOutputConfig, service, model_response) and l <= 3):
-            return response if l != 0 else None
+            return response
         
         l+=1
 
@@ -211,7 +211,7 @@ result =  axios_call(params)
     def service_formatter(self, configuration : object, service : str ):
         try:
             new_config = {ServiceKeys[service].get(key, key): value for key, value in configuration.items()}
-            if configuration.get('tools', '') and configuration.get('tools',{}).get('function', False):
+            if configuration.get('tools', '') :
                 new_config['tools'] = tool_call_formatter(configuration, service)
             return new_config
         except KeyError as e:
