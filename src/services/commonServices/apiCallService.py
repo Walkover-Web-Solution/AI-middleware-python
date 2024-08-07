@@ -175,7 +175,7 @@ async def save_api(desc, org_id, bridge_id, api_id=None, code="", required_param
                 if saved_api.modified_count == 1:
                     return {
                         "success": True,
-                        "api_object_id": api_id,
+                        "api_object_id": str(api_id),
                         "required_params": api_data['required_params'],
                         "optional_fields": api_data.get('optional_fields', [])
                     }
