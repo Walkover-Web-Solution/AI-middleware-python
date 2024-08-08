@@ -25,7 +25,7 @@ app.add_middleware(
 # Healthcheck route
 @app.get("/healthcheck")
 async def healthcheck():
-    return JSONResponse(status_code=200, content="OK running good... v1")
+    return JSONResponse(status_code=200, content="OK running good... v1.1")
 
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(exc: RequestValidationError):
