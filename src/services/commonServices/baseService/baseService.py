@@ -154,21 +154,21 @@ result =  axios_call(params)
         funcModelResponse = functionCallRes.get("modelResponse", {})
         match self.service:
             case 'openai' | 'groq' :
-                self.total_tokens = _.get(model_response, self.modelOutputConfig['usage'][0]['total_tokens']) + _.get(funcModelResponse, self.modelOutputConfig['usage'][0]['total_tokens'])
-                self.prompt_tokens = _.get(model_response, self.modelOutputConfig['usage'][0]['prompt_tokens']) + _.get(funcModelResponse, self.modelOutputConfig['usage'][0]['prompt_tokens'])
-                self.completion_tokens = _.get(model_response, self.modelOutputConfig['usage'][0]['prompt_tokens']) + _.get(funcModelResponse, self.modelOutputConfig['usage'][0]['completion_tokens'])
-                
-                _.set_(model_response, self.modelOutputConfig['message'], _.get(funcModelResponse, self.modelOutputConfig['message']))
-                _.set_(model_response, self.modelOutputConfig['tools'], _.get(funcModelResponse, self.modelOutputConfig['tools']))
+                self.total_tokens = _.get(model_response, self.modelOutputConfig['usage'][0]['total_tokens']) + _.get(funcModelResponse, self.modelOutputConfig['usage'][0]['total_tokens'],0)
+                self.prompt_tokens = _.get(model_response, self.modelOutputConfig['usage'][0]['prompt_tokens']) + _.get(funcModelResponse, self.modelOutputConfig['usage'][0]['prompt_tokens'],0)
+                self.completion_tokens = _.get(model_response, self.modelOutputConfig['usage'][0]['prompt_tokens']) + _.get(funcModelResponse, self.modelOutputConfig['usage'][0]['completion_tokens'],0)
+                if funcModelResponse:
+                    _.set_(model_response, self.modelOutputConfig['message'], _.get(funcModelResponse, self.modelOutputConfig['message']))
+                    _.set_(model_response, self.modelOutputConfig['tools'], _.get(funcModelResponse, self.modelOutputConfig['tools']))
                 _.set_(model_response, self.modelOutputConfig['usage'][0]['total_tokens'], self.total_tokens)
                 _.set_(model_response, self.modelOutputConfig['usage'][0]['prompt_tokens'], self.prompt_tokens)
                 _.set_(model_response, self.modelOutputConfig['usage'][0]['completion_tokens'], self.completion_tokens)
             case 'anthropic':
-                self.prompt_tokens = _.get(model_response, self.modelOutputConfig['usage'][0]['prompt_tokens']) + _.get(funcModelResponse, self.modelOutputConfig['usage'][0]['prompt_tokens'])
-                self.completion_tokens = _.get(model_response, self.modelOutputConfig['usage'][0]['prompt_tokens']) + _.get(funcModelResponse, self.modelOutputConfig['usage'][0]['completion_tokens'])
+                self.prompt_tokens = _.get(model_response, self.modelOutputConfig['usage'][0]['prompt_tokens']) + _.get(funcModelResponse, self.modelOutputConfig['usage'][0]['prompt_tokens'],0)
+                self.completion_tokens = _.get(model_response, self.modelOutputConfig['usage'][0]['prompt_tokens']) + _.get(funcModelResponse, self.modelOutputConfig['usage'][0]['completion_tokens'],0)
                 self.total_tokens = self.prompt_tokens + self.completion_tokens
-
-                _.set_(model_response, self.modelOutputConfig['message'], _.get(funcModelResponse, self.modelOutputConfig['message']))
+                if funcModelResponse:
+                    _.set_(model_response, self.modelOutputConfig['message'], _.get(funcModelResponse, self.modelOutputConfig['message']))
                 # _.set_(model_response, 'content[1].text', _.get(funcModelResponse, 'content[0].text'))
                 _.set_(model_response, self.modelOutputConfig['usage'][0]['prompt_tokens'], self.prompt_tokens)
                 _.set_(model_response, self.modelOutputConfig['usage'][0]['completion_tokens'], self.completion_tokens)
