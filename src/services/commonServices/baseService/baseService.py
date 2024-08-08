@@ -212,8 +212,9 @@ result =  axios_call(params)
         try:
             new_config = {ServiceKeys[service].get(key, key): value for key, value in configuration.items()}
             if configuration.get('tools', '') :
+                new_config['tool_choice'] = "auto"
                 new_config['tools'] = tool_call_formatter(configuration, service)
-            elif configuration.get('tool_choice') or configuration.get('tool_choice') == '':
+            elif 'tool_choice' in configuration:
                 del new_config['tool_choice']   
             return new_config
         except KeyError as e:
