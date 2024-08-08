@@ -90,10 +90,10 @@ def tool_call_formatter(configuration: dict, service: str) -> dict:
         ]
 
 
-async def send_request(url, data, method, header):
+async def send_request(url, data, method, headers):
     try:
         async with httpx.AsyncClient() as client:
-            response = await client.request(method, url, json=data, headers=header)
+            response = await client.request(method, url, json=data, headers=headers)
             return response
     except httpx.RequestError as error:
         print("send_request error=>", error)

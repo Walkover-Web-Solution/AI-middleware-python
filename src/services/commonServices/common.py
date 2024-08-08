@@ -148,8 +148,6 @@ async def chat(request: Request):
             })
             asyncio.create_task(metrics_service.create([usage], result["historyParams"]))
             asyncio.create_task(base_service_instance.sendResponse(response_format, result["modelResponse"],success=True))
-            if response_format['type'] != 'default':
-                return
         return JSONResponse(status_code=200, content={"success": True, "response": result["modelResponse"]})
     except HTTPException as e: 
         raise e
