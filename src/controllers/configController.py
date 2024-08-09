@@ -240,9 +240,10 @@ async def update_bridge_controller(request,bridge_id):
         current_configuration = bridge.get('configuration', {})
         apikey = bridge.get('apikey') if apikey is None else Helper.encrypt(apikey)
         update_fields = {}
-        prompt = new_configuration.get('prompt')
-        if prompt is not None:
-            await storeSystemPrompt(prompt,org_id,bridge_id)
+        prompt = new_configuration.get('prompt') if new_configuration else None
+        if prompt:
+            result = await storeSystemPrompt(prompt, org_id, bridge_id)
+            new_configuration['system_prompt_version_id'] = result.get('id')
         if slugName is not None:
             update_fields['slugName'] = slugName
         if service is not None:
