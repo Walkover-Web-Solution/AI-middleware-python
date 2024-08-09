@@ -229,7 +229,7 @@ async def get_all_service_models_controller(service):
 async def update_bridge_controller(request,bridge_id):
     try:
         body  = await request.json()
-        org_id = request.state.profile['org']['id']
+        org_id = '9185' or request.state.profile['org']['id']
         slugName = body.get('slugName')
         service = body.get('service')
         bridgeType = body.get('bridgeType')
@@ -240,10 +240,9 @@ async def update_bridge_controller(request,bridge_id):
         current_configuration = bridge.get('configuration', {})
         apikey = bridge.get('apikey') if apikey is None else Helper.encrypt(apikey)
         update_fields = {}
-        if new_configuration is not None:
-            prompt = new_configuration.get('prompt')
-            if prompt is not None:
-                await storeSystemPrompt(prompt,org_id,bridge_id)
+        prompt = new_configuration.get('prompt') if new_configuration else None
+        if prompt:
+            await storeSystemPrompt(prompt, org_id, bridge_id)
         if slugName is not None:
             update_fields['slugName'] = slugName
         if service is not None:
