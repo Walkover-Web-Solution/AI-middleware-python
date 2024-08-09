@@ -20,6 +20,7 @@ class Helper:
 
     @staticmethod
     def decrypt(encrypted_text):
+        token = None
         encryption_key=Config.Encreaption_key
         secret_iv=Config.Secret_IV
         
@@ -27,12 +28,17 @@ class Helper:
         key = hashlib.sha512(encryption_key.encode()).hexdigest()[:32]
 
         encrypted_text_bytes = bytes.fromhex(encrypted_text)
-
-        cipher = AES.new(key.encode(), AES.MODE_CBC, iv.encode())
-
-        decrypted_bytes = unpad(cipher.decrypt(encrypted_text_bytes), AES.block_size)
-        
-        return decrypted_bytes.decode('utf-8')
+        try:
+            # Attempt to decrypt using AES CBC mode
+            cipher = AES.new(key.encode(), AES.MODE_CBC, iv.encode())
+            decrypted_bytes = unpad(cipher.decrypt(encrypted_text_bytes), AES.block_size)
+            token = decrypted_bytes.decode('utf-8')
+        except (ValueError, KeyError) as e:
+            # Attempt to decrypt using AES CFB mode
+            cipher = AES.new(key.encode(), AES.MODE_CFB, iv.encode())
+            decrypted_bytes = cipher.decrypt(encrypted_text_bytes)
+            token = decrypted_bytes.decode('utf-8')
+        return token 
     
          
     @staticmethod
