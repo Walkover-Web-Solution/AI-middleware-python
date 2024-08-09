@@ -7,6 +7,7 @@ from src.configs.modelConfiguration import ModelsConfig as model_configuration
 from src.services.utils.helper import Helper
 import json
 from validations.validation import Bridge_update as bridge_validation
+from src.db_services.conversationDbService import storeSystemPrompt
 
 
 async def create_bridges_controller(request):
@@ -239,6 +240,9 @@ async def update_bridge_controller(request,bridge_id):
         current_configuration = bridge.get('configuration', {})
         apikey = bridge.get('apikey') if apikey is None else Helper.encrypt(apikey)
         update_fields = {}
+        prompt = new_configuration.get('prompt')
+        if prompt is not None:
+            await storeSystemPrompt(prompt,org_id,bridge_id)
         if slugName is not None:
             update_fields['slugName'] = slugName
         if service is not None:
