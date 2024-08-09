@@ -10,7 +10,7 @@ router = APIRouter()
 @router.post('/chat/completion', dependencies=[Depends(jwt_middleware)])
 async def chat_completion(request: Request, db_config: dict = Depends(add_configuration_data_to_body)):
     try:
-        request.state.playground = False
+        request.state.is_playground = False
         if(request.state.body.get('configuration',{}).get('response_format',{}) != None and request.state.body.get('configuration',{}).get('response_format',{}).get('type') != 'default'):
             asyncio.create_task(chat(request))
             return {"success": True, "message"  :"Your response will be send through configured means."}
@@ -22,5 +22,5 @@ async def chat_completion(request: Request, db_config: dict = Depends(add_config
 
 @router.post('/playground/chat/completion/{bridge_id}', dependencies=[Depends(jwt_middleware)])
 async def playground_chat_completion(request: Request, db_config: dict = Depends(add_configuration_data_to_body)):
-    request.state.playground = True
+    request.state.is_playground = True
     return await chat(request)

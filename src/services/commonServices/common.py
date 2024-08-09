@@ -44,7 +44,7 @@ async def chat(request: Request):
     customConfig = {}
     response_format = configuration.get("response_format")
     model = configuration.get('model')
-    is_playground = body.get('is_playground', False)
+    is_playground = request.state.is_playground
     bridge = body.get('bridge')
     base_service_instance = {}
 
@@ -148,7 +148,7 @@ async def chat(request: Request):
                 "prompt": configuration["prompt"]
             })
             asyncio.create_task(metrics_service.create([usage], result["historyParams"]))
-            asyncio.create_task(base_service_instance.sendResponse(response_format, result["modelResponse"],success=True))
+            asyncio.create_task(sendResponse(response_format, result["modelResponse"],success=True))
         return JSONResponse(status_code=200, content={"success": True, "response": result["modelResponse"]})
     except HTTPException as e: 
         raise e
@@ -178,7 +178,7 @@ async def chat(request: Request):
                 "actor": "user"
             }))
             print("chat common error=>", error)
-            asyncio.create_task(sendResponse(response_format,result.get("modelResponse",str(error))))
+            asyncio.create_task(sendResponse(response_format,result.get("modelResponse", str(error))))
             if response_format['type'] != 'default':
                 return
         return JSONResponse(status_code=400, content={"success": False, "error": str(error)})

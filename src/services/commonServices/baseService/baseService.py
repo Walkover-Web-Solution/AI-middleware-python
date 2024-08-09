@@ -99,33 +99,30 @@ result =  axios_call(params)
                 pass
         return configuration
 
-    async def function_call(self, configuration, sensitive_config, service, response, l=0, tools={}):
+    async def function_call(self, configuration, service, response, l=0, tools={}):
         if not response.get('success'):
             return {'success': False, 'error': response.get('error')}
         modelfunc = getattr(ModelsConfig, configuration['model'].replace('-',"_").replace('.',"_"), None)
         modelObj = modelfunc()
         modelOutputConfig = modelObj['outputConfig']
         model_response = response.get('modelResponse', {})
-        response_format=sensitive_config['response_format']
-        playground=sensitive_config['playground']
-        apikey = sensitive_config['apikey']
 
         if not (validate_tool_call(modelOutputConfig, service, model_response) and l <= 3):
             return response
         
         l+=1
 
-        if not playground:
-            sendResponse(response_format, data = {'function_call': True}, success = True)
+        if not self.playground:
+            sendResponse(self.response_format, data = {'function_call': True}, success = True)
         
         func_response_data = await self.run_tool(model_response, modelOutputConfig, service)
         tools[func_response_data['name']] = func_response_data['content']
         configuration = self.update_configration(model_response, func_response_data, configuration, modelOutputConfig, service)
-        if not playground:
-            sendResponse(response_format, data = {'function_call': True, 'success': True, 'message': 'Going to GPT'}, success=True)
-        ai_response = await self.chats(configuration, apikey, service)
+        if not self.playground:
+            sendResponse(self.response_format, data = {'function_call': True, 'success': True, 'message': 'Going to GPT'}, success=True)
+        ai_response = await self.chats(configuration, self.apikey, service)
         ai_response['tools'] = tools
-        return await self.function_call(configuration, sensitive_config, service, ai_response, l, tools)
+        return await self.function_call(configuration, service, ai_response, l, tools)
 
     async def handle_failure(self, response):
         usage = {
