@@ -20,22 +20,21 @@ class Helper:
 
     @staticmethod
     def decrypt(encrypted_text):
-        try:
-            encryption_key = Config.Encreaption_key
-            secret_iv = Config.Secret_IV
+        encryption_key=Config.Encreaption_key
+        secret_iv=Config.Secret_IV
         
-            iv = hashlib.sha512(secret_iv.encode()).hexdigest()[:16]
-            key = hashlib.sha512(encryption_key.encode()).hexdigest()[:32]
+        iv = hashlib.sha512(secret_iv.encode()).hexdigest()[:16]
+        key = hashlib.sha512(encryption_key.encode()).hexdigest()[:32]
 
-            encrypted_text_bytes = bytes.fromhex(encrypted_text)
+        encrypted_text_bytes = bytes.fromhex(encrypted_text)
 
-            cipher = AES.new(key.encode(), AES.MODE_CFB, iv.encode())
-            decrypted_bytes = cipher.decrypt(encrypted_text_bytes)
-            return decrypted_bytes.decode('utf-8')
-        except Exception as e:
-            print(f"An error occurred during decryption: {e}")
-            return None
+        cipher = AES.new(key.encode(), AES.MODE_CBC, iv.encode())
+
+        decrypted_bytes = unpad(cipher.decrypt(encrypted_text_bytes), AES.block_size)
         
+        return decrypted_bytes.decode('utf-8')
+    
+         
     @staticmethod
     def update_configuration(prev_configuration, configuration):
         for key in prev_configuration:
