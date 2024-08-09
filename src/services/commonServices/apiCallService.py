@@ -1,6 +1,7 @@
 from fastapi import Request, HTTPException
 from fastapi.responses import JSONResponse
-from src.controllers.configController import get_and_update
+from src.controllers.configController import get_and_update, update_bridge_controller
+from src.db_services.ConfigurationServices import get_bridges 
 import json
 import datetime 
 from models.mongo_connection import db
@@ -17,7 +18,6 @@ async def creates_api(request: Request, bridge_id: str):
         org_id = request.state.org_id if hasattr(request.state, 'org_id') else None
         endpoint_name = body.get('endpoint_name')
         desc = body.get('desc')
-        preFunctionCall = body.get('preFunctionCall')
 
         if not all([desc, function_name, status, bridge_id, org_id]):
             raise HTTPException(status_code=400, detail="Required details must not be empty!!")
@@ -71,7 +71,7 @@ async def creates_api(request: Request, bridge_id: str):
 
             api_object_id = response.get('api_object_id')
             open_api_format = create_open_api(function_name, desc, api_object_id, required_params )
-            result = await get_and_update(bridge_id, org_id, open_api_format['format'], function_name, preFunctionCall)
+            result = await get_and_update(bridge_id, org_id, open_api_format['format'], function_name)
 
             if result.get('success'):
                 return JSONResponse(status_code=200, content={
@@ -100,8 +100,49 @@ async def creates_api(request: Request, bridge_id: str):
     except Exception as error:
         print(f"error in viasocket embed get api=> {error}")
         raise HTTPException(status_code=400, detail=str(error))
+
+
+async def updates_api(request: Request, bridge_id: str):
+    try:
+        body = await request.json()
+        function_name = body.get('id')
+        preFunctionCall = body.get('preFunctionCall')
+        org_id = request.state.org_id if hasattr(request.state, 'org_id') else None
+
+        if not all([function_name, bridge_id, org_id]):
+            raise HTTPException(status_code=400, detail="Required details must not be empty!!")
+    
+        model_config = await get_bridges(bridge_id)
+        tools_call = model_config.get('bridges', {}).get('configuration', {}).get('tools', [])
+        pre_tools_call = model_config.get('bridges', {}).get('configuration', {}).get('pre_tools', [])
+
+        if preFunctionCall:
+            updated_tools_call = [tool for tool in tools_call if tool['name'] != function_name] # remove the tool call if already exists
+            updated_pre_tools_call = pre_tools_call + [tool for tool in tools_call if tool['name'] == function_name] # add the tool call to pre_tools
+        else:
+            updated_pre_tools_call = [tool for tool in pre_tools_call if tool['name'] != function_name] # remove the tool call if already exists
+            updated_tools_call = tools_call + [tool for tool in pre_tools_call if tool['name'] == function_name] # add the tool call to tools
+
+        configuration = {
+            "pre_tools": updated_pre_tools_call,
+            "tools": updated_tools_call
+        }
+
+        body['configuration'] = configuration
+
+        # api_id = await get_api_id(org_id, bridge_id, function_name)
+        request._body = body
+        result = await update_bridge_controller(request=request, bridge_id=bridge_id)
+
+        if result.get("success"):
+            return JSONResponse(status_code=200, content=result)
+        else:
+            return JSONResponse(status_code=400, content=result)
+
+    except Exception as error:
         print(f"error in viasocket embed get api=> {error}")
         raise HTTPException(status_code=400, detail=str(error))
+
 
 def set_nested_value(data, path, value):
     keys = path.split(".")

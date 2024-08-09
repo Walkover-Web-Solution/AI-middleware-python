@@ -269,32 +269,28 @@ async def update_bridge_controller(request,bridge_id):
 
 
 # todo :: change the way tool calls are getting saved in the db
-async def get_and_update( bridge_id, org_id, open_api_format, function_name, preFunctionCall, status="add"):
+async def get_and_update( bridge_id, org_id, open_api_format, function_name, status="add"):
     try:
         model_config = await get_bridges(bridge_id)
         tools_call = model_config.get('bridges', {}).get('configuration', {}).get('tools', [])
-        pre_tools_call = model_config.get('bridges', {}).get('configuration', {}).get('pre_tools', [])
 
-        updated_tools_call = [tool for tool in tools_call if tool['name'] != function_name] # remove the tool call if already exists
-        updated_pre_tools_call = [tool for tool in pre_tools_call if tool['name'] != function_name] # remove the tool call if already exists
+        updated_tools_call = [tool for tool in tools_call if tool['name'] != function_name]
 
         if status == "add":
-            if preFunctionCall:
-                updated_pre_tools_call.append(open_api_format) # add the new updated tool call to pre_tools
-            else:
-                updated_tools_call.append(open_api_format) # add the new updated tool call to tools
+            updated_tools_call.append(open_api_format)
+
+        # todo :: add delete from tool call   
+        # if status == "delete":
+        #     api_endpoints = [item for item in api_endpoints if item != function_name]
 
         tools_call = updated_tools_call
-        pre_tools_call = updated_pre_tools_call
-
         configuration = {
-            "tools": tools_call,
-            "pre_tools": pre_tools_call
+            "tools": tools_call
         }
 
         new_configuration = Helper.update_configuration(model_config['bridges']['configuration'], configuration)
         result = await update_tools_calls(bridge_id, org_id, new_configuration)
-        result['tools_call'] = tools_call or pre_tools_call
+        result['tools_call'] = tools_call
         return result
 
     except Exception as error:
