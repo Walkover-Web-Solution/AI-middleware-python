@@ -44,3 +44,14 @@ class RawData(Base):
     variables = Column(JSON)
     is_present = Column(Boolean, default=False)
     # conversation = relationship("Conversation", back_populates="raw_data")
+
+class system_prompt_versionings(Base):
+    __tablename__ = 'system_prompt_versionings'
+    __table_args__ = {'extend_existing': True}
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    created_at = Column(DateTime, nullable=False, default=func.now())
+    updated_at = Column(DateTime, nullable=False, default=func.now(), onupdate=func.now())
+    system_prompt = Column(Text, nullable=False)
+    bridge_id = Column(String, nullable=False)
+    org_id = Column(String, nullable=False)
