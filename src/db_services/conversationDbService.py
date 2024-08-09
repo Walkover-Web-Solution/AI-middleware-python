@@ -78,6 +78,9 @@ async def storeSystemPrompt(prompt, org_id, bridge_id):
         )
         session.add(new_prompt)
         session.commit()
+        return {
+            'id': new_prompt.id
+            }
     except Exception as error:
         session.rollback()
         print('Error storing system prompt:', error)
