@@ -229,7 +229,7 @@ async def get_all_service_models_controller(service):
 async def update_bridge_controller(request,bridge_id):
     try:
         body  = await request.json()
-        org_id = '9185' or request.state.profile['org']['id']
+        org_id = request.state.profile['org']['id']
         slugName = body.get('slugName')
         service = body.get('service')
         bridgeType = body.get('bridgeType')
