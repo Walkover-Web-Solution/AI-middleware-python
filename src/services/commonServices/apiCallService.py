@@ -17,6 +17,7 @@ async def creates_api(request: Request, bridge_id: str):
         org_id = request.state.org_id if hasattr(request.state, 'org_id') else None
         endpoint_name = body.get('endpoint_name')
         desc = body.get('desc')
+        preFunctionCall = body.get('preFunctionCall')
 
         if not all([desc, function_name, status, bridge_id, org_id]):
             raise HTTPException(status_code=400, detail="Required details must not be empty!!")
@@ -70,7 +71,7 @@ async def creates_api(request: Request, bridge_id: str):
 
             api_object_id = response.get('api_object_id')
             open_api_format = create_open_api(function_name, desc, api_object_id, required_params )
-            result = await get_and_update(bridge_id, org_id, open_api_format['format'], function_name)
+            result = await get_and_update(bridge_id, org_id, open_api_format['format'], function_name, preFunctionCall)
 
             if result.get('success'):
                 return JSONResponse(status_code=200, content={
