@@ -69,7 +69,7 @@ async def chat(request: Request):
         configuration['prompt']  = Helper.replace_variables_in_prompt(configuration['prompt'] , variables)
 
         if template:
-            system_prompt = template;
+            system_prompt = template
             configuration['prompt'] = Helper.replace_variables_in_prompt(system_prompt, {"system_prompt": configuration['prompt'], **variables})
 
         params = {

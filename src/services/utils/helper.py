@@ -55,10 +55,14 @@ class Helper:
     def replace_variables_in_prompt(prompt, variables):
         if variables and len(variables) > 0:
             for key, value in variables.items():
-                string_value = json.dumps(value)
+                # Use repr() instead of json.dumps() to avoid Unicode escape issues
+                string_value = repr(value)
+                # Remove quotes at the beginning and end
+                string_value = string_value[1:-1] if string_value.startswith('"') and string_value.endswith('"') else string_value
                 regex = re.compile(r'\{\{' + re.escape(key) + r'\}\}')
                 prompt = regex.sub(string_value, prompt)
         return prompt
+    
 
     @staticmethod
     def parse_json(json_string):
