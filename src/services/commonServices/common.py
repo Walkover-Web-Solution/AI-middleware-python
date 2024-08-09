@@ -18,6 +18,7 @@ import asyncio
 from .anthrophic.antrophicCall import Antrophic
 from .groq.groqCall import Groq
 from prompts import mui_prompt
+from .baseService.utils import sendResponse
 app = FastAPI()
 # from ..utils.common import common
 
@@ -95,17 +96,17 @@ async def chat(request: Request):
         }
 
         if service == "openai":
-            base_service_instance = openAIInstance = UnifiedOpenAICase(params)
-            result = await openAIInstance.execute()
+            base_service_instance  = UnifiedOpenAICase(params)
+            result = await base_service_instance.execute()
         elif service == "google":
-            base_service_instance = geminiHandler = GeminiHandler(params)
-            result = await geminiHandler.handle_gemini()
+            base_service_instance  = GeminiHandler(params)
+            result = await base_service_instance.handle_gemini()
         elif service == "anthropic":
-            base_service_instance = antrophic = Antrophic(params)
-            result = await antrophic.antrophic_handler()
+            base_service_instance  = Antrophic(params)
+            result = await base_service_instance.antrophic_handler()
         elif service == "groq":
-            base_service_instance = groq = Groq(params)
-            result = await groq.groq_handler()
+            base_service_instance  = Groq(params)
+            result = await base_service_instance.groq_handler()
     
         if not result["success"]:
                 if response_format['type'] != 'default':
@@ -118,8 +119,8 @@ async def chat(request: Request):
                 params["configuration"]["prompt"] = {"role": "system", "content": mui_prompt.responsePrompt}
                 params["user"] = _.get(result["modelResponse"], (modelOutputConfig["message"]))
                 params["template"] = None
-                openAIInstance = UnifiedOpenAICase(params)
-                newresult = await openAIInstance.execute()
+                base_service_instance = UnifiedOpenAICase(params)
+                newresult = await base_service_instance.execute()
                 if not newresult["success"]:
                     return
 
@@ -177,7 +178,7 @@ async def chat(request: Request):
                 "actor": "user"
             }))
             print("chat common error=>", error)
-            asyncio.create_task(base_service_instance.sendResponse(response_format,result["modelResponse"], True))
+            asyncio.create_task(sendResponse(response_format,result.get("modelResponse",str(error))))
             if response_format['type'] != 'default':
                 return
         return JSONResponse(status_code=400, content={"success": False, "error": str(error)})

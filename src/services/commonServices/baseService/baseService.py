@@ -1,12 +1,11 @@
 import asyncio
-from fastapi import HTTPException
 import pydash as _
 from datetime import datetime
 import json
 import requests
 import traceback
 from ....db_services import metrics_service, ConfigurationServices as ConfigurationService
-from .utils import validate_tool_call, fetch_axios, axios_work_js, tool_call_formatter, send_request, send_message
+from .utils import validate_tool_call, fetch_axios, axios_work_js, tool_call_formatter, sendResponse
 from src.configs.serviceKeys import ServiceKeys
 from src.configs.modelConfiguration import ModelsConfig
 from ..openAI.runModel import runModel
@@ -117,13 +116,13 @@ result =  axios_call(params)
         l+=1
 
         if not playground:
-            self.sendResponse(response_format, data = {'function_call': True}, success = True)
+            sendResponse(response_format, data = {'function_call': True}, success = True)
         
         func_response_data = await self.run_tool(model_response, modelOutputConfig, service)
         tools[func_response_data['name']] = func_response_data['content']
         configuration = self.update_configration(model_response, func_response_data, configuration, modelOutputConfig, service)
         if not playground:
-            self.sendResponse(response_format, data = {'function_call': True, 'success': True, 'message': 'Going to GPT'}, success=True)
+            sendResponse(response_format, data = {'function_call': True, 'success': True, 'message': 'Going to GPT'}, success=True)
         ai_response = await self.chats(configuration, apikey, service)
         ai_response['tools'] = tools
         return await self.function_call(configuration, sensitive_config, service, ai_response, l, tools)
@@ -148,7 +147,7 @@ result =  axios_call(params)
             'type': "error",
             'actor': "user" if self.user else "tool"
         }))
-        asyncio.create_task(self.sendResponse(self.response_format, data=response.get('error')))
+        asyncio.create_task(sendResponse(self.response_format, data=response.get('error')))
 # todo
     def update_model_response(self, model_response, functionCallRes={}):
         funcModelResponse = functionCallRes.get("modelResponse", {})
@@ -251,14 +250,3 @@ result =  axios_call(params)
             }
 
 
-    async def sendResponse(self, response_format, data, success = False):
-        data_to_send = {
-            'response' if success else 'error': data,
-            'success': success
-        }
-
-        match response_format['type']:
-            case 'RTLayer' : 
-                return await send_message(cred = response_format['cred'], data=data_to_send)
-            case 'webhook':
-                return await send_request(**response_format['cred'], method='POST', data=data_to_send)
