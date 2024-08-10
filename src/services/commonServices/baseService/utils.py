@@ -101,11 +101,15 @@ async def send_request(url, data, method, headers):
     
 async def send_message(cred, data ):
     try:
-        async with httpx.AsyncClient() as client :
-            response = await client.post(url=f"https://api.rtlayer.com/message?apiKey={cred['apikey']}", data = {
+        response = requests.post(
+            url=f"https://api.rtlayer.com/message?apiKey={cred['apikey']}",
+            data={
                 **cred,
-                'message' : json.dumps(data)
-            })
-            return response
+                'message': json.dumps(data)
+            }
+        )
+        return response
     except httpx.RequestError as error:
         print('send message error=>', error)
+    except Exception as e:
+        print('Unexpected error=>', e)

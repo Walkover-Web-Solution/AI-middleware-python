@@ -3,6 +3,10 @@ from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
+import requests
+import time
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
 
 from config import Config
 from src.controllers.modelController import router as model_router
@@ -11,7 +15,7 @@ from src.routes.config_routes import router as config_router
 from src.controllers.bridgeController import router as bridge_router
 # Initialize the FastAPI app
 app = FastAPI(debug=True)
-
+executor = ThreadPoolExecutor(max_workers= int(Config.max_workers) or 10)
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
@@ -25,7 +29,40 @@ app.add_middleware(
 # Healthcheck route
 @app.get("/healthcheck")
 async def healthcheck():
-    return JSONResponse(status_code=200, content="OK running good... v1.1")
+    return JSONResponse(status_code=200, content={
+            "status": "OK running good... v1.1",
+    })
+            
+
+@app.get("/5-sec")
+async def bloking():
+    try:
+        def blocking_io_function():
+                    # Make the API call
+            response = requests.get("https://flow.sokt.io/func/scriDLT6j3lB")
+                    # Check if the request was successful
+            if response.status_code == 200:
+                api_result = response.json()  # Assuming the API returns JSON
+                return api_result
+            else:
+                return {
+                "status": "API call failed",
+                "error": f"Status code: {response.status_code}"
+                }
+
+        loop = asyncio.get_event_loop()
+        result = await loop.run_in_executor(executor, blocking_io_function)
+        return JSONResponse(status_code=200, content={
+                "status": "OK running good... v1.1",
+                "api_result": result
+            })
+    except Exception as e:
+        return JSONResponse(status_code=500, content={
+            "status": "Error",
+            "error": str(e)
+        })
+        
+
 
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(exc: RequestValidationError):
