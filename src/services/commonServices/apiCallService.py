@@ -1,7 +1,7 @@
 from fastapi import Request, HTTPException
 from fastapi.responses import JSONResponse
 from src.controllers.configController import get_and_update, update_bridge_controller
-from src.db_services.ConfigurationServices import get_bridges 
+from src.db_services.ConfigurationServices import get_bridges, update_bridge
 import json
 import datetime 
 from models.mongo_connection import db
@@ -106,33 +106,22 @@ async def updates_api(request: Request, bridge_id: str):
     try:
         body = await request.json()
         function_name = body.get('id')
-        preFunctionCall = body.get('preFunctionCall')
-        org_id = request.state.org_id if hasattr(request.state, 'org_id') else None
 
-        if not all([function_name, bridge_id, org_id]):
+        if not all([function_name, bridge_id]):
             raise HTTPException(status_code=400, detail="Required details must not be empty!!")
     
         model_config = await get_bridges(bridge_id)
         tools_call = model_config.get('bridges', {}).get('configuration', {}).get('tools', [])
-        pre_tools_call = model_config.get('bridges', {}).get('configuration', {}).get('pre_tools', [])
+        updated_pre_tools_call = []
+        updated_tools_call = [tool for tool in tools_call if tool['name'] != function_name] # remove the tool with the same name
+        updated_pre_tools_call.append(function_name) 
 
-        if preFunctionCall:
-            updated_tools_call = [tool for tool in tools_call if tool['name'] != function_name] # remove the tool call if already exists
-            updated_pre_tools_call = pre_tools_call + [tool for tool in tools_call if tool['name'] == function_name] # add the tool call to pre_tools
-        else:
-            updated_pre_tools_call = [tool for tool in pre_tools_call if tool['name'] != function_name] # remove the tool call if already exists
-            updated_tools_call = tools_call + [tool for tool in pre_tools_call if tool['name'] == function_name] # add the tool call to tools
-
-        configuration = {
-            "pre_tools": updated_pre_tools_call,
+        model_config['configuration'] = {
+            ** model_config["configuration"],
             "tools": updated_tools_call
         }
-
-        body['configuration'] = configuration
-
-        # api_id = await get_api_id(org_id, bridge_id, function_name)
-        request._body = body
-        result = await update_bridge_controller(request=request, bridge_id=bridge_id)
+        model_config["pre_tools"] = updated_pre_tools_call
+        result = await update_bridge(bridge_id, model_config)
 
         if result.get("success"):
             return JSONResponse(status_code=200, content=result)
