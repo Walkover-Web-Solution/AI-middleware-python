@@ -16,7 +16,7 @@ from src.controllers.bridgeController import router as bridge_router
 
 # Initialize the FastAPI app
 app = FastAPI(debug=True)
-executor = ThreadPoolExecutor()
+executor = ThreadPoolExecutor(max_workers= int(Config.max_workers) or 10)
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
