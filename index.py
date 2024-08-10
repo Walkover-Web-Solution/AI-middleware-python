@@ -35,8 +35,6 @@ async def healthcheck():
     })
             
 
-
-
 @app.get("/5-sec")
 async def bloking():
     try:

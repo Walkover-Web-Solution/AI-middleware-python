@@ -14,7 +14,6 @@ executor = ThreadPoolExecutor(max_workers= int(Config.max_workers) or 10)
 async def chat_completion(request: Request, db_config: dict = Depends(add_configuration_data_to_body)):
     try:
         request.state.is_playground = False
-
         # Extract the response format configuration
         response_format = request.state.body.get('configuration', {}).get('response_format', {})
 
@@ -48,4 +47,3 @@ async def playground_chat_completion(request: Request, db_config: dict = Depends
     result = await loop.run_in_executor(executor, lambda: asyncio.run(chat(request)))
 
     return result
-    return await chat(request)
