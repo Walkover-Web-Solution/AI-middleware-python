@@ -18,11 +18,7 @@ class UnifiedOpenAICase(BaseService):
                 await self.handle_failure(openAIResponse)
             return {'success': False, 'error': openAIResponse.get('error')}
         if _.get(modelResponse, self.modelOutputConfig.get('tools')):
-            functionCallRes = await self.function_call(self.customConfig,{
-                'apikey': self.apikey,
-                'response_format' : self.response_format,
-                'playground': self.playground,
-            },service_name['openai'], openAIResponse)
+            functionCallRes = await self.function_call(self.customConfig, service_name['openai'], openAIResponse)
             if not functionCallRes.get('success'):
                 await self.handle_failure(functionCallRes)
                 return {'success': False, 'error': functionCallRes.get('error')}

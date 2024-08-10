@@ -6,7 +6,7 @@ from sqlalchemy.exc import SQLAlchemyError
 import asyncio
 import traceback
 from datetime import datetime
-from models.postgres.pg_models import Conversation, RawData
+from models.postgres.pg_models import Conversation, RawData, system_prompt_versionings
 
 pg = models['pg']
 
@@ -66,6 +66,28 @@ async def find(org_id, thread_id, bridge_id):
     finally:
         session.close()
 
+async def storeSystemPrompt(prompt, org_id, bridge_id):
+    session = pg['session']()
+    try:
+        new_prompt = system_prompt_versionings(
+            system_prompt=prompt,
+            org_id=org_id,
+            bridge_id=bridge_id,
+            created_at=datetime.now(),
+            updated_at=datetime.now()
+        )
+        session.add(new_prompt)
+        session.commit()
+        return {
+            'id': new_prompt.id
+            }
+    except Exception as error:
+        session.rollback()
+        print('Error storing system prompt:', error)
+        raise error
+    finally:
+        session.close()
+        
 # async def getHistory(bridge_id, timestamp):
 #     try:
 #         history = await models['pg'].system_prompt_versionings.find_all(
@@ -186,19 +208,6 @@ async def find(org_id, thread_id, bridge_id):
 #     except SQLAlchemyError as e:
 #         raise e
 
-# async def storeSystemPrompt(promptText, orgId, bridgeId):
-#     try:
-#         await models['pg'].system_prompt_versionings.create(
-#             system_prompt=promptText,
-#             org_id=orgId,
-#             bridge_id=bridgeId,
-#             created_at=func.now(),
-#             updated_at=func.now()
-#         )
-#         await models['pg'].session.commit()
-#     except SQLAlchemyError as e:
-#         await models['pg'].session.rollback()
-#         print('Error storing system prompt:', e)
 
 # # Exporting the functions
 # __all__ = [

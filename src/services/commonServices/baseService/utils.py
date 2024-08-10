@@ -113,3 +113,17 @@ async def send_message(cred, data ):
         print('send message error=>', error)
     except Exception as e:
         print('Unexpected error=>', e)
+
+
+async def sendResponse(response_format, data, success = False):
+    data_to_send = {
+        'response' if success else 'error': data,
+        'success': success
+    }
+
+    match response_format['type']:
+        case 'RTLayer' : 
+            return await send_message(cred = response_format['cred'], data=data_to_send)
+        case 'webhook':
+            return await send_request(**response_format['cred'], method='POST', data=data_to_send)
+
