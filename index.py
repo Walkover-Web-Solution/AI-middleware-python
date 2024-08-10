@@ -13,7 +13,7 @@ from src.controllers.modelController import router as model_router
 from src.routes.chatBot_routes import router as chatbot_router
 from src.routes.config_routes import router as config_router
 from src.controllers.bridgeController import router as bridge_router
-
+from src.routes.v2.modelRouter import router as v2_router
 # Initialize the FastAPI app
 app = FastAPI(debug=True)
 executor = ThreadPoolExecutor(max_workers= int(Config.max_workers) or 10)
@@ -74,6 +74,7 @@ async def validation_exception_handler(exc: RequestValidationError):
 
 # Include routers
 app.include_router(model_router, prefix="/api/v1/model")
+app.include_router(v2_router, prefix="/api/v2/model")
 app.include_router(chatbot_router, prefix="/chatbot")
 app.include_router(bridge_router, prefix="/bridge")
 app.include_router(config_router, prefix="/api/v1/config")
