@@ -19,6 +19,7 @@ from .anthrophic.antrophicCall import Antrophic
 from .groq.groqCall import Groq
 from prompts import mui_prompt
 from .baseService.utils import sendResponse
+from ..utils.ai_middleware_format import Response_formatter
 app = FastAPI()
 # from ..utils.common import common
 
@@ -47,6 +48,7 @@ async def chat(request: Request):
     is_playground = request.state.is_playground
     bridge = body.get('bridge')
     base_service_instance = {}
+    version = request.state.version
 
     try:
         modelname = model.replace("-", "_").replace(".", "_")
@@ -136,6 +138,8 @@ async def chat(request: Request):
                 result['historyParams']['user'] = user
 
         endTime = int(time.time() * 1000)
+        if version == 2:
+            result['modelResponse'] = await Response_formatter(result["modelResponse"],service)
         if not is_playground:
             usage.update({
                 **result.get("usage", {}),
@@ -149,7 +153,7 @@ async def chat(request: Request):
             })
             asyncio.create_task(metrics_service.create([usage], result["historyParams"]))
             asyncio.create_task(sendResponse(response_format, result["modelResponse"],success=True))
-        return JSONResponse(status_code=200, content={"success": True, "response": result["modelResponse"]})
+        return JSONResponse(status_code=200, content= result['modelResponse'])
     except HTTPException as e: 
         raise e
     except Exception as error:
