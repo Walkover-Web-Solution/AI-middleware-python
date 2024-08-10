@@ -1,6 +1,7 @@
 from fastapi import Request, HTTPException
 from fastapi.responses import JSONResponse
 from src.controllers.configController import get_and_update
+from src.db_services.ConfigurationServices import get_bridges, update_bridge
 import json
 import datetime 
 from models.mongo_connection import db
@@ -99,8 +100,49 @@ async def creates_api(request: Request, bridge_id: str):
     except Exception as error:
         print(f"error in viasocket embed get api=> {error}")
         raise HTTPException(status_code=400, detail=str(error))
+
+
+async def updates_api(request: Request, bridge_id: str):
+    try:
+        body = await request.json()
+        function_name = body.get('id')
+
+        if not all([function_name, bridge_id]):
+            raise HTTPException(status_code=400, detail="Required details must not be empty!!")
+    
+        model_config = await get_bridges(bridge_id)
+
+        if model_config.get('success') is False: 
+            raise HTTPException(status_code=400, detail="bridge id is not found")
+            
+        model_config = model_config.get('bridges', {})
+        tools_call = model_config.get('configuration', {}).get('tools', [])
+        updated_pre_tools_call = []
+        updated_tools_call = [tool for tool in tools_call if tool['name'] != function_name] # remove the tool with the same name
+
+        if model_config["pre_tools"] and model_config['pre_tools'][0] == function_name:
+            raise HTTPException(status_code=400, detail='function is already added to pre function ')
+        # to check if function exist or not which is send 
+        if len(tools_call) - 1 != len(updated_tools_call):
+            raise HTTPException(status_code=400, detail="function doesn't exist")
+        
+        updated_pre_tools_call.append(function_name) 
+        model_config['configuration'] = {
+            ** model_config["configuration"],
+            "tools": updated_tools_call
+        }
+        model_config["pre_tools"] = updated_pre_tools_call
+        result = await update_bridge(bridge_id, model_config)
+
+        if result.get("success"):
+            return JSONResponse(status_code=200, content=result)
+        else:
+            return JSONResponse(status_code=400, content=result)
+
+    except Exception as error:
         print(f"error in viasocket embed get api=> {error}")
         raise HTTPException(status_code=400, detail=str(error))
+
 
 def set_nested_value(data, path, value):
     keys = path.split(".")
