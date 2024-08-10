@@ -3,7 +3,7 @@ from .helper import Helper
 # from src.services.commonServices.generateToken import generateToken
 # from src.configs.modelConfiguration import ModelsConfig
 
-async def getConfiguration(configuration, service, bridge_id, apikey, template_id=None):
+async def getConfiguration(configuration, service, bridge_id, apikey, template_id=None, variables = {}):
     RTLayer = False
     bridge = None
     result = await ConfigurationService.get_bridges(bridge_id)
@@ -25,10 +25,21 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
     bridge = result.get('bridges')
     service = service.lower() if service else ""
     template_content = await ConfigurationService.get_template_by_id(template_id) if template_id else None
+    pre_tools = bridge.get('pre_tools', [])
+    if len(pre_tools)>0:
+        api_call = await ConfigurationService.get_api_call_by_name(pre_tools[0])
+        pre_function_code = api_call.get('apiCall', {}).get('code', '')
+        required_params = api_call.get('apiCall', {}).get('required_params', [])
+        data = {}
+        for param in required_params:
+            if param in variables :
+                data[param] = variables[param]
+        
     return {
         'success': True,
         'configuration': configuration,
         'bridge': bridge,
+        'pre_tools': {'pre_function_code': pre_function_code, 'args': data} if pre_function_code else None,
         'service': service,
         'apikey': apikey,
         'RTLayer': RTLayer,
