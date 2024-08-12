@@ -63,6 +63,10 @@ async def chat(request: Request):
             if  modelConfig[key]["level"] == 2 or key in configuration:
                 customConfig[key] = configuration.get(key, modelConfig[key]["default"])
 
+        if pre_tools:
+            pre_function_response = await axios_work(pre_tools.get('args', {}), pre_tools.get('pre_function_code', ''), True)
+            variables['pre_function'] = pre_function_response.get('response')
+
         if thread_id:
             thread_id = thread_id.strip()
             result = await getThread(thread_id, org_id, bridge_id)
@@ -71,9 +75,6 @@ async def chat(request: Request):
         else:
             thread_id = str(uuid.uuid1())
         configuration['prompt']  = Helper.replace_variables_in_prompt(configuration['prompt'] , variables)
-
-        if pre_tools:
-            variables['pre_function'] =  await axios_work(pre_tools.get('args', {}), pre_tools.get('pre_function_code' , ''), True)
             
         if template:
             system_prompt = template
