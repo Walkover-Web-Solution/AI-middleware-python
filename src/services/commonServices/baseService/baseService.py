@@ -190,8 +190,8 @@ class BaseService:
                 new_config['tools'] = tool_call_formatter(configuration, service)
             elif 'tool_choice' in configuration:
                 del new_config['tool_choice']  
-            if len(new_config['tools']) == 0:
-                    del new_config['tools'] 
+            if 'tools' in new_config and len(new_config['tools']) == 0:
+                del new_config['tools'] 
             return new_config
         except KeyError as e:
             print(f"Service key error: {e}")
