@@ -18,6 +18,8 @@ import asyncio
 from .anthrophic.antrophicCall import Antrophic
 from .groq.groqCall import Groq
 from prompts import mui_prompt
+from .baseService.utils import sendResponse
+from ..utils.ai_middleware_format import Response_formatter
 app = FastAPI()
 from src.services.commonServices.baseService.utils import axios_work
 
@@ -46,10 +48,11 @@ async def chat(request: Request):
     customConfig = {}
     response_format = configuration.get("response_format")
     model = configuration.get('model')
-    is_playground = body.get('is_playground', False)
+    is_playground = request.state.is_playground
     bridge = body.get('bridge')
     pre_tools = body.get('pre_tools')
     base_service_instance = {}
+    version = request.state.version
 
     try:
         modelname = model.replace("-", "_").replace(".", "_")
@@ -103,17 +106,17 @@ async def chat(request: Request):
         }
 
         if service == "openai":
-            base_service_instance = openAIInstance = UnifiedOpenAICase(params)
-            result = await openAIInstance.execute()
+            base_service_instance  = UnifiedOpenAICase(params)
+            result = await base_service_instance.execute()
         elif service == "google":
-            base_service_instance = geminiHandler = GeminiHandler(params)
-            result = await geminiHandler.handle_gemini()
+            base_service_instance  = GeminiHandler(params)
+            result = await base_service_instance.handle_gemini()
         elif service == "anthropic":
-            base_service_instance = antrophic = Antrophic(params)
-            result = await antrophic.antrophic_handler()
+            base_service_instance  = Antrophic(params)
+            result = await base_service_instance.antrophic_handler()
         elif service == "groq":
-            base_service_instance = groq = Groq(params)
-            result = await groq.groq_handler()
+            base_service_instance  = Groq(params)
+            result = await base_service_instance.groq_handler()
     
         if not result["success"]:
                 if response_format['type'] != 'default':
@@ -126,8 +129,8 @@ async def chat(request: Request):
                 params["configuration"]["prompt"] = {"role": "system", "content": mui_prompt.responsePrompt}
                 params["user"] = _.get(result["modelResponse"], (modelOutputConfig["message"]))
                 params["template"] = None
-                openAIInstance = UnifiedOpenAICase(params)
-                newresult = await openAIInstance.execute()
+                base_service_instance = UnifiedOpenAICase(params)
+                newresult = await base_service_instance.execute()
                 if not newresult["success"]:
                     return
 
@@ -143,6 +146,8 @@ async def chat(request: Request):
                 result['historyParams']['user'] = user
 
         endTime = int(time.time() * 1000)
+        if version == 2:
+            result['modelResponse'] = await Response_formatter(result["modelResponse"],service)
         if not is_playground:
             usage.update({
                 **result.get("usage", {}),
@@ -155,7 +160,7 @@ async def chat(request: Request):
                 "prompt": configuration["prompt"]
             })
             asyncio.create_task(metrics_service.create([usage], result["historyParams"]))
-            asyncio.create_task(base_service_instance.sendResponse(response_format, result["modelResponse"],success=True))
+            asyncio.create_task(sendResponse(response_format, result["modelResponse"],success=True))
         return JSONResponse(status_code=200, content={"success": True, "response": result["modelResponse"]})
     except HTTPException as e: 
         raise e
@@ -185,7 +190,7 @@ async def chat(request: Request):
                 "actor": "user"
             }))
             print("chat common error=>", error)
-            asyncio.create_task(base_service_instance.sendResponse(response_format,result["modelResponse"], True))
+            asyncio.create_task(sendResponse(response_format,result.get("modelResponse", str(error))))
             if response_format['type'] != 'default':
                 return
         return JSONResponse(status_code=400, content={"success": False, "error": str(error)})

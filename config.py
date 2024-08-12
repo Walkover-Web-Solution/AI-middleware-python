@@ -30,3 +30,4 @@ class Config:
     PORT = os.getenv('PORT', 8080)
     CHATBOTSECRETKEY = os.getenv('CHATBOTSECRETKEY')
     TEMPLATE_ID = os.getenv('TEMPLATE_ID')
+    max_workers = os.getenv('max_workers')
