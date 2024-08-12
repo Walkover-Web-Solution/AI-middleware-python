@@ -290,13 +290,13 @@ async def delete_api(function_name, org_id, bridge_id):
     try:
         # delete by endpoint
         # todo : testing left
-        apiCallModel.find_one_and_delete({
-            "$or": [
-                {"org_id": org_id, "bridge_id": bridge_id, "endpoint": function_name},
-                {"org_id": org_id, "bridge_id": bridge_id, "name": function_name}
-            ]
-        })
-        result = await get_and_update("", bridge_id, org_id, "", function_name, {}, "delete")
+        # apiCallModel.find_one_and_delete({
+        #     "$or": [
+        #         {"org_id": org_id, "bridge_id": bridge_id, "endpoint": function_name},
+        #         {"org_id": org_id, "bridge_id": bridge_id, "name": function_name}
+        #     ]
+        # })
+        result = await get_and_update(bridge_id, org_id, "", function_name, "delete")
         return result
     except Exception as error:
         print(f"Delete API error=> {error}")
