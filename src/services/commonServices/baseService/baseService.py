@@ -38,22 +38,21 @@ class BaseService:
 
     async def run_tool(self, responses, service):
         codes = []
-        final_codes = []
+        codes_mapping = {}
+        names=[]
         match service:
             case 'openai' | 'groq':
                 # make a loop for get the array of api call 
                 for response in responses['choices'][0]['message']['tool_calls']:
                     tools_call = response
                     name = tools_call.get('function', {}).get('name')
-                    axios_instance, is_python = await fetch_axios(ConfigurationService, name)
                     args = json.loads(tools_call['function'].get('arguments', '{}'))
-                    codes.append({
+                    codes_mapping[name] = {
                         'tools_call': tools_call,
                         'name': name,
-                        'axios_instance': axios_instance,
-                        'is_python': is_python,
                         'args': args
-                    })
+                    }
+                    names.append(name)
             case 'anthropic':
                 # make a loop for get the array of api call
                 for index, response in enumerate(responses['content']):
@@ -61,27 +60,32 @@ class BaseService:
                         continue
                     tools_call = response
                     name = tools_call.get('name')
-                    axios_instance, is_python = await fetch_axios(ConfigurationService, name)
                     args = tools_call.get('input', {})
-                    codes.append({
+                    codes_mapping['name'] = {
                         'tools_call': tools_call,
                         'name': name,
-                        'axios_instance': axios_instance,
-                        'is_python': is_python,
                         'args': args
-                    })
+                    }
+                    names.append(name)
             case _:
                 return False
-
-        for code in codes:
-            api_response = await axios_work(code['args'], code['axios_instance'], code['is_python'])
-            final_codes.append({
-                    'tool_call_id': code['tools_call']['id'],
-                    'role': 'tool',
-                    'name': code['name'],
-                    'content': json.dumps(api_response),
-                })
-        return  final_codes 
+        api_calls_reponse = await ConfigurationService.get_api_call_by_names(names)
+        async def process_code(api_call):
+            axios_instance = api_call.get('code') or api_call.get('axios')  
+            is_python = api_call.get('is_python', False)
+            name = api_call.get('function_name',codes_mapping.get('endpoint',''))
+            api_response = await axios_work(
+            codes_mapping[name]['args'], 
+            axios_instance,
+            is_python
+            )
+            return {
+            'tool_call_id': codes_mapping[name]['tools_call'].get('id'),
+            'role': 'tool',
+            'name': codes_mapping[name]['name'],
+            'content': json.dumps(api_response),
+            }    
+        return  await asyncio.gather(*(process_code(api_call) for api_call in api_calls_reponse['apiCalls'])) 
 
     def update_configration(self, response, function_responses, configuration, modelOutputConfig, service, tools):    
         for function_response in function_responses:
@@ -119,7 +123,7 @@ class BaseService:
         func_response_data = await self.run_tool(model_response, service)
         configuration, tools = self.update_configration(model_response, func_response_data, configuration, modelOutputConfig, service, tools)
         if not self.playground:
-            self.sendResponse(self.response_format, data = {'function_call': True, 'success': True, 'message': 'Going to GPT'}, success=True)
+            sendResponse(self.response_format, data = {'function_call': True, 'success': True, 'message': 'Going to GPT'}, success=True)
         ai_response = await self.chats(configuration, self.apikey, service)
         ai_response['tools'] = tools
         return await self.function_call(configuration, service, ai_response, l, tools)

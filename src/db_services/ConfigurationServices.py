@@ -35,6 +35,25 @@ async def get_api_call_by_name(name):
             'error': "something went wrong!!"
         }
 
+async def get_api_call_by_names(names):
+    try:
+        api_calls = list(apiCallModel.find({
+            '$or': [
+                {'function_name': {'$in': names}},
+                {'endpoint': {'$in': names}}
+            ]
+        }))
+        return {
+            'success': True,
+            'apiCalls': api_calls
+        }
+    except Exception as error:
+        print(f"error: {error}")
+        return {
+            'success': False,
+            'error': "Something went wrong!"
+        }
+
 async def get_template_by_id(template_id):
     try:
         template_content = templateModel.find_one({'_id' : ObjectId(template_id)})
