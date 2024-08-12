@@ -12,6 +12,7 @@ from ..openAI.runModel import runModel
 from ..anthrophic.antrophicModelRun import anthropic_runmodel
 from ....configs.constant import service_name
 from ..groq.groqModelRun import groq_runmodel
+from ....configs.constant import service_name
 
 class BaseService:
     def __init__(self, params):
@@ -182,7 +183,10 @@ class BaseService:
         try:
             new_config = {ServiceKeys[service].get(key, key): value for key, value in configuration.items()}
             if configuration.get('tools', '') :
-                new_config['tool_choice'] = "auto"
+                if service == service_name['anthropic']:
+                    new_config['tool_choice'] =  {"type": "auto"}
+                else:
+                    new_config['tool_choice'] = "auto"
                 new_config['tools'] = tool_call_formatter(configuration, service)
             elif 'tool_choice' in configuration:
                 del new_config['tool_choice']  

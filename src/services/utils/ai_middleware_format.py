@@ -1,7 +1,7 @@
 async def Response_formatter(response, service):
     if service == 'openai':
         return {
-            "response" : {
+            "data" : {
                 "id" : response.get("id", None),
                 "content" : response.get("choices", [{}])[0].get("message", {}).get("content", None),
                 "model" : response.get("model", None),
@@ -17,7 +17,7 @@ async def Response_formatter(response, service):
     
     elif service == 'anthropic':
         return {
-            "response" : {
+            "data" : {
                 "id" : response.get("id", None),
                 "content" : response.get("content", [{}])[0].get("text", None),
                 "model" : response.get("model", None),
@@ -35,7 +35,7 @@ async def Response_formatter(response, service):
         }
     elif service == 'groq':
         return {
-            "response" : {
+            "data" : {
                 "id" : response.get("id", None),
                 "content" : response.get("choices", [{}])[0].get("message", {}).get("content", None),
                 "model" : response.get("model", None),
