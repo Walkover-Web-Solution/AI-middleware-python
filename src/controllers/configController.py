@@ -277,11 +277,19 @@ async def update_bridge_controller(request,bridge_id):
 async def get_and_update( bridge_id, org_id, open_api_format, function_name, status="add"):
     try:
         model_config = await get_bridges(bridge_id)
+        pre_tools = model_config.get('bridges', {}).get('pre_tools', [])
         tools_call = model_config.get('bridges', {}).get('configuration', {}).get('tools', [])
+
+        if len(pre_tools) > 0 and function_name in pre_tools:
+            return {
+            'success': True,
+            'message': "tool is already added to the pre_tools so not adding it to configuration tools",
+            'tools_call': tools_call
+        } 
 
         updated_tools_call = [tool for tool in tools_call if tool['name'] != function_name]
 
-        if status == "add":
+        if status == "add" :
             updated_tools_call.append(open_api_format)
 
         # todo :: add delete from tool call   
