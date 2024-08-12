@@ -36,43 +36,69 @@ class BaseService:
         self.response_format = params.get('response_format')
 
 
-    async def run_tool(self, response, modelOutputConfig, service):
-        axios_instance, is_python, args = '', False, {}
+    async def run_tool(self, responses, service):
+        codes = []
+        final_codes = []
         match service:
             case 'openai' | 'groq':
-                tools_call = _.get(response, modelOutputConfig.get('tools'))[0]
-                name = tools_call.get('function', {}).get('name')
-                axios_instance, is_python = await fetch_axios(ConfigurationService, name)
-                args = json.loads(tools_call['function'].get('arguments', {}))
+                # make a loop for get the array of api call 
+                for response in responses['choices'][0]['message']['tool_calls']:
+                    tools_call = response
+                    name = tools_call.get('function', {}).get('name')
+                    axios_instance, is_python = await fetch_axios(ConfigurationService, name)
+                    args = json.loads(tools_call['function'].get('arguments', '{}'))
+                    codes.append({
+                        'tools_call': tools_call,
+                        'name': name,
+                        'axios_instance': axios_instance,
+                        'is_python': is_python,
+                        'args': args
+                    })
             case 'anthropic':
-                tools_call = response['content'][1]
-                name = tools_call.get('name')
-                axios_instance, is_python = await fetch_axios(ConfigurationService, name)
-                args = tools_call.get('input', {})
+                # make a loop for get the array of api call
+                for index, response in enumerate(responses['content']):
+                    if index == 1: 
+                        continue
+                    tools_call = response
+                    name = tools_call.get('name')
+                    axios_instance, is_python = await fetch_axios(ConfigurationService, name)
+                    args = tools_call.get('input', {})
+                    codes.append({
+                        'tools_call': tools_call,
+                        'name': name,
+                        'axios_instance': axios_instance,
+                        'is_python': is_python,
+                        'args': args
+                    })
             case _:
                 return False
-        
-        api_response = await axios_work(args, axios_instance, is_python)
-        return   {
-                    'tool_call_id': tools_call['id'],
-                    'role': 'tool',
-                    'name': name,
-                    'content': json.dumps(api_response),
-                }
 
-    def update_configration(self, response, function_response, configuration, modelOutputConfig, service):    
-        match service:
-            case 'openai' | 'groq' :
-                configuration['messages'].append({'role': 'assistant', 'content': None, 'tool_calls': [_.get(response, modelOutputConfig.get('tools'))[0]]})
-                configuration['messages'].append(function_response)
-            case 'anthropic':
-                configuration['messages'].append({'role': 'assistant', 'content': response['content']})
-                configuration['messages'].append({'role': 'user','content':[{"type":"tool_result",  
+        for code in codes:
+            api_response = await axios_work(code['args'], code['axios_instance'], code['is_python'])
+            final_codes.append({
+                    'tool_call_id': code['tools_call']['id'],
+                    'role': 'tool',
+                    'name': code['name'],
+                    'content': json.dumps(api_response),
+                })
+        return  final_codes 
+
+    def update_configration(self, response, function_responses, configuration, modelOutputConfig, service, tools):    
+        for function_response in function_responses:
+            tools[function_response['name']] = function_response['content']
+        
+            match service:
+                case 'openai' | 'groq' :
+                    configuration['messages'].append({'role': 'assistant', 'content': None, 'tool_calls': [_.get(response, modelOutputConfig.get('tools'))[0]]})
+                    configuration['messages'].append(function_response)
+                case 'anthropic':
+                    configuration['messages'].append({'role': 'assistant', 'content': response['content']})
+                    configuration['messages'].append({'role': 'user','content':[{"type":"tool_result",  
                                                  "tool_use_id": function_response['tool_call_id'],
                                                  "content": function_response['content']}]})
-            case  _:
-                pass
-        return configuration
+                case  _:
+                    pass
+        return configuration, tools
 
     async def function_call(self, configuration, service, response, l=0, tools={}):
         if not response.get('success'):
@@ -90,11 +116,10 @@ class BaseService:
         if not self.playground:
             sendResponse(self.response_format, data = {'function_call': True}, success = True)
         
-        func_response_data = await self.run_tool(model_response, modelOutputConfig, service)
-        tools[func_response_data['name']] = func_response_data['content']
-        configuration = self.update_configration(model_response, func_response_data, configuration, modelOutputConfig, service)
+        func_response_data = await self.run_tool(model_response, service)
+        configuration, tools = self.update_configration(model_response, func_response_data, configuration, modelOutputConfig, service, tools)
         if not self.playground:
-            sendResponse(self.response_format, data = {'function_call': True, 'success': True, 'message': 'Going to GPT'}, success=True)
+            self.sendResponse(self.response_format, data = {'function_call': True, 'success': True, 'message': 'Going to GPT'}, success=True)
         ai_response = await self.chats(configuration, self.apikey, service)
         ai_response['tools'] = tools
         return await self.function_call(configuration, service, ai_response, l, tools)
