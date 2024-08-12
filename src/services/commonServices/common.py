@@ -19,6 +19,7 @@ from .anthrophic.antrophicCall import Antrophic
 from .groq.groqCall import Groq
 from prompts import mui_prompt
 app = FastAPI()
+from src.services.commonServices.baseService.utils import axios_work
 # from ..utils.common import common
 
 @app.post("/chat/{bridge_id}")
@@ -45,6 +46,7 @@ async def chat(request: Request):
     model = configuration.get('model')
     is_playground = body.get('is_playground', False)
     bridge = body.get('bridge')
+    pre_tools = body.get('pre_tools', None)
     base_service_instance = {}
 
     try:
@@ -59,6 +61,10 @@ async def chat(request: Request):
             if  modelConfig[key]["level"] == 2 or key in configuration:
                 customConfig[key] = configuration.get(key, modelConfig[key]["default"])
 
+        if pre_tools:
+            pre_function_response = await axios_work(pre_tools.get('args', {}), pre_tools.get('pre_function_code', ''), True)
+            variables['pre_function'] = pre_function_response.get('response')
+
         if thread_id:
             thread_id = thread_id.strip()
             result = await getThread(thread_id, org_id, bridge_id)
@@ -66,8 +72,9 @@ async def chat(request: Request):
                 configuration["conversation"] = result.get("data", [])
         else:
             thread_id = str(uuid.uuid1())
-        configuration['prompt']  = Helper.replace_variables_in_prompt(configuration['prompt'] , variables)
 
+        configuration['prompt']  = Helper.replace_variables_in_prompt(configuration['prompt'] , variables)
+            
         if template:
             system_prompt = template
             configuration['prompt'] = Helper.replace_variables_in_prompt(system_prompt, {"system_prompt": configuration['prompt'], **variables})
