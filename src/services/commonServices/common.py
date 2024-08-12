@@ -15,6 +15,7 @@ from .Google.geminiCall import GeminiHandler
 import pydash as _
 from ..utils.helper import Helper
 import asyncio
+from ...configs.constant import service_name
 from .anthrophic.antrophicCall import Antrophic
 from .groq.groqCall import Groq
 from prompts import mui_prompt
@@ -94,16 +95,16 @@ async def chat(request: Request):
             "org_id" : org_id
         }
 
-        if service == "openai":
+        if service == service_name['openai']:
             base_service_instance = openAIInstance = UnifiedOpenAICase(params)
             result = await openAIInstance.execute()
-        elif service == "google":
+        elif service == service_name['gemini']:
             base_service_instance = geminiHandler = GeminiHandler(params)
             result = await geminiHandler.handle_gemini()
-        elif service == "anthropic":
+        elif service == service_name['anthropic']:
             base_service_instance = antrophic = Antrophic(params)
             result = await antrophic.antrophic_handler()
-        elif service == "groq":
+        elif service == service_name['groq']:
             base_service_instance = groq = Groq(params)
             result = await groq.groq_handler()
     
