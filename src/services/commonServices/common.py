@@ -153,7 +153,7 @@ async def chat(request: Request):
             })
             asyncio.create_task(metrics_service.create([usage], result["historyParams"]))
             asyncio.create_task(sendResponse(response_format, result["modelResponse"],success=True))
-        return JSONResponse(status_code=200, content= result['modelResponse'])
+        return JSONResponse(status_code=200, content={"success": True, "response": result["modelResponse"]})
     except HTTPException as e: 
         raise e
     except Exception as error:
