@@ -31,7 +31,7 @@ app.add_middleware(
 @app.get("/healthcheck")
 async def healthcheck():
     return JSONResponse(status_code=200, content={
-            "status": "OK running good... v1.1",
+            "status": "OK running good... v1.2",
     })
             
 
