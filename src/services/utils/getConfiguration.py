@@ -41,7 +41,7 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
         'success': True,
         'configuration': configuration,
         'bridge': bridge,
-        'pre_tools': {'pre_function_code': pre_function_code, 'args': args} if pre_function_code else None,
+        'pre_tools': {'pre_function_code': pre_function_code, 'args': args} if len(pre_tools)>0 else None,
         'service': service,
         'apikey': apikey,
         'RTLayer': RTLayer,
