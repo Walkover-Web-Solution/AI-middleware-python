@@ -52,6 +52,9 @@ async def chat(request: Request):
     base_service_instance = {}
     version = request.state.version
 
+    if isinstance(variables, list):
+        variables = {}
+
     try:
         modelname = model.replace("-", "_").replace(".", "_")
         modelfunc = getattr(ModelsConfig, modelname, None)
