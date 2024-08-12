@@ -1,6 +1,8 @@
 from fastapi import Request, HTTPException
 from fastapi.responses import JSONResponse
 from src.controllers.configController import get_and_update
+from src.db_services.ConfigurationServices import get_bridges, update_bridge, get_api_call_by_name
+from src.services.utils.helper import Helper
 import json
 import datetime 
 from models.mongo_connection import db
@@ -99,6 +101,60 @@ async def creates_api(request: Request, bridge_id: str):
     except Exception as error:
         print(f"error in viasocket embed get api=> {error}")
         raise HTTPException(status_code=400, detail=str(error))
+
+
+async def updates_api(request: Request, bridge_id: str):
+    try:
+        body = await request.json()
+        org_id = request.state.org_id if hasattr(request.state, 'org_id') else None
+        function_name = body.get('id')
+        pre_function_call = body.get('preFunctionCall')
+
+        if not all([function_name, bridge_id, org_id]):
+            raise HTTPException(status_code=400, detail="Required details must not be empty!!")
+    
+        model_config = await get_bridges(bridge_id)
+
+        if model_config.get('success') is False: 
+            raise HTTPException(status_code=400, detail="bridge id is not found")
+            
+        model_config = model_config.get('bridges', {})
+        tools_call = model_config.get('configuration', {}).get('tools', [])
+        pre_tools_call = model_config.get('pre_tools', [])
+
+        updated_tools_call = [tool for tool in tools_call if tool['name'] != function_name]
+        updated_pre_tools_call = [tool for tool in pre_tools_call if tool != function_name]
+
+        if pre_function_call:
+            if function_name in pre_tools_call:
+                raise HTTPException(status_code=400, detail='function is already added to pre function')
+            updated_pre_tools_call.append(function_name)
+        else:
+            api_response = await get_api_call_by_name(function_name)
+            api_data = api_response.get('apiCall', {})
+            open_api_format = create_open_api(function_name, api_data.get('description', ""), str(api_data.get('_id', "")), api_data.get('required_params', []) )
+            if function_name in tools_call:
+                raise HTTPException(status_code=400, detail='function is already added to tools')
+            updated_tools_call.append(open_api_format['format'])
+
+        model_config['configuration'] = {
+            **model_config["configuration"],
+            "tools": updated_tools_call
+        }
+        model_config["pre_tools"] = updated_pre_tools_call
+        result = await update_bridge(bridge_id, model_config)
+
+        if result.get("success"):
+            return Helper.response_middleware_for_bridge({
+                "success": True,
+                "message": "Bridge Updated successfully",
+                "bridge" : result.get('result')
+
+            })
+        else:
+            return JSONResponse(status_code=400, content=result)
+
+    except Exception as error:
         print(f"error in viasocket embed get api=> {error}")
         raise HTTPException(status_code=400, detail=str(error))
 

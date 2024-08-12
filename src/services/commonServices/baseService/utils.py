@@ -44,6 +44,33 @@ async def axios_work_js(data, axios_function):
             'status': 0
         }
     
+async def axios_work(data, code, is_python=False):
+    try:
+        if not is_python:
+            return await axios_work_js(data, code)
+        
+        # Append the execution code to the provided code
+        exec_code = code + """
+result =  axios_call(params)
+"""
+        # Prepare the environment for execution
+        local_vars = {'params': data}
+        global_vars = {"requests": requests, "asyncio": __import__('asyncio')}
+
+        exec(exec_code, global_vars, local_vars)
+        return {
+            'response': local_vars.get('result'),
+            'status': 1
+        }
+    except Exception as err:
+        return {
+            'response': '',
+            'metadata':{
+                'error': str(err),
+            },
+            'status': 0
+        }
+    
 
 def tool_call_formatter(configuration: dict, service: str) -> dict:
     if service == service_name['openai']:
