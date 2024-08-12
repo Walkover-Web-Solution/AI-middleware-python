@@ -49,6 +49,9 @@ async def chat(request: Request):
     pre_tools = body.get('pre_tools', None)
     base_service_instance = {}
 
+    if isinstance(variables, list):
+        variables = {}
+
     try:
         modelname = model.replace("-", "_").replace(".", "_")
         modelfunc = getattr(ModelsConfig, modelname, None)
