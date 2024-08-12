@@ -6,6 +6,7 @@ from src.db_services.ConfigurationServices import create_bridge, get_bridge_by_i
 from src.configs.modelConfiguration import ModelsConfig as model_configuration
 from src.services.utils.helper import Helper
 import json
+from ..configs.constant import service_name
 from validations.validation import Bridge_update as bridge_validation
 from src.db_services.conversationDbService import storeSystemPrompt
 
@@ -148,7 +149,7 @@ async def get_all_service_models_controller(service):
                 }
             }
         
-        if service == 'openai':
+        if service == service_name['openai']:
             return {
                 # "completion": {
                 #     "gpt_3_5_turbo_instruct": restructure_configuration(model_configuration.gpt_3_5_turbo_instruct())
@@ -177,7 +178,7 @@ async def get_all_service_models_controller(service):
                 #     "text-embedding-ada-002": restructure_configuration(model_configuration.text_embedding_ada_002()),
                 # }
             }
-        elif service == 'google':
+        elif service == service_name['google']:
             return {
                 # "completion": {
                 #     "gemini-1.5-pro": restructure_configuration(model_configuration.gemini_1_5_pro()),
@@ -195,7 +196,7 @@ async def get_all_service_models_controller(service):
                 }
             }
         
-        elif service == 'anthropic':
+        elif service == service_name['anthropic']:
             return {
                 "chat" : {
                     "claude-3-5-sonnet-20240620" : restructure_configuration(model_configuration.claude_3_5_sonnet_20240620()), 
@@ -205,7 +206,7 @@ async def get_all_service_models_controller(service):
                 }
             }
         
-        elif service == 'groq':
+        elif service == service_name['groq']:
             return {
                 "chat" : {
                     "llama-3.1-405b-reasoning" : restructure_configuration(model_configuration.llama_3_1_405b_reasoning()),
