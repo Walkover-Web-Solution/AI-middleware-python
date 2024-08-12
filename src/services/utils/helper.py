@@ -94,7 +94,7 @@ class Helper:
             config = {}
             for key in configurations.keys():
                 config[key] = db_config.get(key, response['configuration'].get(key, configurations[key]['default']))
-            for key in ['prompt','response_format','type']:
+            for key in ['prompt','response_format','type', 'pre_tools']:
                 config[key] = db_config.get(key, response['configuration'].get(key, {"type":'default',"cred":{}} if key == 'response_format' else ''))
             response['configuration'] = config
             response['apikey'] = Helper.decrypt(response['apikey']) if response.get('apikey') else ""

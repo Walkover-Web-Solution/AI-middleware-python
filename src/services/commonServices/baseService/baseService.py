@@ -6,7 +6,7 @@ import json
 import requests
 import traceback
 from ....db_services import metrics_service, ConfigurationServices as ConfigurationService
-from .utils import validate_tool_call, fetch_axios, axios_work_js, tool_call_formatter, send_request, send_message
+from .utils import validate_tool_call, fetch_axios, axios_work, tool_call_formatter, send_request, send_message
 from src.configs.serviceKeys import ServiceKeys
 from src.configs.modelConfiguration import ModelsConfig
 from ..openAI.runModel import runModel
@@ -35,32 +35,6 @@ class BaseService:
         self.template = params.get('template')
         self.response_format = params.get('response_format')
 
-    async def axios_work(self, data, code, is_python=False):
-        try:
-            if not is_python:
-                return await axios_work_js(data, code)
-            
-            # Append the execution code to the provided code
-            exec_code = code + """
-result =  axios_call(params)
-"""
-            # Prepare the environment for execution
-            local_vars = {'params': data}
-            global_vars = {"requests": requests, "asyncio": __import__('asyncio')}
-
-            exec(exec_code, global_vars, local_vars)
-            return {
-                'response': local_vars.get('result'),
-                'status': 1
-            }
-        except Exception as err:
-            return {
-                'response': '',
-                'metadata':{
-                    'error': str(err),
-                },
-                'status': 0
-            }
 
     async def run_tool(self, response, modelOutputConfig, service):
         axios_instance, is_python, args = '', False, {}
@@ -69,7 +43,7 @@ result =  axios_call(params)
                 tools_call = _.get(response, modelOutputConfig.get('tools'))[0]
                 name = tools_call.get('function', {}).get('name')
                 axios_instance, is_python = await fetch_axios(ConfigurationService, name)
-                args = json.loads(tools_call['function'].get('arguments', '{}'))
+                args = json.loads(tools_call['function'].get('arguments', {}))
             case 'anthropic':
                 tools_call = response['content'][1]
                 name = tools_call.get('name')
@@ -78,7 +52,7 @@ result =  axios_call(params)
             case _:
                 return False
         
-        api_response = await self.axios_work(args, axios_instance, is_python)
+        api_response = await axios_work(args, axios_instance, is_python)
         return   {
                     'tool_call_id': tools_call['id'],
                     'role': 'tool',
@@ -215,7 +189,9 @@ result =  axios_call(params)
                 new_config['tool_choice'] = "auto"
                 new_config['tools'] = tool_call_formatter(configuration, service)
             elif 'tool_choice' in configuration:
-                del new_config['tool_choice']   
+                del new_config['tool_choice']  
+            if 'tools' in new_config and len(new_config['tools']) == 0:
+                del new_config['tools'] 
             return new_config
         except KeyError as e:
             print(f"Service key error: {e}")
