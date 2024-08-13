@@ -9,7 +9,7 @@ from ....db_services import  ConfigurationServices as ConfigurationService
 def validate_tool_call(modelOutputConfig, service, response):
     match service:
         case 'openai' | 'groq':
-            return bool(_.get(response, modelOutputConfig.get('tools')))
+            return len(response.get('choices', [])[0].get('message', {}).get("tool_calls", [])) > 0
         case 'anthropic':
             return response.get('stop_reason') == 'tool_use'
         case _:

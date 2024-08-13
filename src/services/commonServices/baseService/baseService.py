@@ -84,12 +84,12 @@ class BaseService:
         return  await asyncio.gather(*(process_code_and_service_data(api_call) for api_call in api_calls_reponse['apiCalls'])) 
 
     def update_configration(self, response, function_responses, configuration, modelOutputConfig, service, tools):    
-        for function_response in function_responses:
+        for index, function_response in enumerate(function_responses):
             tools[function_response['name']] = function_response['content']
         
             match service:
                 case 'openai' | 'groq' :
-                    configuration['messages'].append({'role': 'assistant', 'content': None, 'tool_calls': [_.get(response, modelOutputConfig.get('tools'))[0]]})
+                    configuration['messages'].append({'role': 'assistant', 'content': None, 'tool_calls': [response['choices'][0]['message']['tool_calls'][index]]})
                     configuration['messages'].append(function_response)
                 case 'anthropic':
                     configuration['messages'].append({'role': 'assistant', 'content': response['content']})

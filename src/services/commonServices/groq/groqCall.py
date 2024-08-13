@@ -21,7 +21,7 @@ class Groq(BaseService):
                 await self.handle_failure(groq_response)
             return {'success': False, 'error': groq_response.get('error')}
         
-        if _.get(model_response, self.modelOutputConfig.get('tools')):
+        if len(model_response.get('choices', [])[0].get('message', {}).get("tool_calls", [])) > 0:
             functionCallRes = await self.function_call(self.customConfig, service_name['groq'], groq_response)
             
             if not functionCallRes.get('success'):
