@@ -22,8 +22,8 @@ async def make_data_if_proxy_token_given(req):
             'name': response_data['data'][0]['name']
         },
         'org': {
-            'id': response_data['data'][0]['c_companies'][0]['id'],
-            'name': response_data['data'][0]['c_companies'][0]['name']
+            'id': response_data['data'][0]['currentCompany']['id'],
+            'name': response_data['data'][0]['currentCompany']['name']
         }
     }
     return data
