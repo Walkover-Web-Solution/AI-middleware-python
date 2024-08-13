@@ -56,12 +56,12 @@ class BaseService:
             case 'anthropic':
                 # make a loop for get the array of api call
                 for index, response in enumerate(responses['content']):
-                    if index == 1: 
+                    if index == 0: 
                         continue
                     tools_call = response
                     name = tools_call.get('name')
                     args = tools_call.get('input', {})
-                    codes_mapping['name'] = {
+                    codes_mapping[name] = {
                         'tools_call': tools_call,
                         'name': name,
                         'args': args
