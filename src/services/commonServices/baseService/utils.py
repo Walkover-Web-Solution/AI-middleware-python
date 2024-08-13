@@ -4,6 +4,7 @@ import requests
 import httpx
 import json 
 from src.configs.constant import service_name
+from ....db_services import  ConfigurationServices as ConfigurationService
 
 def validate_tool_call(modelOutputConfig, service, response):
     match service:
@@ -14,11 +15,6 @@ def validate_tool_call(modelOutputConfig, service, response):
         case _:
             return False
 
-async def fetch_axios(ConfigurationService, name):
-    api_call = await ConfigurationService.get_api_call_by_name(name)
-    axios_instance = api_call['apiCall'].get('code') or api_call['apiCall'].get('axios')  
-    is_python = api_call['apiCall'].get('is_python', False)
-    return axios_instance, is_python
 
 async def axios_work_js(data, axios_function):
     try:    
