@@ -20,30 +20,10 @@ async def get_bridges(bridge_id):
             'success': False,
             'error': "something went wrong!!"
         }
-    
 async def get_api_call_by_names(names):
     try:
         if not isinstance(names, list):
             names = [names]
-        api_calls = list(apiCallModel.find({
-            '$or': [
-                {'function_name': {'$in': names}},
-                {'endpoint': {'$in': names}}
-            ]
-        }))
-        return {
-            'success': True,
-            'apiCalls': api_calls
-        }
-    except Exception as error:
-        print(f"error: {error}")
-        return {
-            'success': False,
-            'error': "Something went wrong!"
-        }
-
-async def get_api_call_by_names(names):
-    try:
         api_calls = list(apiCallModel.find({
             '$or': [
                 {'function_name': {'$in': names}},
