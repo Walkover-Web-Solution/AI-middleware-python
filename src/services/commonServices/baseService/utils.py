@@ -32,7 +32,7 @@ async def axios_work_js(data, axios_function):
     except Exception as err:
         print("Error calling function=>", err)
         return {
-            'response': '',
+            'response': str(err),
             'metadata':{
                 'error': str(err),
             },
@@ -59,7 +59,7 @@ result =  axios_call(params)
         }
     except Exception as err:
         return {
-            'response': '',
+            'response': str(err),
             'metadata':{
                 'error': str(err),
             },
