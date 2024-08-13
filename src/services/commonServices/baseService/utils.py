@@ -15,7 +15,6 @@ def validate_tool_call(modelOutputConfig, service, response):
         case _:
             return False
 
-
 async def axios_work_js(data, axios_function):
     try:    
         pattern = r"https?:\/\/(flow\.sokt\.io|prod-flow-vm\.viasocket\.com)\/func\/([a-zA-Z0-9]+)"
