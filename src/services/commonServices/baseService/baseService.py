@@ -5,7 +5,7 @@ import json
 import requests
 import traceback
 from ....db_services import metrics_service, ConfigurationServices as ConfigurationService
-from .utils import validate_tool_call, fetch_axios, axios_work, tool_call_formatter, sendResponse
+from .utils import validate_tool_call, axios_work, tool_call_formatter, sendResponse
 from src.configs.serviceKeys import ServiceKeys
 from src.configs.modelConfiguration import ModelsConfig
 from ..openAI.runModel import runModel
