@@ -22,6 +22,7 @@ from .baseService.utils import sendResponse
 from ..utils.ai_middleware_format import Response_formatter
 app = FastAPI()
 from src.services.commonServices.baseService.utils import axios_work
+from ...configs.constant import service_name
 # from ..utils.common import common
 
 @app.post("/chat/{bridge_id}")
@@ -107,18 +108,18 @@ async def chat(request: Request):
             "org_id" : org_id
         }
 
-        if service == "openai":
-            base_service_instance  = UnifiedOpenAICase(params)
-            result = await base_service_instance.execute()
-        elif service == "google":
-            base_service_instance  = GeminiHandler(params)
-            result = await base_service_instance.handle_gemini()
-        elif service == "anthropic":
-            base_service_instance  = Antrophic(params)
-            result = await base_service_instance.antrophic_handler()
-        elif service == "groq":
-            base_service_instance  = Groq(params)
-            result = await base_service_instance.groq_handler()
+        if service == service_name['openai']:
+            base_service_instance = openAIInstance = UnifiedOpenAICase(params)
+            result = await openAIInstance.execute()
+        elif service == service_name['gemini']:
+            base_service_instance = geminiHandler = GeminiHandler(params)
+            result = await geminiHandler.handle_gemini()
+        elif service == service_name['anthropic']:
+            base_service_instance = antrophic = Antrophic(params)
+            result = await antrophic.antrophic_handler()
+        elif service == service_name['groq']:
+            base_service_instance = groq = Groq(params)
+            result = await groq.groq_handler()
     
         if not result["success"]:
                 if response_format['type'] != 'default':
