@@ -18,6 +18,11 @@ import asyncio
 from .anthrophic.antrophicCall import Antrophic
 from .groq.groqCall import Groq
 from prompts import mui_prompt
+<<<<<<< Updated upstream
+=======
+from .baseService.utils import sendResponse
+from ..utils.ai_middleware_format import Response_formatter
+>>>>>>> Stashed changes
 app = FastAPI()
 from src.services.commonServices.baseService.utils import axios_work
 # from ..utils.common import common
@@ -48,6 +53,7 @@ async def chat(request: Request):
     bridge = body.get('bridge')
     pre_tools = body.get('pre_tools', None)
     base_service_instance = {}
+    version = request.state.version
 
     if isinstance(variables, list):
         variables = {}
@@ -148,6 +154,8 @@ async def chat(request: Request):
                 result['historyParams']['user'] = user
 
         endTime = int(time.time() * 1000)
+        if version == 2:
+            result['modelResponse'] = await Response_formatter(result["modelResponse"],service)
         if not is_playground:
             usage.update({
                 **result.get("usage", {}),
