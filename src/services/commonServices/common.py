@@ -18,11 +18,7 @@ import asyncio
 from .anthrophic.antrophicCall import Antrophic
 from .groq.groqCall import Groq
 from prompts import mui_prompt
-<<<<<<< Updated upstream
-=======
-from .baseService.utils import sendResponse
 from ..utils.ai_middleware_format import Response_formatter
->>>>>>> Stashed changes
 app = FastAPI()
 from src.services.commonServices.baseService.utils import axios_work
 # from ..utils.common import common

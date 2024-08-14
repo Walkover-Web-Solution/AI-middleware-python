@@ -13,10 +13,7 @@ from src.controllers.modelController import router as model_router
 from src.routes.chatBot_routes import router as chatbot_router
 from src.routes.config_routes import router as config_router
 from src.controllers.bridgeController import router as bridge_router
-<<<<<<< Updated upstream
-=======
 from src.routes.v2.modelRouter import router as v2_router
->>>>>>> Stashed changes
 # Initialize the FastAPI app
 app = FastAPI(debug=True)
 executor = ThreadPoolExecutor(max_workers= int(Config.max_workers) or 10)
