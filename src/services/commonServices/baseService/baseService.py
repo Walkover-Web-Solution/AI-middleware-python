@@ -70,12 +70,12 @@ class BaseService:
         async def process_code_and_service_data(api_call):
             axios_instance = api_call.get('code') or api_call.get('axios')
             is_python = api_call.get('is_python', False)
-            name = api_call.get('function_name',codes_mapping.get('endpoint',codes_mapping[api_call['name']]['name']))
+            name = api_call.get('function_name',codes_mapping.get('endpoint',''))
             api_response = await axios_work(codes_mapping[name]['args'], axios_instance, is_python)
             response_data = {
                 'tool_call_id': codes_mapping[name]['tool_call'].get('id'),
                 'role': 'tool',
-                'name': name,
+                'name': codes_mapping[name]['name'],
                 'content': json.dumps(api_response),
             }
             return response_data, {response_data['tool_call_id']: response_data}
@@ -90,7 +90,7 @@ class BaseService:
             return responses, mapping
         except Exception as error:
             print(f"Error in run_tool: {error}")
-            return [], {}
+            raise error
 
     def update_configration(self, response, function_responses, configuration, mapping_response_data, service, tools):    
         if(service == 'anthropic'):
