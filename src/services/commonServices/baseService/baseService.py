@@ -1,18 +1,19 @@
 import asyncio
-from fastapi import HTTPException
 import pydash as _
 from datetime import datetime
 import json
 import requests
 import traceback
+from collections import ChainMap
 from ....db_services import metrics_service, ConfigurationServices as ConfigurationService
-from .utils import validate_tool_call, fetch_axios, axios_work, tool_call_formatter, send_request, send_message
+from .utils import validate_tool_call, axios_work, tool_call_formatter, sendResponse
 from src.configs.serviceKeys import ServiceKeys
 from src.configs.modelConfiguration import ModelsConfig
 from ..openAI.runModel import runModel
 from ..anthrophic.antrophicModelRun import anthropic_runmodel
 from ....configs.constant import service_name
 from ..groq.groqModelRun import groq_runmodel
+from ....configs.constant import service_name
 
 class BaseService:
     def __init__(self, params):
@@ -36,71 +37,107 @@ class BaseService:
         self.response_format = params.get('response_format')
 
 
-    async def run_tool(self, response, modelOutputConfig, service):
-        axios_instance, is_python, args = '', False, {}
+    async def run_tool(self, responses, service):
+        codes_mapping = {}
+        names = []
+        
         match service:
             case 'openai' | 'groq':
-                tools_call = _.get(response, modelOutputConfig.get('tools'))[0]
-                name = tools_call.get('function', {}).get('name')
-                axios_instance, is_python = await fetch_axios(ConfigurationService, name)
-                args = json.loads(tools_call['function'].get('arguments', {}))
+                for tool_call in responses['choices'][0]['message']['tool_calls']:
+                    name = tool_call['function']['name']
+                    args = json.loads(tool_call['function']['arguments'])
+                    codes_mapping[name] = {
+                        'tool_call': tool_call,
+                        'name': name,
+                        'args': args
+                    }
+                    names.append(name)
             case 'anthropic':
-                tools_call = response['content'][1]
-                name = tools_call.get('name')
-                axios_instance, is_python = await fetch_axios(ConfigurationService, name)
-                args = tools_call.get('input', {})
+                for tool_call in responses['content'][1:]:  # Skip the first item
+                    name = tool_call['name']
+                    args = tool_call['input']
+                    codes_mapping[name] = {
+                        'tool_call': tool_call,
+                        'name': name,
+                        'args': args
+                    }
+                    names.append(name)
             case _:
-                return False
+                return False, {}
+
+        api_calls_response = await ConfigurationService.get_api_call_by_names(names)
+
+        async def process_code_and_service_data(api_call):
+            axios_instance = api_call.get('code') or api_call.get('axios')
+            is_python = api_call.get('is_python', False)
+            name = api_call.get('function_name',codes_mapping.get('endpoint',''))
+            api_response = await axios_work(codes_mapping[name]['args'], axios_instance, is_python)
+            response_data = {
+                'tool_call_id': codes_mapping[name]['tool_call'].get('id'),
+                'role': 'tool',
+                'name': codes_mapping[name]['name'],
+                'content': json.dumps(api_response),
+            }
+            return response_data, {response_data['tool_call_id']: response_data}
+
+        try:
+            responses = []
+            mapping = {}
+            for api_call in api_calls_response['apiCalls']:
+                response_data, response_mapping = await process_code_and_service_data(api_call)
+                responses.append(response_data)
+                mapping.update(response_mapping)
+            return responses, mapping
+        except Exception as error:
+            print(f"Error in run_tool: {error}")
+            raise error
+
+    def update_configration(self, response, function_responses, configuration, mapping_response_data, service, tools):    
+        if(service == 'anthropic'):
+            configuration['messages'].append({'role': 'assistant', 'content': response['content']})
+            configuration['messages'].append({'role': 'user','content':[]})
+
+        for index, function_response in enumerate(function_responses):
+            tools[function_response['name']] = function_response['content']
         
-        api_response = await axios_work(args, axios_instance, is_python)
-        return   {
-                    'tool_call_id': tools_call['id'],
-                    'role': 'tool',
-                    'name': name,
-                    'content': json.dumps(api_response),
-                }
-
-    def update_configration(self, response, function_response, configuration, modelOutputConfig, service):    
-        match service:
-            case 'openai' | 'groq' :
-                configuration['messages'].append({'role': 'assistant', 'content': None, 'tool_calls': [_.get(response, modelOutputConfig.get('tools'))[0]]})
-                configuration['messages'].append(function_response)
-            case 'anthropic':
-                configuration['messages'].append({'role': 'assistant', 'content': response['content']})
-                configuration['messages'].append({'role': 'user','content':[{"type":"tool_result",  
+            match service:
+                case 'openai' | 'groq' :
+                    assistant_tool_calls = response['choices'][0]['message']['tool_calls'][index]
+                    configuration['messages'].append({'role': 'assistant', 'content': None, 'tool_calls': [assistant_tool_calls]})
+                    tool_calls_id = assistant_tool_calls['id']
+                    configuration['messages'].append(mapping_response_data[tool_calls_id])
+                case 'anthropic':
+                    ordered_json = {"type":"tool_result",  
                                                  "tool_use_id": function_response['tool_call_id'],
-                                                 "content": function_response['content']}]})
-            case  _:
-                pass
-        return configuration
+                                                 "content": function_response['content']}
+                    configuration['messages'][-1]['content'].append(ordered_json)
+                case  _:
+                    pass
+        return configuration, tools
 
-    async def function_call(self, configuration, sensitive_config, service, response, l=0, tools={}):
+    async def function_call(self, configuration, service, response, l=0, tools={}):
         if not response.get('success'):
             return {'success': False, 'error': response.get('error')}
         modelfunc = getattr(ModelsConfig, configuration['model'].replace('-',"_").replace('.',"_"), None)
         modelObj = modelfunc()
         modelOutputConfig = modelObj['outputConfig']
         model_response = response.get('modelResponse', {})
-        response_format=sensitive_config['response_format']
-        playground=sensitive_config['playground']
-        apikey = sensitive_config['apikey']
 
         if not (validate_tool_call(modelOutputConfig, service, model_response) and l <= 3):
             return response
         
         l+=1
 
-        if not playground:
-            self.sendResponse(response_format, data = {'function_call': True}, success = True)
+        if not self.playground:
+            asyncio.create_task(sendResponse(self.response_format, data = {'function_call': True}, success = True))
         
-        func_response_data = await self.run_tool(model_response, modelOutputConfig, service)
-        tools[func_response_data['name']] = func_response_data['content']
-        configuration = self.update_configration(model_response, func_response_data, configuration, modelOutputConfig, service)
-        if not playground:
-            self.sendResponse(response_format, data = {'function_call': True, 'success': True, 'message': 'Going to GPT'}, success=True)
-        ai_response = await self.chats(configuration, apikey, service)
+        func_response_data,mapping_response_data = await self.run_tool(model_response, service)
+        configuration, tools = self.update_configration(model_response, func_response_data, configuration, mapping_response_data, service, tools)
+        if not self.playground:
+            asyncio.create_task(sendResponse(self.response_format, data = {'function_call': True, 'success': True, 'message': 'Going to GPT'}, success=True))
+        ai_response = await self.chats(configuration, self.apikey, service)
         ai_response['tools'] = tools
-        return await self.function_call(configuration, sensitive_config, service, ai_response, l, tools)
+        return await self.function_call(configuration, service, ai_response, l, tools)
 
     async def handle_failure(self, response):
         usage = {
@@ -122,7 +159,7 @@ class BaseService:
             'type': "error",
             'actor': "user" if self.user else "tool"
         }))
-        asyncio.create_task(self.sendResponse(self.response_format, data=response.get('error')))
+        asyncio.create_task(sendResponse(self.response_format, data=response.get('error')))
 # todo
     def update_model_response(self, model_response, functionCallRes={}):
         funcModelResponse = functionCallRes.get("modelResponse", {})
@@ -188,8 +225,10 @@ class BaseService:
             if configuration.get('tools', '') :
                 if service == service_name['anthropic']:
                     new_config['tool_choice'] =  {"type": "auto"}
-                else:
+                elif service == service_name['openai'] or service_name['groq']:
                     new_config['tool_choice'] = "auto"
+
+                
                 new_config['tools'] = tool_call_formatter(configuration, service)
             elif 'tool_choice' in configuration:
                 del new_config['tool_choice']  
@@ -228,16 +267,3 @@ class BaseService:
                 'success': False,
                 'error': str(e)
             }
-
-
-    async def sendResponse(self, response_format, data, success = False):
-        data_to_send = {
-            'response' if success else 'error': data,
-            'success': success
-        }
-
-        match response_format['type']:
-            case 'RTLayer' : 
-                return await send_message(cred = response_format['cred'], data=data_to_send)
-            case 'webhook':
-                return await send_request(**response_format['cred'], method='POST', data=data_to_send)

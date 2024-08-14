@@ -1,7 +1,7 @@
 from fastapi import Request, HTTPException
 from fastapi.responses import JSONResponse
 from src.controllers.configController import get_and_update
-from src.db_services.ConfigurationServices import get_bridges, update_bridge, get_api_call_by_name
+from src.db_services.ConfigurationServices import get_bridges, update_bridge, get_api_call_by_names
 from src.services.utils.helper import Helper
 import json
 import datetime 
@@ -130,8 +130,9 @@ async def updates_api(request: Request, bridge_id: str):
                 raise HTTPException(status_code=400, detail='function is already added to pre function')
             updated_pre_tools_call.append(function_name)
         else:
-            api_response = await get_api_call_by_name(function_name)
-            api_data = api_response.get('apiCall', {})
+            api_response = await get_api_call_by_names(function_name)
+            api_data = api_response.get('apiCalls', [])
+            api_data = api_data[0] if len(api_data) > 0 else {}
             open_api_format = create_open_api(function_name, api_data.get('description', ""), str(api_data.get('_id', "")), api_data.get('required_params', []) )
             if function_name in tools_call:
                 raise HTTPException(status_code=400, detail='function is already added to tools')

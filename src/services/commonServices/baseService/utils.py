@@ -4,21 +4,16 @@ import requests
 import httpx
 import json 
 from src.configs.constant import service_name
+from ....db_services import  ConfigurationServices as ConfigurationService
 
 def validate_tool_call(modelOutputConfig, service, response):
     match service:
         case 'openai' | 'groq':
-            return bool(_.get(response, modelOutputConfig.get('tools')))
+            return len(response.get('choices', [])[0].get('message', {}).get("tool_calls", [])) > 0
         case 'anthropic':
             return response.get('stop_reason') == 'tool_use'
         case _:
             return False
-
-async def fetch_axios(ConfigurationService, name):
-    api_call = await ConfigurationService.get_api_call_by_name(name)
-    axios_instance = api_call['apiCall'].get('code') or api_call['apiCall'].get('axios')  
-    is_python = api_call['apiCall'].get('is_python', False)
-    return axios_instance, is_python
 
 async def axios_work_js(data, axios_function):
     try:    
@@ -140,3 +135,17 @@ async def send_message(cred, data ):
         print('send message error=>', error)
     except Exception as e:
         print('Unexpected error=>', e)
+
+
+async def sendResponse(response_format, data, success = False):
+    data_to_send = {
+        'response' if success else 'error': data,
+        'success': success
+    }
+
+    match response_format['type']:
+        case 'RTLayer' : 
+            return await send_message(cred = response_format['cred'], data=data_to_send)
+        case 'webhook':
+            return await send_request(**response_format['cred'], method='POST', data=data_to_send)
+

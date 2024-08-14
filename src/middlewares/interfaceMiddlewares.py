@@ -3,7 +3,7 @@ from fastapi.responses import JSONResponse
 from ..db_services import ConfigurationServices
 import jwt
 from config import Config
-from ..controllers.modelController import chat_completion
+from ..routes.v2.modelRouter import chat_completion
 import json
 from .getDataUsingBridgeId import add_configuration_data_to_body
 
