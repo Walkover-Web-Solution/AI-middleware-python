@@ -131,7 +131,7 @@ async def updates_api(request: Request, bridge_id: str):
             updated_pre_tools_call.append(function_name)
         else:
             api_response = await get_api_call_by_names(function_name)
-            api_data = api_response.get('apiCall', [])
+            api_data = api_response.get('apiCalls', [])
             api_data = api_data[0] if len(api_data) > 0 else {}
             open_api_format = create_open_api(function_name, api_data.get('description', ""), str(api_data.get('_id', "")), api_data.get('required_params', []) )
             if function_name in tools_call:

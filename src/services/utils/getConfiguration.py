@@ -28,9 +28,10 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
     pre_tools = bridge.get('pre_tools', [])
     if len(pre_tools)>0:
         api_call = await ConfigurationService.get_api_call_by_names(pre_tools)
+
         if api_call.get('sucesss') is False: 
             raise Exception("Didn't find the pre_function")
-        api_data =  api_call.get('apiCall', {})
+        api_data =  api_call.get('apiCalls', [])
         api_data = api_data[0] if len(api_data) > 0 else {}
         pre_function_code = api_data.get('code', '')
         required_params = api_data.get('required_params', [])
