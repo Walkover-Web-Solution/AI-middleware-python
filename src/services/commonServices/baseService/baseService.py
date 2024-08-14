@@ -4,6 +4,7 @@ from datetime import datetime
 import json
 import requests
 import traceback
+from collections import ChainMap
 from ....db_services import metrics_service, ConfigurationServices as ConfigurationService
 from .utils import validate_tool_call, axios_work, tool_call_formatter, sendResponse
 from src.configs.serviceKeys import ServiceKeys
@@ -75,27 +76,36 @@ class BaseService:
             is_python = api_call.get('is_python', False)
             name = api_call.get('function_name',codes_mapping.get('endpoint',''))
             api_response = await axios_work(codes_mapping[name]['args'], axios_instance, is_python)
-            return {
-            'tool_call_id': codes_mapping[name]['tools_call'].get('id'),
-            'role': 'tool',
-            'name': codes_mapping[name]['name'],
-            'content': json.dumps(api_response),
-            }    
-        return  await asyncio.gather(*(process_code_and_service_data(api_call) for api_call in api_calls_reponse['apiCalls'])) 
+            response_data = {
+                'tool_call_id': codes_mapping[name]['tools_call'].get('id'),
+                'role': 'tool',
+                'name': codes_mapping[name]['name'],
+                'content': json.dumps(api_response),
+            }
+            return response_data, {response_data['tool_call_id']: response_data}
 
-    def update_configration(self, response, function_responses, configuration, modelOutputConfig, service, tools):    
+        responses, mapping = zip(*(await asyncio.gather(*(process_code_and_service_data(api_call) for api_call in api_calls_reponse['apiCalls']))))
+        return list(responses), dict(ChainMap(*mapping))
+
+    def update_configration(self, response, function_responses, configuration, mapping_response_data, service, tools):    
+        if(service == 'anthropic'):
+            configuration['messages'].append({'role': 'assistant', 'content': response['content']})
+            configuration['messages'].append({'role': 'user','content':[]})
+
         for index, function_response in enumerate(function_responses):
             tools[function_response['name']] = function_response['content']
         
             match service:
                 case 'openai' | 'groq' :
-                    configuration['messages'].append({'role': 'assistant', 'content': None, 'tool_calls': [response['choices'][0]['message']['tool_calls'][index]]})
-                    configuration['messages'].append(function_response)
+                    assistant_tool_calls = response['choices'][0]['message']['tool_calls'][index]
+                    configuration['messages'].append({'role': 'assistant', 'content': None, 'tool_calls': [assistant_tool_calls]})
+                    tool_calls_id = assistant_tool_calls['id']
+                    configuration['messages'].append(mapping_response_data[tool_calls_id])
                 case 'anthropic':
-                    configuration['messages'].append({'role': 'assistant', 'content': response['content']})
-                    configuration['messages'].append({'role': 'user','content':[{"type":"tool_result",  
+                    ordered_json = {"type":"tool_result",  
                                                  "tool_use_id": function_response['tool_call_id'],
-                                                 "content": function_response['content']}]})
+                                                 "content": function_response['content']}
+                    configuration['messages'][-1]['content'].append(ordered_json)
                 case  _:
                     pass
         return configuration, tools
@@ -114,12 +124,12 @@ class BaseService:
         l+=1
 
         if not self.playground:
-            sendResponse(self.response_format, data = {'function_call': True}, success = True)
+            asyncio.create_task(sendResponse(self.response_format, data = {'function_call': True}, success = True))
         
-        func_response_data = await self.run_tool(model_response, service)
-        configuration, tools = self.update_configration(model_response, func_response_data, configuration, modelOutputConfig, service, tools)
+        func_response_data,mapping_response_data = await self.run_tool(model_response, service)
+        configuration, tools = self.update_configration(model_response, func_response_data, configuration, mapping_response_data, service, tools)
         if not self.playground:
-            sendResponse(self.response_format, data = {'function_call': True, 'success': True, 'message': 'Going to GPT'}, success=True)
+            asyncio.create_task(sendResponse(self.response_format, data = {'function_call': True, 'success': True, 'message': 'Going to GPT'}, success=True))
         ai_response = await self.chats(configuration, self.apikey, service)
         ai_response['tools'] = tools
         return await self.function_call(configuration, service, ai_response, l, tools)
@@ -252,5 +262,3 @@ class BaseService:
                 'success': False,
                 'error': str(e)
             }
-
-
