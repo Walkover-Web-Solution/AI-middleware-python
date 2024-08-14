@@ -274,9 +274,8 @@ async def update_bridge_controller(request,bridge_id):
 
 
 # todo :: change the way tool calls are getting saved in the db
-async def get_and_update( bridge_id, org_id, open_api_format, function_name, status="add"):
+async def get_and_update(bridge_id, org_id, open_api_format, function_name, status="add", model_config = {}):
     try:
-        model_config = await get_bridges(bridge_id)
         pre_tools = model_config.get('bridges', {}).get('pre_tools', [])
         tools_call = model_config.get('bridges', {}).get('configuration', {}).get('tools', [])
 
