@@ -138,7 +138,7 @@ async def updates_api(request: Request, bridge_id: str):
             api_response = await get_api_call_by_names(function_name)
             api_data = api_response.get('apiCalls', [])
             api_data = api_data[0] if len(api_data) > 0 else {}
-            open_api_format = create_open_api(function_name, api_data.get('description', ""), str(api_data.get('_id', "")), api_data.get('required_params', []) )
+            open_api_format = await create_open_api(function_name, api_data.get('description', ""), str(api_data.get('_id', "")), api_data.get('required_params', []) )
             if function_name in tools_call:
                 raise HTTPException(status_code=400, detail='function is already added to tools')
             updated_tools_call.append(open_api_format['format'])
@@ -161,7 +161,7 @@ async def updates_api(request: Request, bridge_id: str):
             return JSONResponse(status_code=400, content=result)
 
     except Exception as error:
-        print(f"error in viasocket embed get api=> {error}")
+        print(f"error in viasocket embed get api => {error}")
         raise HTTPException(status_code=400, detail=str(error))
 
 def set_nested_value(data, path, value):
@@ -275,9 +275,10 @@ async def create_open_api(function_name, desc,api_object_id, required_params=Non
         required_params = []
     
     tools_call = model_config.get('bridges', {}).get('configuration', {}).get('tools', [])
-    current_function_data = [tool for tool in tools_call if tool['name'] == function_name][0]
-    old_properties = current_function_data.get('properties', {})
-    old_required = current_function_data.get('required', [])
+    current_function_data = next((tool for tool in tools_call if tool['name'] == function_name), None)
+
+    old_properties = current_function_data.get('properties', {}) if current_function_data else {}
+    old_required = current_function_data.get('required', []) if current_function_data else []
     try:
         format = {
             "type": "function",
