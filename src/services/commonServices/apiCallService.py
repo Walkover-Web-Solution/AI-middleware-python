@@ -22,7 +22,12 @@ async def creates_api(request: Request, bridge_id: str):
 
         if not all([desc, function_name, status, bridge_id, org_id]):
             raise HTTPException(status_code=400, detail="Required details must not be empty!!")
+        
+        model_config = await get_bridges(bridge_id)
 
+        if model_config.get('success') is False:
+            raise HTTPException(status_code=400, detail="bridge data not found")
+        
         desc = f"function_name: {endpoint_name} desc" if endpoint_name else desc
         axios_code = ""
 
@@ -71,8 +76,8 @@ async def creates_api(request: Request, bridge_id: str):
                 raise HTTPException(status_code=400, detail="Something went wrong!")
 
             api_object_id = response.get('api_object_id')
-            open_api_format = create_open_api(function_name, desc, api_object_id, required_params )
-            result = await get_and_update(bridge_id, org_id, open_api_format['format'], function_name)
+            data = await create_open_api(function_name, desc, api_object_id, required_params, model_config)
+            result = await get_and_update(bridge_id, org_id, data['format'], function_name, 'add', model_config)
 
             if result.get('success'):
                 return JSONResponse(status_code=200, content={
@@ -85,7 +90,7 @@ async def creates_api(request: Request, bridge_id: str):
                 raise HTTPException(status_code=400, detail=result)
 
         elif status in ["delete", "paused"]:
-            result = await delete_api(function_name, org_id, bridge_id)
+            result = await delete_api(function_name, org_id, bridge_id, model_config)
             if result.get('success'):
                 return JSONResponse(status_code=200, content={
                     "message": "API deleted successfully",
@@ -133,7 +138,7 @@ async def updates_api(request: Request, bridge_id: str):
             api_response = await get_api_call_by_names(function_name)
             api_data = api_response.get('apiCalls', [])
             api_data = api_data[0] if len(api_data) > 0 else {}
-            open_api_format = create_open_api(function_name, api_data.get('description', ""), str(api_data.get('_id', "")), api_data.get('required_params', []) )
+            open_api_format = await create_open_api(function_name, api_data.get('description', ""), str(api_data.get('_id', "")), api_data.get('required_params', []) )
             if function_name in tools_call:
                 raise HTTPException(status_code=400, detail='function is already added to tools')
             updated_tools_call.append(open_api_format['format'])
@@ -156,7 +161,7 @@ async def updates_api(request: Request, bridge_id: str):
             return JSONResponse(status_code=400, content=result)
 
     except Exception as error:
-        print(f"error in viasocket embed get api=> {error}")
+        print(f"error in viasocket embed get api => {error}")
         raise HTTPException(status_code=400, detail=str(error))
 
 def set_nested_value(data, path, value):
@@ -265,9 +270,15 @@ async def save_api(desc, org_id, bridge_id, api_id=None, code="", required_param
     
 
 
-def create_open_api(function_name, desc,api_object_id, required_params=None):
+async def create_open_api(function_name, desc,api_object_id, required_params=None, model_config = {}):
     if required_params is None:
         required_params = []
+    
+    tools_call = model_config.get('bridges', {}).get('configuration', {}).get('tools', [])
+    current_function_data = next((tool for tool in tools_call if tool['name'] == function_name), None)
+
+    old_properties = current_function_data.get('properties', {}) if current_function_data else {}
+    old_required = current_function_data.get('required', []) if current_function_data else []
     try:
         format = {
             "type": "function",
@@ -276,10 +287,18 @@ def create_open_api(function_name, desc,api_object_id, required_params=None):
             "description": desc
         }
         properties = {}
+        final_required = []
         for field in required_params:
-            properties[field] = {"type": "string"}
+            if old_properties.get(field):
+                properties[field] = old_properties.get(field)
+            else:
+                properties[field] = {"type": "string"}
+                final_required.append(field)
+
+            if field in old_required:
+                final_required.append(field)
         if required_params:
-            format["required"] = required_params
+            format["required"] = final_required
             format["properties"] = properties
         return {"success": True, "format": format}
     except Exception as error:
@@ -287,7 +306,7 @@ def create_open_api(function_name, desc,api_object_id, required_params=None):
     
 
 
-async def delete_api(function_name, org_id, bridge_id):
+async def delete_api(function_name, org_id, bridge_id, model_config):
     try:
         # delete by endpoint
         # todo : testing left
@@ -297,7 +316,7 @@ async def delete_api(function_name, org_id, bridge_id):
         #         {"org_id": org_id, "bridge_id": bridge_id, "name": function_name}
         #     ]
         # })
-        result = await get_and_update(bridge_id, org_id, "", function_name, "delete")
+        result = await get_and_update(bridge_id, org_id, "", function_name, "delete", model_config)
         return result
     except Exception as error:
         print(f"Delete API error=> {error}")
