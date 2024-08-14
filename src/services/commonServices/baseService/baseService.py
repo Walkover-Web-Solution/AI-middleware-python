@@ -38,54 +38,59 @@ class BaseService:
 
 
     async def run_tool(self, responses, service):
-        codes = []
         codes_mapping = {}
-        names= []
+        names = []
+        
         match service:
             case 'openai' | 'groq':
-                # make a loop for get the array of api call 
-                for response in responses['choices'][0]['message']['tool_calls']:
-                    tools_call = response
-                    name = tools_call.get('function', {}).get('name')
-                    args = json.loads(tools_call['function'].get('arguments', {}))
+                for tool_call in responses['choices'][0]['message']['tool_calls']:
+                    name = tool_call['function']['name']
+                    args = json.loads(tool_call['function']['arguments'])
                     codes_mapping[name] = {
-                        'tools_call': tools_call,
+                        'tool_call': tool_call,
                         'name': name,
                         'args': args
                     }
                     names.append(name)
             case 'anthropic':
-                # make a loop for get the array of api call
-                for index, response in enumerate(responses['content']):
-                    if index == 0: 
-                        continue
-                    tools_call = response
-                    name = tools_call.get('name')
-                    args = tools_call.get('input', {})
+                for tool_call in responses['content'][1:]:  # Skip the first item
+                    name = tool_call['name']
+                    args = tool_call['input']
                     codes_mapping[name] = {
-                        'tools_call': tools_call,
+                        'tool_call': tool_call,
                         'name': name,
                         'args': args
                     }
                     names.append(name)
             case _:
-                return False
-        api_calls_reponse = await ConfigurationService.get_api_call_by_names(names)
+                return False, {}
+
+        api_calls_response = await ConfigurationService.get_api_call_by_names(names)
+
         async def process_code_and_service_data(api_call):
-            axios_instance = api_call.get('code') or api_call.get('axios')  
+            axios_instance = api_call.get('code') or api_call.get('axios')
             is_python = api_call.get('is_python', False)
-            name = api_call.get('function_name',codes_mapping.get('endpoint',''))
+            name = api_call.get('function_name',codes_mapping.get('endpoint',codes_mapping[api_call['name']]['name']))
             api_response = await axios_work(codes_mapping[name]['args'], axios_instance, is_python)
             response_data = {
-                'tool_call_id': codes_mapping[name]['tools_call'].get('id'),
+                'tool_call_id': codes_mapping[name]['tool_call'].get('id'),
                 'role': 'tool',
-                'name': codes_mapping[name]['name'],
+                'name': name,
                 'content': json.dumps(api_response),
             }
             return response_data, {response_data['tool_call_id']: response_data}
 
-        responses, mapping = zip(*(await asyncio.gather(*(process_code_and_service_data(api_call) for api_call in api_calls_reponse['apiCalls']))))
-        return list(responses), dict(ChainMap(*mapping))
+        try:
+            responses = []
+            mapping = {}
+            for api_call in api_calls_response['apiCalls']:
+                response_data, response_mapping = await process_code_and_service_data(api_call)
+                responses.append(response_data)
+                mapping.update(response_mapping)
+            return responses, mapping
+        except Exception as error:
+            print(f"Error in run_tool: {error}")
+            return [], {}
 
     def update_configration(self, response, function_responses, configuration, mapping_response_data, service, tools):    
         if(service == 'anthropic'):
