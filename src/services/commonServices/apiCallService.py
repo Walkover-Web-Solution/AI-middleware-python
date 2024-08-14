@@ -25,7 +25,7 @@ async def creates_api(request: Request, bridge_id: str):
         
         model_config = await get_bridges(bridge_id)
 
-        if model_config :
+        if model_config.get('success') is False:
             raise HTTPException(status_code=400, detail="bridge data not found")
         
         desc = f"function_name: {endpoint_name} desc" if endpoint_name else desc
@@ -274,7 +274,9 @@ async def create_open_api(function_name, desc,api_object_id, required_params=Non
         required_params = []
     
     tools_call = model_config.get('bridges', {}).get('configuration', {}).get('tools', [])
-    current_function_data = [tool for tool in tools_call if tool['name'] == function_name]
+    current_function_data = [tool for tool in tools_call if tool['name'] == function_name][0]
+    old_properties = current_function_data.get('properties', {})
+    old_required = current_function_data.get('required', [])
     try:
         format = {
             "type": "function",
@@ -283,13 +285,18 @@ async def create_open_api(function_name, desc,api_object_id, required_params=Non
             "description": desc
         }
         properties = {}
+        final_required = []
         for field in required_params:
-            if current_function_data[field]:
-                properties[field] = current_function_data[field]
+            if old_properties.get(field):
+                properties[field] = old_properties.get(field)
             else:
                 properties[field] = {"type": "string"}
+                final_required.append(field)
+
+            if field in old_required:
+                final_required.append(field)
         if required_params:
-            format["required"] = required_params
+            format["required"] = final_required
             format["properties"] = properties
         return {"success": True, "format": format}
     except Exception as error:
