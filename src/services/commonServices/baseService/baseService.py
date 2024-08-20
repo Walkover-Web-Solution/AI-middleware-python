@@ -70,7 +70,7 @@ class BaseService:
         async def process_code_and_service_data(api_call):
             axios_instance = api_call.get('code') or api_call.get('axios')
             is_python = api_call.get('is_python', False)
-            name = api_call.get('function_name',codes_mapping.get('endpoint',''))
+            name = api_call.get('function_name', api_call.get('endpoint',''))
             api_response = await axios_work(codes_mapping[name]['args'], axios_instance, is_python)
             response_data = {
                 'tool_call_id': codes_mapping[name]['tool_call'].get('id'),
@@ -83,10 +83,13 @@ class BaseService:
         try:
             responses = []
             mapping = {}
+            tool_call_id_set = set()
             for api_call in api_calls_response['apiCalls']:
-                response_data, response_mapping = await process_code_and_service_data(api_call)
-                responses.append(response_data)
-                mapping.update(response_mapping)
+                response_data, response_mapping = await process_code_and_service_data(api_call)#to call directly using promise
+                if response_data['tool_call_id'] not in tool_call_id_set:
+                    tool_call_id_set.add(response_data['tool_call_id'])
+                    responses.append(response_data)
+                    mapping.update(response_mapping)
             return responses, mapping
         except Exception as error:
             print(f"Error in run_tool: {error}")
