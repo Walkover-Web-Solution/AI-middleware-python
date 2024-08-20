@@ -5,6 +5,7 @@ import traceback
 configurationModel = db["configurations"]
 apiCallModel = db['apicalls']
 templateModel = db['templates']
+apisaves = db['apisaves']
 
 async def get_bridges(bridge_id):
     
@@ -157,6 +158,30 @@ async def update_bridge(bridge_id, update_fields):
             'success': False,
             'error': 'Something went wrong!'
         }
+async def update_bridge_apikey(apikey_object_id, apikey):
+    try:
+        updated_result = configurationModel.update_many(
+            {'apikey_object_id': apikey_object_id},
+            {'$set': {'apikey': apikey}},
+        )
+
+        if updated_result.matched_count == 0:
+            return {
+                'success': False,
+                'error': 'No records updated or bridge not found'
+            }
+
+        return {
+            'success': True,
+            'matched_count': updated_result.matched_count,
+            'modified_count': updated_result.modified_count
+        }
+    except Exception as error:
+        print(error)
+        return {
+            'success': False,
+            'error': 'Something went wrong!'
+        }
 
 async def update_tools_calls(bridge_id, org_id, configuration):
     try:
@@ -170,6 +195,19 @@ async def update_tools_calls(bridge_id, org_id, configuration):
         return {
             'success': True,
             'message': "bridge updated successfully"
+        }
+    except Exception as error:
+        print(f"error: {error}")
+        return {
+            'success': False,
+            'error': "something went wrong!!"
+        }
+async def get_api(id):
+    try:
+        api = apisaves.find_one({'_id': ObjectId(id)})
+        return {
+            'success': True,
+            'api': api.get('apikey')
         }
     except Exception as error:
         print(f"error: {error}")
