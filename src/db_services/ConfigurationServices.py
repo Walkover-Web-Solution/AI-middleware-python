@@ -1,13 +1,13 @@
 from models.mongo_connection import db
 from bson import ObjectId
 import traceback
+from fastapi import Request, HTTPException
 
 configurationModel = db["configurations"]
 apiCallModel = db['apicalls']
 templateModel = db['templates']
 
 async def get_bridges(bridge_id):
-    
     try:
         bridges = configurationModel.find_one({'_id': ObjectId(bridge_id)})
         return {
@@ -16,10 +16,7 @@ async def get_bridges(bridge_id):
         }
     except Exception as error:
         print(error)
-        return {
-            'success': False,
-            'error': "something went wrong!!"
-        }
+        raise HTTPException(status_code=400, detail={"success": False, "error": "Error in getting data: "+ str(error)})
 async def get_api_call_by_names(names):
     try:
         if not isinstance(names, list):
