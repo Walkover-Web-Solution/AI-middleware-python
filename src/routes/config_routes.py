@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Request
 from ..middlewares.middleware import jwt_middleware
 from validations.validation import Bridge_update as bridge_update_validation
 from ..controllers.configController import create_bridges_controller, get_bridge as get_bridge_controller,  get_all_bridges as get_all_bridges_controller
-from ..controllers.configController import get_all_service_models_controller,update_bridge_controller
+from ..controllers.configController import get_all_service_models_controller,update_bridge_controller, apikey_update_controller
 from src.services.commonServices.apiCallService import creates_api, updates_api
 router = APIRouter()
 
@@ -33,3 +33,7 @@ async def create_api(bridge_id: str, request: Request):
 @router.post('/updateapi/{bridge_id}', dependencies=[Depends(jwt_middleware)])
 async def update_api(bridge_id: str, request: Request):
     return await updates_api(request, bridge_id)
+
+@router.post('/apikey/update', dependencies=[Depends(jwt_middleware)])
+async def update_apikey(request: Request):
+    return await apikey_update_controller(request)

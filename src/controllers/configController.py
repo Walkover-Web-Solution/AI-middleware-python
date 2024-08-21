@@ -238,8 +238,6 @@ async def update_bridge_controller(request,bridge_id):
         apikey = body.get('apikey')
         apikey_object_id = body.get('apikey_object_id')
         update_fields = {}
-        if apikey is not None and apikey_object_id is not None:
-            await update_bridge_apikey(apikey_object_id,apikey)
         if apikey_object_id is not None:
             update_fields['apikey_object_id'] = apikey_object_id
             data = await get_api(apikey_object_id)
@@ -319,3 +317,22 @@ async def get_and_update(bridge_id, org_id, open_api_format, function_name, stat
             "success": False,
             "error": "something went wrong!!"
         }
+
+async def apikey_update_controller(request):
+    try:
+        body  = await request.json()
+        apikey = body.get('apikey')
+        apikey = Helper.encrypt(apikey)
+        apikey_object_id = body.get('apikey_object_id')
+        if apikey is not None and apikey_object_id is not None:
+                result = await update_bridge_apikey(apikey_object_id,apikey)
+        if result.get("success"):
+            return JSONResponse(status_code=200, content={
+                    "success": True,
+                    "message": "Apikey updated successfully"
+                })
+    except Exception as e:
+        return JSONResponse(status_code=400, content={
+            "success": False,
+            "error": str(e)
+        })
