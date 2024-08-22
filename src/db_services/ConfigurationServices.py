@@ -215,3 +215,26 @@ async def get_api(id):
             'success': False,
             'error': "something went wrong!!"
         }
+async def delete_apikey(api_object_id):
+    try:
+        # Ensure the ID is properly converted to ObjectId
+        result = apisaves.delete_one({'_id': ObjectId(api_object_id)})
+        
+        # Check if a document was actually deleted
+        if result.deleted_count > 0:
+            return {
+                'success': True
+            }
+        else:
+            return {
+                'success': False,
+                'error': 'API key not found'
+            }
+    except Exception as error:
+        print(f"error: {error}")
+        return {
+            'success': False,
+            'error': str(error)  # Convert error to string for safe JSON serialization
+        }
+
+

@@ -2,7 +2,7 @@ from fastapi import HTTPException, status
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 # from src.db_services.ConfigurationServices import get_bridges_by_slug_name_and_name
-from src.db_services.ConfigurationServices import create_bridge, get_bridge_by_id, get_all_bridges_in_org,update_bridge, get_bridges, update_tools_calls, get_api, update_bridge_apikey
+from src.db_services.ConfigurationServices import create_bridge, get_bridge_by_id, get_all_bridges_in_org,update_bridge, get_bridges, update_tools_calls, get_api, update_bridge_apikey,delete_apikey
 from src.configs.modelConfiguration import ModelsConfig as model_configuration
 from src.services.utils.helper import Helper
 import json
@@ -330,6 +330,28 @@ async def apikey_update_controller(request):
             return JSONResponse(status_code=200, content={
                     "success": True,
                     "message": "Apikey updated successfully"
+                })
+    except Exception as e:
+        return JSONResponse(status_code=400, content={
+            "success": False,
+            "error": str(e)
+        })
+
+async def apikey_delete_controller(request):
+    try:
+        body  = await request.json()
+        apikey_object_id = body.get('apikey_object_id')
+        if apikey_object_id is not None:
+            result = await delete_apikey(apikey_object_id)
+        if result.get("success"):
+            return JSONResponse(status_code=200, content={
+                    "success": True,
+                    "message": "Apikey deleted successfully"
+                })
+        else:
+            return JSONResponse(status_code=400, content={
+                    "success": False,
+                    "message": result.get("error")
                 })
     except Exception as e:
         return JSONResponse(status_code=400, content={
