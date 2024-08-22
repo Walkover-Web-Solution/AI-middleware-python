@@ -98,8 +98,6 @@ class Helper:
                 config[key] = db_config.get(key, response['configuration'].get(key, {"type":'default',"cred":{}} if key == 'response_format' else ''))
             response['configuration'] = config
             response['apikey'] = Helper.decrypt(response['apikey']) if response.get('apikey') else ""
-            embed_token = Helper.generate_token({ "org_id": Config.ORG_ID, "project_id": Config.PROJECT_ID, "user_id": response['_id'] },Config.Access_key )
-            response['embed_token'] = embed_token
             finalResponse['bridge'] = response
             return finalResponse
         except json.JSONDecodeError as error:

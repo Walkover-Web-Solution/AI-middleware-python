@@ -6,6 +6,7 @@ from src.db_services.ConfigurationServices import create_bridge, get_bridge_by_i
 from src.configs.modelConfiguration import ModelsConfig as model_configuration
 from src.services.utils.helper import Helper
 import json
+from config import Config
 from validations.validation import Bridge_update as bridge_validation
 from ..configs.constant import service_name
 from src.db_services.conversationDbService import storeSystemPrompt
@@ -124,10 +125,12 @@ async def get_all_bridges(request):
     try:
         org_id = request.state.profile['org']['id']
         bridges = await get_all_bridges_in_org(org_id)
+        embed_token = Helper.generate_token({ "org_id": Config.ORG_ID, "project_id": Config.PROJECT_ID, "user_id": org_id },Config.Access_key )
         return JSONResponse(status_code=200, content={
                 "success": True,
                 "message": "Get all bridges successfully",
                 "bridge" : bridges,
+                "embed_token": embed_token,
                 "org_id": org_id
 
             })
