@@ -1,12 +1,16 @@
 import src.db_services.ConfigurationServices as ConfigurationService
 from .helper import Helper
+from bson import ObjectId
+from models.mongo_connection import db
+apiCallModel = db['apicalls']
+
 # from src.services.commonServices.generateToken import generateToken
 # from src.configs.modelConfiguration import ModelsConfig
 
 async def getConfiguration(configuration, service, bridge_id, apikey, template_id=None, variables = {}):
     RTLayer = False
     bridge = None
-    result = await ConfigurationService.get_bridges(bridge_id)
+    result = await ConfigurationService.get_bridges_with_tools(bridge_id)
     if not result['success']:
         return {
             'success': False,
@@ -16,6 +20,25 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
     if configuration:
         db_configuration.update(configuration)
     configuration = db_configuration
+    
+    # make tools data
+    tools = []
+    for key, api_data in result.get('bridges', {}).get('apiCalls', {}).items():
+        # if status is paused then only don't include it in tools
+        if api_data.get('status') == 0:
+            continue
+        format = {
+            "type": "function",
+            "name": api_data['function_name'],
+            "description": api_data['description'],
+            "properties": { field: { "type": "string" } for field in api_data['required_params'] },
+            "required": api_data['required_params']
+        }
+        tools.append(format)
+
+    configuration.pop('tools', None)
+    configuration['tools'] = tools
+
     service = service or (result.get('bridges', {}).get('service', '').lower())
     db_api_key = result.get('bridges', {}).get('apikey')
     if not (apikey or db_api_key): 
@@ -27,12 +50,10 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
     template_content = await ConfigurationService.get_template_by_id(template_id) if template_id else None
     pre_tools = bridge.get('pre_tools', [])
     if len(pre_tools)>0:
-        api_call = await ConfigurationService.get_api_call_by_names(pre_tools)
+        api_data = apiCallModel.find_one({"_id": ObjectId( pre_tools[0])})
 
-        if api_call.get('sucesss') is False: 
+        if api_data is None: 
             raise Exception("Didn't find the pre_function")
-        api_data =  api_call.get('apiCalls', [])
-        api_data = api_data[0] if len(api_data) > 0 else {}
         pre_function_code = api_data.get('code', '')
         required_params = api_data.get('required_params', [])
         args = {}
