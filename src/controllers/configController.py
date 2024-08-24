@@ -2,7 +2,7 @@ from fastapi import HTTPException, status
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 # from src.db_services.ConfigurationServices import get_bridges_by_slug_name_and_name
-from src.db_services.ConfigurationServices import create_bridge, get_bridge_by_id, get_all_bridges_in_org,update_bridge, get_bridges, update_tools_calls,get_api
+from src.db_services.ConfigurationServices import create_bridge, get_bridge_by_id, get_all_bridges_in_org,update_bridge, get_bridges, update_tools_calls,get_apikey_creds
 from src.configs.modelConfiguration import ModelsConfig as model_configuration
 from src.services.utils.helper import Helper
 import json
@@ -240,8 +240,7 @@ async def update_bridge_controller(request,bridge_id):
         update_fields = {}
         if apikey_object_id is not None:
             update_fields['apikey_object_id'] = apikey_object_id
-            data = await get_api(apikey_object_id)
-            apikey = data.get('api')
+            apikey = await get_apikey_creds(apikey_object_id)
         name = body.get('name')
         bridge = await get_bridge_by_id(org_id, bridge_id)
         current_configuration = bridge.get('configuration', {})

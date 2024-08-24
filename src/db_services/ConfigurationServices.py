@@ -178,13 +178,12 @@ async def update_tools_calls(bridge_id, org_id, configuration):
             'success': False,
             'error': "something went wrong!!"
         }
-async def get_api(id):
+async def get_apikey_creds(id):
     try:
-        api = apikeyCredentialsModel.find_one({'_id': ObjectId(id)})
-        return {
-            'success': True,
-            'api': api.get('apikey')
-        }
+        return apikeyCredentialsModel.find_one(
+            {'_id': ObjectId(id)},
+            {'apikey' : 1}
+        )
     except Exception as error:
         print(f"error: {error}")
         return {
