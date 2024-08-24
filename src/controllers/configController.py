@@ -240,11 +240,11 @@ async def update_bridge_controller(request,bridge_id):
         update_fields = {}
         if apikey_object_id is not None:
             update_fields['apikey_object_id'] = apikey_object_id
-            apikey = await get_apikey_creds(apikey_object_id)
+            data = await get_apikey_creds(apikey_object_id)
+            apikey = data.get('apikey')
         name = body.get('name')
         bridge = await get_bridge_by_id(org_id, bridge_id)
         current_configuration = bridge.get('configuration', {})
-        apikey = bridge.get('apikey') if apikey is None else Helper.encrypt(apikey)
         prompt = new_configuration.get('prompt') if new_configuration else None
         if prompt:
             result = await storeSystemPrompt(prompt, org_id, bridge_id)
