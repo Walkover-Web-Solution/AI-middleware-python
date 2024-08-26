@@ -8,6 +8,7 @@ class ConversationService:
             for message in conversation or []:
                 if message['role'] != "tools_call" and message['role'] != "tool":
                     threads.append({'role': message['role'], 'content': message['content']})
+            
             return {
                 'success': True,
                 'messages': threads
@@ -15,11 +16,7 @@ class ConversationService:
         except Exception as e:
             traceback.print_exc()
             print("create conversation error=>", e)
-            return {
-                'success': False,
-                'error': str(e),
-                'messages': []
-            }
+            raise ValueError(e.args[0])
 
     @staticmethod
     def createGeminiConversation(conversation):

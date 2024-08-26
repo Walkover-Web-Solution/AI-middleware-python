@@ -125,9 +125,7 @@ async def chat(request: Request):
             result = await groq.groq_handler()
     
         if not result["success"]:
-                if response_format['type'] != 'default':
-                    return
-                return JSONResponse(status_code=400, content=result)
+            raise ValueError(result)
 
         if bridgeType:
             parsedJson = Helper.parse_json(_.get(result["modelResponse"], modelOutputConfig["message"]))
@@ -138,7 +136,7 @@ async def chat(request: Request):
                 base_service_instance = UnifiedOpenAICase(params)
                 newresult = await base_service_instance.execute()
                 if not newresult["success"]:
-                    return
+                    raise ValueError("unable to make proper format")
 
                 _.set_(result['modelResponse'], modelOutputConfig['usage'][0]['total_tokens'], _.get(result['modelResponse'], modelOutputConfig['usage'][0]['total_tokens']) + _.get(newresult['modelResponse'], modelOutputConfig['usage'][0]['total_tokens']))
                 _.set_(result['modelResponse'], modelOutputConfig['message'], _.get(newresult['modelResponse'], modelOutputConfig['message']))
@@ -167,9 +165,7 @@ async def chat(request: Request):
             })
             asyncio.create_task(metrics_service.create([usage], result["historyParams"]))
             asyncio.create_task(sendResponse(response_format, result["modelResponse"],success=True))
-        return JSONResponse(status_code=200, content={"success": True, "response": result["modelResponse"]})
-    except HTTPException as e: 
-        raise e
+        return JSONResponse({"status_code":200, "content":{"success": True, "response": result["modelResponse"]}})
     except Exception as error:
         traceback.print_exc()
         if not is_playground:
@@ -197,6 +193,4 @@ async def chat(request: Request):
             }))
             print("chat common error=>", error)
             asyncio.create_task(sendResponse(response_format,result.get("modelResponse", str(error))))
-            if response_format['type'] != 'default':
-                return
-        return JSONResponse(status_code=400, content={"success": False, "error": str(error)})
+        raise ValueError(error)
