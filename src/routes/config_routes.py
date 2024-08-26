@@ -23,12 +23,12 @@ async def create_bridge(request: Request):
     return await create_bridges_controller(request)
 
 @router.post('/update_bridge/{bridge_id}',dependencies=[Depends(jwt_middleware)])
-async def update_bridge(request: Request,bridge_id: str):
+async def update_bridge(request: Request,bridge_id: str, to_update : bridge_update_validation):
     return await update_bridge_controller(request,bridge_id)
 
-@router.post('/createapi', dependencies=[Depends(jwt_middleware)])
-async def create_api(request: Request):
-    return await creates_api(request)
+@router.post('/createapi/{bridge_id}', dependencies=[Depends(jwt_middleware)])
+async def create_api(bridge_id: str, request: Request):
+    return await creates_api(request, bridge_id)
 
 @router.post('/updateapi/{bridge_id}', dependencies=[Depends(jwt_middleware)])
 async def update_api(bridge_id: str, request: Request):

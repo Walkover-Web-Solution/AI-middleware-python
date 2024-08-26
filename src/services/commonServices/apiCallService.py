@@ -1,6 +1,7 @@
 from fastapi import Request, HTTPException
 from fastapi.responses import JSONResponse
-from src.db_services.ConfigurationServices import get_bridges, update_bridge, get_bridges_with_tools
+from src.controllers.configController import get_and_update
+from src.db_services.ConfigurationServices import get_bridges, update_bridge, get_api_call_by_names
 from src.services.utils.helper import Helper
 import json
 import datetime 
@@ -8,7 +9,7 @@ from models.mongo_connection import db
 apiCallModel = db['apicalls']
 
 
-async def creates_api(request: Request):
+async def creates_api(request: Request, bridge_id: str):
     try:
         body = await request.json()
         function_name = body.get('id')
@@ -19,8 +20,13 @@ async def creates_api(request: Request):
         endpoint_name = body.get('endpoint_name')
         desc = body.get('desc')
 
-        if not all([desc, function_name, status, org_id]):
+        if not all([desc, function_name, status, bridge_id, org_id]):
             raise HTTPException(status_code=400, detail="Required details must not be empty!!")
+        
+        model_config = await get_bridges(bridge_id)
+
+        if model_config.get('success') is False:
+            raise HTTPException(status_code=400, detail="bridge data not found")
         
         desc = f"function_name: {endpoint_name} desc" if endpoint_name else desc
         axios_code = ""
@@ -63,39 +69,34 @@ async def creates_api(request: Request):
         return str(e)"""
 
             fields = [{"variable_name": param, "description": '', "enum": ''} for param in required_params]
-            api_id = await get_api_id(org_id, function_name)
-            result  = await save_api(desc, org_id, api_id, axios_code, required_params, function_name, fields, True, endpoint_name)
-            result['api_data']['_id'] = str(result['api_data']['_id'])
-            if 'created_at' in result['api_data'] and isinstance(result['api_data']['created_at'], datetime.datetime):
-                        result['api_data']['created_at'] = result['api_data']['created_at'].strftime('%Y-%m-%d %H:%M:%S')  # Convert datetime to string
+            api_id = await get_api_id(org_id, bridge_id, function_name)
+            response = await save_api(desc, org_id, bridge_id, api_id, axios_code, required_params, function_name, fields, True, endpoint_name)
 
-            if 'updated_at' in result['api_data'] and isinstance(result['api_data']['updated_at'], datetime.datetime):
-                        result['api_data']['updated_at'] = result['api_data']['updated_at'].strftime('%Y-%m-%d %H:%M:%S')  
-             # Convert ObjectId to string
-            if 'bridge_ids' in result['api_data']:
-                result['api_data']['bridge_ids'] = [str(bid) for bid in result['api_data']['bridge_ids']] 
-
-            if not result.get('success'):
+            if not response.get('success'):
                 raise HTTPException(status_code=400, detail="Something went wrong!")
+
+            api_object_id = response.get('api_object_id')
+            data = await create_open_api(function_name, desc, api_object_id, required_params, model_config)
+            result = await get_and_update(bridge_id, org_id, data['format'], function_name, 'add', model_config)
 
             if result.get('success'):
                 return JSONResponse(status_code=200, content={
                     "message": "API saved successfully",
                     "success": True,
                     "activated": True,
-                    "data": result['api_data']
+                    "tools_call": result.get('tools_call')
                 })
             else:
                 raise HTTPException(status_code=400, detail=result)
 
         elif status in ["delete", "paused"]:
-            result = await delete_api(function_name, org_id)
-            if result:
+            result = await delete_api(function_name, org_id, bridge_id, model_config)
+            if result.get('success'):
                 return JSONResponse(status_code=200, content={
                     "message": "API deleted successfully",
                     "success": True,
                     "deleted": True,
-                    "data": result
+                    "tools_call": result.get('tools_call')
                 })
             else:
                 raise HTTPException(status_code=400, detail=result)
@@ -111,27 +112,49 @@ async def updates_api(request: Request, bridge_id: str):
     try:
         body = await request.json()
         org_id = request.state.org_id if hasattr(request.state, 'org_id') else None
-        pre_tools = body.get('pre_tools')
+        function_name = body.get('id')
+        pre_function_call = body.get('preFunctionCall')
 
-        if not all([pre_tools is not None, bridge_id, org_id]):
+        if not all([function_name, bridge_id, org_id]):
             raise HTTPException(status_code=400, detail="Required details must not be empty!!")
     
         model_config = await get_bridges(bridge_id)
 
         if model_config.get('success') is False: 
             raise HTTPException(status_code=400, detail="bridge id is not found")
-    
-        data_to_update = {}
-        data_to_update['pre_tools'] = pre_tools
-        result = await update_bridge(bridge_id, data_to_update)
+            
+        model_config = model_config.get('bridges', {})
+        tools_call = model_config.get('configuration', {}).get('tools', [])
+        pre_tools_call = model_config.get('pre_tools', [])
 
-        result = await get_bridges_with_tools(bridge_id)
+        updated_tools_call = [tool for tool in tools_call if tool['name'] != function_name]
+        updated_pre_tools_call = [tool for tool in pre_tools_call if tool != function_name]
+
+        if pre_function_call:
+            if function_name in pre_tools_call:
+                raise HTTPException(status_code=400, detail='function is already added to pre function')
+            updated_pre_tools_call.append(function_name)
+        else:
+            api_response = await get_api_call_by_names(function_name)
+            api_data = api_response.get('apiCalls', [])
+            api_data = api_data[0] if len(api_data) > 0 else {}
+            open_api_format = await create_open_api(function_name, api_data.get('description', ""), str(api_data.get('_id', "")), api_data.get('required_params', []) )
+            if function_name in tools_call:
+                raise HTTPException(status_code=400, detail='function is already added to tools')
+            updated_tools_call.append(open_api_format['format'])
+
+        model_config['configuration'] = {
+            **model_config["configuration"],
+            "tools": updated_tools_call
+        }
+        model_config["pre_tools"] = updated_pre_tools_call
+        result = await update_bridge(bridge_id, model_config)
 
         if result.get("success"):
             return Helper.response_middleware_for_bridge({
                 "success": True,
                 "message": "Bridge Updated successfully",
-                "bridge" : result.get('bridges')
+                "bridge" : result.get('result')
 
             })
         else:
@@ -167,13 +190,13 @@ def traverse_body(body, required_params=None, path="", paths=None):
 
 
 
-async def get_api_id(org_id, function_name):
+async def get_api_id(org_id, bridge_id, function_name):
     try:
         api_call_data =  apiCallModel.find_one(
         {
             "$or": [
-                {"org_id": org_id, "function_name": function_name},  # new data  function_name
-                {"org_id": org_id, "endpoint": function_name},  # previous data endpoint
+                {"org_id": org_id, "bridge_id": bridge_id, "function_name": function_name},  # new data  function_name
+                {"org_id": org_id, "bridge_id": bridge_id, "endpoint": function_name},  # previous data endpoint
             ]
         })
         api_id = api_call_data.get('_id', "") if api_call_data else ""
@@ -183,7 +206,7 @@ async def get_api_id(org_id, function_name):
         return ""
 
 
-async def save_api(desc, org_id, api_id=None, code="", required_params=None, function_name="", fields=None, activated=False, endpoint_name="", status = 1):
+async def save_api(desc, org_id, bridge_id, api_id=None, code="", required_params=None, function_name="", fields=None, activated=False, endpoint_name=""):
     if fields is None:
         fields = []
     if required_params is None:
@@ -208,19 +231,21 @@ async def save_api(desc, org_id, api_id=None, code="", required_params=None, fun
                 api_data['function_name'] = function_name # script id will be set in this in case of viasocket
                 api_data['endpoint_name'] = endpoint_name # flow name will be saved in this in case of viasocket
                 api_data['is_python'] = 1
-                api_data["status"] = status
 
                 # saving updated fields in the db with same id
                 saved_api =  apiCallModel.replace_one({"_id": api_id}, api_data)
                 if saved_api.modified_count == 1:
                     return {
                         "success": True,
-                        "api_data": api_data,
+                        "api_object_id": str(api_id),
+                        "required_params": api_data['required_params'],
+                        "optional_fields": api_data.get('optional_fields', [])
                     }
         else:
             api_data = {
                 "description": desc,
                 "org_id": org_id,
+                "bridge_id": bridge_id,
                 "required_params": required_params,
                 "fields": fields,
                 "activated": activated,
@@ -228,17 +253,13 @@ async def save_api(desc, org_id, api_id=None, code="", required_params=None, fun
                 "code": code,
                 "endpoint_name": endpoint_name,
                 "is_python": 1,
-                "status": status,
                 "created_at": datetime.datetime.now(),
                 "updated_at": datetime.datetime.now()
             }
             new_api =  apiCallModel.insert_one(api_data)
             return {
                 "success": True,
-                 "api_data": {
-                    "_id": str(new_api.inserted_id),
-                    **api_data
-                },
+                "api_object_id": str(new_api.inserted_id)
             }
     except Exception as error:
         print(f"error: {error}")
@@ -285,23 +306,18 @@ async def create_open_api(function_name, desc,api_object_id, required_params=Non
     
 
 
-async def delete_api(function_name, org_id, status = 0):
+async def delete_api(function_name, org_id, bridge_id, model_config):
     try:
-        data = apiCallModel.find_one_and_update({
-            "$or": [
-                {"org_id": org_id, "endpoint": function_name},
-                {"org_id": org_id, "function_name": function_name},
-            ]
-        }, {"$set": {"status": status}}, return_document=True)
-        if data:
-            data['_id'] = str(data['_id'])  # Convert ObjectId to string
-            if 'bridge_ids' in data:
-                data['bridge_ids'] = [str(bid) for bid in data['bridge_ids']]  # Convert bridge_ids to string
-            if 'created_at' in data:
-                data['created_at'] = data['created_at'].strftime('%Y-%m-%d %H:%M:%S')  # Convert datetime to string
-            if 'updated_at' in data:
-                data['updated_at'] = data['updated_at'].strftime('%Y-%m-%d %H:%M:%S')  
-        return data
+        # delete by endpoint
+        # todo : testing left
+        # apiCallModel.find_one_and_delete({
+        #     "$or": [
+        #         {"org_id": org_id, "bridge_id": bridge_id, "endpoint": function_name},
+        #         {"org_id": org_id, "bridge_id": bridge_id, "name": function_name}
+        #     ]
+        # })
+        result = await get_and_update(bridge_id, org_id, "", function_name, "delete", model_config)
+        return result
     except Exception as error:
         print(f"Delete API error=> {error}")
         return {"success": False, "error": str(error)}
