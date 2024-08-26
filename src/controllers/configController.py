@@ -245,6 +245,8 @@ async def update_bridge_controller(request,bridge_id):
         name = body.get('name')
         bridge = await get_bridge_by_id(org_id, bridge_id)
         current_configuration = bridge.get('configuration', {})
+        if apikey_object_id is None:
+            apikey = bridge.get('apikey') if apikey is None else Helper.encrypt(apikey)
         prompt = new_configuration.get('prompt') if new_configuration else None
         if prompt:
             result = await storeSystemPrompt(prompt, org_id, bridge_id)
