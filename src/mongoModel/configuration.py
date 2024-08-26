@@ -40,6 +40,10 @@
 #         'type': dict,
 #         'default': {}
 #     },
+#     'staticFlowId': {
+#         'type': string,
+#         'default': '' // foreign key of staticFlow
+#     },
 #     'apikey': {
 #         'type': str,
 #         'default': ""

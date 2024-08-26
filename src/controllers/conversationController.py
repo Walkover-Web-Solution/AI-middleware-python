@@ -34,7 +34,7 @@ async def getThreadHistory(thread_id, org_id, bridge_id):
         print(err)
         return { 'success': False, 'message': str(err) }
 
-async def savehistory(thread_id, userMessage, botMessage, org_id, bridge_id, model_name, type, messageBy, userRole="user", tools={}):
+async def savehistory(thread_id, userMessage, botMessage, org_id, bridge_id, model_name, type, messageBy, userRole="user", tools={}, isstatic = False):
     try:
         chatToSave = [{
             'thread_id': thread_id,
@@ -67,7 +67,8 @@ async def savehistory(thread_id, userMessage, botMessage, org_id, bridge_id, mod
                 'message_by': messageBy,
                 'type': type,
                 'bridge_id': bridge_id,
-                'function': botMessage if messageBy == "tool_calls" else {}
+                'function': botMessage if messageBy == "tool_calls" else {},
+                'isstatic' : isstatic  # if response is returned by running static code only then do isstatic = true
             })
 
         # if userRole == "tool":

@@ -41,21 +41,24 @@ async def send_data_middleware(request: Request, botId: str):
         if not bridge_response['success']:
             raise HTTPException(status_code=400, detail="some error occurred")
 
-        request.state.chatbot = True
         request.state.chatbot = {
             "bridge_id": bridges.get('_id', '').__str__(),
             "user": message,
-
             "thread_id": threadId,
             "variables": {**body['interfaceContextData'], "message": message, "actions": actions, **json.loads(profile.get('variables', "{}"))},
             "template_id": Config.TEMPLATE_ID,
-            "configuration": {"response_format": {
-                "type": "RTLayer",
-                "cred": {
-                "channel": channelId,
-                "ttl": 1,
-                'apikey': Config.RTLAYER_AUTH
-            }},}
+            "configuration": {
+                "response_format": {
+                    "type": "RTLayer",
+                    "cred": {
+                        "channel": channelId,
+                        "ttl": 1,
+                        'apikey': Config.RTLAYER_AUTH
+                    }
+                }
+            },
+            "configurationData": bridges,
+            "chatbot": True
         }
         await add_configuration_data_to_body(request=request)
         return await chat_completion(request=request)

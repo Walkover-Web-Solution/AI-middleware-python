@@ -20,6 +20,7 @@ from .groq.groqCall import Groq
 from prompts import mui_prompt
 from .baseService.utils import sendResponse
 from ..utils.ai_middleware_format import Response_formatter
+from src.middlewares.staticResponse import staticResponse
 app = FastAPI()
 from src.services.commonServices.baseService.utils import axios_work
 from ...configs.constant import service_name
@@ -27,6 +28,10 @@ from ...configs.constant import service_name
 
 @app.post("/chat/{bridge_id}")
 async def chat(request: Request):
+    staticDataResponse = await staticResponse(request=request)
+    # if staticDataResponse gives true then don't go ahead
+    if staticDataResponse:
+        return 
     startTime = int(time.time() * 1000)
     body = await request.json()
     if(hasattr(request.state, 'body')): 
