@@ -1,15 +1,15 @@
 from fastapi import HTTPException, status
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
-from src.db_services.ConfigurationServices import create_bridge, get_bridge_by_id, get_all_bridges_in_org, update_bridge, update_bridge_ids_in_api_calls, get_bridges_with_tools
+# from src.db_services.ConfigurationServices import get_bridges_by_slug_name_and_name
+from src.db_services.ConfigurationServices import create_bridge, get_bridge_by_id, get_all_bridges_in_org,update_bridge, get_bridges, update_tools_calls
 from src.configs.modelConfiguration import ModelsConfig as model_configuration
 from src.services.utils.helper import Helper
 import json
-from config import Config
 from validations.validation import Bridge_update as bridge_validation
 from ..configs.constant import service_name
 from src.db_services.conversationDbService import storeSystemPrompt
-from bson import ObjectId
+
 
 async def create_bridges_controller(request):
     try:
@@ -114,8 +114,9 @@ async def duplicate_create_bridges(bridges):
 
 async def get_bridge(request, bridge_id: str):
     try:
-        bridge = await get_bridges_with_tools(bridge_id)
-        return Helper.response_middleware_for_bridge({"succcess": True,"message": "bridge get successfully","bridge":bridge['bridges']})
+        org_id = request.state.profile['org']['id']
+        bridge = await get_bridge_by_id(org_id, bridge_id)
+        return Helper.response_middleware_for_bridge({"succcess": True,"message": "bridge get successfully","bridge":bridge})
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e,)
 
@@ -123,12 +124,10 @@ async def get_all_bridges(request):
     try:
         org_id = request.state.profile['org']['id']
         bridges = await get_all_bridges_in_org(org_id)
-        embed_token = Helper.generate_token({ "org_id": Config.ORG_ID, "project_id": Config.PROJECT_ID, "user_id": org_id },Config.Access_key )
         return JSONResponse(status_code=200, content={
                 "success": True,
                 "message": "Get all bridges successfully",
                 "bridge" : bridges,
-                "embed_token": embed_token,
                 "org_id": org_id
 
             })
@@ -238,12 +237,9 @@ async def update_bridge_controller(request,bridge_id):
         new_configuration = body.get('configuration')
         apikey = body.get('apikey')
         name = body.get('name')
-        function_id = body.get('functionData', {}).get('function_id', None)
-        function_operation = body.get('functionData', {}).get('function_operation')
         bridge = await get_bridge_by_id(org_id, bridge_id)
         current_configuration = bridge.get('configuration', {})
         apikey = bridge.get('apikey') if apikey is None else Helper.encrypt(apikey)
-        function_ids = bridge.get('function_ids') or []
         update_fields = {}
         prompt = new_configuration.get('prompt') if new_configuration else None
         if prompt:
@@ -262,27 +258,13 @@ async def update_bridge_controller(request,bridge_id):
             update_fields['apikey'] = apikey
         if name is not None:
             update_fields['name'] = name
-        if function_id is not None: 
-                if function_operation is not None:      # to add function id 
-                    if function_id not in function_ids:
-                        function_ids.append(function_id)
-                        update_fields['function_ids'] = [ObjectId(fid) for fid in function_ids]
-                        await update_bridge_ids_in_api_calls(function_id, bridge_id, 1)
-
-                elif function_operation is None:        # to remove function id 
-                    if function_id in function_ids:
-                        function_ids.remove(function_id)
-                        update_fields['function_ids'] = [ObjectId(fid) for fid in function_ids]
-                        await update_bridge_ids_in_api_calls(function_id, bridge_id, 0)
-            
-        await update_bridge(bridge_id, update_fields) # todo :: add transaction
-        result = await get_bridges_with_tools(bridge_id)
+        result = await update_bridge(bridge_id, update_fields)
         
         if result.get("success"):
             return Helper.response_middleware_for_bridge({
                 "success": True,
                 "message": "Bridge Updated successfully",
-                "bridge" : result.get('bridges')
+                "bridge" : result.get('result')
 
             })
     except ValidationError as e:
@@ -290,3 +272,43 @@ async def update_bridge_controller(request,bridge_id):
     except Exception as e:
         print(e)
         raise HTTPException(status_code=400, detail="Invalid request body!")
+
+
+# todo :: change the way tool calls are getting saved in the db
+async def get_and_update(bridge_id, org_id, open_api_format, function_name, status="add", model_config = {}):
+    try:
+        pre_tools = model_config.get('bridges', {}).get('pre_tools', [])
+        tools_call = model_config.get('bridges', {}).get('configuration', {}).get('tools', [])
+
+        if len(pre_tools) > 0 and function_name in pre_tools:
+            return {
+            'success': True,
+            'message': "tool is already added to the pre_tools so not adding it to configuration tools",
+            'tools_call': tools_call
+        } 
+
+        updated_tools_call = [tool for tool in tools_call if tool['name'] != function_name]
+
+        if status == "add" :
+            updated_tools_call.append(open_api_format)
+
+        # todo :: add delete from tool call   
+        # if status == "delete":
+        #     api_endpoints = [item for item in api_endpoints if item != function_name]
+
+        tools_call = updated_tools_call
+        configuration = {
+            "tools": tools_call
+        }
+
+        new_configuration = Helper.update_configuration(model_config['bridges']['configuration'], configuration)
+        result = await update_tools_calls(bridge_id, org_id, new_configuration)
+        result['tools_call'] = tools_call
+        return result
+
+    except Exception as error:
+        print(f"error: {error}")
+        return {
+            "success": False,
+            "error": "something went wrong!!"
+        }
