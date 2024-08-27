@@ -1,5 +1,6 @@
 from models.mongo_connection import db
 from bson import ObjectId
+from fastapi import HTTPException, status
 from ..services.commonServices.openAI.runModel import runModel
 import traceback
 import json
@@ -234,7 +235,4 @@ async def makeStaticData(bridge_id):
         }
     except Exception as error:
         print(error)
-        return {
-            'success': False,
-            'error': 'Something went wrong!'
-        }
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail={"error": "Something went wrong!", "success": False})

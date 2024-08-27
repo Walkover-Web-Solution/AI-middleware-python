@@ -56,13 +56,11 @@ async def static_response_operation(responseToSend, request, input_data):
         static_response['message'] = responseToSend
     else:
         static_response = responseToSend
-    response_format = {}
-    response_format['type'] = 'RTLayer'
+        
+    body = request.state.body
+    response_format =   body.get('configuration', {}).get('response_format')
     # first sending message to chatbot
-    data_to_send = {"choices": [{"message": {
-        "role": "assistant",
-        "content": static_response['message'],
-    }}]}
+    data_to_send = {"data": {"content": static_response['message'], "role": "assistant"}}
     body = request.state.body
     asyncio.create_task(sendResponse(
         response_format,
@@ -72,13 +70,15 @@ async def static_response_operation(responseToSend, request, input_data):
 
     # then sending mui format data
     if "muiFormat" in static_response:
-        data_to_send['choices'][0]["message"]["content"] = json.dumps(static_response.get('muiFormat', {}))
+        data_to_send = {"data": {"content": "", "role": "assistant"}}
+        data_to_send["data"]["content"] = json.dumps(static_response.get('muiFormat', {}))
         asyncio.create_task(sendResponse(
         response_format,
         data_to_send,
         True
     ))
 
+    #  history save api error de rahi hai
     await savehistory(
             thread_id=body['thread_id'], userMessage=input_data, botMessage=static_response['message'],
             org_id=body['org_id'], bridge_id=body['bridge_id'], model_name=body['configurationData']['configuration']['model'],
