@@ -47,3 +47,4 @@ class Bridge_update(BaseModel):
     apikey: Optional[str] = None
     name: Optional[str] = None
     apikey_object_id: Optional[str] = None
+    functionData: Optional[object]
