@@ -110,7 +110,7 @@ async def chat(request: Request):
             "response_format" : response_format,
             "org_id" : org_id
         }
-
+        result = {}
         if service == service_name['openai']:
             base_service_instance = openAIInstance = UnifiedOpenAICase(params)
             result = await openAIInstance.execute()

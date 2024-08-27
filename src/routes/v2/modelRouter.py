@@ -11,6 +11,7 @@ from config import Config
 from functools import wraps
 from bson import ObjectId
 import json
+from ...services.utils.send_error_webhook import send_error_to_webhook
 
 router = APIRouter()
 executor = ThreadPoolExecutor(max_workers= int(Config.max_workers) or 10)
@@ -26,32 +27,36 @@ def handle_exceptions(func):
     @wraps(func)
     async def wrapper(request: Request, *args, **kwargs):
         try:
-            # Ensure that request state and JSON body are properly handled
             body = await request.json()
             if hasattr(request.state, 'body'):
                 body.update(request.state.body)
-            request.state.body = body  # Make sure request.state.body is always set
-
-            # Execute the wrapped function
+            request.state.body = body
             return await func(request, *args, **kwargs)
         
         except Exception as exc:
-            # Extract exception information
             exc_type, exc_obj, exc_tb = sys.exc_info()
             tb = traceback.extract_tb(exc_tb)
-            last_frame = tb[-1] if tb else None  # Handle cases where traceback might be empty
+            last_frame = tb[-1] if tb else None
             error_location = f"{last_frame.filename.split('/')[-1]}:{last_frame.lineno}" if last_frame else "unknown location"
             
-            # Log the error with traceback for debugging
-            print(f"Error caught in {error_location}: {exc}")
-            traceback.print_exc()
-            
-            # Handle the response format
-            response_format = request.state.body.get("configuration", {}).get("response_format", {})
-            if response_format.get('type') != 'default':
-                return 
-            
-            # Return a structured JSON response
+            if isinstance(exc, ValueError):
+                error_details = exc.args[0] if exc.args else str(exc)
+            else:
+                error_details = str(exc)
+
+            if isinstance(error_details, ValueError):
+                error_details = error_details.args[0] if error_details.args else str(error_details)
+
+            try:
+                error_json = json.loads(error_details)
+            except json.JSONDecodeError:
+                error_json = {
+                    "location": error_location,
+                    "error_message": error_details
+                }
+            bridge_id = request.path_params.get('bridge_id') or body.get("bridge_id")
+            org_id = request.state.org_id
+            await send_error_to_webhook(bridge_id, org_id,error_json)
             return JSONResponse(
                 status_code=500,
                 content=json.loads(json.dumps({
@@ -59,8 +64,8 @@ def handle_exceptions(func):
                     "error": "An unexpected error occurred",
                     "error_details": exc.args[0] if isinstance(exc, ValueError) and isinstance(exc.args[0], dict) else str(exc),
                     "error_location": error_location,
-                    "request_data": request.state.body  # Ensure the request data is returned
-                }, cls=CustomJSONEncoder))  # Use custom encoder here
+                    "request_data": request.state.body 
+                }, cls=CustomJSONEncoder))
             )
     
     return wrapper
