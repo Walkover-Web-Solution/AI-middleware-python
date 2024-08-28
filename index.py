@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
@@ -71,6 +71,16 @@ async def validation_exception_handler(exc: RequestValidationError):
         status_code=400,
         content={"detail": "Custom error message", "errors": exc.errors()},
     )
+
+# New route for streaming data
+@app.get("/stream")
+async def stream_data():
+    async def generate():
+        for i in range(100):
+            yield f"data: {i}\n\n"
+            await asyncio.sleep(1)
+
+    return StreamingResponse(generate(), media_type="text/event-stream")
 
 # Include routers
 app.include_router(model_router, prefix="/api/v1/model")
