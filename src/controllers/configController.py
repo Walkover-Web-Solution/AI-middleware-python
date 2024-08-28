@@ -1,7 +1,7 @@
 from fastapi import HTTPException, status
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
-from src.db_services.ConfigurationServices import create_bridge, get_bridge_by_id, get_all_bridges_in_org, update_bridge, update_bridge_ids_in_api_calls, get_bridges_with_tools
+from src.db_services.ConfigurationServices import create_bridge, get_bridge_by_id, get_all_bridges_in_org, update_bridge, update_bridge_ids_in_api_calls, get_bridges_with_tools, get_apikey_creds
 from src.configs.modelConfiguration import ModelsConfig as model_configuration
 from src.services.utils.helper import Helper
 import json
@@ -251,7 +251,6 @@ async def update_bridge_controller(request,bridge_id):
         if apikey_object_id is None:
             apikey = bridge.get('apikey') if apikey is None else Helper.encrypt(apikey)
         function_ids = bridge.get('function_ids') or []
-        update_fields = {}
         prompt = new_configuration.get('prompt') if new_configuration else None
         if prompt:
             result = await storeSystemPrompt(prompt, org_id, bridge_id)
