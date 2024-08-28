@@ -144,6 +144,8 @@ async def chat(request: Request):
                 newresult = await executer(params,service)
                 if not newresult["success"]:
                     return
+                else:
+                    result = newresult
 
         endTime = int(time.time() * 1000)
         if version == 2:
