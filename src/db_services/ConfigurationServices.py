@@ -5,6 +5,7 @@ import traceback
 configurationModel = db["configurations"]
 apiCallModel = db['apicalls']
 templateModel = db['templates']
+apikeyCredentialsModel = db['apikeycredentials']
 
 async def get_bridges(bridge_id):
     
@@ -171,6 +172,18 @@ async def update_tools_calls(bridge_id, org_id, configuration):
             'success': True,
             'message': "bridge updated successfully"
         }
+    except Exception as error:
+        print(f"error: {error}")
+        return {
+            'success': False,
+            'error': "something went wrong!!"
+        }
+async def get_apikey_creds(id):
+    try:
+        return apikeyCredentialsModel.find_one(
+            {'_id': ObjectId(id)},
+            {'apikey' : 1}
+        )
     except Exception as error:
         print(f"error: {error}")
         return {
