@@ -58,13 +58,11 @@ def handle_exceptions(func):
             org_id = request.state.org_id
             await send_error_to_webhook(bridge_id, org_id,error_json)
             return JSONResponse(
-                status_code=500,
+                status_code=400,
                 content=json.loads(json.dumps({
                     "success": False,
-                    "error": "An unexpected error occurred",
-                    "error_details": exc.args[0] if isinstance(exc, ValueError) and isinstance(exc.args[0], dict) else str(exc),
+                    "error": exc.args[0] if isinstance(exc, ValueError) and isinstance(exc.args[0], dict) else str(exc),
                     "error_location": error_location,
-                    "request_data": request.state.body 
                 }, cls=CustomJSONEncoder))
             )
     
