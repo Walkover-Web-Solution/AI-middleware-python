@@ -69,7 +69,7 @@ async def chat(request: Request):
     bridge = body.get('bridge')
     pre_tools = body.get('pre_tools', None)
     version = request.state.version
-
+    result = {}
     if isinstance(variables, list):
         variables = {}
 
@@ -131,9 +131,7 @@ async def chat(request: Request):
         result = await executer(params,service)
     
         if not result["success"]:
-                if response_format['type'] != 'default':
-                    return
-                return JSONResponse(status_code=400, content=result)
+            raise ValueError(result)
 
         if bridgeType:
             parsedJson = Helper.parse_json(_.get(result["modelResponse"], modelOutputConfig["message"]))
@@ -172,9 +170,7 @@ async def chat(request: Request):
             })
             asyncio.create_task(metrics_service.create([usage], result["historyParams"]))
             asyncio.create_task(sendResponse(response_format, result["modelResponse"],success=True))
-        return JSONResponse(status_code=200, content={"success": True, "response": result["modelResponse"]})
-    except HTTPException as e: 
-        raise e
+        return JSONResponse({"status_code":200, "content":{"success": True, "response": result["modelResponse"]}})
     except Exception as error:
         traceback.print_exc()
         if not is_playground:
@@ -202,6 +198,4 @@ async def chat(request: Request):
             }))
             print("chat common error=>", error)
             asyncio.create_task(sendResponse(response_format,result.get("modelResponse", str(error))))
-            if response_format['type'] != 'default':
-                return
-        return JSONResponse(status_code=400, content={"success": False, "error": str(error)})
+        raise ValueError(error)
