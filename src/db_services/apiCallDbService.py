@@ -36,22 +36,16 @@ async def get_all_api_calls_by_org_id(org_id):
         api_calls = list(apiCallModel.aggregate(pipeline))
         
         for index, api_data in enumerate(api_calls):
-            call = api_data['fields']
+            fields = api_data['fields']
             transformed_data = {}
             if api_data.get("version") != "v2":
                 transformed_data = {
                     item["variable_name"]: {
                         "description": item["description"], 
-                        "enum": [] if(item["enum"] == '') else item["enum"],
+                        "enum": [] if(item["enum"] == '') else item.get("enum", []),
                         "type": "string",
                         "parameter": {}
-                        } for item in call}
-                # transformed_data[call.get("variable_name")] = {
-                #     "description": call.get("description", ''),
-                #     "enum": call.get("enum", []),
-                #     "type": "string",
-                #     "parameter": {}
-                # }
+                        } for item in fields}
             api_calls[index]['fields'] = transformed_data
         return api_calls or []
     except Exception as error:

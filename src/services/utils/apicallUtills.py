@@ -2,9 +2,6 @@ import datetime
 from models.mongo_connection import db
 apiCallModel = db['apicalls']
 
-
-
-
 async def get_api_id(org_id, function_name):
     try:
         api_call_data =  apiCallModel.find_one(
@@ -96,7 +93,7 @@ def updateFields(oldFields, newFields, versionCheck):
             if key in old:
                 # Update fields based on old_dict values
                 new[key]['description'] = old[key].get('description') if new[key].get('description') == '' else new[key].get('description')
-                new[key]['type'] = new[key].get('type') or old[key].get('type')
+                new[key]['type'] = old[key].get('type') or new[key].get('type')
                 new[key]['enum'] = old[key].get('enum') if new[key].get('enum') == [] else []
                 if isinstance(old[key], dict) and isinstance(new[key], dict):
                     # Recursively update nested dictionaries
