@@ -110,7 +110,7 @@ def updateFields(oldFields, newFields, versionCheck):
     if(versionCheck): 
         updateField = update_recursive(oldFields, newFields)
     else:
-        transformed_data = {item["variable_name"]: {"description": item["description"], "enum": item["enum"]} for item in old}
+        transformed_data = {item["variable_name"]: {"description": item["description"], "enum": item["enum"]} for item in oldFields}
         updateField = update_recursive(transformed_data, newFields)
     return updateField
 
