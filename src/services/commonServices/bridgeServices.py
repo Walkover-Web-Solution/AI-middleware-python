@@ -8,8 +8,9 @@ import json
 async def duplicate_bridge(request : Request):
     try:
         body = await request.json()
+        org_id = request.state.profile.get("org",{}).get("id","")
         bridge_id = body.get('bridge_id')
-        result = await get_bridges(bridge_id)
+        result = await get_bridges(bridge_id, org_id)
         bridge = result.get('bridges')
         timestamp = datetime.now(timezone.utc).strftime('%d%H%S')
         name = bridge.get('name')

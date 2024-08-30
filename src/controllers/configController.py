@@ -2,7 +2,7 @@ from fastapi import HTTPException, status
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 # from src.db_services.ConfigurationServices import get_bridges_by_slug_name_and_name
-from src.db_services.ConfigurationServices import create_bridge, get_bridge_by_id, get_all_bridges_in_org,update_bridge, get_bridges, update_tools_calls,get_apikey_creds
+from src.db_services.ConfigurationServices import create_bridge, get_bridge_by_id, get_all_bridges_in_org,update_bridge, update_tools_calls,get_apikey_creds
 from src.configs.modelConfiguration import ModelsConfig as model_configuration
 from src.services.utils.helper import Helper
 import json
