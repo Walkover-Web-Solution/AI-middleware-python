@@ -3,6 +3,7 @@ from fastapi.responses import JSONResponse
 from src.db_services.ConfigurationServices import get_bridges, update_bridge, get_bridges_with_tools
 from src.services.utils.helper import Helper
 from src.services.utils.apicallUtills import  get_api_id, save_api, delete_api
+import pydash as _
 import json
 import datetime 
 from models.mongo_connection import db
@@ -28,11 +29,9 @@ async def creates_api(request: Request):
 
         if status in ["published", "updated"]:
             body_content = payload.get('body') if payload else None
-            required_params = []
 
             if body_content:
                 traversed_body = traverse_body(body_content)
-                required_params = traversed_body.get('required_params', [])
                 axios_code = f"""def axios_call(params):
     import requests
 
@@ -63,9 +62,9 @@ async def creates_api(request: Request):
     except requests.RequestException as e:
         return str(e)"""
 
-            fields = [{"variable_name": param, "description": '', "enum": ''} for param in required_params]
+            fields = traversed_body.get('fields',{})
             api_id = await get_api_id(org_id, function_name)
-            result  = await save_api(desc, org_id, api_id, axios_code, required_params, function_name, fields, True, endpoint_name, 1, 'v1')
+            result  = await save_api(desc, org_id, api_id, axios_code, [], function_name, fields, True, endpoint_name)
             result['api_data']['_id'] = str(result['api_data']['_id'])
             if 'created_at' in result['api_data'] and isinstance(result['api_data']['created_at'], datetime.datetime):
                         result['api_data']['created_at'] = result['api_data']['created_at'].strftime('%Y-%m-%d %H:%M:%S')  # Convert datetime to string
@@ -143,20 +142,46 @@ async def updates_api(request: Request, bridge_id: str):
         raise HTTPException(status_code=400, detail=str(error))
 
 
-def traverse_body(body, required_params=None, path="", paths=None):
-    if required_params is None:
-        required_params = []
+def traverse_body(body, path=None, paths=None, fields=None):
+    if path is None:
+        path = []
     if paths is None:
         paths = []
+    if fields is None:
+        fields = {}
 
     for key, value in body.items():
+        current_path = path + [key]
         if isinstance(value, dict):
-            traverse_body(value, required_params, f"{path}{key}.", paths)
+            path_str = '.'.join(path)
+            path_str = f"{path_str}.parameter.{key}" if  fields != {} else key
+            _.objects.set_(fields, path_str, {"description": 'obj', "type": "object", "enum": [], "required_params": [], "parameter": {}})
+            traverse_body(value, current_path, paths, fields)
         elif value == "your_value_here":
-            paths.append(f"{path}{key}")
-            required_params.append(key)  # [?] it can repeat
-
-    return {"required_params": required_params, "paths": paths}
+            path_str = '.'.join(current_path)
+            paths.append(path_str)
+            for i in range(len(path)):
+                if i == 0:
+                    parameter = path[i]
+                else:
+                    parameter += '.' + 'parameter.' + path[i]
+    
+            path_str = f"{parameter}.parameter.{key}" if  fields != {} else key
+            _.objects.set_(fields, path_str, {"description": 'as', "type": "string", "enum": [], "required_params": [], "parameter": {}})
+        if(path != []):
+            for i in range(len(path)):
+                if i == 0:
+                    parameter = path[i]
+                else:
+                    parameter += '.' + 'parameter.' + path[i]
+            path_str = f"{parameter}"
+            existing_data = _.get(fields, path_str, {"required_params": []})
+            existing_data["required_params"].append(key)
+            _.set_(fields, path_str, existing_data)   
+    return {
+        "paths": paths,
+        "fields": fields
+    }
 
 
 async def create_open_api(function_name, desc,api_object_id, required_params=None, model_config = {}):
@@ -193,3 +218,7 @@ async def create_open_api(function_name, desc,api_object_id, required_params=Non
     except Exception as error:
         return {"success": False, "error": str(error)}
     
+
+
+
+

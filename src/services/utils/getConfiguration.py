@@ -31,8 +31,8 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
             "type": "function",
             "name": api_data['function_name'],
             "description": api_data['description'],
-            "properties": { field: { "type": "string" } for field in api_data['required_params'] },
-            "required": api_data['required_params']
+            "properties": api_data.get("fields", {}) if(api_data.get("version") == 'v2') else { field: { "type": "string" } for field in api_data['required_params'] },# handle desc & enum in old function
+            "required": list(api_data.get("fields", {}).keys()) if(api_data.get("version") == 'v2') else api_data['required_params']
         }
         tools.append(format)
 
