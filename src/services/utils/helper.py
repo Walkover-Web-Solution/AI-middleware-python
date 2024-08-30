@@ -53,16 +53,22 @@ class Helper:
 
     @staticmethod
     def replace_variables_in_prompt(prompt, variables):
-        if variables and len(variables) > 0:
+        missing_variables = {}
+        placeholders = re.findall(r'\{\{(.*?)\}\}', prompt)
+        
+        if variables:
             for key, value in variables.items():
-                # Use repr() instead of json.dumps() to avoid Unicode escape issues
-                string_value = repr(value)
-                # Remove quotes at the beginning and end
-                string_value = string_value[1:-1] if string_value.startswith('"') and string_value.endswith('"') else string_value
-                regex = re.compile(r'\{\{' + re.escape(key) + r'\}\}')
-                prompt = regex.sub(string_value, prompt)
-        return prompt
-    
+                if key in placeholders:
+                    string_value = str(value)
+                    string_value = string_value[1:-1] if string_value.startswith('"') and string_value.endswith('"') else string_value
+                    regex = re.compile(r'\{\{' + re.escape(key) + r'\}\}')
+                    prompt = regex.sub(string_value, prompt)
+                    placeholders.remove(key)
+
+        for placeholder in placeholders:
+            missing_variables[placeholder] = f"{{{{{placeholder}}}}}"
+
+        return prompt, missing_variables
 
     @staticmethod
     def parse_json(json_string):

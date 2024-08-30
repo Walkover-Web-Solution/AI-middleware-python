@@ -25,7 +25,7 @@ app = FastAPI()
 from src.services.commonServices.baseService.utils import axios_work
 from ...configs.constant import service_name
 import src.db_services.ConfigurationServices as ConfigurationService
-# from ..utils.common import common
+from ..utils.send_error_webhook import send_error_to_webhook
 
 async def executer(params, service):
     if service == service_name['openai']:
@@ -100,11 +100,15 @@ async def chat(request: Request):
         else:
             thread_id = str(uuid.uuid1())
 
-        configuration['prompt']  = Helper.replace_variables_in_prompt(configuration['prompt'] , variables)
-            
+        configuration['prompt'], missing_vars  = Helper.replace_variables_in_prompt(configuration['prompt'] , variables)
+        if len(missing_vars) > 0:
+            asyncio.create_task(send_error_to_webhook(bridge_id, org_id, missing_vars, type = 'Variable'))
+
         if template:
             system_prompt = template
-            configuration['prompt'] = Helper.replace_variables_in_prompt(system_prompt, {"system_prompt": configuration['prompt'], **variables})
+            configuration['prompt'], missing_vars = Helper.replace_variables_in_prompt(system_prompt, {"system_prompt": configuration['prompt'], **variables})
+            if len(missing_vars) > 0:
+                asyncio.create_task(send_error_to_webhook(bridge_id, org_id, missing_vars, type = 'Variable'))
 
         params = {
             "customConfig": customConfig,

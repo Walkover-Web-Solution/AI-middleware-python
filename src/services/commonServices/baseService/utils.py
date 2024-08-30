@@ -114,12 +114,21 @@ def tool_call_formatter(configuration: dict, service: str) -> dict:
 
 async def send_request(url, data, method, headers):
     try:
-        async with httpx.AsyncClient() as client:
-            response = await client.request(method, url, json=data, headers=headers)
-            return response
-    except httpx.RequestError as error:
-        print("send_request error=>", error)
-        return None
+        response = requests.request(method, url, json=json.dumps(data), headers=headers)
+        response.raise_for_status()
+        return response.json()
+    except requests.HTTPError as http_error:
+        print(f"HTTP error occurred: {http_error.response.status_code} => {http_error.response.text}")
+        return {'error': 'HTTP error', 'details': http_error.response.text}
+    except requests.Timeout as timeout_error:
+        print("Request timed out:", timeout_error)
+        return {'error': 'Timeout', 'details': str(timeout_error)}
+    except requests.RequestException as request_error:
+        print("Request error occurred:", request_error)
+        return {'error': 'Request error', 'details': str(request_error)}
+    except Exception as e:
+        print('Unexpected error:', e)
+        return {'error': 'Unexpected error', 'details': str(e)}
     
 async def send_message(cred, data ):
     try:
@@ -139,13 +148,14 @@ async def send_message(cred, data ):
 
 async def sendResponse(response_format, data, success = False):
     data_to_send = {
-        'response' if success else 'error': data,
+        'response' if success else 'data': data,
         'success': success
     }
-
-    match response_format['type']:
-        case 'RTLayer' : 
-            return await send_message(cred = response_format['cred'], data=data_to_send)
-        case 'webhook':
-            return await send_request(**response_format['cred'], method='POST', data=data_to_send)
-
+    try:
+        match response_format['type']:
+            case 'RTLayer' : 
+                return await send_message(cred = response_format['cred'], data=data_to_send)
+            case 'webhook':
+                return await send_request(**response_format['cred'], method='POST', data=data_to_send)
+    except Exception as e:
+        print("error sending request", e)

@@ -15,12 +15,10 @@ from ...services.utils.send_error_webhook import send_error_to_webhook
 
 router = APIRouter()
 executor = ThreadPoolExecutor(max_workers= int(Config.max_workers) or 10)
-
-# Custom JSON encoder for ObjectId
 class CustomJSONEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, ObjectId):
-            return str(obj)  # Convert ObjectId to string
+            return str(obj)
         return super().default(obj)
 
 def handle_exceptions(func):
@@ -56,7 +54,7 @@ def handle_exceptions(func):
                 }
             bridge_id = request.path_params.get('bridge_id') or body.get("bridge_id")
             org_id = request.state.org_id
-            await send_error_to_webhook(bridge_id, org_id,error_json)
+            await send_error_to_webhook(bridge_id, org_id,error_json, type = 'Error')
             return JSONResponse(
                 status_code=400,
                 content=json.loads(json.dumps({
