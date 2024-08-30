@@ -8,7 +8,6 @@ async def get_webhook_data(org_id):
             'org_id': org_id
         }))
         return {
-            'success': True,
             'webhook_data': webhook_data or []
         }
     except Exception as error:

@@ -107,8 +107,6 @@ async def chat(request: Request):
         if template:
             system_prompt = template
             configuration['prompt'], missing_vars = Helper.replace_variables_in_prompt(system_prompt, {"system_prompt": configuration['prompt'], **variables})
-            if len(missing_vars) > 0:
-                asyncio.create_task(send_error_to_webhook(bridge_id, org_id, missing_vars, type = 'Variable'))
 
         params = {
             "customConfig": customConfig,

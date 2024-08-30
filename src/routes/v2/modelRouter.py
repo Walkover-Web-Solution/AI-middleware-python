@@ -15,11 +15,6 @@ from ...services.utils.send_error_webhook import send_error_to_webhook
 
 router = APIRouter()
 executor = ThreadPoolExecutor(max_workers= int(Config.max_workers) or 10)
-class CustomJSONEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, ObjectId):
-            return str(obj)
-        return super().default(obj)
 
 def handle_exceptions(func):
     @wraps(func)
@@ -61,7 +56,7 @@ def handle_exceptions(func):
                     "success": False,
                     "error": exc.args[0] if isinstance(exc, ValueError) and isinstance(exc.args[0], dict) else str(exc),
                     "error_location": error_location,
-                }, cls=CustomJSONEncoder))
+                }))
             )
     
     return wrapper

@@ -117,15 +117,6 @@ async def send_request(url, data, method, headers):
         response = requests.request(method, url, json=json.dumps(data), headers=headers)
         response.raise_for_status()
         return response.json()
-    except requests.HTTPError as http_error:
-        print(f"HTTP error occurred: {http_error.response.status_code} => {http_error.response.text}")
-        return {'error': 'HTTP error', 'details': http_error.response.text}
-    except requests.Timeout as timeout_error:
-        print("Request timed out:", timeout_error)
-        return {'error': 'Timeout', 'details': str(timeout_error)}
-    except requests.RequestException as request_error:
-        print("Request error occurred:", request_error)
-        return {'error': 'Request error', 'details': str(request_error)}
     except Exception as e:
         print('Unexpected error:', e)
         return {'error': 'Unexpected error', 'details': str(e)}
@@ -148,7 +139,7 @@ async def send_message(cred, data ):
 
 async def sendResponse(response_format, data, success = False):
     data_to_send = {
-        'response' if success else 'data': data,
+        'response' if success else 'error': data,
         'success': success
     }
     try:
