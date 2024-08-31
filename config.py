@@ -31,3 +31,4 @@ class Config:
     CHATBOTSECRETKEY = os.getenv('CHATBOTSECRETKEY')
     TEMPLATE_ID = os.getenv('TEMPLATE_ID')
     max_workers = os.getenv('max_workers')
+    MUI_TEMPLATE_ID = os.getenv('MUI_TEMPLATE_ID')
