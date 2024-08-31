@@ -78,7 +78,15 @@ async def chat_bot_auth(request: Request):
             check_token = jwt.decode(token, Config.CHATBOTSECRETKEY, algorithms=["HS256"])
             if check_token:
                 check_token['org_id'] = str(check_token['org_id'])
-                request.state.profile = check_token
+                request.state.profile = {
+                    "user":{
+                        "id": check_token['userId']
+                    },
+                    "org":{
+                        "id": check_token['org_id']
+                    },
+                    **check_token
+                }
                 request.state.org_id = check_token['org_id']
                 if 'user' not in check_token:
                     request.state.profile['viewOnly'] = True
