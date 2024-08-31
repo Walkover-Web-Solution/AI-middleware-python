@@ -12,6 +12,7 @@ apiCallModel = db['apicalls']
 async def creates_api(request: Request, bridge_id: str):
     try:
         body = await request.json()
+        org_id = request.state.profile.get("org",{}).get("id","")
         function_name = body.get('id')
         payload = body.get('payload')
         url = body.get('url')
@@ -23,7 +24,7 @@ async def creates_api(request: Request, bridge_id: str):
         if not all([desc, function_name, status, bridge_id, org_id]):
             raise HTTPException(status_code=400, detail="Required details must not be empty!!")
         
-        model_config = await get_bridges(bridge_id)
+        model_config = await get_bridges(bridge_id, org_id)
 
         if model_config.get('success') is False:
             raise HTTPException(status_code=400, detail="bridge data not found")
@@ -118,7 +119,7 @@ async def updates_api(request: Request, bridge_id: str):
         if not all([function_name, bridge_id, org_id]):
             raise HTTPException(status_code=400, detail="Required details must not be empty!!")
     
-        model_config = await get_bridges(bridge_id)
+        model_config = await get_bridges(bridge_id, org_id)
 
         if model_config.get('success') is False: 
             raise HTTPException(status_code=400, detail="bridge id is not found")
@@ -135,7 +136,7 @@ async def updates_api(request: Request, bridge_id: str):
                 raise HTTPException(status_code=400, detail='function is already added to pre function')
             updated_pre_tools_call.append(function_name)
         else:
-            api_response = await get_api_call_by_names(function_name)
+            api_response = await get_api_call_by_names(function_name,org_id)
             api_data = api_response.get('apiCalls', [])
             api_data = api_data[0] if len(api_data) > 0 else {}
             open_api_format = await create_open_api(function_name, api_data.get('description', ""), str(api_data.get('_id', "")), api_data.get('required_params', []) )

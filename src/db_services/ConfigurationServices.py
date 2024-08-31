@@ -7,10 +7,10 @@ apiCallModel = db['apicalls']
 templateModel = db['templates']
 apikeyCredentialsModel = db['apikeycredentials']
 
-async def get_bridges(bridge_id):
+async def get_bridges(bridge_id, org_id):
     
     try:
-        bridges = configurationModel.find_one({'_id': ObjectId(bridge_id)})
+        bridges = configurationModel.find_one({'_id': ObjectId(bridge_id), 'org_id': org_id})
         return {
             'success': True,
             'bridges': bridges or {},
@@ -21,14 +21,14 @@ async def get_bridges(bridge_id):
             'success': False,
             'error': "something went wrong!!"
         }
-async def get_api_call_by_names(names):
+async def get_api_call_by_names(names, org_id):
     try:
         if not isinstance(names, list):
             names = [names]
         api_calls = list(apiCallModel.find({
             '$or': [
-                {'function_name': {'$in': names}},
-                {'endpoint': {'$in': names}}
+                {'function_name': {'$in': names}, "org_id": org_id},
+                {'endpoint': {'$in': names}, "org_id": org_id}
             ]
         }))
         return {

@@ -3,11 +3,11 @@ from .helper import Helper
 # from src.services.commonServices.generateToken import generateToken
 # from src.configs.modelConfiguration import ModelsConfig
 
-async def getConfiguration(configuration, service, bridge_id, apikey, template_id=None, variables = {}):
+async def getConfiguration(configuration, service, bridge_id, apikey, template_id=None, variables = {}, org_id=""):
     RTLayer = False
     bridge = None
-    result = await ConfigurationService.get_bridges(bridge_id)
-    if not result['success']:
+    result = await ConfigurationService.get_bridges(bridge_id, org_id)
+    if not result['success'] or result['bridges'] == {}:
         return {
             'success': False,
             'error': "bridge_id does not exist"
@@ -27,7 +27,7 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
     template_content = await ConfigurationService.get_template_by_id(template_id) if template_id else None
     pre_tools = bridge.get('pre_tools', [])
     if len(pre_tools)>0:
-        api_call = await ConfigurationService.get_api_call_by_names(pre_tools)
+        api_call = await ConfigurationService.get_api_call_by_names(pre_tools, org_id)
 
         if api_call.get('sucesss') is False: 
             raise Exception("Didn't find the pre_function")
