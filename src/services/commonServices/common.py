@@ -3,6 +3,7 @@ from fastapi.responses import JSONResponse
 import traceback
 import uuid
 import time
+from config import Config
 from src.configs.models import services
 from src.configs.modelConfiguration import ModelsConfig
 from ...controllers.conversationController import getThread 
@@ -22,7 +23,24 @@ from ..utils.ai_middleware_format import Response_formatter
 app = FastAPI()
 from src.services.commonServices.baseService.utils import axios_work
 from ...configs.constant import service_name
+import src.db_services.ConfigurationServices as ConfigurationService
 # from ..utils.common import common
+
+async def executer(params, service):
+    if service == service_name['openai']:
+        openAIInstance = UnifiedOpenAICase(params)
+        result = await openAIInstance.execute()
+    elif service == service_name['gemini']:
+        geminiHandler = GeminiHandler(params)
+        result = await geminiHandler.handle_gemini()
+    elif service == service_name['anthropic']:
+        antrophic = Antrophic(params)
+        result = await antrophic.antrophic_handler()
+    elif service == service_name['groq']:
+        groq = Groq(params)
+        result = await groq.groq_handler()
+    return result
+
 
 @app.post("/chat/{bridge_id}")
 async def chat(request: Request):
@@ -49,7 +67,6 @@ async def chat(request: Request):
     is_playground = request.state.is_playground
     bridge = body.get('bridge')
     pre_tools = body.get('pre_tools', None)
-    base_service_instance = {}
     version = request.state.version
 
     if isinstance(variables, list):
@@ -110,18 +127,7 @@ async def chat(request: Request):
             "org_id" : org_id
         }
 
-        if service == service_name['openai']:
-            base_service_instance = openAIInstance = UnifiedOpenAICase(params)
-            result = await openAIInstance.execute()
-        elif service == service_name['gemini']:
-            base_service_instance = geminiHandler = GeminiHandler(params)
-            result = await geminiHandler.handle_gemini()
-        elif service == service_name['anthropic']:
-            base_service_instance = antrophic = Antrophic(params)
-            result = await antrophic.antrophic_handler()
-        elif service == service_name['groq']:
-            base_service_instance = groq = Groq(params)
-            result = await groq.groq_handler()
+        result = await executer(params,service)
     
         if not result["success"]:
                 if response_format['type'] != 'default':
@@ -131,14 +137,12 @@ async def chat(request: Request):
         if bridgeType:
             parsedJson = Helper.parse_json(_.get(result["modelResponse"], modelOutputConfig["message"]))
             if not parsedJson.get("json", {}).get("isMarkdown"):
-                params["configuration"]["prompt"] = {"role": "system", "content": mui_prompt.responsePrompt}
+                params["configuration"]["prompt"] = (await ConfigurationService.get_template_by_id(Config.MUI_TEMPLATE_ID)).get('template', '')
                 params["user"] = _.get(result["modelResponse"], (modelOutputConfig["message"]))
                 params["template"] = None
-                base_service_instance = UnifiedOpenAICase(params)
-                newresult = await base_service_instance.execute()
-                if not newresult["success"]:
-                    return
+                newresult = await executer(params,service)
 
+                # TODO Let's prioritize building the other feature first and plan to improve this one later
                 _.set_(result['modelResponse'], modelOutputConfig['usage'][0]['total_tokens'], _.get(result['modelResponse'], modelOutputConfig['usage'][0]['total_tokens']) + _.get(newresult['modelResponse'], modelOutputConfig['usage'][0]['total_tokens']))
                 _.set_(result['modelResponse'], modelOutputConfig['message'], _.get(newresult['modelResponse'], modelOutputConfig['message']))
                 _.set_(result['modelResponse'], modelOutputConfig['usage'][0]['prompt_tokens'], _.get(result['modelResponse'], modelOutputConfig['usage'][0]['prompt_tokens']) + _.get(newresult['modelResponse'], modelOutputConfig['usage'][0]['prompt_tokens']))
@@ -149,6 +153,7 @@ async def chat(request: Request):
                 _.set_(result['usage'], "outputTokens", _.get(result['usage'], "outputTokens") + _.get(newresult['usage'], "outputTokens"))
                 _.set_(result['usage'], "expectedCost", _.get(result['usage'], "expectedCost") + _.get(newresult['usage'], "expectedCost"))
                 result['historyParams']['user'] = user
+
 
         endTime = int(time.time() * 1000)
         if version == 2:
