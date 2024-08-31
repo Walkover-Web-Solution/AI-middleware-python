@@ -13,9 +13,9 @@ async def add_configuration_data_to_body(request: Request):
         if chatbotData:
             body.update(chatbotData)
         bridge_id = body.get("bridge_id") or request.path_params.get('bridge_id') or request.state.chatbot.get('bridge_id','')
-        db_config = await getConfiguration(body.get('configuration'), body.get('service'), bridge_id, body.get('apikey'), body.get('template_id'), body.get('variables', {}))
+        db_config = await getConfiguration(body.get('configuration'), body.get('service'), bridge_id, body.get('apikey'), body.get('template_id'), body.get('variables', {}), request.state.profile.get("org",{}).get("id",""))
         if not db_config.get("success"):
-                return JSONResponse(status_code=400, content={"success": False, "error": db_config["error"]}) 
+                raise HTTPException(status_code=400, detail={"success": False, "error": db_config["error"]}) 
         body.update(db_config)
         request.state.body = body
         service = body.get("service")

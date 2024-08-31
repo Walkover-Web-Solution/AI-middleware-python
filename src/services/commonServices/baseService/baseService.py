@@ -65,8 +65,10 @@ class BaseService:
             case _:
                 return False, {}
 
-        api_calls_response = await ConfigurationService.get_api_call_by_names(names)
-
+        api_calls_response = await ConfigurationService.get_api_call_by_names(names, self.org_id)
+        if(api_calls_response == []):
+            print(names, self.org_id)
+            raise ValueError("uanble to find function")
         async def process_code_and_service_data(api_call):
             axios_instance = api_call.get('code') or api_call.get('axios')
             is_python = api_call.get('is_python', False)
@@ -126,11 +128,12 @@ class BaseService:
         modelOutputConfig = modelObj['outputConfig']
         model_response = response.get('modelResponse', {})
 
-        if not (validate_tool_call(modelOutputConfig, service, model_response) and l <= 3):
+        if validate_tool_call(modelOutputConfig, service, model_response) and l <= 5:
+            l += 1
+            # Continue with the rest of the logic here
+        else:
             return response
         
-        l+=1
-
         if not self.playground:
             asyncio.create_task(sendResponse(self.response_format, data = {'function_call': True}, success = True))
         
