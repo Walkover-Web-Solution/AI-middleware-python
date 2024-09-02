@@ -136,7 +136,14 @@ async def chat(request: Request):
 
         if bridgeType:
                 try:
-                    parsedJson = Helper.parse_json(_.get(result["modelResponse"], modelOutputConfig["message"]))
+                    try:
+                        parsedJson = Helper.parse_json(_.get(result["modelResponse"], modelOutputConfig["message"]))
+                    except Exception as e:
+                        if _.get(result["modelResponse"], modelOutputConfig["tools"]):
+                            raise RuntimeError("Function calling has been done 6 times, limit exceeded.")
+                        raise RuntimeError(e)
+
+
                     if not parsedJson.get("json", {}).get("isMarkdown"):
                         params["configuration"]["prompt"] = (await ConfigurationService.get_template_by_id(Config.MUI_TEMPLATE_ID)).get('template', '')
                         params["user"] = _.get(result["modelResponse"], (modelOutputConfig["message"]))
@@ -160,7 +167,7 @@ async def chat(request: Request):
                         result['historyParams']['user'] = user
                 except Exception as e:
                     print(f"error in chatbot : {e}")
-                    raise RuntimeError("error in chatbot")
+                    raise RuntimeError(f"error in chatbot : {e}")
                     
 
 
