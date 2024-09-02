@@ -141,6 +141,10 @@ async def chat(request: Request):
                         params["configuration"]["prompt"] = (await ConfigurationService.get_template_by_id(Config.MUI_TEMPLATE_ID)).get('template', '')
                         params["user"] = _.get(result["modelResponse"], (modelOutputConfig["message"]))
                         params["template"] = None
+                        if 'tools' in params:
+                            del params['tools']
+                        if 'customConfig' in params and 'tools' in params['customConfig']:
+                            del params['customConfig']['tools']
                         newresult = await executer(params,service)
 
                         # TODO Let's prioritize building the other feature first and plan to improve this one later
@@ -156,7 +160,7 @@ async def chat(request: Request):
                         result['historyParams']['user'] = user
                 except Exception as e:
                     print(f"error in chatbot : {e}")
-                    raise RuntimeError(f"error in chatbot : {e}")
+                    raise RuntimeError("error in chatbot")
                     
 
 
