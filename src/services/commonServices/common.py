@@ -135,24 +135,29 @@ async def chat(request: Request):
                 return JSONResponse(status_code=400, content=result)
 
         if bridgeType:
-            parsedJson = Helper.parse_json(_.get(result["modelResponse"], modelOutputConfig["message"]))
-            if not parsedJson.get("json", {}).get("isMarkdown"):
-                params["configuration"]["prompt"] = (await ConfigurationService.get_template_by_id(Config.MUI_TEMPLATE_ID)).get('template', '')
-                params["user"] = _.get(result["modelResponse"], (modelOutputConfig["message"]))
-                params["template"] = None
-                newresult = await executer(params,service)
+                try:
+                    parsedJson = Helper.parse_json(_.get(result["modelResponse"], modelOutputConfig["message"]))
+                    if not parsedJson.get("json", {}).get("isMarkdown"):
+                        params["configuration"]["prompt"] = (await ConfigurationService.get_template_by_id(Config.MUI_TEMPLATE_ID)).get('template', '')
+                        params["user"] = _.get(result["modelResponse"], (modelOutputConfig["message"]))
+                        params["template"] = None
+                        newresult = await executer(params,service)
 
-                # TODO Let's prioritize building the other feature first and plan to improve this one later
-                _.set_(result['modelResponse'], modelOutputConfig['usage'][0]['total_tokens'], _.get(result['modelResponse'], modelOutputConfig['usage'][0]['total_tokens']) + _.get(newresult['modelResponse'], modelOutputConfig['usage'][0]['total_tokens']))
-                _.set_(result['modelResponse'], modelOutputConfig['message'], _.get(newresult['modelResponse'], modelOutputConfig['message']))
-                _.set_(result['modelResponse'], modelOutputConfig['usage'][0]['prompt_tokens'], _.get(result['modelResponse'], modelOutputConfig['usage'][0]['prompt_tokens']) + _.get(newresult['modelResponse'], modelOutputConfig['usage'][0]['prompt_tokens']))
-                _.set_(result['modelResponse'], modelOutputConfig['usage'][0]['completion_tokens'], _.get(result['modelResponse'], modelOutputConfig['usage'][0]['completion_tokens']) + _.get(newresult['modelResponse'], modelOutputConfig['usage'][0]['completion_tokens']))
-                result['historyParams'] = newresult['historyParams']
-                _.set_(result['usage'], "totalTokens", _.get(result['usage'], "totalTokens") + _.get(newresult['usage'], "totalTokens"))
-                _.set_(result['usage'], "inputTokens", _.get(result['usage'], "inputTokens") + _.get(newresult['usage'], "inputTokens"))
-                _.set_(result['usage'], "outputTokens", _.get(result['usage'], "outputTokens") + _.get(newresult['usage'], "outputTokens"))
-                _.set_(result['usage'], "expectedCost", _.get(result['usage'], "expectedCost") + _.get(newresult['usage'], "expectedCost"))
-                result['historyParams']['user'] = user
+                        # TODO Let's prioritize building the other feature first and plan to improve this one later
+                        _.set_(result['modelResponse'], modelOutputConfig['usage'][0]['total_tokens'], _.get(result['modelResponse'], modelOutputConfig['usage'][0]['total_tokens']) + _.get(newresult['modelResponse'], modelOutputConfig['usage'][0]['total_tokens']))
+                        _.set_(result['modelResponse'], modelOutputConfig['message'], _.get(newresult['modelResponse'], modelOutputConfig['message']))
+                        _.set_(result['modelResponse'], modelOutputConfig['usage'][0]['prompt_tokens'], _.get(result['modelResponse'], modelOutputConfig['usage'][0]['prompt_tokens']) + _.get(newresult['modelResponse'], modelOutputConfig['usage'][0]['prompt_tokens']))
+                        _.set_(result['modelResponse'], modelOutputConfig['usage'][0]['completion_tokens'], _.get(result['modelResponse'], modelOutputConfig['usage'][0]['completion_tokens']) + _.get(newresult['modelResponse'], modelOutputConfig['usage'][0]['completion_tokens']))
+                        result['historyParams'] = newresult['historyParams']
+                        _.set_(result['usage'], "totalTokens", _.get(result['usage'], "totalTokens") + _.get(newresult['usage'], "totalTokens"))
+                        _.set_(result['usage'], "inputTokens", _.get(result['usage'], "inputTokens") + _.get(newresult['usage'], "inputTokens"))
+                        _.set_(result['usage'], "outputTokens", _.get(result['usage'], "outputTokens") + _.get(newresult['usage'], "outputTokens"))
+                        _.set_(result['usage'], "expectedCost", _.get(result['usage'], "expectedCost") + _.get(newresult['usage'], "expectedCost"))
+                        result['historyParams']['user'] = user
+                except Exception as e:
+                    print(f"error in chatbot : {e}")
+                    raise RuntimeError(f"error in chatbot : {e}")
+                    
 
 
         endTime = int(time.time() * 1000)
@@ -200,7 +205,10 @@ async def chat(request: Request):
                 "actor": "user"
             }))
             print("chat common error=>", error)
-            asyncio.create_task(sendResponse(response_format,result.get("modelResponse", str(error))))
+            error_message = str(error)
+            if not result["success"]:
+                error_message = result.get("modelResponse", str(error))
+            asyncio.create_task(sendResponse(response_format, error_message))
             if response_format['type'] != 'default':
                 return
         return JSONResponse(status_code=400, content={"success": False, "error": str(error)})
