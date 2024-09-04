@@ -10,12 +10,12 @@ from .getDataUsingBridgeId import add_configuration_data_to_body
 async def send_data_middleware(request: Request, botId: str):
     try:
         body = await request.json()
-        org_id = request.state.org_id
+        org_id = request.state.profile.org.id
         slugName = body.get("slugName")
         threadId = body.get("threadId")
         profile = request.state.profile
         message = body.get("message")
-        userId = profile.get("userId") 
+        userId = profile.user.id
         chatBotId = botId
         
         channelId = f"{chatBotId}{userId}"
@@ -77,11 +77,14 @@ async def chat_bot_auth(request: Request):
         if decoded_token:
             check_token = jwt.decode(token, Config.CHATBOTSECRETKEY, algorithms=["HS256"])
             if check_token:
-                check_token['org_id'] = str(check_token['org_id'])
-                request.state.profile = check_token
-                request.state.org_id = check_token['org_id']
-                if 'user' not in check_token:
-                    request.state.profile['viewOnly'] = True
+                request.state.profile = {
+                    "org":{
+                        "id": str(check_token['org_id'])
+                    },
+                    "user":{
+                        "id": str(check_token['user_id'])
+                    }
+                }
                 return True
         raise HTTPException(status_code=401, detail="unauthorized user")
     except jwt.ExpiredSignatureError:

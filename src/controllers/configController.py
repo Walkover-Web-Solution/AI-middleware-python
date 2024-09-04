@@ -6,7 +6,6 @@ from src.configs.modelConfiguration import ModelsConfig as model_configuration
 from src.services.utils.helper import Helper
 import json
 from config import Config
-from validations.validation import Bridge_update as bridge_validation
 from ..configs.constant import service_name
 from src.db_services.conversationDbService import storeSystemPrompt
 from bson import ObjectId

@@ -7,11 +7,11 @@ apiCallModel = db['apicalls']
 templateModel = db['templates']
 apikeyCredentialsModel = db['apikeycredentials']
 
-async def get_bridges(bridge_id):
+async def get_bridges(bridge_id, org_id):
     try:
         pipeline = [
             {
-                '$match': {'_id': ObjectId(bridge_id)}
+                '$match': {'_id': ObjectId(bridge_id), 'org_id': org_id}
             },
             {
                 '$addFields': {
@@ -41,11 +41,11 @@ async def get_bridges(bridge_id):
             'error': "something went wrong!!"
         }
 # todo
-async def get_bridges_with_tools(bridge_id):
+async def get_bridges_with_tools(bridge_id, org_id):
     try:
         pipeline = [
             {
-                '$match': {'_id': ObjectId(bridge_id)}
+                '$match': {'_id': ObjectId(bridge_id), "org_id": org_id}
             },
             {
                 '$lookup': {
@@ -179,7 +179,7 @@ async def update_bridge_ids_in_api_calls(function_id, bridge_id, add=1):
             'error': 'Something went wrong!'
         }
 
-async def get_api_call_by_names(names):
+async def get_api_call_by_names(names, org_id):
     try:
         if not isinstance(names, list):
             names = [names]
@@ -189,7 +189,8 @@ async def get_api_call_by_names(names):
                     '$or': [
                         {'function_name': {'$in': names}},
                         {'endpoint': {'$in': names}}
-                    ]
+                    ],
+                    'org_id': org_id 
                 }
             },
             {

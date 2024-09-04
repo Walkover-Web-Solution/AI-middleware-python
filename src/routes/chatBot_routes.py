@@ -10,7 +10,7 @@ executor = ThreadPoolExecutor(max_workers= int(Config.max_workers) or 10)
 
 async def auth_and_rate_limit(request: Request):
     await chat_bot_auth(request)
-    await rate_limit(request, key_path='profile.userId')
+    await rate_limit(request, key_path='profile.user.id')
 
 @router.post("/{botId}/sendMessage", dependencies=[Depends(auth_and_rate_limit)])
 async def send_message(request: Request, botId: str):

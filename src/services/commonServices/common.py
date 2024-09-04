@@ -7,7 +7,6 @@ from config import Config
 from src.configs.models import services
 from src.configs.modelConfiguration import ModelsConfig
 from ...controllers.conversationController import getThread 
-from ..utils.getConfiguration import getConfiguration
 from operator import itemgetter
 from ...db_services import metrics_service as metrics_service
 from .openAI.openaiCall import UnifiedOpenAICase
