@@ -19,6 +19,8 @@ async def runModel(configuration, chat=True, apiKey=None):
             'response': response
         }
     except Exception as error:
+
+
         print("runmodel error=>", error)
         traceback.print_exc()
         return {

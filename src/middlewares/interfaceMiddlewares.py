@@ -81,14 +81,15 @@ async def chat_bot_auth(request: Request):
             check_token = jwt.decode(token, Config.CHATBOTSECRETKEY, algorithms=["HS256"])
             if check_token:
                 request.state.profile = {
-                    "org":{
+                    "org": {
                         "id": str(check_token['org_id'])
                     },
-                    "user":{
+                    "user": {
                         "id": str(check_token['user_id'])
                     },
-                    "variables": check_token.get('variables', None)
                 }
+                if check_token.get('variables') is not None:
+                    request.state.profile["variables"]: check_token['variables']
                 return True
         raise HTTPException(status_code=401, detail="unauthorized user")
     except jwt.ExpiredSignatureError:

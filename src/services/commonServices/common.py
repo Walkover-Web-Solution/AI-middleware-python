@@ -53,7 +53,7 @@ async def chat(request: Request):
     bridge_id = request.path_params.get('bridge_id') or body.get("bridge_id")
     configuration = body.get("configuration")
     thread_id = body.get("thread_id")
-    org_id = request.state.org_id
+    org_id = request.state.profile.get('org',{}).get('id','')
     user = body.get("user")
     tools =  configuration.get('tools')
     service = body.get("service")
