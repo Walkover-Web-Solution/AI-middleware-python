@@ -244,6 +244,9 @@ async def update_bridge_controller(request,bridge_id):
             apikey = data.get('apikey')
         name = body.get('name')
         bridge = await get_bridge_by_id(org_id, bridge_id)
+        if new_configuration.get('type') == 'chat':
+            new_configuration['fine_tune_model'] = {}
+            new_configuration['fine_tune_model']['curr_model'] = None
         current_configuration = bridge.get('configuration', {})
         if apikey_object_id is None:
             apikey = bridge.get('apikey') if apikey is None else Helper.encrypt(apikey)
