@@ -10,12 +10,12 @@ from .getDataUsingBridgeId import add_configuration_data_to_body
 async def send_data_middleware(request: Request, botId: str):
     try:
         body = await request.json()
-        org_id = request.state.profile.org.id
+        org_id = request.state.profile['org']['id']
         slugName = body.get("slugName")
         threadId = body.get("threadId")
         profile = request.state.profile
         message = body.get("message")
-        userId = profile.user.id
+        userId = profile['user']['id']
         chatBotId = botId
         
         channelId = f"{chatBotId}{threadId.strip() if threadId and threadId.strip() else userId}"
@@ -86,8 +86,8 @@ async def chat_bot_auth(request: Request):
                     },
                     "user":{
                         "id": str(check_token['user_id'])
-                    }
-                    **check_token
+                    },
+                    "variables": check_token.get('variables', None)
                 }
                 return True
         raise HTTPException(status_code=401, detail="unauthorized user")
