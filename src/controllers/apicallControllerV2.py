@@ -154,10 +154,11 @@ def traverse_body(body, path=None, paths=None, fields=None):
         current_path = path + [key]
         if isinstance(value, dict):
             path_str = '.'.join(path)
-            path_str = f"{path_str}.parameter.{key}" if  fields != {} else key
+            path_str = f"{path_str}.parameter.{key}" if  path != [] else key
             _.objects.set_(fields, path_str, {"description": '', "type": "object", "enum": [], "required_params": [], "parameter": {}})
             traverse_body(value, current_path, paths, fields)
         elif value == "your_value_here":
+            parameter = ""
             path_str = '.'.join(current_path)
             paths.append(path_str)
             for i in range(len(path)):
@@ -166,7 +167,7 @@ def traverse_body(body, path=None, paths=None, fields=None):
                 else:
                     parameter += '.' + 'parameter.' + path[i]
     
-            path_str = f"{parameter}.parameter.{key}" if  fields != {} else key
+            path_str = f"{parameter}.parameter.{key}" if  parameter != "" else key
             _.objects.set_(fields, path_str, {"description": '', "type": "string", "enum": [], "required_params": [], "parameter": {}})
         if(path != []):
             for i in range(len(path)):
