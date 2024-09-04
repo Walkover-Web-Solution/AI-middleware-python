@@ -7,10 +7,10 @@ apiCallModel = db['apicalls']
 # from src.services.commonServices.generateToken import generateToken
 # from src.configs.modelConfiguration import ModelsConfig
 
-async def getConfiguration(configuration, service, bridge_id, apikey, template_id=None, variables = {}):
+async def getConfiguration(configuration, service, bridge_id, apikey, template_id=None, variables = {}, org_id=""):
     RTLayer = False
     bridge = None
-    result = await ConfigurationService.get_bridges_with_tools(bridge_id)
+    result = await ConfigurationService.get_bridges_with_tools(bridge_id, org_id)
     if not result['success']:
         return {
             'success': False,
@@ -50,7 +50,7 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
     template_content = await ConfigurationService.get_template_by_id(template_id) if template_id else None
     pre_tools = bridge.get('pre_tools', [])
     if len(pre_tools)>0:
-        api_data = apiCallModel.find_one({"_id": ObjectId( pre_tools[0])})
+        api_data = apiCallModel.find_one({"_id": ObjectId( pre_tools[0]), "org_id": org_id})
 
         if api_data is None: 
             raise Exception("Didn't find the pre_function")

@@ -6,7 +6,6 @@ from src.configs.modelConfiguration import ModelsConfig as model_configuration
 from src.services.utils.helper import Helper
 import json
 from config import Config
-from validations.validation import Bridge_update as bridge_validation
 from ..configs.constant import service_name
 from src.db_services.conversationDbService import storeSystemPrompt
 from bson import ObjectId
@@ -114,7 +113,7 @@ async def duplicate_create_bridges(bridges):
 
 async def get_bridge(request, bridge_id: str):
     try:
-        bridge = await get_bridges_with_tools(bridge_id)
+        bridge = await get_bridges_with_tools(bridge_id,request.state.profile.get("org",{}).get("id",""))
         return Helper.response_middleware_for_bridge({"succcess": True,"message": "bridge get successfully","bridge":bridge['bridges']})
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e,)
@@ -282,7 +281,7 @@ async def update_bridge_controller(request,bridge_id):
                         await update_bridge_ids_in_api_calls(function_id, bridge_id, 0)
             
         await update_bridge(bridge_id, update_fields) # todo :: add transaction
-        result = await get_bridges_with_tools(bridge_id)
+        result = await get_bridges_with_tools(bridge_id, org_id)
         
         if result.get("success"):
             return Helper.response_middleware_for_bridge({
