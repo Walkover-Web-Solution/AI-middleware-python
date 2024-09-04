@@ -163,7 +163,6 @@ async def get_all_service_models_controller(service):
                     # "gpt-3.5-turbo-16k": restructure_configuration(model_configuration.gpt_3_5_turbo_16k()),
                     # "gpt-3.5-turbo-16k-0613": restructure_configuration(model_configuration.gpt_3_5_turbo_16k_0613()),
                     "gpt-4": restructure_configuration(model_configuration.gpt_4()),
-                    # "gpt-4-0613": restructure_configuration(model_configuration.gpt_4_0613()),
                     # "gpt-4-1106-preview": restructure_configuration(model_configuration.gpt_4_1106_preview()),
                     # "gpt-4-turbo-preview": restructure_configuration(model_configuration.gpt_4_turbo_preview()),
                     # "gpt-4-0125-preview": restructure_configuration(model_configuration.gpt_4_0125_preview()),
@@ -171,6 +170,12 @@ async def get_all_service_models_controller(service):
                     "gpt-4-turbo": restructure_configuration(model_configuration.gpt_4_turbo()),
                     "gpt-4o": restructure_configuration(model_configuration.gpt_4o()),
                     "gpt-4o-mini": restructure_configuration(model_configuration.gpt_4o_mini()),
+                },
+                "fine-tune" : {
+                     "gpt-4-0613": restructure_configuration(model_configuration.gpt_4_0613()),
+                     "gpt-4o-2024-08-06": restructure_configuration(model_configuration.gpt_4o_2024_08_06()),
+                     "gpt-4o-mini-2024-07-18": restructure_configuration(model_configuration.gpt_4o_mini_2024_07_18()),
+
                 }
                 # "embedding": {
                 #     "text-embedding-3-large": restructure_configuration(model_configuration.text_embedding_3_large()),
