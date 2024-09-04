@@ -251,7 +251,7 @@ async def update_bridge_controller(request,bridge_id):
         function_id = body.get('functionData', {}).get('function_id', None)
         function_operation = body.get('functionData', {}).get('function_operation')
         bridge = await get_bridge_by_id(org_id, bridge_id)
-        if new_configuration and 'type' in new_configuration and new_configuration.get('type') != 'chat':
+        if new_configuration and 'type' in new_configuration and new_configuration.get('type') != 'fine-tune':
             new_configuration['fine_tune_model'] = {}
             new_configuration['fine_tune_model']['current_model'] = None
         current_configuration = bridge.get('configuration', {})
