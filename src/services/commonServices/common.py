@@ -68,7 +68,7 @@ async def chat(request: Request):
     bridge = body.get('bridge')
     pre_tools = body.get('pre_tools', None)
     version = request.state.version
-    fine_tune_model = configuration.get('fine_tune_model').get('curr_model')
+    fine_tune_model = configuration.get('fine_tune_model').get('current_model')
 
     if isinstance(variables, list):
         variables = {}
