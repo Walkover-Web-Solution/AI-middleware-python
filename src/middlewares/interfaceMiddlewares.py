@@ -18,42 +18,43 @@ async def send_data_middleware(request: Request, botId: str):
         userId = profile.user.id
         chatBotId = botId
         
-        channelId = f"{chatBotId}{userId}"
-        if threadId and threadId.strip():
-            channelId = f"{chatBotId}{threadId}"
+        channelId = f"{chatBotId}{threadId.strip() if threadId and threadId.strip() else userId}"
 
         bridge_response = await ConfigurationServices.get_bridge_by_slugname(org_id, slugName)
-        bridges = bridge_response['bridges'] if(bridge_response['success']) else {}
+        bridges = bridge_response['bridges'] if bridge_response['success'] else {}
 
-        if not bridges : 
-            raise Exception("Invalid bridge Id")
+        if not bridges: 
+            raise HTTPException(status_code=400, detail="Invalid bridge Id")
 
-
-        actions = []
-
-        if bridges.get('actions', {}):
-            for actionId, actionDetails in bridges.get('actions', {}).items():
-                description = actionDetails.get('description')
-                action_type = actionDetails.get('type')
-                variable = actionDetails.get('variable')
-                actions.append({"actionId": actionId, "description": description, "type": action_type, "variable": variable})
+        actions = [
+            {
+                "actionId": actionId,
+                "description": actionDetails.get('description'),
+                "type": actionDetails.get('type'),
+                "variable": actionDetails.get('variable')
+            }
+            for actionId, actionDetails in bridges.get('actions', {}).items()
+        ]
 
         if not bridge_response['success']:
-            raise HTTPException(status_code=400, detail="some error occurred")
-        request.state.chatbot = {
-            "bridge_id": bridges.get('_id', '').__str__(),
-            "user": message,
+            raise HTTPException(status_code=400, detail="Some error occurred")
 
+        request.state.chatbot = {
+            "bridge_id": str(bridges.get('_id', '')),
+            "user": message,
             "thread_id": threadId,
-            "variables": {**body['interfaceContextData'], "message": message, "actions": actions, **json.loads(profile.get('variables', "{}"))},
+            "variables": {**body.get('interfaceContextData', {}), "message": message, "actions": actions, **json.loads(profile.get('variables', "{}"))},
             "template_id": Config.TEMPLATE_ID,
-            "configuration": {"response_format": {
-                "type": "RTLayer",
-                "cred": {
-                "channel": channelId,
-                "ttl": 1,
-                'apikey': Config.RTLAYER_AUTH
-            }},},
+            "configuration": {
+                "response_format": {
+                    "type": "RTLayer",
+                    "cred": {
+                        "channel": channelId,
+                        "ttl": 1,
+                        'apikey': Config.RTLAYER_AUTH
+                    }
+                }
+            },
             "chatbot": True,
             "response_type": {
                 "type": "json_object"
@@ -61,8 +62,10 @@ async def send_data_middleware(request: Request, botId: str):
         }
         await add_configuration_data_to_body(request=request)
         return await chat_completion(request=request)
-    except Exception as error : 
-        return JSONResponse(status_code=400, content={'error' : error.__str__()})
+    except HTTPException as http_error:
+        raise http_error  # Re-raise HTTP exceptions for proper handling
+    except Exception as error: 
+        return JSONResponse(status_code=400, content={'error': str(error)})
 
 async def chat_bot_auth(request: Request):
     token = request.headers.get('Authorization')
@@ -84,6 +87,7 @@ async def chat_bot_auth(request: Request):
                     "user":{
                         "id": str(check_token['user_id'])
                     }
+                    **check_token
                 }
                 return True
         raise HTTPException(status_code=401, detail="unauthorized user")
