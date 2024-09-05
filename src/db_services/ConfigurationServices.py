@@ -241,7 +241,7 @@ async def create_bridge(data):
         }
 
 async def get_all_bridges_in_org(org_id):
-    bridges = configurationModel.find({"org_id": org_id}, {
+    bridges = configurationModel.find({"org_id": org_id, "status": 0}, {
       "_id": 1,
       "name": 1,
       "service": 1,
@@ -250,6 +250,7 @@ async def get_all_bridges_in_org(org_id):
       "configuration.prompt": 1,
       "bridgeType": 1,
       "slugName":1,
+      "status": 1
     })
     bridges_list = []
     for bridge in bridges:
