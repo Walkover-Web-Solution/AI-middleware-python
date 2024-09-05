@@ -233,6 +233,7 @@ class BaseService:
                     new_config['tool_choice'] =  {"type": "auto"}
                 elif service == service_name['openai'] or service_name['groq']:
                     new_config['tool_choice'] = "auto"
+                    new_config['parallel_tool_calls'] = False
 
                 
                 new_config['tools'] = tool_call_formatter(configuration, service)
