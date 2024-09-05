@@ -4662,6 +4662,7 @@ class ModelsConfig:
     #         },
     #         "content_location": "prompt[0].content"
     #     }
+    
     #     return {
     #         "configuration": configuration,
     #         "outputConfig": outputConfig,
