@@ -30,8 +30,8 @@ async def creates_api(request: Request):
         if status in ["published", "updated"]:
             body_content = payload.get('body') if payload else None
 
+            traversed_body = traverse_body(body_content)
             if body_content:
-                traversed_body = traverse_body(body_content)
                 axios_code = f"""def axios_call(params):
     import requests
 
@@ -149,36 +149,36 @@ def traverse_body(body, path=None, paths=None, fields=None):
         paths = []
     if fields is None:
         fields = {}
-
-    for key, value in body.items():
-        current_path = path + [key]
-        if isinstance(value, dict):
-            path_str = '.'.join(path)
-            path_str = f"{path_str}.parameter.{key}" if  path != [] else key
-            _.objects.set_(fields, path_str, {"description": '', "type": "object", "enum": [], "required_params": [], "parameter": {}})
-            traverse_body(value, current_path, paths, fields)
-        elif value == "your_value_here":
-            parameter = ""
-            path_str = '.'.join(current_path)
-            paths.append(path_str)
-            for i in range(len(path)):
-                if i == 0:
-                    parameter = path[i]
-                else:
-                    parameter += '.' + 'parameter.' + path[i]
-    
-            path_str = f"{parameter}.parameter.{key}" if  parameter != "" else key
-            _.objects.set_(fields, path_str, {"description": '', "type": "string", "enum": [], "required_params": [], "parameter": {}})
-        if(path != []):
-            for i in range(len(path)):
-                if i == 0:
-                    parameter = path[i]
-                else:
-                    parameter += '.' + 'parameter.' + path[i]
-            path_str = f"{parameter}"
-            existing_data = _.get(fields, path_str, {"required_params": []})
-            existing_data["required_params"].append(key)
-            _.set_(fields, path_str, existing_data)   
+    if body:
+        for key, value in body.items():
+            current_path = path + [key]
+            if isinstance(value, dict):
+                path_str = '.'.join(path)
+                path_str = f"{path_str}.parameter.{key}" if  path != [] else key
+                _.objects.set_(fields, path_str, {"description": '', "type": "object", "enum": [], "required_params": [], "parameter": {}})
+                traverse_body(value, current_path, paths, fields)
+            elif value == "your_value_here":
+                parameter = ""
+                path_str = '.'.join(current_path)
+                paths.append(path_str)
+                for i in range(len(path)):
+                    if i == 0:
+                        parameter = path[i]
+                    else:
+                        parameter += '.' + 'parameter.' + path[i]
+        
+                path_str = f"{parameter}.parameter.{key}" if  parameter != "" else key
+                _.objects.set_(fields, path_str, {"description": '', "type": "string", "enum": [], "required_params": [], "parameter": {}})
+            if(path != []):
+                for i in range(len(path)):
+                    if i == 0:
+                        parameter = path[i]
+                    else:
+                        parameter += '.' + 'parameter.' + path[i]
+                path_str = f"{parameter}"
+                existing_data = _.get(fields, path_str, {"required_params": []})
+                existing_data["required_params"].append(key)
+                _.set_(fields, path_str, existing_data)   
     return {
         "paths": paths,
         "fields": fields
