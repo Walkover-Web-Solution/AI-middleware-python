@@ -123,7 +123,7 @@ class BaseService:
     async def function_call(self, configuration, service, response, l=0, tools={}):
         if not response.get('success'):
             return {'success': False, 'error': response.get('error')}
-        modelfunc = getattr(ModelsConfig, configuration['model'].replace('-',"_").replace('.',"_"), None)
+        modelfunc = getattr(ModelsConfig, self.model.replace('-',"_").replace('.',"_"), None)
         modelObj = modelfunc()
         modelOutputConfig = modelObj['outputConfig']
         model_response = response.get('modelResponse', {})
