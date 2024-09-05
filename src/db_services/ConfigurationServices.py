@@ -240,8 +240,9 @@ async def create_bridge(data):
             'error': error
         }
 
-async def get_all_bridges_in_org(org_id):
-    bridges = configurationModel.find({"org_id": org_id, "status": 0}, {
+async def get_all_bridges_in_org(org_id,isArchive):
+    status_value = 1 if isArchive else 0
+    bridges = configurationModel.find({"org_id": org_id, "status": status_value}, {
       "_id": 1,
       "name": 1,
       "service": 1,

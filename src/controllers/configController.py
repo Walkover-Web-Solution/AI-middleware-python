@@ -118,21 +118,22 @@ async def get_bridge(request, bridge_id: str):
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e,)
 
-async def get_all_bridges(request):
+async def get_all_bridges(request,isArchive: bool):
     try:
         org_id = request.state.profile['org']['id']
-        bridges = await get_all_bridges_in_org(org_id)
+        bridges = await get_all_bridges_in_org(org_id,isArchive)
         embed_token = Helper.generate_token({ "org_id": Config.ORG_ID, "project_id": Config.PROJECT_ID, "user_id": org_id },Config.Access_key )
         return JSONResponse(status_code=200, content={
                 "success": True,
                 "message": "Get all bridges successfully",
                 "bridge" : bridges,
                 "embed_token": embed_token,
-                "org_id": org_id
-
+                "org_id": org_id,
+                "isArchive": isArchive
             })
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
 async def get_all_service_models_controller(service):
     try:
         service = service.lower()
