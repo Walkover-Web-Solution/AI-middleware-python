@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Request, Query
+from fastapi import APIRouter, Depends, Request
 from ..middlewares.middleware import jwt_middleware
 from validations.validation import Bridge_update as bridge_update_validation
 from ..controllers.configController import create_bridges_controller, get_bridge as get_bridge_controller,  get_all_bridges as get_all_bridges_controller
@@ -11,9 +11,9 @@ async def get_all_service_models(service: str):
     return await get_all_service_models_controller(service)
 
 
-@router.get('/getbridges/all', dependencies=[Depends(jwt_middleware)])
-async def get_all_bridges(request: Request, isArchive: bool = Query(default=False)):
-    return await get_all_bridges_controller(request, isArchive)
+@router.get('/getbridges/all',dependencies=[Depends(jwt_middleware)])
+async def get_all_bridges(request: Request):
+    return await get_all_bridges_controller(request)
 
 @router.get('/getbridges/{bridge_id}',dependencies=[Depends(jwt_middleware)])
 async def get_bridge(request: Request,bridge_id: str):
