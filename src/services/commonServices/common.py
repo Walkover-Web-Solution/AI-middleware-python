@@ -54,7 +54,7 @@ async def chat(request: Request):
     configuration = body.get("configuration")
     thread_id = body.get("thread_id")
     org_id = request.state.org_id
-    user = body.get("user")
+    user = str(body.get("user"))
     tools =  configuration.get('tools')
     service = body.get("service")
     variables = body.get("variables", {})
