@@ -13,7 +13,7 @@ async def send_error_to_webhook(bridge_id, org_id, details, type):
             
             if not webhook_config:
                 continue
-            if type in ['Variable', 'Error'] and (bridge_id in bridges or 'all' in bridges):
+            if type in entry['alertType'] and (bridge_id in bridges or 'all' in bridges):
                     webhook_url = webhook_config.get('url')
                     if webhook_url:
                         response_format = create_response_format(webhook_url, webhook_config.get('headers', {}))
