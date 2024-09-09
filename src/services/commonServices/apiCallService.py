@@ -51,7 +51,7 @@ async def creates_api(request: Request):
             keys = path.split(".")
             data = set_nested_value(data, path, params[keys[-1]])
         response = requests.post('{url}', json=data, headers={{'content-type': 'application/json'}})
-        return response.json()
+        return response.json(), response.headers
     except requests.RequestException as e:
         return str(e)"""
             else:
@@ -59,7 +59,7 @@ async def creates_api(request: Request):
     import requests
     try:
         response = requests.get('{url}', headers={{'content-type': 'application/json'}})
-        return response.json()
+        return response.json(), response.headers
     except requests.RequestException as e:
         return str(e)"""
 
