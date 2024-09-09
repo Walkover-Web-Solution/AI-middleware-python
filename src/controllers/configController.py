@@ -114,7 +114,7 @@ async def duplicate_create_bridges(bridges):
 async def get_bridge(request, bridge_id: str):
     try:
         bridge = await get_bridges_with_tools(bridge_id,request.state.profile.get("org",{}).get("id",""))
-        return Helper.response_middleware_for_bridge({"succcess": True,"message": "bridge get successfully","bridge":bridge['bridges']})
+        return Helper.response_middleware_for_bridge({"succcess": True,"message": "bridge get successfully","bridge":bridge.get("bridges", {})})
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e,)
 
