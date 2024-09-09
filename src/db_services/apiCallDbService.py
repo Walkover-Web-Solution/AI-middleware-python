@@ -48,6 +48,7 @@ async def get_all_api_calls_by_org_id(org_id):
                         "type": "string",
                         "parameter": {}
                     } for item in fields}
+            else: transformed_data = fields
             api_calls[index]['fields'] = transformed_data
         return api_calls or []
     except Exception as error:
