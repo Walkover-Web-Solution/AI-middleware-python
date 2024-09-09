@@ -60,6 +60,7 @@ class Helper:
                 # Remove quotes at the beginning and end if they exist
                 string_value = string_value[1:-1] if string_value.startswith('"') and string_value.endswith('"') else string_value
                 # Escape backslashes and use raw string for regex replacement
+                # todo will we change if any error occurs ( hjotfix for now )
                 string_value = string_value.replace("\\", "\\\\")
                 # Use raw string to avoid Unicode errors in regex
                 regex = re.compile(r'\{\{' + re.escape(key) + r'\}\}')

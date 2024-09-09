@@ -97,6 +97,7 @@ async def duplicate_create_bridges(bridges):
 
         if result.get("success"):
             res = result.get('bridge')
+            # todo: optimize in future
             for function_id in function_ids:
                 await update_bridge_ids_in_api_calls(function_id, str(res.get("_id")), 1)
             return res
