@@ -80,14 +80,8 @@ async def duplicate_create_bridges(bridges):
         configuration = bridges.get('configuration') 
         apikey = bridges.get('apikey') 
         slugName = bridges.get('slugName') 
-        # created_at = bridges.get('created_at') 
-        # api_call  = bridges.get('api_call') 
-        # api_endpoints = bridges.get('api_endpoints')
-        # is_api_call = bridges.get('is_api_call')
-        # # responseIds = bridges.get('responseIds')
-        # # responseRef = bridges.get('responseRef')
-        # # defaultQuestions = bridges.get('defaultQuestions')
-        # # actions= bridges.get('actions')
+        function_ids= bridges.get('function_ids')
+        actions= bridges.get('actions')
 
         result = await create_bridge({
             "configuration": configuration,
@@ -96,11 +90,15 @@ async def duplicate_create_bridges(bridges):
             "slugName": slugName,
             "service": service,
             "apikey": apikey,
-            "bridgeType": bridgeType
+            "bridgeType": bridgeType,
+            "function_ids":function_ids,
+            "actions": actions
         })
 
         if result.get("success"):
             res = result.get('bridge')
+            for function_id in function_ids:
+                await update_bridge_ids_in_api_calls(function_id, str(res.get("_id")), 1)
             return res
 
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=result)

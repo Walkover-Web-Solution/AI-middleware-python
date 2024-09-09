@@ -56,7 +56,7 @@ class Helper:
         if variables and len(variables) > 0:
             for key, value in variables.items():
                 # Use json.dumps() to escape special characters
-                string_value = json.dumps(value)
+                string_value = repr(value)
                 # Remove quotes at the beginning and end if they exist
                 string_value = string_value[1:-1] if string_value.startswith('"') and string_value.endswith('"') else string_value
                 # Escape backslashes and use raw string for regex replacement
