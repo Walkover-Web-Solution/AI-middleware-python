@@ -46,7 +46,10 @@ async def axios_work(data, code, is_python=False):
         
         # Append the execution code to the provided code
         exec_code = code + """
-result =  axios_call(params)
+result = axios_call(params)
+headers = {} 
+if isinstance(result, tuple) and len(result) == 2:
+    result, headers = result
 """
         # Prepare the environment for execution
         local_vars = {'params': data}
@@ -55,6 +58,9 @@ result =  axios_call(params)
         exec(exec_code, global_vars, local_vars)
         return {
             'response': local_vars.get('result'),
+            'metadata':{
+                'flowHitId': local_vars.get('headers').get('flowHitId'),
+            },
             'status': 1
         }
     except Exception as err:
