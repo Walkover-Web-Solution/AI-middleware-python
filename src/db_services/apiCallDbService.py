@@ -1,5 +1,6 @@
 from models.mongo_connection import db
 from bson.json_util import dumps, loads
+from bson import ObjectId
 
 configurationModel = db["configurations"]
 apiCallModel = db['apicalls']
@@ -56,4 +57,53 @@ async def get_all_api_calls_by_org_id(org_id):
         return {
             'success': False,
             'error': "Error in getting api calls of a organization!!"
+        }
+    
+
+
+async def update_api_call_by_function_id(org_id, function_id, data_to_update):
+    try:
+        # Define the query to match the document by both `org_id` and `function_id`
+        query = {
+            '_id': ObjectId(function_id),  # Match the function_id
+            'org_id': org_id  # Match the org_id as well
+        }
+        if '_id' in data_to_update:
+            del data_to_update['_id']  # Remove _id from the update data
+        
+        # Define the update operation
+        update = {
+            '$set': data_to_update  # Set the new values from data_to_update
+        }
+        
+        # Perform the update operation
+        result = apiCallModel.update_one(query, update)
+        
+        # Check if the document was updated
+        if result.modified_count == 1:
+            data_to_update['_id'] = function_id
+            return {
+                'success': True,
+                'data': data_to_update,
+                'message': f"API call with function_id {function_id} updated successfully."
+            }
+        elif result.modified_count == 0:
+            data_to_update['_id'] = function_id
+            return {
+                'success': True,
+                'data': data_to_update,
+                'message': f"API call with function_id {function_id} matched but no changes were made."
+            }
+        else:
+            return {
+                'success': False,
+                'message': f"No API call found with function_id {function_id} for organization {org_id}."
+            }
+
+    except Exception as error:
+        # Log the error
+        print(f"Error: {error}")
+        return {
+            'success': False,
+            'error': f"Error in updating the API call: {str(error)}"
         }
