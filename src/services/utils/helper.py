@@ -55,13 +55,17 @@ class Helper:
     def replace_variables_in_prompt(prompt, variables):
         if variables and len(variables) > 0:
             for key, value in variables.items():
-                # Use repr() instead of json.dumps() to avoid Unicode escape issues
-                string_value = repr(value)
-                # Remove quotes at the beginning and end
+                # Use json.dumps() to escape special characters
+                string_value = json.dumps(value)
+                # Remove quotes at the beginning and end if they exist
                 string_value = string_value[1:-1] if string_value.startswith('"') and string_value.endswith('"') else string_value
+                # Escape backslashes and use raw string for regex replacement
+                string_value = string_value.replace("\\", "\\\\")
+                # Use raw string to avoid Unicode errors in regex
                 regex = re.compile(r'\{\{' + re.escape(key) + r'\}\}')
                 prompt = regex.sub(string_value, prompt)
         return prompt
+
     
 
     @staticmethod
@@ -93,7 +97,7 @@ class Helper:
             db_config = response['configuration']
             config = {}
             for key in configurations.keys():
-                config[key] = db_config.get(key, response['configuration'].get(key, configurations[key]['default']))
+                config[key] = db_config.get(key, response['configuration'].get(key, configurations[key].get("default", '')))
             for key in ['prompt','response_format','type', 'pre_tools','fine_tune_model']:
                 config[key] = db_config.get(key, response['configuration'].get(key, {"type":'default',"cred":{}} if key == 'response_format' else ''))
             response['configuration'] = config
