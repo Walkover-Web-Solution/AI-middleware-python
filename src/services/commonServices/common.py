@@ -169,6 +169,7 @@ async def chat(request: Request):
                             _.set_(result['usage'], "outputTokens", _.get(result['usage'], "outputTokens") + tokens['outputTokens'])
                             _.set_(result['usage'], "expectedCost", _.get(result['usage'], "expectedCost") + tokens['expectedCost'])
                         _.set_(result['modelResponse'], modelOutputConfig['message'], _.get(newresult['modelResponse'], modelOutputConfig['message']))
+                        result['historyParams'] = newresult['historyParams']
                         result['historyParams']['user'] = user
                 except Exception as e:
                     print(f"error in chatbot : {e}")
