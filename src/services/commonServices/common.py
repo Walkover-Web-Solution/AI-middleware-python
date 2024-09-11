@@ -98,8 +98,6 @@ async def chat(request: Request):
             result = await getThread(thread_id, org_id, bridge_id)
             if result["success"]:
                 configuration["conversation"] = result.get("data", [])
-                if service == 'anthropic':
-                    configuration["conversation"] = []
         else:
             thread_id = str(uuid.uuid1())
 
