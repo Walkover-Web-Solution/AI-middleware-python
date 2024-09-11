@@ -80,8 +80,9 @@ async def duplicate_create_bridges(bridges):
         configuration = bridges.get('configuration') 
         apikey = bridges.get('apikey') 
         slugName = bridges.get('slugName') 
-        function_ids= bridges.get('function_ids')
+        function_ids= bridges.get('function_ids', [])
         actions= bridges.get('actions')
+        apikey_object_id = bridges.get('apikey_object_id')
 
         result = await create_bridge({
             "configuration": configuration,
@@ -92,14 +93,16 @@ async def duplicate_create_bridges(bridges):
             "apikey": apikey,
             "bridgeType": bridgeType,
             "function_ids":function_ids,
-            "actions": actions
+            "actions": actions,
+            "apikey_object_id":apikey_object_id
         })
 
         if result.get("success"):
             res = result.get('bridge')
             # todo: optimize in future
-            for function_id in function_ids:
-                await update_bridge_ids_in_api_calls(function_id, str(res.get("_id")), 1)
+            if(function_ids):
+                for function_id in function_ids:
+                    await update_bridge_ids_in_api_calls(function_id, str(res.get("_id")), 1)
             return res
 
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=result)
@@ -245,7 +248,7 @@ async def update_bridge_controller(request,bridge_id):
         if apikey_object_id is not None:
             update_fields['apikey_object_id'] = apikey_object_id
             data = await get_apikey_creds(apikey_object_id)
-            apikey = data.get('apikey')
+            apikey = data.get('apikey',"")
         name = body.get('name')
         function_id = body.get('functionData', {}).get('function_id', None)
         function_operation = body.get('functionData', {}).get('function_operation')
