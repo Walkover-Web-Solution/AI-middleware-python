@@ -31,7 +31,7 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
         format = {
             "type": "function",
             "name": api_data.get("function_name", api_data.get("endpoint")),
-            "description": api_data.get("description", api_data.get("short_description")),
+            "description": api_data.get("description", api_data.get("api_description", api_data.get("short_description", ""))),
             "properties": { field: { "type": "string" } for field in api_data.get("required_params", api_data.get("required_fields"))  },
             "required": api_data.get("required_params", api_data.get("required_fields"))
         }
