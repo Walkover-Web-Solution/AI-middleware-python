@@ -44,7 +44,7 @@ class Helper:
     def mask_api_key(key):
         if not key:
             return ''
-        if len(key) > 4:
+        if len(key) > 6:
             return key[:3] + '*' * (9) + key[-3:]
         return key
          
