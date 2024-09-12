@@ -96,6 +96,13 @@ class Helper:
             configuration = getattr(model_configuration,model_name,None)
             configurations = configuration()['configuration']
             db_config = response['configuration']
+            apiKeys = Helper.decrypt(response['apikey'])
+            if apiKeys:
+                if len(apiKeys) > 4:
+                    apiKeys = apiKeys[:2] + '*' * (len(apiKeys) - 4) + apiKeys[-2:]
+                else:
+                    apiKeys = '*' * len(apiKeys)
+            response['apikey'] = apiKeys
             config = {}
             for key in configurations.keys():
                 config[key] = db_config.get(key, response['configuration'].get(key, configurations[key].get("default", '')))
