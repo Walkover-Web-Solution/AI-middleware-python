@@ -58,7 +58,6 @@ async def chat(request: Request):
     tools =  configuration.get('tools')
     service = body.get("service")
     variables = body.get("variables", {})
-    bridgeType = body.get('chatbot')
     template = body.get('template')
     usage = {}
     customConfig = {}
@@ -69,6 +68,7 @@ async def chat(request: Request):
     pre_tools = body.get('pre_tools', None)
     version = request.state.version
     fine_tune_model = configuration.get('fine_tune_model', {}).get('current_model', {})
+    is_rich_text = configuration.get('is_rich_text',False)   
 
     if isinstance(variables, list):
         variables = {}
@@ -138,7 +138,7 @@ async def chat(request: Request):
                     return
                 return JSONResponse(status_code=400, content=result)
 
-        if bridgeType:
+        if is_rich_text:
                 try:
                     try:
                         parsedJson = Helper.parse_json(_.get(result["modelResponse"], modelOutputConfig["message"]))
