@@ -156,7 +156,7 @@ async def chat(request: Request):
                             del params['tools']
                         if 'customConfig' in params and 'tools' in params['customConfig']:
                             del params['customConfig']['tools']
-                        model_response_content = result.get('historyparams').get('message')
+                        model_response_content = result.get('historyParams').get('message')
                         newresult = await executer(params,service)
                         base_service_instance = BaseService(params)
                         tokens = base_service_instance.calculate_usage(newresult["modelResponse"])
@@ -172,7 +172,7 @@ async def chat(request: Request):
                         _.set_(result['modelResponse'], modelOutputConfig['message'], _.get(newresult['modelResponse'], modelOutputConfig['message']))
                         result['historyParams'] = newresult['historyParams']
                         result['historyParams']['message'] = model_response_content
-                        result['historyParams']['chatbot_response'] = newresult['message']
+                        result['historyParams']['chatbot_message'] = newresult['historyParams']['message']
                         result['historyParams']['user'] = user
                 except Exception as e:
                     print(f"error in chatbot : {e}")

@@ -222,7 +222,8 @@ class BaseService:
             'channel': 'chat',
             'type': "assistant" if _.get(model_response, self.modelOutputConfig['message']) else "tool_calls",
             'actor': "user" if self.user else "tool",
-            'tools': tools
+            'tools': tools,
+            'chatbot_message' : ""
         }
     
     def service_formatter(self, configuration : object, service : str ):
