@@ -44,7 +44,6 @@ async def send_data_middleware(request: Request, botId: str):
             "user": message,
             "thread_id": threadId,
             "variables": {**body.get('interfaceContextData', {}), "message": message, "actions": actions, **json.loads(profile.get('variables', "{}"))},
-            "template_id": Config.TEMPLATE_ID,
             "configuration": {
                 "response_format": {
                     "type": "RTLayer",
