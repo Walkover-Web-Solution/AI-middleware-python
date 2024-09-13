@@ -38,9 +38,17 @@ class Helper:
             cipher = AES.new(key.encode(), AES.MODE_CFB, iv.encode())
             decrypted_bytes = cipher.decrypt(encrypted_text_bytes)
             token = decrypted_bytes.decode('utf-8')
-        return token 
+        return token
     
+    @staticmethod 
+    def mask_api_key(key):
+        if not key:
+            return ''
+        if len(key) > 6:
+            return key[:3] + '*' * (9) + key[-3:]
+        return key
          
+
     @staticmethod
     def update_configuration(prev_configuration, configuration):
         for key in prev_configuration:
@@ -96,6 +104,9 @@ class Helper:
             configuration = getattr(model_configuration,model_name,None)
             configurations = configuration()['configuration']
             db_config = response['configuration']
+            decryptedApiKey = Helper.decrypt(response['apikey'])
+            maskedApiKey = Helper.mask_api_key(decryptedApiKey)
+            response['apikey'] = maskedApiKey
             config = {}
             for key in configurations.keys():
                 config[key] = db_config.get(key, response['configuration'].get(key, configurations[key].get("default", '')))
