@@ -69,7 +69,7 @@ class GeminiHandler:
                     'reqBody': self.req.json if self.req else {},
                     'headers': self.headers or {},
                 })
-            return {'success': False, 'error': geminiResponse.get('error')}
+            raise ValueError(geminiResponse.get('error'))
         
         if not self.playground:
             usage["totalTokens"] = _.get(geminiResponse, self.modelOutputConfig['usage'][0]['total_tokens'])
