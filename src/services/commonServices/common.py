@@ -177,10 +177,10 @@ async def chat(request: Request):
                     raise RuntimeError(f"error in chatbot : {e}")
                     
 
-
+        chatbot_message = result.get('historyParams',{}).get('chatbot_message', None)
         endTime = int(time.time() * 1000)
         if version == 2:
-            result['modelResponse'] = await Response_formatter(result["modelResponse"],service)
+            result['modelResponse'] = await Response_formatter(result["modelResponse"],service ,chatbot_message)
         if not is_playground:
             usage.update({
                 **result.get("usage", {}),

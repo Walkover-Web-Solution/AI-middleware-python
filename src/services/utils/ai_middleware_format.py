@@ -1,9 +1,9 @@
-async def  Response_formatter(response, service):
+async def  Response_formatter(response, service, chatbot_message):
     if service == 'openai':
         return {
             "data" : {
                 "id" : response.get("id", None),
-                "content" : response.get("choices", [{}])[0].get("message", {}).get("content", None),
+                "content" : chatbot_message if chatbot_message else response.get("choices", [{}])[0].get("message", {}).get("content", None),
                 "model" : response.get("model", None),
                 "role" : response.get("choices", [{}])[0].get("message", {}).get("role", None),
                 "finish_reason" : response.get("choices", [{}])[0].get("finish_reason", None)
@@ -19,7 +19,7 @@ async def  Response_formatter(response, service):
         return {
             "data" : {
                 "id" : response.get("id", None),
-                "content" : response.get("content", [{}])[0].get("text", None),
+                "content" : chatbot_message if chatbot_message else response.get("content", [{}])[0].get("text", None),
                 "model" : response.get("model", None),
                 "role" : response.get("role", None),
                 "finish_reason" : response.get("stop_reason", None)
@@ -37,7 +37,7 @@ async def  Response_formatter(response, service):
         return {
             "data" : {
                 "id" : response.get("id", None),
-                "content" : response.get("choices", [{}])[0].get("message", {}).get("content", None),
+                "content" : chatbot_message if chatbot_message else response.get("choices", [{}])[0].get("message", {}).get("content", None),
                 "model" : response.get("model", None),
                 "role" : response.get("choices", [{}])[0].get("message", {}).get("role", None),
                 "finish_reason" : response.get("choices", [{}])[0].get("finish_reason", None)
