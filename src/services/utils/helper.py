@@ -112,7 +112,7 @@ class Helper:
             config = {}
             for key in configurations.keys():
                 config[key] = db_config.get(key, response['configuration'].get(key, configurations[key].get("default", '')))
-            for key in ['prompt','response_format','type', 'pre_tools','fine_tune_model']:
+            for key in ['prompt','response_format','type', 'pre_tools','fine_tune_model', 'is_rich_text']:
                 config[key] = db_config.get(key, response['configuration'].get(key, {"type":'default',"cred":{}} if key == 'response_format' else ''))
             response['configuration'] = config
             finalResponse['bridge'] = response
