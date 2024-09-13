@@ -47,7 +47,7 @@ def handle_exceptions(func):
                     "error_message": error_details
                 }
             bridge_id = request.path_params.get('bridge_id') or body.get("bridge_id")
-            org_id = request.state.org_id
+            org_id = request.state.profile['org']['id']
             asyncio.create_task(send_error_to_webhook(bridge_id, org_id,error_json, type = 'Error'))
             return JSONResponse(
                 status_code=400,
