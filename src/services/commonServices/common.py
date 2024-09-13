@@ -24,7 +24,7 @@ app = FastAPI()
 from src.services.commonServices.baseService.utils import axios_work
 from ...configs.constant import service_name
 import src.db_services.ConfigurationServices as ConfigurationService
-# from ..utils.common import common
+from ..utils.send_error_webhook import send_error_to_webhook
 
 async def executer(params, service):
     if service == service_name['openai']:
@@ -70,6 +70,7 @@ async def chat(request: Request):
     version = request.state.version
     fine_tune_model = configuration.get('fine_tune_model', {}).get('current_model', {})
 
+    result = {}
     if isinstance(variables, list):
         variables = {}
 
@@ -103,11 +104,13 @@ async def chat(request: Request):
         else:
             thread_id = str(uuid.uuid1())
 
-        configuration['prompt']  = Helper.replace_variables_in_prompt(configuration['prompt'] , variables)
-            
+        configuration['prompt'], missing_vars  = Helper.replace_variables_in_prompt(configuration['prompt'] , variables)
+        if len(missing_vars) > 0:
+            asyncio.create_task(send_error_to_webhook(bridge_id, org_id, missing_vars, type = 'Variable'))
+
         if template:
             system_prompt = template
-            configuration['prompt'] = Helper.replace_variables_in_prompt(system_prompt, {"system_prompt": configuration['prompt'], **variables})
+            configuration['prompt'], missing_vars = Helper.replace_variables_in_prompt(system_prompt, {"system_prompt": configuration['prompt'], **variables})
 
         params = {
             "customConfig": customConfig,
@@ -134,9 +137,7 @@ async def chat(request: Request):
         result = await executer(params,service)
     
         if not result["success"]:
-                if response_format['type'] != 'default':
-                    return
-                return JSONResponse(status_code=400, content=result)
+            raise ValueError(result)
 
         if bridgeType:
                 try:
@@ -194,8 +195,6 @@ async def chat(request: Request):
             asyncio.create_task(metrics_service.create([usage], result["historyParams"]))
             asyncio.create_task(sendResponse(response_format, result["modelResponse"],success=True))
         return JSONResponse(status_code=200, content={"success": True, "response": result["modelResponse"]})
-    except HTTPException as e: 
-        raise e
     except Exception as error:
         traceback.print_exc()
         if not is_playground:
@@ -228,4 +227,5 @@ async def chat(request: Request):
             asyncio.create_task(sendResponse(response_format, error_message))
             if response_format['type'] != 'default':
                 return
-        return JSONResponse(status_code=400, content={"success": False, "error": str(error)})
+            asyncio.create_task(sendResponse(response_format,result.get("modelResponse", str(error))))
+        raise ValueError(error)

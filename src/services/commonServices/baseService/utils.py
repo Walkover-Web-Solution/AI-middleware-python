@@ -120,12 +120,12 @@ def tool_call_formatter(configuration: dict, service: str) -> dict:
 
 async def send_request(url, data, method, headers):
     try:
-        async with httpx.AsyncClient() as client:
-            response = await client.request(method, url, json=data, headers=headers)
-            return response
-    except httpx.RequestError as error:
-        print("send_request error=>", error)
-        return None
+        response = requests.request(method, url, json=json.dumps(data), headers=headers)
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        print('Unexpected error:', e)
+        return {'error': 'Unexpected error', 'details': str(e)}
     
 async def send_message(cred, data ):
     try:
@@ -148,10 +148,11 @@ async def sendResponse(response_format, data, success = False):
         'response' if success else 'error': data,
         'success': success
     }
-
-    match response_format['type']:
-        case 'RTLayer' : 
-            return await send_message(cred = response_format['cred'], data=data_to_send)
-        case 'webhook':
-            return await send_request(**response_format['cred'], method='POST', data=data_to_send)
-
+    try:
+        match response_format['type']:
+            case 'RTLayer' : 
+                return await send_message(cred = response_format['cred'], data=data_to_send)
+            case 'webhook':
+                return await send_request(**response_format['cred'], method='POST', data=data_to_send)
+    except Exception as e:
+        print("error sending request", e)
