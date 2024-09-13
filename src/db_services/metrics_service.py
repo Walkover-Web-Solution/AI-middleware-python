@@ -44,7 +44,7 @@ async def create(dataset, history_params):
             history_params['thread_id'], history_params['user'], history_params['message'],
             history_params['org_id'], history_params['bridge_id'], history_params['model'],
             history_params['channel'], history_params['type'], history_params['actor'],
-            history_params.get('tools')
+            history_params.get('tools'),history_params.get('chatbot_message')
         )
         
         chat_id = result['result'][0]
