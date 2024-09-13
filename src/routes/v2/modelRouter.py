@@ -44,7 +44,6 @@ def handle_exceptions(func):
                 error_json = json.loads(error_details)
             except json.JSONDecodeError:
                 error_json = {
-                    "location": error_location,
                     "error_message": error_details
                 }
             bridge_id = request.path_params.get('bridge_id') or body.get("bridge_id")
