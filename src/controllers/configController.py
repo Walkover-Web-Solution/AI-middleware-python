@@ -54,7 +54,8 @@ async def create_bridges_controller(request):
             "slugName": slugName,
             "service": service,
             "bridgeType": bridgeType,
-            "org_id" : org_id
+            "org_id" : org_id,
+            "is_rich_text" : True
         })
         if result.get("success"):
             return JSONResponse(status_code=200, content={

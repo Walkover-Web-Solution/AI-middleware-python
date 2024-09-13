@@ -68,7 +68,7 @@ async def chat(request: Request):
     pre_tools = body.get('pre_tools', None)
     version = request.state.version
     fine_tune_model = configuration.get('fine_tune_model', {}).get('current_model', {})
-    is_rich_text = configuration.get('is_rich_text',False)   
+    is_rich_text = configuration.get('is_rich_text',True)   
 
     if isinstance(variables, list):
         variables = {}
