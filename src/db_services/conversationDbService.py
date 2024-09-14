@@ -53,7 +53,8 @@ async def find(org_id, thread_id, bridge_id):
                     Conversation.org_id == org_id,
                     Conversation.thread_id == thread_id,
                     Conversation.bridge_id == bridge_id,
-                    or_(RawData.error == '', RawData.error.is_(None))
+                    or_(RawData.error == '', RawData.error.is_(None)),
+                    Conversation.message_by != "tool_calls"
                 )
             )
             .order_by(Conversation.id.desc())
