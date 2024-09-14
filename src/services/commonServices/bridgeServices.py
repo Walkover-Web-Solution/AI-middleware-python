@@ -28,7 +28,7 @@ async def duplicate_bridge(request : Request):
             "apikey": bridge.get('apikey'),
             "slugName": new_slugName,
             "function_ids": bridge.get('function_ids'),
-            "actions": bridge.get('actions'),
+            "actions": bridge.get('actions',{}),
             "apikey_object_id": bridge.get('apikey_object_id',""),
         })
         return JSONResponse(status_code=200, content={
