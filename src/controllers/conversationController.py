@@ -16,8 +16,9 @@ async def getThread(thread_id, org_id, bridge_id, bridgeType):
             filtered_chats = []
             for chat in chats:
                 if chat['is_reset']:
-                    break
-                filtered_chats.append(chat)
+                    filtered_chats = []
+                else:
+                    filtered_chats.append(chat)
             chats = filtered_chats
         return { 'success': True, 'data': chats }
     except Exception as err:
