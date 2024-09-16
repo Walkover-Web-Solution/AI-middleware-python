@@ -92,13 +92,14 @@ async def storeSystemPrompt(prompt, org_id, bridge_id):
     finally:
         session.close()
 
-async def reset_chat_history(bridge_id, thread_id):
+async def reset_chat_history(org_id, bridge_id, thread_id):
     session = pg['session']()
     try:
         conversation = (
             session.query(Conversation)
             .filter(
                 and_(
+                    Conversation.org_id == org_id,
                     Conversation.bridge_id == bridge_id,
                     Conversation.thread_id == thread_id
                 )
