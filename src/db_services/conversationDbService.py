@@ -54,7 +54,7 @@ async def find(org_id, thread_id, bridge_id):
                     Conversation.thread_id == thread_id,
                     Conversation.bridge_id == bridge_id,
                     or_(RawData.error == '', RawData.error.is_(None)),
-                    Conversation.message_by != "tool_calls"
+                    Conversation.message_by.in_(["user", "assistant"])
                 )
             )
             .order_by(Conversation.id.desc())
