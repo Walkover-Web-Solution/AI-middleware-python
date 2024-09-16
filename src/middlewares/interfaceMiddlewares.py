@@ -113,7 +113,7 @@ async def reset_chatBot(request: Request, botId: str):
         raise HTTPException(status_code=400, detail="Invalid bridge Id")
     else:
         bridge_id = str(bridges.get('_id', ''))
-    result = await reset_chat_history(bridge_id, thread_id)
+    result = await reset_chat_history(org_id, bridge_id, thread_id)
     response_format = {
         "type": "RTLayer",
         "cred": {
