@@ -25,6 +25,7 @@ from src.services.commonServices.baseService.utils import axios_work
 from ...configs.constant import service_name
 import src.db_services.ConfigurationServices as ConfigurationService
 from ..utils.send_error_webhook import send_error_to_webhook
+from copy import deepcopy
 
 async def executer(params, service):
     if service == service_name['openai']:
@@ -168,7 +169,7 @@ async def chat(request: Request):
                         _.set_(result['usage'], "outputTokens", _.get(result['usage'], "outputTokens") + tokens['outputTokens'])
                         _.set_(result['usage'], "expectedCost", _.get(result['usage'], "expectedCost") + tokens['expectedCost'])
                     _.set_(result['modelResponse'], modelOutputConfig['message'], _.get(newresult['modelResponse'], modelOutputConfig['message']))
-                    result['historyParams'] = newresult['historyParams']
+                    result['historyParams'] = deepcopy(newresult.get('historyParams',{}))
                     result['historyParams']['message'] = model_response_content
                     result['historyParams']['chatbot_message'] = newresult['historyParams']['message']
                     result['historyParams']['user'] = user
