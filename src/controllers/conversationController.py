@@ -9,9 +9,16 @@ async def getAllThreads(bridge_id, org_id, page, pageSize):
         print("getAllThreads =>", err)
         return { 'success': False, 'message': str(err) }
 
-async def getThread(thread_id, org_id, bridge_id):
+async def getThread(thread_id, org_id, bridge_id, bridgeType):
     try:
         chats = await chatbotDbService.find(org_id, thread_id, bridge_id)
+        if bridgeType:
+            filtered_chats = []
+            for chat in chats:
+                if chat['is_reset']:
+                    break
+                filtered_chats.append(chat)
+            chats = filtered_chats
         return { 'success': True, 'data': chats }
     except Exception as err:
         print("Error in getting thread:",err)

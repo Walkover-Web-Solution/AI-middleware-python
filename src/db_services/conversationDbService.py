@@ -45,6 +45,7 @@ async def find(org_id, thread_id, bridge_id):
                 Conversation.createdAt,
                 Conversation.id,
                 Conversation.function,
+                Conversation.is_reset,
                 RawData.error
             )
             .outerjoin(RawData, Conversation.id == RawData.chat_id)
@@ -90,7 +91,47 @@ async def storeSystemPrompt(prompt, org_id, bridge_id):
         raise error
     finally:
         session.close()
+
+async def reset_chat_history(bridge_id, thread_id):
+    session = pg['session']()
+    try:
+        conversation = (
+            session.query(Conversation)
+            .filter(
+                and_(
+                    Conversation.bridge_id == bridge_id,
+                    Conversation.thread_id == thread_id
+                )
+            )
+            .order_by(Conversation.id.desc())
+            .first()
+        )
         
+        if conversation:
+            # Update the fetched record
+            conversation.is_reset = True
+            session.commit()
+            return {
+                'success': True,
+                'message': 'Chatbot reset successfully',
+                'result': conversation.id
+            }
+        else:
+            return {
+                'success': False,
+                'message': 'No conversation found to reset',
+                'result': None
+            }
+    except Exception as error:
+        session.rollback()
+        return {
+            'success': False,
+            'message': 'Error resetting chatbot',
+            'result': error
+        }
+    finally:
+        session.close()
+
 # async def getHistory(bridge_id, timestamp):
 #     try:
 #         history = await models['pg'].system_prompt_versionings.find_all(
