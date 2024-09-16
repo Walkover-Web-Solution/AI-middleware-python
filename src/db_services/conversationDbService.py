@@ -118,7 +118,7 @@ async def reset_chat_history(bridge_id, thread_id):
             }
         else:
             return {
-                'success': False,
+                'success': True,
                 'message': 'No conversation found to reset',
                 'result': None
             }

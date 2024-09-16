@@ -101,11 +101,18 @@ async def chat_bot_auth(request: Request):
 
 async def reset_chatBot(request: Request, botId: str):
     body = await request.json()
-    bridge_id = body.get('bridge_id')
     thread_id = body.get('thread_id')
     profile = request.state.profile
     userId = profile['user']['id']
+    org_id = request.state.profile['org']['id']
+    slugName = body.get("slugName")
     
+    bridge_response = await ConfigurationServices.get_bridge_by_slugname(org_id, slugName)
+    bridges = bridge_response['bridges'] if bridge_response['success'] else {}
+    if not bridges: 
+        raise HTTPException(status_code=400, detail="Invalid bridge Id")
+    else:
+        bridge_id = str(bridges.get('_id', ''))
     result = await reset_chat_history(bridge_id, thread_id)
     response_format = {
         "type": "RTLayer",
@@ -115,8 +122,13 @@ async def reset_chatBot(request: Request, botId: str):
             'apikey': Config.RTLAYER_AUTH
         }
     }
+    response = {
+        "data": {
+            "role": "reset"
+        }
+    }
     if result['success']:
-        asyncio.create_task(sendResponse(response_format, result, True))
+        asyncio.create_task(sendResponse(response_format, response, True))
         return JSONResponse(status_code=200, content={'success': True, 'message': 'Chatbot reset successfully'})
     else:
         return JSONResponse(status_code=400, content={'success': False, 'message': 'Error resetting chatbot'})
