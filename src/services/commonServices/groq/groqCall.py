@@ -19,14 +19,14 @@ class Groq(BaseService):
         if not groq_response.get('success'):
             if not self.playground:
                 await self.handle_failure(groq_response)
-            return {'success': False, 'error': groq_response.get('error')}
+            raise ValueError(groq_response.get('error'))
         
         if len(model_response.get('choices', [])[0].get('message', {}).get("tool_calls", [])) > 0:
             functionCallRes = await self.function_call(self.customConfig, service_name['groq'], groq_response)
             
             if not functionCallRes.get('success'):
                 await self.handle_failure(functionCallRes)
-                return {'success': False, 'error': functionCallRes.get('error')}
+                raise ValueError(functionCallRes.get('error'))
             
             self.update_model_response(model_response, functionCallRes)
             tools = functionCallRes.get("tools", {}) 

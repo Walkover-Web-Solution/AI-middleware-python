@@ -1,7 +1,7 @@
 
 from models.index import combined_models as models
 import sqlalchemy as sa
-from sqlalchemy import func, and_ , insert, delete
+from sqlalchemy import func, and_ , insert, delete, or_
 from sqlalchemy.exc import SQLAlchemyError
 import asyncio
 import traceback
@@ -44,13 +44,17 @@ async def find(org_id, thread_id, bridge_id):
                 Conversation.message_by.label('role'),
                 Conversation.createdAt,
                 Conversation.id,
-                Conversation.function
+                Conversation.function,
+                RawData.error
             )
+            .outerjoin(RawData, Conversation.id == RawData.chat_id)
             .filter(
                 and_(
                     Conversation.org_id == org_id,
                     Conversation.thread_id == thread_id,
-                    Conversation.bridge_id == bridge_id
+                    Conversation.bridge_id == bridge_id,
+                    or_(RawData.error == '', RawData.error.is_(None)),
+                    Conversation.message_by.in_(["user", "assistant"])
                 )
             )
             .order_by(Conversation.id.desc())
@@ -60,7 +64,6 @@ async def find(org_id, thread_id, bridge_id):
         conversations.reverse()
         return [conversation._asdict() for conversation in conversations]
     except Exception as e:
-        # Handle the exception or log it
         print(f"An error occurred: {str(e)}")
         return []
     finally:

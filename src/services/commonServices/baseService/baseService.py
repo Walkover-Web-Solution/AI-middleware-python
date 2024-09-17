@@ -222,7 +222,8 @@ class BaseService:
             'channel': 'chat',
             'type': "assistant" if _.get(model_response, self.modelOutputConfig['message']) else "tool_calls",
             'actor': "user" if self.user else "tool",
-            'tools': tools
+            'tools': tools,
+            'chatbot_message' : ""
         }
     
     def service_formatter(self, configuration : object, service : str ):
@@ -241,12 +242,9 @@ class BaseService:
             if 'tools' in new_config and len(new_config['tools']) == 0:
                 del new_config['tools'] 
             return new_config
-        except KeyError as e:
-            print(f"Service key error: {e}")
-            raise "Service key error: {e}"
         except Exception as e:
             print(f"An error occurred: {e}")
-            raise "Service key error: {e}"
+            raise ValueError(f"Service key error: {e.args[0]}")
         
     async def chats(self, configuration, apikey, service):
         try:
@@ -258,10 +256,7 @@ class BaseService:
             elif service == service_name['groq']:
                 response = await groq_runmodel(configuration, True, apikey)
             if not response['success']:
-                return {
-                    'success': False,
-                    'error': response['error']
-                }
+                raise ValueError(response['error'])
             return {
                 'success': True,
                 'modelResponse': response['response']
@@ -269,7 +264,4 @@ class BaseService:
         except Exception as e:
             traceback.print_exc()
             print("chats error=>", e)
-            return {
-                'success': False,
-                'error': str(e)
-            }
+            raise ValueError(f"error occurs from openAi api {e.args[0]}")

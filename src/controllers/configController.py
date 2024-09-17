@@ -47,6 +47,7 @@ async def create_bridges_controller(request):
         "type": "default", # need changes
         "cred": {}
         } 
+        model_data["is_rich_text"]= True
         result = await create_bridge({
             "configuration": model_data,
             "name": name,
@@ -81,7 +82,7 @@ async def duplicate_create_bridges(bridges):
         apikey = bridges.get('apikey') 
         slugName = bridges.get('slugName') 
         function_ids= bridges.get('function_ids', [])
-        actions= bridges.get('actions')
+        actions= bridges.get('actions', {})
         apikey_object_id = bridges.get('apikey_object_id')
 
         result = await create_bridge({

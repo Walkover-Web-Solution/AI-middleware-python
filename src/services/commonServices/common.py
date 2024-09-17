@@ -24,7 +24,8 @@ app = FastAPI()
 from src.services.commonServices.baseService.utils import axios_work
 from ...configs.constant import service_name
 import src.db_services.ConfigurationServices as ConfigurationService
-# from ..utils.common import common
+from ..utils.send_error_webhook import send_error_to_webhook
+from copy import deepcopy
 
 async def executer(params, service):
     if service == service_name['openai']:
@@ -69,7 +70,9 @@ async def chat(request: Request):
     pre_tools = body.get('pre_tools', None)
     version = request.state.version
     fine_tune_model = configuration.get('fine_tune_model', {}).get('current_model', {})
+    is_rich_text = configuration.get('is_rich_text',True)   
 
+    result = {}
     if isinstance(variables, list):
         variables = {}
 
@@ -98,16 +101,16 @@ async def chat(request: Request):
             result = await getThread(thread_id, org_id, bridge_id)
             if result["success"]:
                 configuration["conversation"] = result.get("data", [])
-                if service == 'anthropic':
-                    configuration["conversation"] = []
         else:
             thread_id = str(uuid.uuid1())
 
-        configuration['prompt']  = Helper.replace_variables_in_prompt(configuration['prompt'] , variables)
-            
+        configuration['prompt'], missing_vars  = Helper.replace_variables_in_prompt(configuration['prompt'] , variables)
+        if len(missing_vars) > 0:
+            asyncio.create_task(send_error_to_webhook(bridge_id, org_id, missing_vars, type = 'Variable'))
+
         if template:
             system_prompt = template
-            configuration['prompt'] = Helper.replace_variables_in_prompt(system_prompt, {"system_prompt": configuration['prompt'], **variables})
+            configuration['prompt'], missing_vars = Helper.replace_variables_in_prompt(system_prompt, {"system_prompt": configuration['prompt'], **variables})
 
         params = {
             "customConfig": customConfig,
@@ -134,43 +137,42 @@ async def chat(request: Request):
         result = await executer(params,service)
     
         if not result["success"]:
-                if response_format['type'] != 'default':
-                    return
-                return JSONResponse(status_code=400, content=result)
+            raise ValueError(result)
 
-        if bridgeType:
+        if is_rich_text and bridgeType:
                 try:
                     try:
+                        # validation for the check response
                         parsedJson = Helper.parse_json(_.get(result["modelResponse"], modelOutputConfig["message"]))
                     except Exception as e:
                         if _.get(result["modelResponse"], modelOutputConfig["tools"]):
                             raise RuntimeError("Function calling has been done 6 times, limit exceeded.")
                         raise RuntimeError(e)
-
-
-                    if not parsedJson.get("json", {}).get("isMarkdown"):
-                        params["configuration"]["prompt"] = (await ConfigurationService.get_template_by_id(Config.MUI_TEMPLATE_ID)).get('template', '')
-                        params["user"] = _.get(result["modelResponse"], (modelOutputConfig["message"]))
-                        params["template"] = None
-                        if 'tools' in params:
-                            del params['tools']
-                        if 'customConfig' in params and 'tools' in params['customConfig']:
-                            del params['customConfig']['tools']
-                        newresult = await executer(params,service)
-                        base_service_instance = BaseService(params)
-                        tokens = base_service_instance.calculate_usage(newresult["modelResponse"])
-                        if service == "anthropic":
-                            _.set_(result['usage'], "totalTokens", _.get(result['usage'], "totalTokens") + tokens['totalTokens'])
-                            _.set_(result['usage'], "inputTokens", _.get(result['usage'], "inputTokens") + tokens['inputTokens'])
-                            _.set_(result['usage'], "outputTokens", _.get(result['usage'], "outputTokens") + tokens['outputTokens'])
-                        elif service == 'openai' or service == 'groq':
-                            _.set_(result['usage'], "totalTokens", _.get(result['usage'], "totalTokens") + tokens['totalTokens'])
-                            _.set_(result['usage'], "inputTokens", _.get(result['usage'], "inputTokens") + tokens['inputTokens'])
-                            _.set_(result['usage'], "outputTokens", _.get(result['usage'], "outputTokens") + tokens['outputTokens'])
-                            _.set_(result['usage'], "expectedCost", _.get(result['usage'], "expectedCost") + tokens['expectedCost'])
-                        _.set_(result['modelResponse'], modelOutputConfig['message'], _.get(newresult['modelResponse'], modelOutputConfig['message']))
-                        result['historyParams'] = newresult['historyParams']
-                        result['historyParams']['user'] = user
+                    params["configuration"]["prompt"] = (await ConfigurationService.get_template_by_id(Config.MUI_TEMPLATE_ID)).get('template', '')
+                    params["user"] = f"user: {user} answer: {_.get(result['modelResponse'], modelOutputConfig['message'])}"
+                    params["template"] = None
+                    if 'tools' in params:
+                        del params['tools']
+                    if 'customConfig' in params and 'tools' in params['customConfig']:
+                        del params['customConfig']['tools']
+                    model_response_content = result.get('historyParams').get('message')
+                    newresult = await executer(params,service)
+                    base_service_instance = BaseService(params)
+                    tokens = base_service_instance.calculate_usage(newresult["modelResponse"])
+                    if service == "anthropic":
+                        _.set_(result['usage'], "totalTokens", _.get(result['usage'], "totalTokens") + tokens['totalTokens'])
+                        _.set_(result['usage'], "inputTokens", _.get(result['usage'], "inputTokens") + tokens['inputTokens'])
+                        _.set_(result['usage'], "outputTokens", _.get(result['usage'], "outputTokens") + tokens['outputTokens'])
+                    elif service == 'openai' or service == 'groq':
+                        _.set_(result['usage'], "totalTokens", _.get(result['usage'], "totalTokens") + tokens['totalTokens'])
+                        _.set_(result['usage'], "inputTokens", _.get(result['usage'], "inputTokens") + tokens['inputTokens'])
+                        _.set_(result['usage'], "outputTokens", _.get(result['usage'], "outputTokens") + tokens['outputTokens'])
+                        _.set_(result['usage'], "expectedCost", _.get(result['usage'], "expectedCost") + tokens['expectedCost'])
+                    _.set_(result['modelResponse'], modelOutputConfig['message'], _.get(newresult['modelResponse'], modelOutputConfig['message']))
+                    result['historyParams'] = deepcopy(newresult.get('historyParams',{}))
+                    result['historyParams']['message'] = model_response_content
+                    result['historyParams']['chatbot_message'] = newresult['historyParams']['message']
+                    result['historyParams']['user'] = user
                 except Exception as e:
                     print(f"error in chatbot : {e}")
                     raise RuntimeError(f"error in chatbot : {e}")
@@ -194,8 +196,6 @@ async def chat(request: Request):
             asyncio.create_task(metrics_service.create([usage], result["historyParams"]))
             asyncio.create_task(sendResponse(response_format, result["modelResponse"],success=True))
         return JSONResponse(status_code=200, content={"success": True, "response": result["modelResponse"]})
-    except HTTPException as e: 
-        raise e
     except Exception as error:
         traceback.print_exc()
         if not is_playground:
@@ -228,4 +228,5 @@ async def chat(request: Request):
             asyncio.create_task(sendResponse(response_format, error_message))
             if response_format['type'] != 'default':
                 return
-        return JSONResponse(status_code=400, content={"success": False, "error": str(error)})
+            asyncio.create_task(sendResponse(response_format,result.get("modelResponse", str(error))))
+        raise ValueError(error)

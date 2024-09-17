@@ -38,9 +38,17 @@ class Helper:
             cipher = AES.new(key.encode(), AES.MODE_CFB, iv.encode())
             decrypted_bytes = cipher.decrypt(encrypted_text_bytes)
             token = decrypted_bytes.decode('utf-8')
-        return token 
+        return token
     
+    @staticmethod 
+    def mask_api_key(key):
+        if not key:
+            return ''
+        if len(key) > 6:
+            return key[:3] + '*' * (9) + key[-3:]
+        return key
          
+
     @staticmethod
     def update_configuration(prev_configuration, configuration):
         for key in prev_configuration:
@@ -53,21 +61,23 @@ class Helper:
 
     @staticmethod
     def replace_variables_in_prompt(prompt, variables):
-        if variables and len(variables) > 0:
+        missing_variables = {}
+        placeholders = re.findall(r'\{\{(.*?)\}\}', prompt)
+        
+        if variables:
             for key, value in variables.items():
-                # Use json.dumps() to escape special characters
-                string_value = repr(value)
-                # Remove quotes at the beginning and end if they exist
-                string_value = string_value[1:-1] if string_value.startswith('"') and string_value.endswith('"') else string_value
-                # Escape backslashes and use raw string for regex replacement
-                # todo will we change if any error occurs ( hjotfix for now )
-                string_value = string_value.replace("\\", "\\\\")
-                # Use raw string to avoid Unicode errors in regex
-                regex = re.compile(r'\{\{' + re.escape(key) + r'\}\}')
-                prompt = regex.sub(string_value, prompt)
-        return prompt
+                if key in placeholders:
+                    string_value = repr(value)
+                    string_value = string_value[1:-1] if string_value.startswith('"') and string_value.endswith('"') else string_value
+                    string_value = string_value.replace("\\", "\\\\")
+                    regex = re.compile(r'\{\{' + re.escape(key) + r'\}\}')
+                    prompt = regex.sub(string_value, prompt)
+                    placeholders.remove(key)
 
-    
+        for placeholder in placeholders:
+            missing_variables[placeholder] = f"{{{{{placeholder}}}}}"
+
+        return prompt, missing_variables
 
     @staticmethod
     def parse_json(json_string):
@@ -96,10 +106,14 @@ class Helper:
             configuration = getattr(model_configuration,model_name,None)
             configurations = configuration()['configuration']
             db_config = response['configuration']
+            if 'apikey' in response:
+                decryptedApiKey = Helper.decrypt(response['apikey'])
+                maskedApiKey = Helper.mask_api_key(decryptedApiKey)
+                response['apikey'] = maskedApiKey
             config = {}
             for key in configurations.keys():
                 config[key] = db_config.get(key, response['configuration'].get(key, configurations[key].get("default", '')))
-            for key in ['prompt','response_format','type', 'pre_tools','fine_tune_model']:
+            for key in ['prompt','response_format','type', 'pre_tools','fine_tune_model', 'is_rich_text']:
                 config[key] = db_config.get(key, response['configuration'].get(key, {"type":'default',"cred":{}} if key == 'response_format' else ''))
             response['configuration'] = config
             finalResponse['bridge'] = response
