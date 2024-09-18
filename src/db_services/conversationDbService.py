@@ -1,7 +1,7 @@
 
 from models.index import combined_models as models
 import sqlalchemy as sa
-from sqlalchemy import func, and_ , insert, delete, or_
+from sqlalchemy import func, and_ , insert, delete, or_ , update, select
 from sqlalchemy.exc import SQLAlchemyError
 import asyncio
 import traceback
@@ -95,9 +95,9 @@ async def storeSystemPrompt(prompt, org_id, bridge_id):
 async def reset_chat_history(org_id, bridge_id, thread_id):
     session = pg['session']()
     try:
-        conversation = (
-            session.query(Conversation)
-            .filter(
+        subquery = (
+            select(Conversation.id)
+            .where(
                 and_(
                     Conversation.org_id == org_id,
                     Conversation.bridge_id == bridge_id,
@@ -105,14 +105,22 @@ async def reset_chat_history(org_id, bridge_id, thread_id):
                 )
             )
             .order_by(Conversation.id.desc())
-            .update({"is_reset": True}, synchronize_session=False)
+            .limit(1)
         )
-        session.commit()
-        if conversation:
+        stmt = (
+            update(Conversation)
+            .where(Conversation.id == subquery.scalar_subquery())
+            .values(is_reset=True)
+            .returning(Conversation.id)
+        )
+        result = session.execute(stmt)
+        updated_conversation = result.fetchone()
+        if updated_conversation:
+            session.commit()
             return {
                 'success': True,
                 'message': 'Chatbot reset successfully',
-                'result': conversation.id
+                'result': updated_conversation.id
             }
         else:
             return {
