@@ -105,12 +105,10 @@ async def reset_chat_history(org_id, bridge_id, thread_id):
                 )
             )
             .order_by(Conversation.id.desc())
-            .first()
+            .update({"is_reset": True}, synchronize_session=False)
         )
-        
+        session.commit()
         if conversation:
-            conversation.is_reset = True
-            session.commit()
             return {
                 'success': True,
                 'message': 'Chatbot reset successfully',
