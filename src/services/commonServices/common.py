@@ -98,7 +98,7 @@ async def chat(request: Request):
 
         if thread_id:
             thread_id = thread_id.strip()
-            result = await getThread(thread_id, org_id, bridge_id)
+            result = await getThread(thread_id, org_id, bridge_id,bridgeType)
             if result["success"]:
                 configuration["conversation"] = result.get("data", [])
         else:
