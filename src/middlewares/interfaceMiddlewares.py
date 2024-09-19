@@ -20,6 +20,7 @@ async def send_data_middleware(request: Request, botId: str):
         message = body.get("message")
         userId = profile['user']['id']
         chatBotId = botId
+        flag = body.get("flag") or False
         
         channelId = f"{chatBotId}{threadId.strip() if threadId and threadId.strip() else userId}"
 
@@ -48,7 +49,10 @@ async def send_data_middleware(request: Request, botId: str):
             "thread_id": threadId,
             "variables": {**body.get('interfaceContextData', {}), "message": message, "actions": actions, **json.loads(profile.get('variables', "{}"))},
             "configuration": {
-                "response_format": {
+                 "response_format": {
+                    "type": "default",
+                    "cred": {}
+                } if flag else {
                     "type": "RTLayer",
                     "cred": {
                         "channel": channelId,
