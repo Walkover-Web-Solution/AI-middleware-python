@@ -156,3 +156,94 @@ async def sendResponse(response_format, data, success = False):
                 return await send_request(**response_format['cred'], method='POST', data=data_to_send)
     except Exception as e:
         print("error sending request", e)
+
+async def process_data_and_run_tools(codes_mapping, function_code_mapping):
+
+    async def process_code_and_service_data(api_call):
+            axios_instance = api_call.get('code')
+            is_python = api_call.get('is_python')
+            args= api_call.get("args")
+            api_response = await axios_work(args, axios_instance, is_python)
+            return api_response
+
+    try:
+        responses = []
+        mapping = {}
+
+        # Iterate through each tool and process the API calls in one loop
+        for tool in codes_mapping.values():
+            tool_call_id = tool["tool_call"]["id"]
+            name = tool['name']
+            
+            # Get the function code mapping for the current tool
+            tool_mapping = function_code_mapping.get(name, {"error": True, "response": "Wrong Function name"})
+            
+            # Combine tool data with function code mapping
+            tool_data = {**tool, **tool_mapping}
+
+            # Process the API call if no response exists
+            if not tool_data.get("response"):
+                api_response = await process_code_and_service_data(tool_data)
+                response = api_response if not tool_data.get('error') else "Args / Input is not proper JSON"
+            else:
+                response = tool_data.get("response")
+
+            # Store the response
+            tool_data['response'] = response
+
+            # Format the data to be returned
+            formatted_data = {
+                'tool_call_id': tool_call_id, 
+                'role': 'tool', 
+                'name': tool_data['name'], 
+                'content': json.dumps(response)
+            }
+
+            # Append to responses and mapping
+            responses.append(formatted_data)
+            mapping[tool_call_id] = formatted_data
+
+        return responses, mapping
+
+    except Exception as error:
+        print(f"Error in createMapping: {error}")
+        raise error
+    
+
+
+def make_code_mapping_by_service(responses, service):
+    codes_mapping = {}
+    names = []
+    match service:
+        case 'openai' | 'groq':
+            for tool_call in responses['choices'][0]['message']['tool_calls']:
+                name = tool_call['function']['name']
+                error = False
+                try:
+                    args = json.loads(tool_call['function']['arguments'])
+                except json.JSONDecodeError:
+                    args = {
+                        "error": tool_call['function']['arguments']
+                    }
+                    error = True
+                codes_mapping[tool_call["id"]] = {
+                    'tool_call': tool_call,
+                    'name': name,
+                    'args': args,
+                    "error": error
+                }
+                names.append(name)
+        case 'anthropic':
+            for tool_call in responses['content'][1:]:  # Skip the first item
+                name = tool_call['name']
+                args = tool_call['input']
+                codes_mapping[tool_call["id"]] = {
+                    'tool_call': tool_call,
+                    'name': name,
+                    'args': args,
+                    "error": False
+                }
+                names.append(name)
+        case _:
+            return False, {}
+    return codes_mapping, names

@@ -72,11 +72,6 @@ class ModelsConfig:
                 "type" : "text",
                 },
                 "level": 0
-            },
-            "parallel_tool_calls" : {
-                "field": "boolean",
-                "default": False,
-                "level": 0
             }
         }
         outputConfig = {
@@ -888,11 +883,6 @@ class ModelsConfig:
             },
              "type" : {
                 "default" : ["chat"]
-            },
-            "parallel_tool_calls" : {
-                "field": "boolean",
-                "default": False,
-                "level": 0
             }
         }
         outputConfig = {
@@ -1007,11 +997,6 @@ class ModelsConfig:
             },
              "type" : {
                 "default" : ["chat"]
-            },
-            "parallel_tool_calls" : {
-                "field": "boolean",
-                "default": False,
-                "level": 0
             }
         }
         outputConfig = {
@@ -1628,11 +1613,6 @@ class ModelsConfig:
             },
             "type" : {
                 "default" : ["chat"]
-            },
-            "parallel_tool_calls" : {
-                "field": "boolean",
-                "default": False,
-                "level": 0
             }
         }
         outputConfig = {
@@ -1753,11 +1733,6 @@ class ModelsConfig:
                 "default": {
                 "type" : "text",
                 },
-                "level": 0
-            },
-            "parallel_tool_calls" : {
-                "field": "boolean",
-                "default": False,
                 "level": 0
             }
         }
@@ -1881,11 +1856,6 @@ class ModelsConfig:
                 "type" : "text",
                 },
                 "level": 0
-            },
-            "parallel_tool_calls" : {
-                "field": "boolean",
-                "default": False,
-                "level": 0
             }
         }
         outputConfig = {
@@ -2005,11 +1975,6 @@ class ModelsConfig:
                 "default": {
                 "type" : "text",
                 },
-                "level": 0
-            },
-            "parallel_tool_calls" : {
-                "field": "boolean",
-                "default": False,
                 "level": 0
             }
         }
@@ -2132,11 +2097,6 @@ class ModelsConfig:
                 "default": {
                 "type" : "text",
                 },
-                "level": 0
-            },
-            "parallel_tool_calls" : {
-                "field": "boolean",
-                "default": False,
                 "level": 0
             }
         }
