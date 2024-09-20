@@ -2,11 +2,9 @@ import asyncio
 import pydash as _
 from datetime import datetime
 import json
-import requests
 import traceback
-from collections import ChainMap
 from ....db_services import metrics_service, ConfigurationServices as ConfigurationService
-from .utils import validate_tool_call, axios_work, tool_call_formatter, sendResponse
+from .utils import validate_tool_call, tool_call_formatter, sendResponse, make_code_mapping_by_service, process_data_and_run_tools
 from src.configs.serviceKeys import ServiceKeys
 from src.configs.modelConfiguration import ModelsConfig
 from ..openAI.runModel import runModel
@@ -38,64 +36,10 @@ class BaseService:
 
 
     async def run_tool(self, responses, service):
-        codes_mapping = {}
-        names = []
-        
-        match service:
-            case 'openai' | 'groq':
-                for tool_call in responses['choices'][0]['message']['tool_calls']:
-                    name = tool_call['function']['name']
-                    args = json.loads(tool_call['function']['arguments'])
-                    codes_mapping[name] = {
-                        'tool_call': tool_call,
-                        'name': name,
-                        'args': args
-                    }
-                    names.append(name)
-            case 'anthropic':
-                for tool_call in responses['content'][1:]:  # Skip the first item
-                    name = tool_call['name']
-                    args = tool_call['input']
-                    codes_mapping[name] = {
-                        'tool_call': tool_call,
-                        'name': name,
-                        'args': args
-                    }
-                    names.append(name)
-            case _:
-                return False, {}
-
+        codes_mapping, names = make_code_mapping_by_service(responses, service)
         api_calls_response = await ConfigurationService.get_api_call_by_names(names, self.org_id)
-        if(api_calls_response == []):
-            print(names, self.org_id, "uanble to find function")
-            raise ValueError("uanble to find function")
-        async def process_code_and_service_data(api_call):
-            axios_instance = api_call.get('code') or api_call.get('axios')
-            is_python = api_call.get('is_python', False)
-            name = api_call.get('function_name', api_call.get('endpoint',''))
-            api_response = await axios_work(codes_mapping[name]['args'], axios_instance, is_python)
-            response_data = {
-                'tool_call_id': codes_mapping[name]['tool_call'].get('id'),
-                'role': 'tool',
-                'name': codes_mapping[name]['name'],
-                'content': json.dumps(api_response),
-            }
-            return response_data, {response_data['tool_call_id']: response_data}
+        return await process_data_and_run_tools(codes_mapping, api_calls_response[0]['apiCalls'])
 
-        try:
-            responses = []
-            mapping = {}
-            tool_call_id_set = set()
-            for api_call in api_calls_response['apiCalls']:
-                response_data, response_mapping = await process_code_and_service_data(api_call)#to call directly using promise
-                if response_data['tool_call_id'] not in tool_call_id_set:
-                    tool_call_id_set.add(response_data['tool_call_id'])
-                    responses.append(response_data)
-                    mapping.update(response_mapping)
-            return responses, mapping
-        except Exception as error:
-            print(f"Error in run_tool: {error}")
-            raise error
 
     def update_configration(self, response, function_responses, configuration, mapping_response_data, service, tools):    
         if(service == 'anthropic'):
