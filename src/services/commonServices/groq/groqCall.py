@@ -8,7 +8,7 @@ class Groq(BaseService):
         historyParams = {}
         usage = {}
         tools = {}
-        
+        tools_call_data = []
         conversation = ConversationService.createOpenAiConversation(self.configuration.get('conversation')).get('messages', [])
         self.customConfig["messages"] = [{"role": "system", "content": self.configuration['prompt']}] + conversation + ([{"role": "user", "content": self.user}] if self.user else []) 
         self.customConfig =self.service_formatter(self.customConfig, service_name['groq'])
@@ -22,6 +22,7 @@ class Groq(BaseService):
             raise ValueError(groq_response.get('error'))
         
         if len(model_response.get('choices', [])[0].get('message', {}).get("tool_calls", [])) > 0:
+            tools_call_data.extend(model_response.get('choices', [])[0].get('message', {}).get("tool_calls", []))
             functionCallRes = await self.function_call(self.customConfig, service_name['groq'], groq_response)
             
             if not functionCallRes.get('success'):
@@ -35,5 +36,6 @@ class Groq(BaseService):
         
         if not self.playground:
             historyParams = self.prepare_history_params(model_response, tools)
+            historyParams["tools_call_data"] = tools_call_data
         
         return {'success': True, 'modelResponse': model_response, 'historyParams': historyParams, 'usage': usage}

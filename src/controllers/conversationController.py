@@ -42,7 +42,7 @@ async def getThreadHistory(thread_id, org_id, bridge_id):
         print(err)
         return { 'success': False, 'message': str(err) }
 
-async def savehistory(thread_id, userMessage, botMessage, org_id, bridge_id, model_name, type, messageBy, userRole="user", tools={}, chatbot_message =""):
+async def savehistory(thread_id, userMessage, botMessage, org_id, bridge_id, model_name, type, messageBy, userRole="user", tools={}, chatbot_message = "",tools_call_data = []):
     try:
         chatToSave = [{
             'thread_id': thread_id,
@@ -63,7 +63,8 @@ async def savehistory(thread_id, userMessage, botMessage, org_id, bridge_id, mod
                 'message_by': "tools_call",
                 'type': type,
                 'bridge_id': bridge_id,
-                'function': tools
+                'function': tools,
+                'tools_call_data': tools_call_data
             })
 
         if botMessage:
