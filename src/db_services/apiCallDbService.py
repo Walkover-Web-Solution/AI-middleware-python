@@ -1,7 +1,7 @@
 from models.mongo_connection import db
 from bson.json_util import dumps, loads
 from bson import ObjectId
-
+from pymongo import ReturnDocument
 configurationModel = db["configurations"]
 apiCallModel = db['apicalls']
 templateModel = db['templates']
@@ -66,37 +66,35 @@ async def update_api_call_by_function_id(org_id, function_id, data_to_update):
         query = {
             '_id': ObjectId(function_id),  
             'org_id': org_id  
-        }
-        if '_id' in data_to_update:
-            del data_to_update['_id'] 
-        
+        }      
         
         update = {
             '$set': data_to_update  
         }
         
-        result = apiCallModel.update_one(query, update)
+       
+        updated_document = apiCallModel.find_one_and_update(
+            query,
+            update,
+            return_document=ReturnDocument.AFTER 
+        )
         
-        # Check if the document was updated
-        if result.modified_count == 1:
-            data_to_update['_id'] = function_id
+        if updated_document:
+            updated_document['_id'] = str(updated_document['_id'])
+        
+        if updated_document:
             return {
-                "data":data_to_update,
-             }
-        elif result.modified_count == 0:
-            data_to_update['_id'] = function_id
-            return {
-                "data":data_to_update,
-             }
+                "success": True, 
+                "data": updated_document 
+            }
         else:
             return {
-                'success': False,
-                'message': f"No API call found with function_id for organization ."
+                "success": False,
+                "message": "Document not found or not modified."
             }
-
+     
     except Exception as error:
         return {
             'success': False,
             'error': f"Error in updating the API call: {str(error)}"
         }
-        

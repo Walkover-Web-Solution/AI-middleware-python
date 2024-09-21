@@ -50,25 +50,3 @@ class Bridge_update(BaseModel):
     apikey_object_id: Optional[str] = None
     functionData: Optional[object]
     
-class FieldsModel(BaseModel):
-    description: str
-    type: str
-    enum: List[Any]
-    required_params: List[str]
-    parameter: Dict[str, Any]
-class DataToSendModel(BaseModel):
-    activated: bool
-    bridge_ids: List[str]
-    code: str
-    created_at: str
-    description: Optional[str]
-    endpoint_name: Optional[str]
-    fields: Dict[str, FieldsModel] = None
-    function_name: str
-    is_python: int
-    org_id: str
-    required_params: List[str]
-    status: int
-    updated_at: str
-    version: str
-    _id: str
