@@ -26,6 +26,7 @@ from ...configs.constant import service_name
 import src.db_services.ConfigurationServices as ConfigurationService
 from ..utils.send_error_webhook import send_error_to_webhook
 from copy import deepcopy
+from ..utils.log import execution_times_log
 
 async def executer(params, service):
     if service == service_name['openai']:
@@ -183,6 +184,11 @@ async def chat(request: Request):
         endTime = int(time.time() * 1000)
         if version == 2:
             result['modelResponse'] = await Response_formatter(result["modelResponse"],service)
+        latency = {
+            "over_all_time" : endTime - startTime,
+            "model_execution_time": sum(execution_times_log.values()),
+            "execution_times_log" : execution_times_log
+        }
         if not is_playground:
             usage.update({
                 **result.get("usage", {}),

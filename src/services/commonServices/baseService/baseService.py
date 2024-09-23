@@ -85,7 +85,7 @@ class BaseService:
         configuration, tools = self.update_configration(model_response, func_response_data, configuration, mapping_response_data, service, tools)
         if not self.playground:
             asyncio.create_task(sendResponse(self.response_format, data = {'function_call': True, 'success': True, 'message': 'Going to GPT'}, success=True))
-        ai_response = await self.chats(configuration, self.apikey, service)
+        ai_response = await self.chats(configuration, self.apikey, service,l)
         ai_response['tools'] = tools
         return await self.function_call(configuration, service, ai_response, l, tools)
 
@@ -190,15 +190,15 @@ class BaseService:
             print(f"An error occurred: {e}")
             raise ValueError(f"Service key error: {e.args[0]}")
         
-    async def chats(self, configuration, apikey, service):
+    async def chats(self, configuration, apikey, service,l):
         try:
             response = {}
             if service == service_name['openai']:
-                response = await runModel(configuration, True, apikey)
+                response = await runModel(configuration, True, apikey,l)
             elif service == service_name['anthropic']:
-                response = await anthropic_runmodel(configuration, apikey)
+                response = await anthropic_runmodel(configuration, apikey,l)
             elif service == service_name['groq']:
-                response = await groq_runmodel(configuration, True, apikey)
+                response = await groq_runmodel(configuration, True, apikey,l)
             if not response['success']:
                 raise ValueError(response['error'])
             return {
