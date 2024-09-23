@@ -32,3 +32,7 @@ class data_to_update_model(BaseModel):
     status: int
     updated_at: datetime
     version: str
+    
+class update_tool_call_body_data(BaseModel):
+    function_id: str
+    data_to_update : object

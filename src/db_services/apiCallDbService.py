@@ -62,35 +62,30 @@ async def get_all_api_calls_by_org_id(org_id):
 
 
 async def update_api_call_by_function_id(org_id, function_id, data_to_update):
-    try:
-        query = {
+    try:      
+        updated_document = apiCallModel.find_one_and_update(
+            {
             '_id': ObjectId(function_id),  
             'org_id': org_id  
-        }      
-        
-        update = {
+            },
+            {
             '$set': data_to_update  
-        }
-        
-       
-        updated_document = apiCallModel.find_one_and_update(
-            query,
-            update,
+            },
             return_document=ReturnDocument.AFTER 
-        )
+            )
         
         if updated_document:
             updated_document['_id'] = str(updated_document['_id'])
         
         if updated_document:
-            return {
+                return {
                 "success": True, 
                 "data": updated_document 
-            }
+         }
         else:
-            return {
+                return {
                 "success": False,
-                "message": "Document not found or not modified."
+                "message": "Data not found or not modified."
             }
      
     except Exception as error:
