@@ -47,7 +47,7 @@ async def send_data_middleware(request: Request, botId: str):
             "bridge_id": str(bridges.get('_id', '')),
             "user": message,
             "thread_id": threadId,
-            "variables": {**body.get('interfaceContextData', {}), "message": message, "actions": actions, **json.loads(profile.get('variables', "{}"))},
+            "variables": {**body.get('interfaceContextData', {})},
             "configuration": {
                  "response_format": {
                     "type": "default",
@@ -62,9 +62,10 @@ async def send_data_middleware(request: Request, botId: str):
                 }
             },
             "chatbot": True,
-            "response_type": {
+            "response_type": { 
                 "type": "json_object"
-            }
+            },
+            "actions" : actions
         }
         await add_configuration_data_to_body(request=request)
         return await chat_completion(request=request)
