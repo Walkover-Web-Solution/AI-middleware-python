@@ -152,8 +152,7 @@ async def chat(request: Request):
                     params["configuration"]["prompt"], missing_vars = Helper.replace_variables_in_prompt(system_prompt, {"system_prompt": configuration['prompt'], **variables})
                     params["user"] = f"user: {user}, \n Answer: {_.get(result['modelResponse'], modelOutputConfig['message'])}"
                     params["template"] = None
-                    if 'tools' in params:
-                        del params['tools']
+                    tools = result.get('historyParams').get('tools')
                     if 'customConfig' in params and 'tools' in params['customConfig']:
                         del params['customConfig']['tools']
                     model_response_content = result.get('historyParams').get('message')
@@ -174,6 +173,7 @@ async def chat(request: Request):
                     result['historyParams']['message'] = model_response_content
                     result['historyParams']['chatbot_message'] = newresult['historyParams']['message']
                     result['historyParams']['user'] = user
+                    result['historyParams']['tools'] = tools
                 except Exception as e:
                     print(f"error in chatbot : {e}")
                     raise RuntimeError(f"error in chatbot : {e}")
