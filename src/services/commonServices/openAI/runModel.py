@@ -3,9 +3,8 @@ import traceback
 import json
 import time
 from ...utils.time import Timer
-from ...utils.log import execution_time_logs
 
-async def runModel(configuration, apiKey=None, run_id = 0):
+async def runModel(configuration, apiKey, execution_time_logs):
     try:
         timer = Timer()
         OpenAIConfig = OpenAIInitializer(apiKey)

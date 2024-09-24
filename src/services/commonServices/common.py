@@ -73,7 +73,8 @@ async def chat(request: Request):
     pre_tools = body.get('pre_tools', None)
     version = request.state.version
     fine_tune_model = configuration.get('fine_tune_model', {}).get('current_model', {})
-    is_rich_text = configuration.get('is_rich_text',True)   
+    is_rich_text = configuration.get('is_rich_text',True)
+    execution_time_logs = body.get('execution_time_logs')
 
     result = {}
     if isinstance(variables, list):
@@ -133,7 +134,8 @@ async def chat(request: Request):
             "playground": is_playground,
             "template": template,
             "response_format" : response_format,
-            "org_id" : org_id
+            "org_id" : org_id,
+            "execution_time_logs" : execution_time_logs
         }
 
         result = await executer(params,service)

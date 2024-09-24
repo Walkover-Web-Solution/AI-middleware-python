@@ -1,8 +1,7 @@
 import anthropic
-from ...utils.log import execution_time_logs
 from ...utils.time import Timer
 
-async def anthropic_runmodel(configuration, apikey):
+async def anthropic_runmodel(configuration, apikey, execution_time_logs):
     try:
         timer = Timer()
         antrophic_config = anthropic.Anthropic(api_key = apikey)

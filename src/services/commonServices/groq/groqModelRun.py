@@ -4,7 +4,7 @@ from groq import Groq
 from ...utils.log import execution_time_logs
 from ...utils.time import Timer
 
-async def groq_runmodel(configuration, apiKey=None):
+async def groq_runmodel(configuration, apiKey, execution_time_logs):
     try:
         timer = Timer()
         Groq_config = Groq(api_key = apiKey)

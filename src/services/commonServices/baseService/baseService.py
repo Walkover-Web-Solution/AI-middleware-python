@@ -12,7 +12,6 @@ from ..anthrophic.antrophicModelRun import anthropic_runmodel
 from ....configs.constant import service_name
 from ..groq.groqModelRun import groq_runmodel
 from ....configs.constant import service_name
-from ...utils.log import execution_time_logs
 from ...utils.time import Timer
 
 class BaseService:
@@ -34,6 +33,7 @@ class BaseService:
         self.playground = params.get('playground')
         self.template = params.get('template')
         self.response_format = params.get('response_format')
+        self.execution_time_logs = params.get('execution_time_logs')
 
 
     async def run_tool(self, responses, service):
@@ -94,8 +94,8 @@ class BaseService:
         timer = Timer()
         latency = {
             "over_all_time" : timer.stop("Api total time") or "",
-            "model_execution_time": sum(execution_time_logs.values()) or "",
-            "execution_time_logs" : execution_time_logs or {}
+            "model_execution_time": sum(self.execution_time_logs.values()) or "",
+            "execution_time_logs" : self.execution_time_logs or {}
         }
         usage = {
             'service': self.service,
@@ -201,11 +201,11 @@ class BaseService:
         try:
             response = {}
             if service == service_name['openai']:
-                response = await runModel(configuration, apikey)
+                response = await runModel(configuration, apikey, self.execution_time_logs)
             elif service == service_name['anthropic']:
-                response = await anthropic_runmodel(configuration, apikey)
+                response = await anthropic_runmodel(configuration, apikey, self.execution_time_logs)
             elif service == service_name['groq']:
-                response = await groq_runmodel(configuration, apikey)
+                response = await groq_runmodel(configuration, apikey, self.execution_time_logs)
             if not response['success']:
                 raise ValueError(response['error'])
             return {

@@ -24,6 +24,7 @@ def handle_exceptions(func):
             if hasattr(request.state, 'body'):
                 body.update(request.state.body)
             request.state.body = body
+            request.state.body['execution_time_logs'] = {}
             return await func(request, *args, **kwargs)
         
         except Exception as exc:
