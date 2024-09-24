@@ -1,1 +1,1 @@
-execution_times_log = {} # for time global object 
+execution_time_logs = {}

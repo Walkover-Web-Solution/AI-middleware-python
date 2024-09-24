@@ -12,6 +12,8 @@ from ..anthrophic.antrophicModelRun import anthropic_runmodel
 from ....configs.constant import service_name
 from ..groq.groqModelRun import groq_runmodel
 from ....configs.constant import service_name
+from ...utils.log import execution_time_logs
+from ...utils.time import Timer
 
 class BaseService:
     def __init__(self, params):
@@ -21,7 +23,6 @@ class BaseService:
         self.variables = params.get('variables')
         self.user = params.get('user')
         self.tool_call = params.get('tools')
-        self.startTime = params.get('startTime')
         self.org_id = params.get('org_id')
         self.bridge_id = params.get('bridge_id')
         self.bridge = params.get('bridge')
@@ -85,16 +86,22 @@ class BaseService:
         configuration, tools = self.update_configration(model_response, func_response_data, configuration, mapping_response_data, service, tools)
         if not self.playground:
             asyncio.create_task(sendResponse(self.response_format, data = {'function_call': True, 'success': True, 'message': 'Going to GPT'}, success=True))
-        ai_response = await self.chats(configuration, self.apikey, service,l)
+        ai_response = await self.chats(configuration, self.apikey, service)
         ai_response['tools'] = tools
         return await self.function_call(configuration, service, ai_response, l, tools)
 
     async def handle_failure(self, response):
+        timer = Timer()
+        latency = {
+            "over_all_time" : timer.stop("Api total time") or "",
+            "model_execution_time": sum(execution_time_logs.values()) or "",
+            "execution_time_logs" : execution_time_logs or {}
+        }
         usage = {
             'service': self.service,
             'model': self.model,
             'orgId': self.org_id,
-            'latency': datetime.now().timestamp() - self.startTime,
+            'latency': json.dumps(latency),
             'success': False,
             'error': response.get('error')
         }
@@ -190,15 +197,15 @@ class BaseService:
             print(f"An error occurred: {e}")
             raise ValueError(f"Service key error: {e.args[0]}")
         
-    async def chats(self, configuration, apikey, service,l):
+    async def chats(self, configuration, apikey, service):
         try:
             response = {}
             if service == service_name['openai']:
-                response = await runModel(configuration, True, apikey,l)
+                response = await runModel(configuration, apikey)
             elif service == service_name['anthropic']:
-                response = await anthropic_runmodel(configuration, apikey,l)
+                response = await anthropic_runmodel(configuration, apikey)
             elif service == service_name['groq']:
-                response = await groq_runmodel(configuration, True, apikey,l)
+                response = await groq_runmodel(configuration, apikey)
             if not response['success']:
                 raise ValueError(response['error'])
             return {
