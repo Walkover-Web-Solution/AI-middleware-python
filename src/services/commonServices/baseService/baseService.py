@@ -194,7 +194,7 @@ class BaseService:
         try:
             response = {}
             if service == service_name['openai']:
-                response = await runModel(configuration, True, apikey)
+                response = await runModel(configuration, True, apikey, self.bridge_id)
             elif service == service_name['anthropic']:
                 response = await anthropic_runmodel(configuration, apikey)
             elif service == service_name['groq']:
