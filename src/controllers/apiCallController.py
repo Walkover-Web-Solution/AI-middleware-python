@@ -43,21 +43,18 @@ async def update_apicalls_controller(request):
 
         if not function_id or not data_to_update:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Missing function_id or data to update")
-
-        # Fetch db_data from the database
-        data_to_update["_id"] = function_id
+        
         db_data = await get_function_by_id(function_id)
-
+        
         if not db_data:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Function not found")
-
+        
+        data = db_data.get('data', {})
+        del data['_id']
 
         # Validate data before updating
-        validate_data_to_update(data_to_update, db_data["data"])  # Assuming db_data is a dict-like structure
-
-        # Perform the update
-        
-        del data_to_update['_id']
+        validate_data_to_update(data_to_update, data)  # Assuming db_data is a dict-like structure
+      
         updated_function = await update_api_call_by_function_id(
             org_id=org_id, function_id=function_id, data_to_update=data_to_update
         )
