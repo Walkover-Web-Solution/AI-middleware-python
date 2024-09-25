@@ -2,7 +2,7 @@ from fastapi import Request, HTTPException
 from fastapi.responses import JSONResponse
 from src.db_services.ConfigurationServices import get_bridges, update_bridge, get_bridges_with_tools
 from src.services.utils.helper import Helper
-from src.services.utils.apicallUtills import  get_api_id, save_api, delete_api
+from src.services.utils.apicallUtills import  get_api_data, save_api, delete_api
 import json
 import datetime 
 from models.mongo_connection import db
@@ -64,8 +64,8 @@ async def creates_api(request: Request):
         return str(e)"""
 
             fields = [{"variable_name": param, "description": '', "enum": ''} for param in required_params]
-            api_id = await get_api_id(org_id, function_name)
-            result  = await save_api(desc, org_id, api_id, axios_code, required_params, function_name, fields, True, endpoint_name, 1, 'v1')
+            api_data = await get_api_data(org_id, function_name)
+            result  = await save_api(desc, org_id, api_data, axios_code, required_params, function_name, fields, True, endpoint_name, 1, 'v1')
             result['api_data']['_id'] = str(result['api_data']['_id'])
             if 'created_at' in result['api_data'] and isinstance(result['api_data']['created_at'], datetime.datetime):
                         result['api_data']['created_at'] = result['api_data']['created_at'].strftime('%Y-%m-%d %H:%M:%S')  # Convert datetime to string

@@ -2,7 +2,7 @@ import datetime
 from models.mongo_connection import db
 apiCallModel = db['apicalls']
 
-async def get_api_id(org_id, function_name):
+async def get_api_data(org_id, function_name):
     try:
         api_call_data =  apiCallModel.find_one(
         {
@@ -11,50 +11,48 @@ async def get_api_id(org_id, function_name):
                 {"org_id": org_id, "endpoint": function_name},  # previous data endpoint
             ]
         })
-        api_id = api_call_data.get('_id', "") if api_call_data else ""
-        return api_id
+        api_call_data['__id'] = str(api_call_data.get('_id')) if api_call_data.get('_id') else None
+        return api_call_data  if api_call_data.get('_id') else None
     except Exception as error:
         print(f"error: {error}")
         return ""
 
 
 
-async def save_api(desc, org_id, api_id=None, code="", required_params=None, function_name="", fields=None, activated=False, endpoint_name="", status = 1, version="v2"):
+async def save_api(desc, org_id, api_data=None, code="", required_params=None, function_name="", fields=None, activated=False, endpoint_name="", status = 1, version="v2"):
     if fields is None:
         fields = []
     if required_params is None:
         required_params = []
 
     try:
-        if api_id:
-            api_data = apiCallModel.find_one({"_id": api_id})
-            if api_data:
-                fields = updateFields(api_data.get('fields',{} if api_data.get('version', 'v1')== 'v2' else []), fields , api_data.get('version', 'v1') == version)
-                # Delete certain keys from api_data
-                keys_to_delete = ["required_fields", "short_description", 'axios', "optional_fields", "endpoint", 'api_description']  # Replace with actual keys to delete
-                for key in keys_to_delete:
-                    if key in api_data:
-                        del api_data[key]
-                
-                api_data['description'] = desc
-                api_data['code'] = code
-                api_data['required_params'] = api_data['required_params'] if api_data.get('version', 'v1')== 'v2' else required_params
-                api_data['fields'] = fields
-                api_data['activated'] = activated
-                api_data['updated_at'] = datetime.datetime.now()
-                api_data['function_name'] = function_name # script id will be set in this in case of viasocket
-                api_data['endpoint_name'] = endpoint_name # flow name will be saved in this in case of viasocket
-                api_data['is_python'] = 1
-                api_data["status"] = status
-                api_data['version']= version
+        if api_data:
+            fields = updateFields(api_data.get('fields',{} if api_data.get('version', 'v1')== 'v2' else []), fields , api_data.get('version', 'v1') == version)
+            # Delete certain keys from api_data
+            keys_to_delete = ["required_fields", "short_description", 'axios', "optional_fields", "endpoint", 'api_description']  # Replace with actual keys to delete
+            for key in keys_to_delete:
+                if key in api_data:
+                    del api_data[key]
+            
+            api_data['description'] = desc
+            api_data['code'] = code
+            api_data['required_params']  =  required_params
+            api_data['fields'] = fields
+            api_data['activated'] = activated
+            api_data['updated_at'] = datetime.datetime.now()
+            api_data['function_name'] = function_name # script id will be set in this in case of viasocket
+            api_data['endpoint_name'] = endpoint_name # flow name will be saved in this in case of viasocket
+            api_data['is_python'] = 1
+            api_data["status"] = status
+            api_data['version']= version
 
-                # saving updated fields in the db with same id
-                saved_api =  apiCallModel.replace_one({"_id": api_id}, api_data)
-                if saved_api.modified_count == 1:
-                    return {
-                        "success": True,
-                        "api_data": api_data,
-                    }
+            # saving updated fields in the db with same id
+            saved_api =  apiCallModel.replace_one({"_id": api_data["_id"]}, api_data)
+            if saved_api.modified_count == 1:
+                return {
+                    "success": True,
+                    "api_data": api_data,
+                }
         else:
             api_data = {
                 "description": desc,
