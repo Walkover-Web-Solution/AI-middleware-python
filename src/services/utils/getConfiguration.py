@@ -41,8 +41,7 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
                 } for item in api_data['fields']}
             ),
             "required": (
-                list(api_data.get("fields", {}).keys()) if api_data.get("version") == 'v2' 
-                else api_data['required_params']
+               api_data['required_params']
             )
         }
         tools.append(format)

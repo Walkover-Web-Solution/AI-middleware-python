@@ -38,7 +38,7 @@ async def save_api(desc, org_id, api_id=None, code="", required_params=None, fun
                 
                 api_data['description'] = desc
                 api_data['code'] = code
-                api_data['required_params'] = required_params
+                api_data['required_params'] = api_data['required_params'] if api_data.get('version', 'v1')== 'v2' else required_params
                 api_data['fields'] = fields
                 api_data['activated'] = activated
                 api_data['updated_at'] = datetime.datetime.now()
