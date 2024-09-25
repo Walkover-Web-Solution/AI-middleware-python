@@ -56,6 +56,8 @@ async def update_apicalls_controller(request):
         validate_data_to_update(data_to_update, db_data["data"])  # Assuming db_data is a dict-like structure
 
         # Perform the update
+        
+        del data_to_update['_id']
         updated_function = await update_api_call_by_function_id(
             org_id=org_id, function_id=function_id, data_to_update=data_to_update
         )
