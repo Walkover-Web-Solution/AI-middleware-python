@@ -172,6 +172,7 @@ async def get_all_service_models_controller(service):
                     # "gpt-4-turbo-2024-04-09": restructure_configuration(model_configuration.gpt_4_turbo_2024_04_09()),
                     "gpt-4-turbo": restructure_configuration(model_configuration.gpt_4_turbo()),
                     "gpt-4o": restructure_configuration(model_configuration.gpt_4o()),
+                    "chatgpt-4o-latest": restructure_configuration(model_configuration.chatgpt_4o_latest()),
                     "gpt-4o-mini": restructure_configuration(model_configuration.gpt_4o_mini()),
                 },
                 "fine-tune" : {
