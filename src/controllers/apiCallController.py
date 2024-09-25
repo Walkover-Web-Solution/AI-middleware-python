@@ -19,13 +19,12 @@ async def get_all_apicalls_controller(request):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e,)
     
 
-def validate_data_to_update(data_to_update, db_data):
+async def validate_data_to_update(data_to_update, db_data):
     def recursive_check(data, expected):
         for key in expected:
             if key not in data:
                 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Missing key: '{key}' in data_to_update")
 
-            # If the value is a nested dictionary, check recursively
             if isinstance(expected[key], dict):
                 recursive_check(data[key], expected[key])
 
@@ -52,8 +51,7 @@ async def update_apicalls_controller(request):
         data = db_data.get('data', {})
         del data['_id']
 
-        # Validate data before updating
-        validate_data_to_update(data_to_update, data)  # Assuming db_data is a dict-like structure
+        await validate_data_to_update(data_to_update, data)
       
         updated_function = await update_api_call_by_function_id(
             org_id=org_id, function_id=function_id, data_to_update=data_to_update

@@ -99,10 +99,7 @@ async def get_function_by_id(function_id):
             return {"success": False, "message": "Invalid function_id format."}
         
         db_data =  apiCallModel.find_one({"_id": ObjectId(function_id)})
-        
-        if db_data is None:
-            return {"success": False, "message": "Function not found."}
-        
+                
         return {"success": True, "data": db_data}
     
     except Exception as e:
