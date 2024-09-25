@@ -225,7 +225,7 @@ async def chat(request: Request):
             }))
             print("chat common error=>", error)
             error_message = str(error)
-            if not result["success"]:
+            if not result.get('success'):
                 error_message = result.get("modelResponse", str(error))
             asyncio.create_task(sendResponse(response_format, error_message))
             if response_format['type'] != 'default':
