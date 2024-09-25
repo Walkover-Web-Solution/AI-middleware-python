@@ -1,4 +1,4 @@
-async def Response_formatter(response, service):
+async def  Response_formatter(response, service):
     if service == 'openai':
         return {
             "data" : {

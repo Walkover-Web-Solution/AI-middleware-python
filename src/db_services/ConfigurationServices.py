@@ -7,11 +7,11 @@ apiCallModel = db['apicalls']
 templateModel = db['templates']
 apikeyCredentialsModel = db['apikeycredentials']
 
-async def get_bridges(bridge_id):
+async def get_bridges(bridge_id, org_id):
     try:
         pipeline = [
             {
-                '$match': {'_id': ObjectId(bridge_id)}
+                '$match': {'_id': ObjectId(bridge_id), 'org_id': org_id}
             },
             {
                 '$addFields': {
@@ -41,11 +41,11 @@ async def get_bridges(bridge_id):
             'error': "something went wrong!!"
         }
 # todo
-async def get_bridges_with_tools(bridge_id):
+async def get_bridges_with_tools(bridge_id, org_id):
     try:
         pipeline = [
             {
-                '$match': {'_id': ObjectId(bridge_id)}
+                '$match': {'_id': ObjectId(bridge_id), "org_id": org_id}
             },
             {
                 '$lookup': {
@@ -179,43 +179,86 @@ async def update_bridge_ids_in_api_calls(function_id, bridge_id, add=1):
             'error': 'Something went wrong!'
         }
 
-async def get_api_call_by_names(names):
+async def get_api_call_by_names(names, org_id):
     try:
         if not isinstance(names, list):
             names = [names]
         pipeline = [
-            {
-                '$match': {
-                    '$or': [
-                        {'function_name': {'$in': names}},
-                        {'endpoint': {'$in': names}}
-                    ]
+    {
+        '$match': {
+            '$or': [
+                {'function_name': {'$in': names}},
+                {'endpoint': {'$in': names}}
+            ],
+            'org_id': org_id
+        }
+    },
+    {
+        '$addFields': {
+            'name': {
+                '$cond': {
+                    'if': {'$ifNull': ['$function_name', False]},
+                    'then': '$function_name',
+                    'else': '$endpoint'
                 }
             },
-            {
-                '$addFields': {
-                    '_id': {'$toString': '$_id'},
-                    'bridge_ids': {
-                        '$map': {
-                            'input': '$bridge_ids',
-                            'as': 'fid',
-                            'in': {'$toString': '$$fid'}
+            'code': {
+                '$cond': {
+                    'if': {'$ifNull': ['$code', False]},
+                    'then': '$code',
+                    'else': '$axios'
+                }
+            }
+        }
+    },
+    {
+        '$project': {
+            '_id': 0,  # Exclude the `_id` from the response if not needed
+            'name': 1,
+            'code': 1,
+            'is_python': 1
+        }
+    },
+    {
+        '$group': {
+            '_id': None,  # We don't need an actual group key
+            'apiCalls': {
+                '$push': {
+                    'name': '$name',
+                    'code': '$code',
+                    'is_python': '$is_python'
+                }
+            }
+        }
+    },
+    {
+        '$project': {
+            '_id': 0,  # Exclude the group _id
+            'apiCalls': {
+                '$arrayToObject': {
+                    '$map': {
+                        'input': '$apiCalls',
+                        'as': 'api',
+                        'in': {
+                            'k': '$$api.name',  # Use the name as the key
+                            'v': {
+                                'code': '$$api.code',
+                                'is_python': '$$api.is_python',
+                                'name': '$$api.name'
+                            }
                         }
                     }
                 }
             }
-        ]
-        api_calls = list(apiCallModel.aggregate(pipeline))
-        return {
-            'success': True,
-            'apiCalls': api_calls
         }
+    }
+]
+
+        return list(apiCallModel.aggregate(pipeline))
+
     except Exception as error:
         print(f"error: {error}")
-        return {
-            'success': False,
-            'error': "Something went wrong!"
-        }
+        raise error
 
 async def get_template_by_id(template_id):
     try:

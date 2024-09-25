@@ -9,9 +9,17 @@ async def getAllThreads(bridge_id, org_id, page, pageSize):
         print("getAllThreads =>", err)
         return { 'success': False, 'message': str(err) }
 
-async def getThread(thread_id, org_id, bridge_id):
+async def getThread(thread_id, org_id, bridge_id, bridgeType):
     try:
         chats = await chatbotDbService.find(org_id, thread_id, bridge_id)
+        if bridgeType:
+            filtered_chats = []
+            for chat in chats:
+                if chat['is_reset']:
+                    filtered_chats = []
+                else:
+                    filtered_chats.append(chat)
+            chats = filtered_chats
         return { 'success': True, 'data': chats }
     except Exception as err:
         print("Error in getting thread:",err)
@@ -34,7 +42,7 @@ async def getThreadHistory(thread_id, org_id, bridge_id):
         print(err)
         return { 'success': False, 'message': str(err) }
 
-async def savehistory(thread_id, userMessage, botMessage, org_id, bridge_id, model_name, type, messageBy, userRole="user", tools={}):
+async def savehistory(thread_id, userMessage, botMessage, org_id, bridge_id, model_name, type, messageBy, userRole="user", tools={}, chatbot_message =""):
     try:
         chatToSave = [{
             'thread_id': thread_id,
@@ -67,7 +75,8 @@ async def savehistory(thread_id, userMessage, botMessage, org_id, bridge_id, mod
                 'message_by': messageBy,
                 'type': type,
                 'bridge_id': bridge_id,
-                'function': botMessage if messageBy == "tool_calls" else {}
+                'function': botMessage if messageBy == "tool_calls" else {},
+                'chatbot_message' : chatbot_message or ""
             })
 
         # if userRole == "tool":

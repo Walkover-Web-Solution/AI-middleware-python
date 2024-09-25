@@ -1,7 +1,7 @@
 
 from models.index import combined_models as models
 import sqlalchemy as sa
-from sqlalchemy import func, and_ , insert, delete
+from sqlalchemy import func, and_ , insert, delete, or_ , update, select
 from sqlalchemy.exc import SQLAlchemyError
 import asyncio
 import traceback
@@ -44,13 +44,18 @@ async def find(org_id, thread_id, bridge_id):
                 Conversation.message_by.label('role'),
                 Conversation.createdAt,
                 Conversation.id,
-                Conversation.function
+                Conversation.function,
+                Conversation.is_reset,
+                RawData.error
             )
+            .outerjoin(RawData, Conversation.id == RawData.chat_id)
             .filter(
                 and_(
                     Conversation.org_id == org_id,
                     Conversation.thread_id == thread_id,
-                    Conversation.bridge_id == bridge_id
+                    Conversation.bridge_id == bridge_id,
+                    or_(RawData.error == '', RawData.error.is_(None)),
+                    Conversation.message_by.in_(["user", "assistant"])
                 )
             )
             .order_by(Conversation.id.desc())
@@ -60,7 +65,6 @@ async def find(org_id, thread_id, bridge_id):
         conversations.reverse()
         return [conversation._asdict() for conversation in conversations]
     except Exception as e:
-        # Handle the exception or log it
         print(f"An error occurred: {str(e)}")
         return []
     finally:
@@ -87,7 +91,53 @@ async def storeSystemPrompt(prompt, org_id, bridge_id):
         raise error
     finally:
         session.close()
-        
+
+async def reset_chat_history(org_id, bridge_id, thread_id):
+    session = pg['session']()
+    try:
+        subquery = (
+            select(Conversation.id)
+            .where(
+                and_(
+                    Conversation.org_id == org_id,
+                    Conversation.bridge_id == bridge_id,
+                    Conversation.thread_id == thread_id
+                )
+            )
+            .order_by(Conversation.id.desc())
+            .limit(1)
+        )
+        stmt = (
+            update(Conversation)
+            .where(Conversation.id == subquery.scalar_subquery())
+            .values(is_reset=True)
+            .returning(Conversation.id)
+        )
+        result = session.execute(stmt)
+        updated_conversation = result.fetchone()
+        if updated_conversation:
+            session.commit()
+            return {
+                'success': True,
+                'message': 'Chatbot reset successfully',
+                'result': updated_conversation.id
+            }
+        else:
+            return {
+                'success': True,
+                'message': 'No conversation found to reset',
+                'result': None
+            }
+    except Exception as error:
+        session.rollback()
+        return {
+            'success': False,
+            'message': 'Error resetting chatbot',
+            'result': error
+        }
+    finally:
+        session.close()
+
 # async def getHistory(bridge_id, timestamp):
 #     try:
 #         history = await models['pg'].system_prompt_versionings.find_all(

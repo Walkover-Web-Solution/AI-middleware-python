@@ -12,18 +12,18 @@ apiCallModel = db['apicalls']
 async def creates_api(request: Request):
     try:
         body = await request.json()
+        org_id = request.state.profile.get("org",{}).get("id","")
         function_name = body.get('id')
         payload = body.get('payload')
         url = body.get('url')
         status = body.get('status')
         org_id = request.state.org_id if hasattr(request.state, 'org_id') else None
-        endpoint_name = body.get('endpoint_name')
+        endpoint_name = body.get('title')
         desc = body.get('desc')
 
         if not all([desc, function_name, status, org_id]):
             raise HTTPException(status_code=400, detail="Required details must not be empty!!")
         
-        desc = f"function_name: {endpoint_name} desc" if endpoint_name else desc
         axios_code = ""
 
         if status in ["published", "updated"]:
@@ -51,7 +51,7 @@ async def creates_api(request: Request):
             keys = path.split(".")
             data = set_nested_value(data, path, params[keys[-1]])
         response = requests.post('{url}', json=data, headers={{'content-type': 'application/json'}})
-        return response.json()
+        return response.json(), response.headers
     except requests.RequestException as e:
         return str(e)"""
             else:
@@ -59,7 +59,7 @@ async def creates_api(request: Request):
     import requests
     try:
         response = requests.get('{url}', headers={{'content-type': 'application/json'}})
-        return response.json()
+        return response.json(), response.headers
     except requests.RequestException as e:
         return str(e)"""
 
@@ -117,7 +117,7 @@ async def updates_api(request: Request, bridge_id: str):
         if not all([pre_tools is not None, bridge_id, org_id]):
             raise HTTPException(status_code=400, detail="Required details must not be empty!!")
     
-        model_config = await get_bridges(bridge_id)
+        model_config = await get_bridges(bridge_id, org_id)
 
         if model_config.get('success') is False: 
             raise HTTPException(status_code=400, detail="bridge id is not found")
@@ -126,7 +126,7 @@ async def updates_api(request: Request, bridge_id: str):
         data_to_update['pre_tools'] = pre_tools
         result = await update_bridge(bridge_id, data_to_update)
 
-        result = await get_bridges_with_tools(bridge_id)
+        result = await get_bridges_with_tools(bridge_id, org_id)
 
         if result.get("success"):
             return Helper.response_middleware_for_bridge({

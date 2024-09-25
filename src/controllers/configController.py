@@ -6,7 +6,6 @@ from src.configs.modelConfiguration import ModelsConfig as model_configuration
 from src.services.utils.helper import Helper
 import json
 from config import Config
-from validations.validation import Bridge_update as bridge_validation
 from ..configs.constant import service_name
 from src.db_services.conversationDbService import storeSystemPrompt
 from bson import ObjectId
@@ -48,6 +47,7 @@ async def create_bridges_controller(request):
         "type": "default", # need changes
         "cred": {}
         } 
+        model_data["is_rich_text"]= True
         result = await create_bridge({
             "configuration": model_data,
             "name": name,
@@ -81,14 +81,9 @@ async def duplicate_create_bridges(bridges):
         configuration = bridges.get('configuration') 
         apikey = bridges.get('apikey') 
         slugName = bridges.get('slugName') 
-        # created_at = bridges.get('created_at') 
-        # api_call  = bridges.get('api_call') 
-        # api_endpoints = bridges.get('api_endpoints')
-        # is_api_call = bridges.get('is_api_call')
-        # # responseIds = bridges.get('responseIds')
-        # # responseRef = bridges.get('responseRef')
-        # # defaultQuestions = bridges.get('defaultQuestions')
-        # # actions= bridges.get('actions')
+        function_ids= bridges.get('function_ids', [])
+        actions= bridges.get('actions', {})
+        apikey_object_id = bridges.get('apikey_object_id')
 
         result = await create_bridge({
             "configuration": configuration,
@@ -97,11 +92,18 @@ async def duplicate_create_bridges(bridges):
             "slugName": slugName,
             "service": service,
             "apikey": apikey,
-            "bridgeType": bridgeType
+            "bridgeType": bridgeType,
+            "function_ids":function_ids,
+            "actions": actions,
+            "apikey_object_id":apikey_object_id
         })
 
         if result.get("success"):
             res = result.get('bridge')
+            # todo: optimize in future
+            if(function_ids):
+                for function_id in function_ids:
+                    await update_bridge_ids_in_api_calls(function_id, str(res.get("_id")), 1)
             return res
 
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=result)
@@ -114,8 +116,8 @@ async def duplicate_create_bridges(bridges):
 
 async def get_bridge(request, bridge_id: str):
     try:
-        bridge = await get_bridges_with_tools(bridge_id)
-        return Helper.response_middleware_for_bridge({"succcess": True,"message": "bridge get successfully","bridge":bridge['bridges']})
+        bridge = await get_bridges_with_tools(bridge_id,request.state.profile.get("org",{}).get("id",""))
+        return Helper.response_middleware_for_bridge({"succcess": True,"message": "bridge get successfully","bridge":bridge.get("bridges", {})})
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e,)
 
@@ -164,7 +166,6 @@ async def get_all_service_models_controller(service):
                     # "gpt-3.5-turbo-16k": restructure_configuration(model_configuration.gpt_3_5_turbo_16k()),
                     # "gpt-3.5-turbo-16k-0613": restructure_configuration(model_configuration.gpt_3_5_turbo_16k_0613()),
                     "gpt-4": restructure_configuration(model_configuration.gpt_4()),
-                    # "gpt-4-0613": restructure_configuration(model_configuration.gpt_4_0613()),
                     # "gpt-4-1106-preview": restructure_configuration(model_configuration.gpt_4_1106_preview()),
                     # "gpt-4-turbo-preview": restructure_configuration(model_configuration.gpt_4_turbo_preview()),
                     # "gpt-4-0125-preview": restructure_configuration(model_configuration.gpt_4_0125_preview()),
@@ -172,6 +173,12 @@ async def get_all_service_models_controller(service):
                     "gpt-4-turbo": restructure_configuration(model_configuration.gpt_4_turbo()),
                     "gpt-4o": restructure_configuration(model_configuration.gpt_4o()),
                     "gpt-4o-mini": restructure_configuration(model_configuration.gpt_4o_mini()),
+                },
+                "fine-tune" : {
+                     "gpt-4-0613": restructure_configuration(model_configuration.gpt_4_0613()),
+                     "gpt-4o-2024-08-06": restructure_configuration(model_configuration.gpt_4o_2024_08_06()),
+                     "gpt-4o-mini-2024-07-18": restructure_configuration(model_configuration.gpt_4o_mini_2024_07_18()),
+
                 }
                 # "embedding": {
                 #     "text-embedding-3-large": restructure_configuration(model_configuration.text_embedding_3_large()),
@@ -242,11 +249,14 @@ async def update_bridge_controller(request,bridge_id):
         if apikey_object_id is not None:
             update_fields['apikey_object_id'] = apikey_object_id
             data = await get_apikey_creds(apikey_object_id)
-            apikey = data.get('apikey')
+            apikey = data.get('apikey',"")
         name = body.get('name')
         function_id = body.get('functionData', {}).get('function_id', None)
         function_operation = body.get('functionData', {}).get('function_operation')
         bridge = await get_bridge_by_id(org_id, bridge_id)
+        if new_configuration and 'type' in new_configuration and new_configuration.get('type') != 'fine-tune':
+            new_configuration['fine_tune_model'] = {}
+            new_configuration['fine_tune_model']['current_model'] = None
         current_configuration = bridge.get('configuration', {})
         if apikey_object_id is None:
             apikey = bridge.get('apikey') if apikey is None else Helper.encrypt(apikey)
@@ -282,7 +292,7 @@ async def update_bridge_controller(request,bridge_id):
                         await update_bridge_ids_in_api_calls(function_id, bridge_id, 0)
             
         await update_bridge(bridge_id, update_fields) # todo :: add transaction
-        result = await get_bridges_with_tools(bridge_id)
+        result = await get_bridges_with_tools(bridge_id, org_id)
         
         if result.get("success"):
             return Helper.response_middleware_for_bridge({

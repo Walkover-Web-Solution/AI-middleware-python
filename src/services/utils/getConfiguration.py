@@ -7,11 +7,12 @@ apiCallModel = db['apicalls']
 # from src.services.commonServices.generateToken import generateToken
 # from src.configs.modelConfiguration import ModelsConfig
 
-async def getConfiguration(configuration, service, bridge_id, apikey, template_id=None, variables = {}):
+async def getConfiguration(configuration, service, bridge_id, apikey, template_id=None, variables = {}, org_id=""):
     RTLayer = False
     bridge = None
-    result = await ConfigurationService.get_bridges_with_tools(bridge_id)
+    result = await ConfigurationService.get_bridges_with_tools(bridge_id, org_id)
     if not result['success']:
+
         return {
             'success': False,
             'error': "bridge_id does not exist"
@@ -29,8 +30,8 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
             continue
         format = {
             "type": "function",
-            "name": api_data['function_name'],
-            "description": api_data['description'],
+            "name": api_data.get("function_name", api_data.get("endpoint")),
+            "description": api_data.get('description', api_data.get('short_description')) if not api_data.get('endpoint_name') else f"Name: {api_data.get('endpoint_name')}, Description: {api_data.get('description', api_data.get('short_description'))}",
             "properties": (
                 api_data.get("fields", {}) if api_data.get("version") == 'v2' 
                 else {item["variable_name"]: {
@@ -41,7 +42,7 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
                 } for item in api_data['fields']}
             ),
             "required": (
-               api_data['required_params']
+               api_data.get("required_params", api_data.get("required_fields"))
             )
         }
         tools.append(format)
@@ -60,7 +61,7 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
     template_content = await ConfigurationService.get_template_by_id(template_id) if template_id else None
     pre_tools = bridge.get('pre_tools', [])
     if len(pre_tools)>0:
-        api_data = apiCallModel.find_one({"_id": ObjectId( pre_tools[0])})
+        api_data = apiCallModel.find_one({"_id": ObjectId( pre_tools[0]), "org_id": org_id})
 
         if api_data is None: 
             raise Exception("Didn't find the pre_function")
@@ -81,38 +82,3 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
         'RTLayer': RTLayer,
         'template': template_content.get('template') if template_content else None
     }
-
-
-# def filter_data_of_bridge_on_the_base_of_ui(result, bridge_id, update=True):
-    configuration = result.get('bridges', {}).get('configuration')
-    type_ = configuration.get('type') if configuration and 'type' in configuration else ''
-    model = configuration.get('model') if configuration and 'model' in configuration else ''
-    modelname = model.replace("-", "_").replace(".", "_")
-    modelfunc = ModelsConfig[modelname]
-    model_config = modelfunc().configuration
-    for key in model_config:
-        if key in configuration:
-            model_config[key]['default'] = configuration[key]
-    
-    custom_config = model_config
-    for keys in configuration:
-        if keys not in ["name", "type"]:
-            custom_config[keys] = model_config.get(keys, configuration[keys])
-    
-    if configuration and 'max_tokens' in configuration and model_config and 'max_tokens' in model_config and configuration['max_tokens'] > model_config['max_tokens']['max']:
-        configuration['max_tokens'] = model_config['max_tokens']['default']
-    
-    result['bridges']['apikey'] = Helper.decrypt(result['bridges']['apikey'])
-    if update:
-        embed_token = generate_token({
-            'payload': {
-                'org_id': os.getenv('ORG_ID'),
-                'project_id': os.getenv('PROJECT_ID'),
-                'user_id': bridge_id
-            },
-            'accessKey': os.getenv('ACCESS_KEY')
-        })
-        result['bridges']['embed_token'] = embed_token
-    
-    result['bridges']['type'] = type_
-    result['bridges']['configuration'] = custom_config

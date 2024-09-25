@@ -20,6 +20,8 @@ class Conversation(Base):
     type = Column(Enum('chat', 'completion', 'embedding', name='enum_conversations_type'), nullable=False)
     createdAt = Column(DateTime, default=func.now())
     updatedAt = Column(DateTime, default=func.now(), onupdate=func.now())
+    chatbot_message = Column(Text)
+    is_reset = Column(Boolean, default=False)
 
     # raw_data = relationship("RawData", back_populates="conversation")
 

@@ -2,11 +2,9 @@ import asyncio
 import pydash as _
 from datetime import datetime
 import json
-import requests
 import traceback
-from collections import ChainMap
 from ....db_services import metrics_service, ConfigurationServices as ConfigurationService
-from .utils import validate_tool_call, axios_work, tool_call_formatter, sendResponse
+from .utils import validate_tool_call, tool_call_formatter, sendResponse, make_code_mapping_by_service, process_data_and_run_tools
 from src.configs.serviceKeys import ServiceKeys
 from src.configs.modelConfiguration import ModelsConfig
 from ..openAI.runModel import runModel
@@ -38,62 +36,10 @@ class BaseService:
 
 
     async def run_tool(self, responses, service):
-        codes_mapping = {}
-        names = []
-        
-        match service:
-            case 'openai' | 'groq':
-                for tool_call in responses['choices'][0]['message']['tool_calls']:
-                    name = tool_call['function']['name']
-                    args = json.loads(tool_call['function']['arguments'])
-                    codes_mapping[name] = {
-                        'tool_call': tool_call,
-                        'name': name,
-                        'args': args
-                    }
-                    names.append(name)
-            case 'anthropic':
-                for tool_call in responses['content'][1:]:  # Skip the first item
-                    name = tool_call['name']
-                    args = tool_call['input']
-                    codes_mapping[name] = {
-                        'tool_call': tool_call,
-                        'name': name,
-                        'args': args
-                    }
-                    names.append(name)
-            case _:
-                return False, {}
+        codes_mapping, names = make_code_mapping_by_service(responses, service)
+        api_calls_response = await ConfigurationService.get_api_call_by_names(names, self.org_id)
+        return await process_data_and_run_tools(codes_mapping, api_calls_response[0]['apiCalls'])
 
-        api_calls_response = await ConfigurationService.get_api_call_by_names(names)
-
-        async def process_code_and_service_data(api_call):
-            axios_instance = api_call.get('code') or api_call.get('axios')
-            is_python = api_call.get('is_python', False)
-            name = api_call.get('function_name', api_call.get('endpoint',''))
-            api_response = await axios_work(codes_mapping[name]['args'], axios_instance, is_python)
-            response_data = {
-                'tool_call_id': codes_mapping[name]['tool_call'].get('id'),
-                'role': 'tool',
-                'name': codes_mapping[name]['name'],
-                'content': json.dumps(api_response),
-            }
-            return response_data, {response_data['tool_call_id']: response_data}
-
-        try:
-            responses = []
-            mapping = {}
-            tool_call_id_set = set()
-            for api_call in api_calls_response['apiCalls']:
-                response_data, response_mapping = await process_code_and_service_data(api_call)#to call directly using promise
-                if response_data['tool_call_id'] not in tool_call_id_set:
-                    tool_call_id_set.add(response_data['tool_call_id'])
-                    responses.append(response_data)
-                    mapping.update(response_mapping)
-            return responses, mapping
-        except Exception as error:
-            print(f"Error in run_tool: {error}")
-            raise error
 
     def update_configration(self, response, function_responses, configuration, mapping_response_data, service, tools):    
         if(service == 'anthropic'):
@@ -121,16 +67,17 @@ class BaseService:
     async def function_call(self, configuration, service, response, l=0, tools={}):
         if not response.get('success'):
             return {'success': False, 'error': response.get('error')}
-        modelfunc = getattr(ModelsConfig, configuration['model'].replace('-',"_").replace('.',"_"), None)
+        modelfunc = getattr(ModelsConfig, self.model.replace('-',"_").replace('.',"_"), None)
         modelObj = modelfunc()
         modelOutputConfig = modelObj['outputConfig']
         model_response = response.get('modelResponse', {})
 
-        if not (validate_tool_call(modelOutputConfig, service, model_response) and l <= 3):
+        if validate_tool_call(modelOutputConfig, service, model_response) and l <= 3:
+            l += 1
+            # Continue with the rest of the logic here
+        else:
             return response
         
-        l+=1
-
         if not self.playground:
             asyncio.create_task(sendResponse(self.response_format, data = {'function_call': True}, success = True))
         
@@ -219,7 +166,8 @@ class BaseService:
             'channel': 'chat',
             'type': "assistant" if _.get(model_response, self.modelOutputConfig['message']) else "tool_calls",
             'actor': "user" if self.user else "tool",
-            'tools': tools
+            'tools': tools,
+            'chatbot_message' : ""
         }
     
     def service_formatter(self, configuration : object, service : str ):
@@ -238,27 +186,21 @@ class BaseService:
             if 'tools' in new_config and len(new_config['tools']) == 0:
                 del new_config['tools'] 
             return new_config
-        except KeyError as e:
-            print(f"Service key error: {e}")
-            raise "Service key error: {e}"
         except Exception as e:
             print(f"An error occurred: {e}")
-            raise "Service key error: {e}"
+            raise ValueError(f"Service key error: {e.args[0]}")
         
     async def chats(self, configuration, apikey, service):
         try:
             response = {}
             if service == service_name['openai']:
-                response = await runModel(configuration, True, apikey)
+                response = await runModel(configuration, True, apikey, self.bridge_id)
             elif service == service_name['anthropic']:
                 response = await anthropic_runmodel(configuration, apikey)
             elif service == service_name['groq']:
                 response = await groq_runmodel(configuration, True, apikey)
             if not response['success']:
-                return {
-                    'success': False,
-                    'error': response['error']
-                }
+                raise ValueError(response['error'])
             return {
                 'success': True,
                 'modelResponse': response['response']
@@ -266,7 +208,4 @@ class BaseService:
         except Exception as e:
             traceback.print_exc()
             print("chats error=>", e)
-            return {
-                'success': False,
-                'error': str(e)
-            }
+            raise ValueError(f"error occurs from openAi api {e.args[0]}")
