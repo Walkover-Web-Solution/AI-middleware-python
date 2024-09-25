@@ -37,7 +37,7 @@ async def get_all_api_calls_by_org_id(org_id):
         api_calls = list(apiCallModel.aggregate(pipeline))
         
         for index, api_data in enumerate(api_calls):
-            fields = api_data['fields']
+            fields = api_data.get('fields', {})
             transformed_data = {}
             if not fields:  # Check if fields is empty or null
                 transformed_data = {}
