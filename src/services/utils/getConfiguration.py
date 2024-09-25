@@ -32,8 +32,18 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
             "type": "function",
             "name": api_data.get("function_name", api_data.get("endpoint")),
             "description": api_data.get('description', api_data.get('short_description')) if not api_data.get('endpoint_name') else f"Name: {api_data.get('endpoint_name')}, Description: {api_data.get('description', api_data.get('short_description'))}",
-            "properties": { field: { "type": "string" } for field in api_data.get("required_params", api_data.get("required_fields"))  },
-            "required": api_data.get("required_params", api_data.get("required_fields"))
+            "properties": (
+                api_data.get("fields", {}) if api_data.get("version") == 'v2' 
+                else {item["variable_name"]: {
+                    "description": item.get("description", ""), 
+                    "enum": [] if(item.get("enum") == '') else item.get("enum", []),
+                    "type": "string",
+                    "parameter": {}
+                } for item in api_data['fields']}
+            ),
+            "required": (
+               api_data.get("required_params", api_data.get("required_fields"))
+            )
         }
         tools.append(format)
 

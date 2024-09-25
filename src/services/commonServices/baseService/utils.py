@@ -71,6 +71,23 @@ if isinstance(result, tuple) and len(result) == 2:
             'status': 0
         }
     
+def transform_required_params_to_required(properties):
+    # Base case: if the input is not a dictionary, return it as-is
+    if not isinstance(properties, dict):
+        return properties
+
+    # Create a new dictionary to hold the transformed data
+    transformed_properties = {}
+
+    for key, value in properties.items():
+        # If the key is 'required_params', rename it to 'required'
+        if key == 'required_params':
+            transformed_properties['required'] = value
+        else:
+            # Recursively apply the transformation to nested objects
+            transformed_properties[key] = transform_required_params_to_required(value)
+
+    return transformed_properties
 
 def tool_call_formatter(configuration: dict, service: str) -> dict:
     if service == service_name['openai']:
@@ -82,7 +99,7 @@ def tool_call_formatter(configuration: dict, service: str) -> dict:
                     'description': transformed_tool['description'],
                     'parameters': {
                         'type': 'object',
-                        'properties': transformed_tool.get('properties', {}),
+                        'properties': transform_required_params_to_required(transformed_tool.get('properties', {})),
                         'required': transformed_tool.get('required', [])
                     }
                 }
@@ -95,7 +112,7 @@ def tool_call_formatter(configuration: dict, service: str) -> dict:
                 'description': transformed_tool['description'],
                 'input_schema': {
                     "type": "object",
-                    'properties': transformed_tool.get('properties', {}),
+                    'properties': transform_required_params_to_required(transformed_tool.get('properties', {})),
                     'required': transformed_tool.get('required', [])
                 }
             } for transformed_tool in configuration.get('tools', [])
@@ -109,7 +126,7 @@ def tool_call_formatter(configuration: dict, service: str) -> dict:
                 "description": transformed_tool['description'],
                 "parameters": {
                     "type": "object",
-                    "properties": transformed_tool.get('properties', {}),
+                    "properties": transform_required_params_to_required(transformed_tool.get('properties', {})),
                     "required": transformed_tool.get('required', []),
                 },
                     },
