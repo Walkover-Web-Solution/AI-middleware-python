@@ -143,13 +143,15 @@ async def updates_api(request: Request, bridge_id: str):
         raise HTTPException(status_code=400, detail=str(error))
 
 
-def traverse_body(body, path=None, paths=None, fields=None):
+def traverse_body(body, path=None, paths=None, fields=None, required_params=None):
     if path is None: # for understanding the path where [a,b]
         path = []
     if paths is None: # final path to send [a.b.c , a.b.d]
         paths = []
     if fields is None:
         fields = {}
+    if required_params is None:
+        required_params = []
     if body:
         for key, value in body.items():
             current_path = path + [key]
@@ -157,11 +159,12 @@ def traverse_body(body, path=None, paths=None, fields=None):
                 path_str = '.'.join(path)
                 path_str = f"{path_str}.parameter.{key}" if  path != [] else key
                 _.objects.set_(fields, path_str, {"description": '', "type": "object", "enum": [], "required_params": [], "parameter": {}})
-                traverse_body(value, current_path, paths, fields)
+                traverse_body(value, current_path, paths, fields, required_params)
             elif value == "your_value_here":
                 parameter = ""
                 path_str = '.'.join(current_path)
                 paths.append(path_str)
+                required_params.append(key)
                 for i in range(len(path)):
                     if i == 0:
                         parameter = path[i]
@@ -182,7 +185,8 @@ def traverse_body(body, path=None, paths=None, fields=None):
                 _.set_(fields, path_str, existing_data)   
     return {
         "paths": paths,
-        "fields": fields
+        "fields": fields,
+        "required_params": required_params
     }
 
 
