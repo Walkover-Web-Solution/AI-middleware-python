@@ -28,7 +28,7 @@ async def save_api(desc, org_id, api_data=None, code="", required_params=None, f
     try:
         if api_data:
             fields = updateFields(api_data.get('fields',{} if api_data.get('version', 'v1')== 'v2' else []), fields , api_data.get('version', 'v1') == version)
-            required_params = [key for key in api_data.get("required_params",{}) if key in fields.keys()] if api_data.get('version', 'v1')== 'v2' else required_params
+            required_params = [key for key in fields if key not in api_data.get('fields') or key in api_data["required_params"]] if api_data.get('version', 'v1')== 'v2' else required_params
             # Delete certain keys from api_data
             keys_to_delete = ["required_fields", "short_description", 'axios', "optional_fields", "endpoint", 'api_description']  # Replace with actual keys to delete
             for key in keys_to_delete:

@@ -13,18 +13,18 @@ apiCallModel = db['apicalls']
 async def creates_api(request: Request):
     try:
         body = await request.json()
+        org_id = request.state.profile.get("org",{}).get("id","")
         function_name = body.get('id')
         payload = body.get('payload')
         url = body.get('url')
         status = body.get('status')
         org_id = request.state.org_id if hasattr(request.state, 'org_id') else None
-        endpoint_name = body.get('endpoint_name')
+        endpoint_name = body.get('title')
         desc = body.get('desc')
 
         if not all([desc, function_name, status, org_id]):
             raise HTTPException(status_code=400, detail="Required details must not be empty!!")
         
-        desc = f"function_name: {endpoint_name} desc" if endpoint_name else desc
         axios_code = ""
 
         if status in ["published", "updated"]:
