@@ -37,7 +37,8 @@ class BaseService:
 
 
     async def run_tool(self, responses, service):
-        codes_mapping, names, self.tools_call_data  = make_code_mapping_by_service(responses, service)
+        codes_mapping, names, tools_call_data  = make_code_mapping_by_service(responses, service)
+        self.tools_call_data.extend(tools_call_data)
         api_calls_response = await ConfigurationService.get_api_call_by_names(names, self.org_id)
         return await process_data_and_run_tools(codes_mapping, api_calls_response[0]['apiCalls'])
 
