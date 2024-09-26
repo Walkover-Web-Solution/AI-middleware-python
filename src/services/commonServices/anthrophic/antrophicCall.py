@@ -21,10 +21,7 @@ class Antrophic(BaseService):
             if not self.playground:
                 await self.handle_failure(antrophic_response)
             raise ValueError(antrophic_response.get('error'))
-        if modelResponse.get('content'):
-            for item in modelResponse['content']:
-                if item.get('type') == 'tool_use':
-                    tools_call_data.append(item)
+        tools_call_data.extend(BaseService.extract_tool_calls(modelResponse, self.service))
         functionCallRes = await self.function_call(self.customConfig, service_name['anthropic'], antrophic_response)
         if not functionCallRes.get('success'):
             await self.handle_failure(functionCallRes)

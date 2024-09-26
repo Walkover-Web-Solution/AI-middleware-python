@@ -22,7 +22,7 @@ class Groq(BaseService):
             raise ValueError(groq_response.get('error'))
         
         if len(model_response.get('choices', [])[0].get('message', {}).get("tool_calls", [])) > 0:
-            tools_call_data.extend(model_response.get('choices', [])[0].get('message', {}).get("tool_calls", []))
+            tools_call_data.extend(BaseService.extract_tool_calls(model_response, self.service))
             functionCallRes = await self.function_call(self.customConfig, service_name['groq'], groq_response)
             
             if not functionCallRes.get('success'):
