@@ -20,7 +20,6 @@ class Antrophic(BaseService):
             if not self.playground:
                 await self.handle_failure(antrophic_response)
             raise ValueError(antrophic_response.get('error'))
-        
         functionCallRes = await self.function_call(self.customConfig, service_name['anthropic'], antrophic_response)
         if not functionCallRes.get('success'):
             await self.handle_failure(functionCallRes)

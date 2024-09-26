@@ -230,8 +230,11 @@ async def process_data_and_run_tools(codes_mapping, function_code_mapping):
 def make_code_mapping_by_service(responses, service):
     codes_mapping = {}
     names = []
+    tools_call_data = []
     match service:
         case 'openai' | 'groq':
+
+            tools_call_data.extend(responses['choices'][0]['message']['tool_calls'])
             for tool_call in responses['choices'][0]['message']['tool_calls']:
                 name = tool_call['function']['name']
                 error = False
@@ -250,6 +253,7 @@ def make_code_mapping_by_service(responses, service):
                 }
                 names.append(name)
         case 'anthropic':
+            tools_call_data.extend(responses['content'][1:])
             for tool_call in responses['content'][1:]:  # Skip the first item
                 name = tool_call['name']
                 args = tool_call['input']
@@ -262,4 +266,4 @@ def make_code_mapping_by_service(responses, service):
                 names.append(name)
         case _:
             return False, {}
-    return codes_mapping, names
+    return codes_mapping, names, tools_call_data
