@@ -7,9 +7,6 @@ import json
 from src.services.utils.send_error_webhook import send_error_to_webhook
 import asyncio
 
-
-
-
 def handle_exceptions(func):
     @wraps(func)
     async def wrapper(request: Request, *args, **kwargs):

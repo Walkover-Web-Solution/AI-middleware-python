@@ -13,15 +13,22 @@ async def auth_and_rate_limit(request: Request):
     await chat_bot_auth(request)
     await rate_limit(request, key_path='profile.user.id')
 
-@router.post("/{botId}/sendMessage", dependencies=[Depends(auth_and_rate_limit)])
-@handle_exceptions
-async def send_message(request: Request, botId: str):
-   # Get the current event loop
-   loop = asyncio.get_event_loop()
+# @router.post("/{botId}/sendMessage", dependencies=[Depends(auth_and_rate_limit)])
+# # @handle_exceptions
+# async def send_message(request: Request, botId: str):
+#    # Get the current event loop
+#    loop = asyncio.get_event_loop()
 
-    # Run the async function in a separate thread to avoid blocking
-   result = await loop.run_in_executor(executor, lambda: asyncio.run(send_data_middleware(request, botId)))
-   return result
+#     # Run the async function in a separate thread to avoid blocking
+#    result = await loop.run_in_executor(executor, lambda: asyncio.run(send_data_middleware(request, botId)))
+#    return result
+
+@router.post("/{botId}/sendMessage", dependencies=[Depends(auth_and_rate_limit)])
+# @handle_exceptions
+async def send_message(request: Request, botId: str):
+    # Call the async function directly, no need for run_in_executor
+    result = await send_data_middleware(request, botId)
+    return result
 
 @router.post("/{botId}/resetchat", dependencies=[Depends(auth_and_rate_limit)])
 async def reset_chat(request: Request, botId: str):
