@@ -26,6 +26,7 @@ from ...configs.constant import service_name
 import src.db_services.ConfigurationServices as ConfigurationService
 from ..utils.send_error_webhook import send_error_to_webhook
 from copy import deepcopy
+from src.handler.executionHandler import handle_exceptions
 
 async def executer(params, service):
     if service == service_name['openai']:
@@ -44,6 +45,7 @@ async def executer(params, service):
 
 
 @app.post("/chat/{bridge_id}")
+@handle_exceptions
 async def chat(request: Request):
     startTime = int(time.time() * 1000)
     body = await request.json()
@@ -228,7 +230,7 @@ async def chat(request: Request):
             if not result.get('success'):
                 error_message = result.get("modelResponse", str(error))
             asyncio.create_task(sendResponse(response_format, error_message))
-            if response_format['type'] != 'default':
-                return
+            # if response_format['type'] != 'default':
+            #     return
             asyncio.create_task(sendResponse(response_format,result.get("modelResponse", str(error))))
-        raise ValueError(error)
+        raise ValueError(error.args[0])
