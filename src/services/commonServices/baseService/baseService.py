@@ -213,19 +213,3 @@ class BaseService:
             print("chats error=>", e)
             raise ValueError(f"error occurs from openAi api {e.args[0]}")
     
-    def extract_tool_calls(model_response, service_name):
-        tools_call_data = []
-
-        if service_name == 'openai':
-            tools_call_data.extend(model_response.get('choices', [])[0].get('message', {}).get("tool_calls", []))
-        
-        elif service_name == 'groq':
-            tools_call_data.extend(model_response.get('choices', [])[0].get('message', {}).get("tool_calls", []))
-        
-        elif service_name == 'anthropic':
-            if model_response.get('content'):
-                for item in model_response['content']:
-                    if item.get('type') == 'tool_use':
-                        tools_call_data.append(item)
-
-        return tools_call_data
