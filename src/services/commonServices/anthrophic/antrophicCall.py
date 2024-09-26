@@ -8,7 +8,6 @@ class Antrophic(BaseService):
         historyParams = {}
         usage = {}
         tools = {}
-        tools_call_data = []
         conversation = []
         conversation = ConversationService.createAnthropicConversation(self.configuration.get('conversation')).get('messages', [])        
         self.customConfig['system'] = self.configuration.get('prompt')
@@ -21,7 +20,6 @@ class Antrophic(BaseService):
             if not self.playground:
                 await self.handle_failure(antrophic_response)
             raise ValueError(antrophic_response.get('error'))
-        tools_call_data.extend(BaseService.extract_tool_calls(modelResponse, self.service))
         functionCallRes = await self.function_call(self.customConfig, service_name['anthropic'], antrophic_response)
         if not functionCallRes.get('success'):
             await self.handle_failure(functionCallRes)
@@ -33,5 +31,4 @@ class Antrophic(BaseService):
         usage = self.calculate_usage(modelResponse)
         if not self.playground:
             historyParams = self.prepare_history_params(modelResponse, tools)
-            historyParams["tools_call_data"] = tools_call_data
         return {'success': True, 'modelResponse': modelResponse, 'historyParams': historyParams, 'usage': usage}

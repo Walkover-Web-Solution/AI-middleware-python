@@ -33,10 +33,12 @@ class BaseService:
         self.playground = params.get('playground')
         self.template = params.get('template')
         self.response_format = params.get('response_format')
+        self.tools_call_data = []
 
 
     async def run_tool(self, responses, service):
         codes_mapping, names = make_code_mapping_by_service(responses, service)
+        self.tools_call_data.append(codes_mapping)
         api_calls_response = await ConfigurationService.get_api_call_by_names(names, self.org_id)
         return await process_data_and_run_tools(codes_mapping, api_calls_response[0]['apiCalls'])
 
@@ -167,7 +169,8 @@ class BaseService:
             'type': "assistant" if _.get(model_response, self.modelOutputConfig['message']) else "tool_calls",
             'actor': "user" if self.user else "tool",
             'tools': tools,
-            'chatbot_message' : ""
+            'chatbot_message' : "",
+            'tools_call_data' : self.tools_call_data
         }
     
     def service_formatter(self, configuration : object, service : str ):
