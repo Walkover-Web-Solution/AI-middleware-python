@@ -26,6 +26,8 @@ from ...configs.constant import service_name
 import src.db_services.ConfigurationServices as ConfigurationService
 from ..utils.send_error_webhook import send_error_to_webhook
 from copy import deepcopy
+import json
+from ..utils.time import Timer
 
 async def executer(params, service):
     if service == service_name['openai']:
@@ -45,7 +47,7 @@ async def executer(params, service):
 
 @app.post("/chat/{bridge_id}")
 async def chat(request: Request):
-    startTime = int(time.time() * 1000)
+    timer = Timer()
     body = await request.json()
     if(hasattr(request.state, 'body')): 
         body.update(request.state.body) 
@@ -72,6 +74,7 @@ async def chat(request: Request):
     fine_tune_model = configuration.get('fine_tune_model', {}).get('current_model', {})
     is_rich_text = configuration.get('is_rich_text',True)   
     actions = body.get('actions',{})
+    execution_time_logs = body.get('execution_time_logs')
 
     result = {}
     if isinstance(variables, list):
@@ -120,7 +123,6 @@ async def chat(request: Request):
             "variables": variables,
             "user": user,
             "tools": tools,
-            "startTime": startTime,
             "org_id": org_id if is_playground else None,
             "bridge_id": bridge_id,
             "bridge": bridge,
@@ -132,7 +134,8 @@ async def chat(request: Request):
             "playground": is_playground,
             "template": template,
             "response_format" : response_format,
-            "org_id" : org_id
+            "org_id" : org_id,
+            "execution_time_logs" : execution_time_logs
         }
 
         result = await executer(params,service)
@@ -179,18 +182,20 @@ async def chat(request: Request):
                     print(f"error in chatbot : {e}")
                     raise RuntimeError(f"error in chatbot : {e}")
                     
-
-
-        endTime = int(time.time() * 1000)
         if version == 2:
             result['modelResponse'] = await Response_formatter(result["modelResponse"],service)
+        latency = {
+            "over_all_time" : timer.stop("Api total time") or "",
+            "model_execution_time": sum(execution_time_logs.values()) or "",
+            "execution_time_logs" : execution_time_logs or {}
+        }
         if not is_playground:
             usage.update({
                 **result.get("usage", {}),
                 "service": service,
                 "model": model,
                 "orgId": org_id,
-                "latency": endTime - startTime,
+                "latency": json.dumps(latency),
                 "success": True,
                 "variables": variables,
                 "prompt": configuration["prompt"]
@@ -201,14 +206,17 @@ async def chat(request: Request):
     except Exception as error:
         traceback.print_exc()
         if not is_playground:
-            endTime = int(time.time() * 1000)
-            latency = endTime - startTime
+            latency = {
+            "over_all_time" : timer.stop("Api total time") or "",
+            "model_execution_time": sum(execution_time_logs.values()) or "",
+            "execution_time_logs" : execution_time_logs or {}
+            }
             usage.update({
                 **usage,
                 "service": service,
                 "model": model,
                 "orgId": org_id,
-                "latency": latency,
+                "latency": json.dumps(latency),
                 "success": False,
                 "error": str(error)
             })
