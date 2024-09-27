@@ -4,6 +4,7 @@ import traceback
 from config import Config
 
 import requests
+from ..services.utils.time import Timer
 
 async def make_data_if_proxy_token_given(req):
     headers = {
@@ -31,6 +32,8 @@ async def make_data_if_proxy_token_given(req):
         
 async def jwt_middleware(request: Request):
         try:
+            timer = Timer()
+            timer.start()
             if request.headers.get('proxy_auth_token') :
                 check_token = await make_data_if_proxy_token_given(request)
             else :
