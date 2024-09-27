@@ -96,11 +96,13 @@ def tool_call_formatter(configuration: dict, service: str) -> dict:
                 'type': 'function',
                 'function': {
                     'name': transformed_tool['name'],
+                    "strict": True,
                     'description': transformed_tool['description'],
                     'parameters': {
                         'type': 'object',
                         'properties': transform_required_params_to_required(transformed_tool.get('properties', {})),
-                        'required': transformed_tool.get('required', [])
+                        'required': transformed_tool.get('required', []),
+                        "additionalProperties": False,
                     }
                 }
             } for transformed_tool in configuration.get('tools', [])
