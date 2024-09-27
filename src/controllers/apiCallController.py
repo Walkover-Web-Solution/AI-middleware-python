@@ -50,6 +50,7 @@ async def update_apicalls_controller(request, function_id):
 
         await validate_data_to_update(data_to_update, data)
       
+        data_to_update = {**data_to_update, "version": "v2"}
         updated_function = await update_api_call_by_function_id(
             org_id=org_id, function_id=function_id, data_to_update=data_to_update
         )
