@@ -39,7 +39,7 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
                     "enum": [] if(item.get("enum") == '') else item.get("enum", []),
                     "type": "string",
                     "parameter": {}
-                } for item in api_data['fields']}
+                } for item in api_data.get('fields',{})}
             ),
             "required": (
                api_data.get("required_params", api_data.get("required_fields"))
