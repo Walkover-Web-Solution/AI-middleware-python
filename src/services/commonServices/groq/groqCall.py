@@ -8,7 +8,6 @@ class Groq(BaseService):
         historyParams = {}
         usage = {}
         tools = {}
-        
         conversation = ConversationService.createOpenAiConversation(self.configuration.get('conversation')).get('messages', [])
         self.customConfig["messages"] = [{"role": "system", "content": self.configuration['prompt']}] + conversation + ([{"role": "user", "content": self.user}] if self.user else []) 
         self.customConfig =self.service_formatter(self.customConfig, service_name['groq'])

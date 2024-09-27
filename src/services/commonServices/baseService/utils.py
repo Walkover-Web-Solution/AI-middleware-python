@@ -4,7 +4,6 @@ import requests
 import httpx
 import json 
 from src.configs.constant import service_name
-from ....db_services import  ConfigurationServices as ConfigurationService
 
 def validate_tool_call(modelOutputConfig, service, response):
     match service:
@@ -72,6 +71,23 @@ if isinstance(result, tuple) and len(result) == 2:
             'status': 0
         }
     
+def transform_required_params_to_required(properties):
+    # Base case: if the input is not a dictionary, return it as-is
+    if not isinstance(properties, dict):
+        return properties
+
+    # Create a new dictionary to hold the transformed data
+    transformed_properties = {}
+
+    for key, value in properties.items():
+        # If the key is 'required_params', rename it to 'required'
+        if key == 'required_params':
+            transformed_properties['required'] = value
+        else:
+            # Recursively apply the transformation to nested objects
+            transformed_properties[key] = transform_required_params_to_required(value)
+
+    return transformed_properties
 
 def tool_call_formatter(configuration: dict, service: str) -> dict:
     if service == service_name['openai']:
@@ -80,14 +96,14 @@ def tool_call_formatter(configuration: dict, service: str) -> dict:
                 'type': 'function',
                 'function': {
                     'name': transformed_tool['name'],
-                    "strict": True,
+                    # "strict": True,
                     'description': transformed_tool['description'],
                     'parameters': {
                         'type': 'object',
-                        'properties': transformed_tool.get('properties', {}),
+                        'properties': transform_required_params_to_required(transformed_tool.get('properties', {})),
                         'required': transformed_tool.get('required', []),
-                        "additionalProperties": False,
-                    },
+                        # "additionalProperties": False,
+                    }
                 }
             } for transformed_tool in configuration.get('tools', [])
         ]
@@ -98,7 +114,7 @@ def tool_call_formatter(configuration: dict, service: str) -> dict:
                 'description': transformed_tool['description'],
                 'input_schema': {
                     "type": "object",
-                    'properties': transformed_tool.get('properties', {}),
+                    'properties': transform_required_params_to_required(transformed_tool.get('properties', {})),
                     'required': transformed_tool.get('required', [])
                 }
             } for transformed_tool in configuration.get('tools', [])
@@ -112,7 +128,7 @@ def tool_call_formatter(configuration: dict, service: str) -> dict:
                 "description": transformed_tool['description'],
                 "parameters": {
                     "type": "object",
-                    "properties": transformed_tool.get('properties', {}),
+                    "properties": transform_required_params_to_required(transformed_tool.get('properties', {})),
                     "required": transformed_tool.get('required', []),
                 },
                     },
@@ -216,8 +232,11 @@ async def process_data_and_run_tools(codes_mapping, function_code_mapping):
 def make_code_mapping_by_service(responses, service):
     codes_mapping = {}
     names = []
+    tools_call_data = []
     match service:
         case 'openai' | 'groq':
+
+            tools_call_data.extend(responses['choices'][0]['message']['tool_calls'])
             for tool_call in responses['choices'][0]['message']['tool_calls']:
                 name = tool_call['function']['name']
                 error = False
@@ -236,6 +255,7 @@ def make_code_mapping_by_service(responses, service):
                 }
                 names.append(name)
         case 'anthropic':
+            tools_call_data.extend(responses['content'][1:])
             for tool_call in responses['content'][1:]:  # Skip the first item
                 name = tool_call['name']
                 args = tool_call['input']
@@ -248,4 +268,4 @@ def make_code_mapping_by_service(responses, service):
                 names.append(name)
         case _:
             return False, {}
-    return codes_mapping, names
+    return codes_mapping, names, tools_call_data

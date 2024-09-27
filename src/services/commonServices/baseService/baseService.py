@@ -12,6 +12,7 @@ from ..anthrophic.antrophicModelRun import anthropic_runmodel
 from ....configs.constant import service_name
 from ..groq.groqModelRun import groq_runmodel
 from ....configs.constant import service_name
+from ...utils.time import Timer
 
 class BaseService:
     def __init__(self, params):
@@ -21,7 +22,6 @@ class BaseService:
         self.variables = params.get('variables')
         self.user = params.get('user')
         self.tool_call = params.get('tools')
-        self.startTime = params.get('startTime')
         self.org_id = params.get('org_id')
         self.bridge_id = params.get('bridge_id')
         self.bridge = params.get('bridge')
@@ -33,10 +33,14 @@ class BaseService:
         self.playground = params.get('playground')
         self.template = params.get('template')
         self.response_format = params.get('response_format')
+        self.tools_call_data = []
+        self.execution_time_logs = params.get('execution_time_logs')
 
 
     async def run_tool(self, responses, service):
-        codes_mapping, names = make_code_mapping_by_service(responses, service)
+        codes_mapping, names, tools_call_data  = make_code_mapping_by_service(responses, service)
+        temp = {f'{len(self.tools_call_data) + 1}' : tools_call_data}
+        self.tools_call_data.append(temp)
         api_calls_response = await ConfigurationService.get_api_call_by_names(names, self.org_id)
         return await process_data_and_run_tools(codes_mapping, api_calls_response[0]['apiCalls'])
 
@@ -90,11 +94,17 @@ class BaseService:
         return await self.function_call(configuration, service, ai_response, l, tools)
 
     async def handle_failure(self, response):
+        timer = Timer()
+        latency = {
+            "over_all_time" : timer.stop("Api total time") or "",
+            "model_execution_time": sum(self.execution_time_logs.values()) or "",
+            "execution_time_logs" : self.execution_time_logs or {}
+        }
         usage = {
             'service': self.service,
             'model': self.model,
             'orgId': self.org_id,
-            'latency': datetime.now().timestamp() - self.startTime,
+            'latency': json.dumps(latency),
             'success': False,
             'error': response.get('error')
         }
@@ -167,7 +177,8 @@ class BaseService:
             'type': "assistant" if _.get(model_response, self.modelOutputConfig['message']) else "tool_calls",
             'actor': "user" if self.user else "tool",
             'tools': tools,
-            'chatbot_message' : ""
+            'chatbot_message' : "",
+            'tools_call_data' : self.tools_call_data
         }
     
     def service_formatter(self, configuration : object, service : str ):
@@ -194,11 +205,11 @@ class BaseService:
         try:
             response = {}
             if service == service_name['openai']:
-                response = await runModel(configuration, True, apikey, self.bridge_id)
+                response = await runModel(configuration, apikey, self.execution_time_logs, self.bridge_id)
             elif service == service_name['anthropic']:
-                response = await anthropic_runmodel(configuration, apikey)
+                response = await anthropic_runmodel(configuration, apikey, self.execution_time_logs)
             elif service == service_name['groq']:
-                response = await groq_runmodel(configuration, True, apikey)
+                response = await groq_runmodel(configuration, apikey, self.execution_time_logs)
             if not response['success']:
                 raise ValueError(response['error'])
             return {
@@ -209,3 +220,4 @@ class BaseService:
             traceback.print_exc()
             print("chats error=>", e)
             raise ValueError(f"error occurs from openAi api {e.args[0]}")
+    
