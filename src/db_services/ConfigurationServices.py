@@ -184,75 +184,85 @@ async def get_api_call_by_names(names, org_id):
         if not isinstance(names, list):
             names = [names]
         pipeline = [
-    {
-        '$match': {
-            '$or': [
-                {'function_name': {'$in': names}},
-                {'endpoint': {'$in': names}}
-            ],
-            'org_id': org_id
-        }
-    },
-    {
-        '$addFields': {
-            'name': {
-                '$cond': {
-                    'if': {'$ifNull': ['$function_name', False]},
-                    'then': '$function_name',
-                    'else': '$endpoint'
+            {
+                '$match': {
+                    '$or': [
+                        {'function_name': {'$in': names}},
+                        {'endpoint': {'$in': names}}
+                    ],
+                    'org_id': org_id
                 }
             },
-            'code': {
-                '$cond': {
-                    'if': {'$ifNull': ['$code', False]},
-                    'then': '$code',
-                    'else': '$axios'
+            {
+                '$addFields': {
+                    'name': {
+                        '$cond': {
+                            'if': {'$ifNull': ['$function_name', False]},
+                            'then': '$function_name',
+                            'else': '$endpoint'
+                        }
+                    },
+                    'code': {
+                        '$cond': {
+                            'if': {'$ifNull': ['$code', False]},
+                            'then': '$code',
+                            'else': '$axios'
+                        }
+                    },
+                    'variables': {
+                        '$cond': {
+                            'if': {'$ifNull': ['$variables', False]},
+                            'then': '$variables',
+                            'else': []  # Provide an empty array if variables field is missing
+                        }
+                    }
                 }
-            }
-        }
-    },
-    {
-        '$project': {
-            '_id': 0,  # Exclude the `_id` from the response if not needed
-            'name': 1,
-            'code': 1,
-            'is_python': 1
-        }
-    },
-    {
-        '$group': {
-            '_id': None,  # We don't need an actual group key
-            'apiCalls': {
-                '$push': {
-                    'name': '$name',
-                    'code': '$code',
-                    'is_python': '$is_python'
+            },
+            {
+                '$project': {
+                    '_id': 0,  # Exclude the `_id` from the response if not needed
+                    'name': 1,
+                    'code': 1,
+                    'is_python': 1,
+                    'variables': 1  # Include the variables key
                 }
-            }
-        }
-    },
-    {
-        '$project': {
-            '_id': 0,  # Exclude the group _id
-            'apiCalls': {
-                '$arrayToObject': {
-                    '$map': {
-                        'input': '$apiCalls',
-                        'as': 'api',
-                        'in': {
-                            'k': '$$api.name',  # Use the name as the key
-                            'v': {
-                                'code': '$$api.code',
-                                'is_python': '$$api.is_python',
-                                'name': '$$api.name'
+            },
+            {
+                '$group': {
+                    '_id': None,  # We don't need an actual group key
+                    'apiCalls': {
+                        '$push': {
+                            'name': '$name',
+                            'code': '$code',
+                            'is_python': '$is_python',
+                            'variables': '$variables'  # Group the variables as well
+                        }
+                    }
+                }
+            },
+            {
+                '$project': {
+                    '_id': 0,  # Exclude the group _id
+                    'apiCalls': {
+                        '$arrayToObject': {
+                            '$map': {
+                                'input': '$apiCalls',
+                                'as': 'api',
+                                'in': {
+                                    'k': '$$api.name',  # Use the name as the key
+                                    'v': {
+                                        'code': '$$api.code',
+                                        'is_python': '$$api.is_python',
+                                        'variables': '$$api.variables',  # Include the variables in the response
+                                        'name': '$$api.name'
+                                    }
+                                }
                             }
                         }
                     }
                 }
             }
-        }
-    }
-]
+        ]
 
         return list(apiCallModel.aggregate(pipeline))
 

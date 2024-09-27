@@ -42,7 +42,8 @@ class BaseService:
         temp = {f'{len(self.tools_call_data) + 1}' : tools_call_data}
         self.tools_call_data.append(temp)
         api_calls_response = await ConfigurationService.get_api_call_by_names(names, self.org_id)
-        return await process_data_and_run_tools(codes_mapping, api_calls_response[0]['apiCalls'])
+        response = await BaseService.replace_variables_in_args(self, responses, api_calls_response)
+        return await process_data_and_run_tools(codes_mapping, api_calls_response[0]['apiCalls'], response)
 
 
     def update_configration(self, response, function_responses, configuration, mapping_response_data, service, tools):    
@@ -75,7 +76,7 @@ class BaseService:
         modelObj = modelfunc()
         modelOutputConfig = modelObj['outputConfig']
         model_response = response.get('modelResponse', {})
-
+        
         if validate_tool_call(modelOutputConfig, service, model_response) and l <= 3:
             l += 1
             # Continue with the rest of the logic here
@@ -93,6 +94,35 @@ class BaseService:
         ai_response['tools'] = tools
         return await self.function_call(configuration, service, ai_response, l, tools)
 
+
+    async def replace_variables_in_args(self, modal_response, api_call_data):
+        variables = self.variables
+        api_calls = api_call_data[0]['apiCalls']
+        script_id = list(api_calls.keys())[0]
+        variable_path = api_calls[script_id]['variables']
+        tool_calls = modal_response.get('choices', [])[0].get('message', {}).get("tool_calls", [])
+        
+        for tool_call in tool_calls:
+            args = json.loads(tool_call['function']['arguments'])
+            
+            for key, path in variable_path.items():
+                if key in args:
+                    path_parts = path.split('.')
+                    value = variables
+                    try:
+                        for part in path_parts:
+                            value = value.get(part, None)
+                            if value is None:
+                                break
+                    except AttributeError:
+                        value = None
+                        
+                    if value is not None:
+                        args[key] = value
+            tool_call['function']['arguments'] = json.dumps(args)
+
+        return modal_response
+    
     async def handle_failure(self, response):
         timer = Timer()
         latency = {
