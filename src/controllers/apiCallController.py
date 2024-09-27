@@ -2,9 +2,8 @@ from fastapi import HTTPException, status
 from fastapi.responses import JSONResponse
 from src.db_services.apiCallDbService import get_all_api_calls_by_org_id
 from src.db_services.apiCallDbService import update_api_call_by_function_id
-from pydantic import ValidationError
-from validations.update_tools_call_validation import data_to_update_model
-from validations.update_tools_call_validation import update_tool_call_body_data
+from src.db_services.apiCallDbService import get_function_by_id
+
 async def get_all_apicalls_controller(request):
     try:
         org_id = request.state.profile['org']['id']
@@ -17,6 +16,20 @@ async def get_all_apicalls_controller(request):
             })
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e,)
+    
+
+async def validate_data_to_update(data_to_update, db_data):
+    def recursive_check(data, expected):
+        for key in expected:
+            if key not in data:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Missing key: '{key}' in data_to_update")
+
+            if isinstance(expected[key], dict):
+                recursive_check(data[key], expected[key])
+
+    recursive_check(data_to_update, db_data)
+    return True
+
 
 async def update_apicalls_controller(request, function_id):
     try:
@@ -24,15 +37,22 @@ async def update_apicalls_controller(request, function_id):
         body = await request.json()  
         data_to_update = body.get('dataToSend')  
 
-        try:
-            validate_function_id = update_tool_call_body_data(**{
-            "data_to_update": data_to_update
-        })
-            validated_data_to_update = data_to_update_model(**data_to_update)
-        except ValidationError as e:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+        if not function_id or not data_to_update:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Missing function_id or data to update")
         
-        updated_function = await update_api_call_by_function_id(org_id=org_id, function_id=function_id, data_to_update=data_to_update)
+        db_data = await get_function_by_id(function_id)
+        
+        if not db_data:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Function not found")
+        
+        data = db_data.get('data', {})
+        del data['_id']
+
+        await validate_data_to_update(data_to_update, data)
+      
+        updated_function = await update_api_call_by_function_id(
+            org_id=org_id, function_id=function_id, data_to_update=data_to_update
+        )
         
         return JSONResponse(status_code=200, content={
             "success": True,

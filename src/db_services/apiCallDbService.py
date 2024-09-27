@@ -93,3 +93,15 @@ async def update_api_call_by_function_id(org_id, function_id, data_to_update):
             'success': False,
             'error': f"Error in updating the API call: {str(error)}"
         }
+async def get_function_by_id(function_id):
+    try:
+        if not ObjectId.is_valid(function_id):
+            return {"success": False, "message": "Invalid function_id format."}
+        
+        db_data =  apiCallModel.find_one({"_id": ObjectId(function_id)})
+                
+        return {"success": True, "data": db_data}
+    
+    except Exception as e:
+        print(f"Error retrieving function by id: {e}")
+        return {"success": False, "message": f"Error retrieving function: {str(e)}"}
