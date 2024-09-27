@@ -18,19 +18,14 @@ async def get_all_apicalls_controller(request):
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e,)
 
-async def update_apicalls_controller(request):
+async def update_apicalls_controller(request, function_id):
     try:
         org_id = request.state.profile['org']['id']
         body = await request.json()  
-        
-        function_id = body.get('function_id')  
         data_to_update = body.get('dataToSend')  
-        
-   
 
         try:
             validate_function_id = update_tool_call_body_data(**{
-            "function_id" : function_id,
             "data_to_update": data_to_update
         })
             validated_data_to_update = data_to_update_model(**data_to_update)

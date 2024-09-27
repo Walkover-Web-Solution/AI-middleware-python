@@ -34,5 +34,4 @@ class data_to_update_model(BaseModel):
     version: str
     
 class update_tool_call_body_data(BaseModel):
-    function_id: str
     data_to_update : object
