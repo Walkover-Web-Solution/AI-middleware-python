@@ -98,12 +98,15 @@ class BaseService:
     async def replace_variables_in_args(self, modal_response, api_call_data):
         variables = self.variables
         api_calls = api_call_data[0]['apiCalls']
-        script_id = list(api_calls.keys())[0]
-        variable_path = api_calls[script_id]['variables']
+        script_ids_array = list(api_calls.keys())
         tool_calls = modal_response.get('choices', [])[0].get('message', {}).get("tool_calls", [])
         
-        for tool_call in tool_calls:
+        for index, tool_call in enumerate(tool_calls):
             args = json.loads(tool_call['function']['arguments'])
+            script_id = script_ids_array[index]
+            variable_path = api_calls[script_id].get('variables', {})
+            if variable_path == []:
+                variable_path = {}
             
             for key, path in variable_path.items():
                 if key in args:

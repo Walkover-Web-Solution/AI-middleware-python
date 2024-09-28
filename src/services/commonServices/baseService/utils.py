@@ -203,7 +203,7 @@ async def process_data_and_run_tools(codes_mapping, function_code_mapping, respo
                 arguments = function_data.get('arguments')
 
                 if function_name == name:
-                    tool['args'] = arguments
+                    tool['args'] = json.loads(arguments)
             
             # Combine tool data with function code mapping
             tool_data = {**tool, **tool_mapping}
