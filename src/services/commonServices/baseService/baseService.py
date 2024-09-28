@@ -35,12 +35,11 @@ class BaseService:
         self.response_format = params.get('response_format')
         self.tools_call_data = []
         self.execution_time_logs = params.get('execution_time_logs')
+        self.func_tool_call_data = []
 
 
     async def run_tool(self, responses, service):
-        codes_mapping, names, tools_call_data  = make_code_mapping_by_service(responses, service)
-        temp = {f'{len(self.tools_call_data) + 1}' : tools_call_data}
-        self.tools_call_data.append(temp)
+        codes_mapping, names, self.tools_call_data  = make_code_mapping_by_service(responses, service)
         api_calls_response = await ConfigurationService.get_api_call_by_names(names, self.org_id)
         return await process_data_and_run_tools(codes_mapping, api_calls_response[0]['apiCalls'])
 
@@ -86,6 +85,8 @@ class BaseService:
             asyncio.create_task(sendResponse(self.response_format, data = {'function_call': True}, success = True))
         
         func_response_data,mapping_response_data = await self.run_tool(model_response, service)
+        response_data = await self.make_tool_call_data(func_response_data)
+        self.func_tool_call_data.extend(json.loads(response_data))
         configuration, tools = self.update_configration(model_response, func_response_data, configuration, mapping_response_data, service, tools)
         if not self.playground:
             asyncio.create_task(sendResponse(self.response_format, data = {'function_call': True, 'success': True, 'message': 'Going to GPT'}, success=True))
@@ -178,7 +179,7 @@ class BaseService:
             'actor': "user" if self.user else "tool",
             'tools': tools,
             'chatbot_message' : "",
-            'tools_call_data' : self.tools_call_data
+            'tools_call_data' : self.func_tool_call_data
         }
     
     def service_formatter(self, configuration : object, service : str ):
@@ -221,3 +222,16 @@ class BaseService:
             print("chats error=>", e)
             raise ValueError(f"error occurs from openAi api {e.args[0]}")
     
+    async def make_tool_call_data(self, func_response_data):
+        tools_call_data_dict = {item['id']: item for item in self.tools_call_data}
+        func_response_data_dict = {item['tool_call_id']: item for item in func_response_data}
+
+        final_data = [
+            {
+                "tools_call_data": tools_call_data_dict,
+                "func_response_data": func_response_data_dict
+            }
+        ]
+        self.tools_call_data = []
+        return json.dumps(final_data, indent=4)
+
