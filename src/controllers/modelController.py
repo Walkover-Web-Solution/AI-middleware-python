@@ -17,7 +17,7 @@ async def chat_completion(request: Request, db_config: dict = Depends(add_config
         request.state.version = 1
         
         # Extract the response format configuration
-        response_format = request.state.get("body",{}).get('configuration', {}).get('response_format', {})
+        response_format = request.state.body.get('configuration', {}).get('response_format', {})
 
         # If the response format is not default, handle asynchronously as a background task
         if response_format is not None and response_format.get('type') != 'default':
