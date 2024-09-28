@@ -42,6 +42,8 @@ class BaseService:
         temp = {f'{len(self.tools_call_data) + 1}' : tools_call_data}
         self.tools_call_data.append(temp)
         api_calls_response = await ConfigurationService.get_api_call_by_names(names, self.org_id)
+        if not api_calls_response:
+            return await process_data_and_run_tools(codes_mapping, [])
         return await process_data_and_run_tools(codes_mapping, api_calls_response[0]['apiCalls'])
 
 
