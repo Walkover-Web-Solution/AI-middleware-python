@@ -34,7 +34,7 @@ class BaseService:
         self.template = params.get('template')
         self.response_format = params.get('response_format')
         self.tools_call_data = []
-        self.execution_time_logs = params.get('execution_time_logs')
+        self.execution_time_logs = params.get('execution_time_logs',{})
 
 
     async def run_tool(self, responses, service):
@@ -43,7 +43,7 @@ class BaseService:
         self.tools_call_data.append(temp)
         api_calls_response = await ConfigurationService.get_api_call_by_names(names, self.org_id)
         if not api_calls_response:
-            return await process_data_and_run_tools(codes_mapping, [])
+            return await process_data_and_run_tools(codes_mapping, {})
         return await process_data_and_run_tools(codes_mapping, api_calls_response[0]['apiCalls'])
 
 
