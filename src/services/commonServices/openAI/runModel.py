@@ -4,9 +4,11 @@ import json
 import time
 from ...utils.time import Timer
 
-async def runModel(configuration, apiKey, execution_time_logs={}, bridge_id = ''):
+async def runModel(configuration, apiKey, execution_time_logs=None, bridge_id = ''):
     try:
         timer = Timer()
+        if execution_time_logs is None:
+            execution_time_logs = {}
         OpenAIConfig = OpenAIInitializer(apiKey)
         openAI = OpenAIConfig.getOpenAIService()
         timer.start()

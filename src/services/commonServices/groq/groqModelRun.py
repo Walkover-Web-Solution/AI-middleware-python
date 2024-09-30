@@ -3,8 +3,10 @@ import json
 from groq import Groq
 from ...utils.time import Timer
 
-async def groq_runmodel(configuration, apiKey, execution_time_logs):
+async def groq_runmodel(configuration, apiKey, execution_time_logs=None):
     try:
+        if execution_time_logs is None:
+            execution_time_logs = {}
         timer = Timer()
         Groq_config = Groq(api_key = apiKey)
         timer.start()

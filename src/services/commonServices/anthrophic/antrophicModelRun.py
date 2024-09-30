@@ -1,8 +1,10 @@
 import anthropic
 from ...utils.time import Timer
 
-async def anthropic_runmodel(configuration, apikey, execution_time_logs):
+async def anthropic_runmodel(configuration, apikey, execution_time_logs = None):
     try:
+        if execution_time_logs is None:
+            execution_time_logs = {}
         timer = Timer()
         antrophic_config = anthropic.Anthropic(api_key = apikey)
         timer.start()
