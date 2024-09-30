@@ -6,12 +6,11 @@ from ...middlewares.middleware import jwt_middleware
 from ...middlewares.getDataUsingBridgeId import add_configuration_data_to_body
 from concurrent.futures import ThreadPoolExecutor
 from config import Config
-from src.handler.executionHandler import handle_exceptions
+
 router = APIRouter()
 executor = ThreadPoolExecutor(max_workers= int(Config.max_workers) or 10)
 
 @router.post('/chat/completion', dependencies=[Depends(jwt_middleware)])
-@handle_exceptions
 async def chat_completion(request: Request, db_config: dict = Depends(add_configuration_data_to_body)):
     request.state.is_playground = False
     request.state.version = 2
@@ -24,7 +23,6 @@ async def chat_completion(request: Request, db_config: dict = Depends(add_config
     return result
 
 @router.post('/playground/chat/completion/{bridge_id}', dependencies=[Depends(jwt_middleware)])
-@handle_exceptions
 async def playground_chat_completion(request: Request, db_config: dict = Depends(add_configuration_data_to_body)):
     request.state.is_playground = True
     request.state.version = 2

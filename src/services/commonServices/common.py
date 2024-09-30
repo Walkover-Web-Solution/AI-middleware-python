@@ -28,6 +28,7 @@ from ..utils.send_error_webhook import send_error_to_webhook
 from copy import deepcopy
 import json
 from ..utils.time import Timer
+from src.handler.executionHandler import handle_exceptions
 
 async def executer(params, service):
     if service == service_name['openai']:
@@ -46,6 +47,7 @@ async def executer(params, service):
 
 
 @app.post("/chat/{bridge_id}")
+@handle_exceptions
 async def chat(request: Request):
     body = await request.json()
     if(hasattr(request.state, 'body')): 
@@ -243,6 +245,5 @@ async def chat(request: Request):
                 error_message = result.get("modelResponse", str(error))
             asyncio.create_task(sendResponse(response_format, error_message))
             if response_format['type'] != 'default':
-                return
-            asyncio.create_task(sendResponse(response_format,result.get("modelResponse", str(error))))
+                asyncio.create_task(sendResponse(response_format,result.get("modelResponse", str(error))))
         raise ValueError(error)
