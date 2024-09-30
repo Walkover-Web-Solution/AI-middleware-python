@@ -28,6 +28,7 @@ from ..utils.send_error_webhook import send_error_to_webhook
 from copy import deepcopy
 import json
 from ..utils.time import Timer
+from src.handler.executionHandler import handle_exceptions
 
 async def executer(params, service):
     if service == service_name['openai']:
@@ -46,8 +47,8 @@ async def executer(params, service):
 
 
 @app.post("/chat/{bridge_id}")
+@handle_exceptions
 async def chat(request: Request):
-    timer = Timer()
     body = await request.json()
     if(hasattr(request.state, 'body')): 
         body.update(request.state.body) 
@@ -75,6 +76,9 @@ async def chat(request: Request):
     is_rich_text = configuration.get('is_rich_text',True)   
     actions = body.get('actions',{})
     execution_time_logs = body.get('execution_time_logs')
+    user_reference = body.get("user_reference", "")
+    user_contains = ""
+    timer = request.state.timer
 
     result = {}
     if isinstance(variables, list):
@@ -135,7 +139,8 @@ async def chat(request: Request):
             "template": template,
             "response_format" : response_format,
             "org_id" : org_id,
-            "execution_time_logs" : execution_time_logs
+            "execution_time_logs" : execution_time_logs,
+            "timer" : timer
         }
 
         result = await executer(params,service)
@@ -153,7 +158,10 @@ async def chat(request: Request):
                             raise RuntimeError("Function calling has been done 6 times, limit exceeded.")
                         raise RuntimeError(e)
                     system_prompt =  (await ConfigurationService.get_template_by_id(Config.MUI_TEMPLATE_ID)).get('template', '')
-                    params["configuration"]["prompt"], missing_vars = Helper.replace_variables_in_prompt(system_prompt, { "actions" : actions })
+                    if user_reference: 
+                        user_reference = f"\"user reference\": \"{user_reference}\""
+                        user_contains = "on the base of user reference"
+                    params["configuration"]["prompt"], missing_vars = Helper.replace_variables_in_prompt(system_prompt, { "actions" : actions, "user_reference": user_reference, "user_contains": user_contains})
                     params["user"] = f"user: {user}, \n Answer: {_.get(result['modelResponse'], modelOutputConfig['message'])}"
                     params["template"] = None
                     tools = result.get('historyParams').get('tools')
@@ -237,6 +245,5 @@ async def chat(request: Request):
                 error_message = result.get("modelResponse", str(error))
             asyncio.create_task(sendResponse(response_format, error_message))
             if response_format['type'] != 'default':
-                return
-            asyncio.create_task(sendResponse(response_format,result.get("modelResponse", str(error))))
+                asyncio.create_task(sendResponse(response_format,result.get("modelResponse", str(error))))
         raise ValueError(error)

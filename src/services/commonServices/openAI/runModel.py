@@ -1,12 +1,9 @@
 from .openAIInitializerService import OpenAIInitializer
 import traceback
 import json
-import time
-from ...utils.time import Timer
 
-async def runModel(configuration, apiKey, execution_time_logs={}, bridge_id = ''):
+async def runModel(configuration, apiKey, execution_time_logs, bridge_id, timer):
     try:
-        timer = Timer()
         OpenAIConfig = OpenAIInitializer(apiKey)
         openAI = OpenAIConfig.getOpenAIService()
         timer.start()

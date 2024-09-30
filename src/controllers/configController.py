@@ -172,6 +172,7 @@ async def get_all_service_models_controller(service):
                     # "gpt-4-turbo-2024-04-09": restructure_configuration(model_configuration.gpt_4_turbo_2024_04_09()),
                     "gpt-4-turbo": restructure_configuration(model_configuration.gpt_4_turbo()),
                     "gpt-4o": restructure_configuration(model_configuration.gpt_4o()),
+                    "chatgpt-4o-latest": restructure_configuration(model_configuration.chatgpt_4o_latest()),
                     "gpt-4o-mini": restructure_configuration(model_configuration.gpt_4o_mini()),
                 },
                 "fine-tune" : {
@@ -240,6 +241,7 @@ async def update_bridge_controller(request,bridge_id):
         body  = await request.json()
         org_id = request.state.profile['org']['id']
         slugName = body.get('slugName')
+        user_reference=body.get('user_reference')
         service = body.get('service')
         bridgeType = body.get('bridgeType')
         new_configuration = body.get('configuration')
@@ -267,6 +269,8 @@ async def update_bridge_controller(request,bridge_id):
             new_configuration['system_prompt_version_id'] = result.get('id')
         if slugName is not None:
             update_fields['slugName'] = slugName
+        if user_reference is not None:
+            update_fields['user_reference'] = user_reference
         if service is not None:
             update_fields['service'] = service
         if bridgeType is not None:

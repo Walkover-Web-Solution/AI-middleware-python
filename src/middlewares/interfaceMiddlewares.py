@@ -78,6 +78,7 @@ async def send_data_middleware(request: Request, botId: str):
 async def chat_bot_auth(request: Request):
     timer = Timer()
     timer.start()
+    request.state.timer = timer
     token = request.headers.get('Authorization')
     if token:
         token = token.split(' ')[1] if ' ' in token else token
