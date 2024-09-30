@@ -187,9 +187,10 @@ async def process_data_and_run_tools(codes_mapping, function_code_mapping):
     try:
         responses = []
         mapping = {}
+        replica_code_mapping = {**codes_mapping}
 
         # Iterate through each tool and process the API calls in one loop
-        for tool in codes_mapping.values():
+        for tool_call_key, tool in codes_mapping.items():
             tool_call_id = tool["tool_call"]["id"]
             name = tool['name']
             
@@ -216,12 +217,15 @@ async def process_data_and_run_tools(codes_mapping, function_code_mapping):
                 'name': tool_data['name'], 
                 'content': json.dumps(response)
             }
+            replica_code_mapping[tool_call_key] = {
+                **replica_code_mapping[tool_call_key],
+                **response
+            }
 
             # Append to responses and mapping
             responses.append(formatted_data)
             mapping[tool_call_id] = formatted_data
-
-        return responses, mapping
+        return responses, mapping, replica_code_mapping
 
     except Exception as error:
         print(f"Error in createMapping: {error}")

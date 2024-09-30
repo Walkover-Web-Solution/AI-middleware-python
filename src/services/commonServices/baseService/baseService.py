@@ -84,9 +84,8 @@ class BaseService:
         if not self.playground:
             asyncio.create_task(sendResponse(self.response_format, data = {'function_call': True}, success = True))
         
-        func_response_data,mapping_response_data = await self.run_tool(model_response, service)
-        response_data = await self.make_tool_call_data(func_response_data)
-        self.func_tool_call_data.extend(json.loads(response_data))
+        func_response_data,mapping_response_data, tools_call_data = await self.run_tool(model_response, service)
+        self.func_tool_call_data.append(tools_call_data)
         configuration, tools = self.update_configration(model_response, func_response_data, configuration, mapping_response_data, service, tools)
         if not self.playground:
             asyncio.create_task(sendResponse(self.response_format, data = {'function_call': True, 'success': True, 'message': 'Going to GPT'}, success=True))
