@@ -34,6 +34,7 @@ async def jwt_middleware(request: Request):
         try:
             timer = Timer()
             timer.start()
+            request.state.timer = timer
             if request.headers.get('proxy_auth_token') :
                 check_token = await make_data_if_proxy_token_given(request)
             else :
