@@ -207,9 +207,9 @@ class BaseService:
             if service == service_name['openai']:
                 response = await runModel(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer)
             elif service == service_name['anthropic']:
-                response = await anthropic_runmodel(configuration, apikey, self.execution_time_logs, self.timer)
+                response = await anthropic_runmodel(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer)
             elif service == service_name['groq']:
-                response = await groq_runmodel(configuration, apikey, self.execution_time_logs, self.timer)
+                response = await groq_runmodel(configuration, apikey, self.execution_time_logs, self.bridge_id,  self.timer)
             if not response['success']:
                 raise ValueError(response['error'])
             return {

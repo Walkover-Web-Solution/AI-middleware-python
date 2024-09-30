@@ -2,7 +2,7 @@ from .openAIInitializerService import OpenAIInitializer
 import traceback
 import json
 
-async def runModel(configuration, apiKey, execution_time_logs={}, bridge_id = '', timer = None):
+async def runModel(configuration, apiKey, execution_time_logs, bridge_id, timer):
     try:
         OpenAIConfig = OpenAIInitializer(apiKey)
         openAI = OpenAIConfig.getOpenAIService()
