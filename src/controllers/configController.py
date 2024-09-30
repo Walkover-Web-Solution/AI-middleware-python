@@ -240,6 +240,7 @@ async def update_bridge_controller(request,bridge_id):
         body  = await request.json()
         org_id = request.state.profile['org']['id']
         slugName = body.get('slugName')
+        user_reference=body.get('user_reference')
         service = body.get('service')
         bridgeType = body.get('bridgeType')
         new_configuration = body.get('configuration')
@@ -267,6 +268,8 @@ async def update_bridge_controller(request,bridge_id):
             new_configuration['system_prompt_version_id'] = result.get('id')
         if slugName is not None:
             update_fields['slugName'] = slugName
+        if user_reference is not None:
+            update_fields['user_reference'] = user_reference
         if service is not None:
             update_fields['service'] = service
         if bridgeType is not None:
