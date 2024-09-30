@@ -76,7 +76,8 @@ async def chat(request: Request):
     actions = body.get('actions',{})
     execution_time_logs = body.get('execution_time_logs')
     user_reference = body.get("user_reference", "")
-
+    user_contains = ""
+    
     result = {}
     if isinstance(variables, list):
         variables = {}

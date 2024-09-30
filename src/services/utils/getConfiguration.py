@@ -80,5 +80,6 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
         'service': service,
         'apikey': apikey,
         'RTLayer': RTLayer,
-        'template': template_content.get('template') if template_content else None
+        'template': template_content.get('template') if template_content else None,
+        "user_reference": result.get("bridges", {}).get("user_reference", "")
     }
