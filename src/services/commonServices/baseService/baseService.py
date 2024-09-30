@@ -34,12 +34,11 @@ class BaseService:
         self.tools_call_data = []
         self.execution_time_logs = params.get('execution_time_logs',{})
         self.timer = params.get('timer')
+        self.func_tool_call_data = []
 
 
     async def run_tool(self, responses, service):
-        codes_mapping, names, tools_call_data  = make_code_mapping_by_service(responses, service)
-        temp = {f'{len(self.tools_call_data) + 1}' : tools_call_data}
-        self.tools_call_data.append(temp)
+        codes_mapping, names, self.tools_call_data  = make_code_mapping_by_service(responses, service)
         api_calls_response = await ConfigurationService.get_api_call_by_names(names, self.org_id)
         if not api_calls_response:
             return await process_data_and_run_tools(codes_mapping, {})
@@ -86,7 +85,8 @@ class BaseService:
         if not self.playground:
             asyncio.create_task(sendResponse(self.response_format, data = {'function_call': True}, success = True))
         
-        func_response_data,mapping_response_data = await self.run_tool(model_response, service)
+        func_response_data,mapping_response_data, tools_call_data = await self.run_tool(model_response, service)
+        self.func_tool_call_data.append(tools_call_data)
         configuration, tools = self.update_configration(model_response, func_response_data, configuration, mapping_response_data, service, tools)
         if not self.playground:
             asyncio.create_task(sendResponse(self.response_format, data = {'function_call': True, 'success': True, 'message': 'Going to GPT'}, success=True))
@@ -178,7 +178,7 @@ class BaseService:
             'actor': "user" if self.user else "tool",
             'tools': tools,
             'chatbot_message' : "",
-            'tools_call_data' : self.tools_call_data
+            'tools_call_data' : self.func_tool_call_data
         }
     
     def service_formatter(self, configuration : object, service : str ):
