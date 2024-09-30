@@ -1,11 +1,9 @@
 import traceback
 import json
 from groq import Groq
-from ...utils.time import Timer
 
-async def groq_runmodel(configuration, apiKey, execution_time_logs):
+async def groq_runmodel(configuration, apiKey, execution_time_logs, timer):
     try:
-        timer = Timer()
         Groq_config = Groq(api_key = apiKey)
         timer.start()
         chat_completion = Groq_config.chat.completions.create(**configuration)

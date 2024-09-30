@@ -47,7 +47,6 @@ async def executer(params, service):
 
 @app.post("/chat/{bridge_id}")
 async def chat(request: Request):
-    timer = Timer()
     body = await request.json()
     if(hasattr(request.state, 'body')): 
         body.update(request.state.body) 
@@ -77,7 +76,8 @@ async def chat(request: Request):
     execution_time_logs = body.get('execution_time_logs')
     user_reference = body.get("user_reference", "")
     user_contains = ""
-    
+    timer = request.state.timer
+
     result = {}
     if isinstance(variables, list):
         variables = {}
@@ -137,7 +137,8 @@ async def chat(request: Request):
             "template": template,
             "response_format" : response_format,
             "org_id" : org_id,
-            "execution_time_logs" : execution_time_logs
+            "execution_time_logs" : execution_time_logs,
+            "timer" : timer
         }
 
         result = await executer(params,service)
