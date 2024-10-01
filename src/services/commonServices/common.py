@@ -79,6 +79,7 @@ async def chat(request: Request):
     user_reference = body.get("user_reference", "")
     user_contains = ""
     timer = request.state.timer
+    variables_path = body.get('variables_path')
 
     result = {}
     if isinstance(variables, list):
@@ -140,7 +141,8 @@ async def chat(request: Request):
             "response_format" : response_format,
             "org_id" : org_id,
             "execution_time_logs" : execution_time_logs,
-            "timer" : timer
+            "timer" : timer,
+            "variables_path" : variables_path
         }
 
         result = await executer(params,service)
