@@ -175,7 +175,7 @@ async def sendResponse(response_format, data, success = False):
     except Exception as e:
         print("error sending request", e)
 
-async def process_data_and_run_tools(codes_mapping, function_code_mapping):
+async def process_data_and_run_tools(codes_mapping, function_code_mapping, response):
 
     async def process_code_and_service_data(api_call):
             axios_instance = api_call.get('code')
@@ -187,6 +187,7 @@ async def process_data_and_run_tools(codes_mapping, function_code_mapping):
     try:
         responses = []
         mapping = {}
+        tool_calls = response.get('choices', [])[0].get('message', {}).get('tool_calls', [])
 
         # Iterate through each tool and process the API calls in one loop
         for tool in codes_mapping.values():
@@ -195,6 +196,14 @@ async def process_data_and_run_tools(codes_mapping, function_code_mapping):
             
             # Get the function code mapping for the current tool
             tool_mapping = function_code_mapping.get(name, {"error": True, "response": "Wrong Function name"})
+            
+            for tool_call in tool_calls:
+                function_data = tool_call.get('function', {})
+                function_name = function_data.get('name')
+                arguments = function_data.get('arguments')
+
+                if function_name == name:
+                    tool['args'] = json.loads(arguments)
             
             # Combine tool data with function code mapping
             tool_data = {**tool, **tool_mapping}
