@@ -187,9 +187,10 @@ async def process_data_and_run_tools(codes_mapping, function_code_mapping):
     try:
         responses = []
         mapping = {}
+        replica_code_mapping = {**codes_mapping}
 
         # Iterate through each tool and process the API calls in one loop
-        for tool in codes_mapping.values():
+        for tool_call_key, tool in codes_mapping.items():
             tool_call_id = tool["tool_call"]["id"]
             name = tool['name']
             
@@ -216,12 +217,15 @@ async def process_data_and_run_tools(codes_mapping, function_code_mapping):
                 'name': tool_data['name'], 
                 'content': json.dumps(response)
             }
+            replica_code_mapping[tool_call_key] = {
+                **replica_code_mapping[tool_call_key],
+                **response
+            }
 
             # Append to responses and mapping
             responses.append(formatted_data)
             mapping[tool_call_id] = formatted_data
-
-        return responses, mapping
+        return responses, mapping, replica_code_mapping
 
     except Exception as error:
         print(f"Error in createMapping: {error}")
@@ -232,11 +236,9 @@ async def process_data_and_run_tools(codes_mapping, function_code_mapping):
 def make_code_mapping_by_service(responses, service):
     codes_mapping = {}
     names = []
-    tools_call_data = []
     match service:
         case 'openai' | 'groq':
 
-            tools_call_data.extend(responses['choices'][0]['message']['tool_calls'])
             for tool_call in responses['choices'][0]['message']['tool_calls']:
                 name = tool_call['function']['name']
                 error = False
@@ -255,7 +257,6 @@ def make_code_mapping_by_service(responses, service):
                 }
                 names.append(name)
         case 'anthropic':
-            tools_call_data.extend(responses['content'][1:])
             for tool_call in responses['content'][1:]:  # Skip the first item
                 name = tool_call['name']
                 args = tool_call['input']
@@ -268,4 +269,4 @@ def make_code_mapping_by_service(responses, service):
                 names.append(name)
         case _:
             return False, {}
-    return codes_mapping, names, tools_call_data
+    return codes_mapping, names
