@@ -20,7 +20,7 @@ class UnifiedOpenAICase(BaseService):
                 await self.handle_failure(openAIResponse)
             raise ValueError(openAIResponse.get('error'))
         if len(modelResponse.get('choices', [])[0].get('message', {}).get("tool_calls", [])) > 0:
-            functionCallRes = await self.function_call(self.customConfig, service_name['openai'], openAIResponse)
+            functionCallRes = await self.function_call(self.customConfig, service_name['openai'], openAIResponse, 0, {})
             if not functionCallRes.get('success'):
                 await self.handle_failure(functionCallRes)
                 raise ValueError(functionCallRes.get('error'))
