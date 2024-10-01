@@ -35,6 +35,7 @@ class BaseService:
         self.execution_time_logs = params.get('execution_time_logs',{})
         self.timer = params.get('timer')
         self.func_tool_call_data = []
+        self.variables_path = params.get('variables_path')
 
 
     async def run_tool(self, responses, service):
@@ -84,7 +85,7 @@ class BaseService:
         
         if not self.playground:
             asyncio.create_task(sendResponse(self.response_format, data = {'function_call': True}, success = True))
-        
+        model_response = await self.replace_variables_in_args(model_response)
         func_response_data,mapping_response_data, tools_call_data = await self.run_tool(model_response, service)
         self.func_tool_call_data.append(tools_call_data)
         configuration, tools = self.update_configration(model_response, func_response_data, configuration, mapping_response_data, service, tools)
@@ -220,4 +221,29 @@ class BaseService:
             traceback.print_exc()
             print("chats error=>", e)
             raise ValueError(f"error occurs from openAi api {e.args[0]}")
-    
+
+    async def replace_variables_in_args(self, modal_response):
+        variables = self.variables
+        variables_path = self.variables_path
+        tool_calls = modal_response.get('choices', [])[0].get('message', {}).get("tool_calls", [])
+        
+        for index, tool_call in enumerate(tool_calls):
+            args = json.loads(tool_call['function']['arguments'])
+            for key, path in variables_path.items():
+                if key in args:
+                    path_parts = path.split('.')
+                    value = variables
+                    try:
+                        for part in path_parts:
+                            value = value.get(part, None)
+                            if value is None:
+                                break
+                    except AttributeError:
+                        value = None
+                    
+                    if value is not None:
+                        args[key] = value
+            
+            tool_call['function']['arguments'] = json.dumps(args)
+
+        return modal_response

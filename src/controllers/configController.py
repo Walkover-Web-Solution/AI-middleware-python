@@ -247,6 +247,7 @@ async def update_bridge_controller(request,bridge_id):
         new_configuration = body.get('configuration')
         apikey = body.get('apikey')
         apikey_object_id = body.get('apikey_object_id')
+        variables_path = body.get('variables_path')
         update_fields = {}
         if apikey_object_id is not None:
             update_fields['apikey_object_id'] = apikey_object_id
@@ -282,6 +283,8 @@ async def update_bridge_controller(request,bridge_id):
             update_fields['apikey'] = apikey
         if name is not None:
             update_fields['name'] = name
+        if variables_path is not None:
+            update_fields['variables_path'] = variables_path
         if function_id is not None: 
                 if function_operation is not None:      # to add function id 
                     if function_id not in function_ids:
