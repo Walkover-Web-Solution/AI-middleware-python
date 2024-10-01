@@ -31,7 +31,6 @@ class BaseService:
         self.playground = params.get('playground')
         self.template = params.get('template')
         self.response_format = params.get('response_format')
-        self.tools_call_data = []
         self.execution_time_logs = params.get('execution_time_logs',{})
         self.timer = params.get('timer')
         self.func_tool_call_data = []
@@ -80,6 +79,8 @@ class BaseService:
             l += 1
             # Continue with the rest of the logic here
         else:
+            response['success'] = False
+            response['error'] = "The model function keeps getting called repeatedly without stopping."
             return response
         
         if not self.playground:
