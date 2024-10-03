@@ -227,22 +227,21 @@ class BaseService:
         variables_path = self.variables_path
         tool_calls = modal_response.get('choices', [])[0].get('message', {}).get("tool_calls", [])
         
+        def set_nested_value(d, path, value):
+            parts = path.split('.')
+            for part in parts[:-1]:
+                if part not in d or not isinstance(d[part], dict):
+                    d[part] = {}
+                d = d[part]
+            d[parts[-1]] = value
+
         for index, tool_call in enumerate(tool_calls):
             args = json.loads(tool_call['function']['arguments'])
             for key, path in variables_path.items():
-                if key in args:
-                    path_parts = path.split('.')
-                    value = variables
-                    try:
-                        for part in path_parts:
-                            value = value.get(part, None)
-                            if value is None:
-                                break
-                    except AttributeError:
-                        value = None
-                    
-                    if value is not None:
-                        args[key] = value
+                value_to_set = variables.get(key)
+                
+                if value_to_set is not None:
+                    set_nested_value(args, path, value_to_set)
             
             tool_call['function']['arguments'] = json.dumps(args)
 
