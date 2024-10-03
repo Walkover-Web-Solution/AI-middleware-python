@@ -232,7 +232,7 @@ class BaseService:
             for key, path in variables_path.items():
                 value_to_set = variables.get(key)
 
-                if value_to_set is not None:
+                if value_to_set is not None and _.objects.has(args, path):
                     try:
                         _.objects.set_(args, path, value_to_set)
                     except Exception as e:
