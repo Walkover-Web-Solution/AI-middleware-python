@@ -232,11 +232,15 @@ class BaseService:
             for key, path in variables_path.items():
                 value_to_set = variables.get(key)
 
-                if value_to_set is not None and _.objects.has(args, path):
-                    try:
-                        _.objects.set_(args, path, value_to_set)
-                    except Exception as e:
-                        print(f"Error setting value for key '{key}' at path '{path}': {e}")
+                if value_to_set is not None:
+                    if _.objects.has(args, path):
+                        current_value = _.objects.get(args, path)
+                        if isinstance(current_value, dict) and isinstance(value_to_set, dict):
+                            _.objects.set_(args, path, value_to_set)
+                        elif not isinstance(current_value, dict):
+                            _.objects.set_(args, path, value_to_set)
+                    else:
+                        continue
 
             tool_call['function']['arguments'] = json.dumps(args)
 
