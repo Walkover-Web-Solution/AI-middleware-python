@@ -225,20 +225,18 @@ class BaseService:
     async def replace_variables_in_args(self, modal_response):
         variables = self.variables
         variables_path = self.variables_path
+        if variables_path is None:
+            return modal_response
         tool_calls = modal_response.get('choices', [])[0].get('message', {}).get("tool_calls", [])
 
         for index, tool_call in enumerate(tool_calls):
             args = json.loads(tool_call['function']['arguments'])
             for key, path in variables_path.items():
-                value_to_set = variables.get(key)
+                value_to_set = _.objects.get(variables, path)
 
                 if value_to_set is not None:
-                    if _.objects.has(args, path):
-                        current_value = _.objects.get(args, path)
-                        if isinstance(current_value, dict) and isinstance(value_to_set, dict):
-                            _.objects.set_(args, path, value_to_set)
-                        elif not isinstance(current_value, dict):
-                            _.objects.set_(args, path, value_to_set)
+                    if _.objects.has(args, key):
+                        _.objects.set_(args, key, value_to_set)
                     else:
                         continue
 
