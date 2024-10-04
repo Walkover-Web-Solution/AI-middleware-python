@@ -225,8 +225,8 @@ class BaseService:
     async def replace_variables_in_args(self, modal_response):
         variables = self.variables
         variables_path = self.variables_path
-        if variables_path is None:
-            return modal_response
+        if variables_path is None or isinstance(variables_path, list):
+            return modal_response      
         tool_calls = modal_response.get('choices', [])[0].get('message', {}).get("tool_calls", [])
 
         for index, tool_call in enumerate(tool_calls):
