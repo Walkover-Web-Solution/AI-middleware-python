@@ -238,10 +238,7 @@ class BaseService:
                     value_to_set = _.objects.get(variables, path)
 
                     if value_to_set is not None:
-                        if _.objects.has(args, key):
-                            _.objects.set_(args, key, value_to_set)
-                        else:
-                            continue
+                        _.objects.set_(args, key, value_to_set)
 
             tool_call['function']['arguments'] = json.dumps(args)
 
