@@ -1663,7 +1663,7 @@ class ModelsConfig:
             "max_tokens": {
                 "field": "slider",
                 "min": 1,
-                "max": 4096,
+                "max": 16384,
                 "step": 1,
                 "default": 256,
                 "level": 2
@@ -1785,7 +1785,7 @@ class ModelsConfig:
             "max_tokens": {
                 "field": "slider",
                 "min": 1,
-                "max": 4096,
+                "max": 16384,
                 "step": 1,
                 "default": 256,
                 "level": 2
