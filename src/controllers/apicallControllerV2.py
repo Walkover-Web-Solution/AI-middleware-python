@@ -152,13 +152,18 @@ def traverse_body(body, path=None, paths=None, fields=None, required_params=None
         fields = {}
     if required_params is None:
         required_params = []
+
     if body:
         for key, value in body.items():
             current_path = path + [key]
+            path_str = '.'.join(path) if path else key
+
             if isinstance(value, dict):
-                path_str = '.'.join(path)
-                path_str = f"{path_str}.parameter.{key}" if  path != [] else key
-                _.objects.set_(fields, path_str, {"description": '', "type": "object", "enum": [], "required_params": [], "parameter": {}})
+                # Handle object type
+                field = fields
+                for part in path:
+                    field = field.setdefault(part, {}).setdefault('parameter', {})
+                field[key] = {"description": '', "type": "object", "enum": [], "required_params": [], "parameter": {}}
                 traverse_body(value, current_path, paths, fields, required_params)
             elif value == "your_value_here":
                 parameter = ""

@@ -92,15 +92,43 @@ def updateFields(oldFields, newFields, versionCheck):
             if key in old:
                 # Update fields based on old_dict values
                 new[key]['description'] = old[key].get('description') if new[key].get('description') == '' else new[key].get('description')
-                new[key]['type'] = old[key].get('type') or new[key].get('type')
-                new[key]['enum'] = old[key].get('enum') if new[key].get('enum') == [] else []
+                
+                if old[key]['type'] == 'array' and new[key]['type']=='object':
+                    new[key]['type'] = old[key].get('type')
+                else:
+                    new[key]['type'] = new[key].get('type') or old[key].get('type')
+                
+                new[key]['enum'] = old[key].get('enum') if new[key].get('enum') == [] else new[key].get('enum')
+
                 if isinstance(old[key], dict) and isinstance(new[key], dict):
                     # Recursively update nested dictionaries
-                    update_recursive(old[key]['parameter'], new[key]['parameter'])
+                    if old[key].get("type") == "object":
+                        # Ensure 'parameter' key is present
+                        if 'parameter' not in old[key]:
+                            old[key]['parameter'] = {}
+                        if 'parameter' in new[key]:
+                            update_recursive(old[key]['parameter'], new[key]['parameter'])
+
+                    elif old[key].get("type") == "array" and new[key].get('type')=='array':
+                        if 'items' in old[key] and 'parameter' in new[key]: 
+                            if('items' not in new[key]):
+                                new[key]['items'] = {}
+                            new[key]['items'] = new[key]['parameter']
+                            del new[key]['parameter']
+
+                        # If 'items' exists in old and 'parameter' exists in new, update items with parameter from new
+                        if 'items' in old[key] and 'parameter' in new[key]:
+                            update_recursive(old[key]['items'], new[key]['parameter'])
+                        elif 'items' in new[key]:
+                            # If 'items' exists in new, update old items
+                            update_recursive(old[key]['items'], new[key]['items'])
+
+
             else:
                 # Preserve additional keys in new_dict
                 if isinstance(new[key], dict):
-                    update_recursive({}, new[key])  # No update needed if old doesn't have the key
+                    update_recursive({}, new[key])  # No update needed if old doesn't have the key  # Directly add non-dict values
+
         return new
 
     if(versionCheck): 
