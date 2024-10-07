@@ -80,7 +80,7 @@ async def chat(request: Request):
     user_contains = ""
     timer = request.state.timer
     variables_path = body.get('variables_path')
-
+    message_id = str(uuid.uuid1())
     result = {}
     if isinstance(variables, list):
         variables = {}
@@ -142,7 +142,8 @@ async def chat(request: Request):
             "org_id" : org_id,
             "execution_time_logs" : execution_time_logs,
             "timer" : timer,
-            "variables_path" : variables_path
+            "variables_path" : variables_path,
+            "message_id" : message_id
         }
 
         result = await executer(params,service)
@@ -210,6 +211,7 @@ async def chat(request: Request):
                 "variables": variables,
                 "prompt": configuration["prompt"]
             })
+            result['modelResponse']['message_id'] = message_id
             asyncio.create_task(metrics_service.create([usage], result["historyParams"]))
             asyncio.create_task(sendResponse(response_format, result["modelResponse"],success=True))
         return JSONResponse(status_code=200, content={"success": True, "response": result["modelResponse"]})
