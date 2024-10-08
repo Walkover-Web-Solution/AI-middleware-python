@@ -12,7 +12,7 @@ async def add_configuration_data_to_body(request: Request):
         chatbotData = getattr(request.state, "chatbot", None)
         if chatbotData:
             body.update(chatbotData)
-        bridge_id = body.get("bridge_id") or request.path_params.get('bridge_id') or request.state.chatbot.get('bridge_id','')
+        bridge_id = body.get("bridge_id") or request.path_params.get('bridge_id') or getattr(request.state, 'chatbot', {}).get('bridge_id', None)
         db_config = await getConfiguration(body.get('configuration'), body.get('service'), bridge_id, body.get('apikey'), body.get('template_id'), body.get('variables', {}), request.state.profile.get("org",{}).get("id",""), body.get('variables_path'))
         if not db_config.get("success"):
                 raise HTTPException(status_code=400, detail={"success": False, "error": db_config["error"]}) 
