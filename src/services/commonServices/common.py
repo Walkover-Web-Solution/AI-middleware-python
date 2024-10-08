@@ -213,8 +213,8 @@ async def chat(request: Request):
             })
             if result.get('modelResponse') and result['modelResponse'].get('data'):
                 result['modelResponse']['data']['message_id'] = message_id
-            asyncio.create_task(metrics_service.create([usage], result["historyParams"]))
             asyncio.create_task(sendResponse(response_format, result["modelResponse"],success=True))
+            asyncio.create_task(metrics_service.create([usage], result["historyParams"]))
         return JSONResponse(status_code=200, content={"success": True, "response": result["modelResponse"]})
     except Exception as error:
         traceback.print_exc()

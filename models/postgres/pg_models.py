@@ -23,7 +23,7 @@ class Conversation(Base):
     chatbot_message = Column(Text)
     is_reset = Column(Boolean, default=False)
     tools_call_data = Column(ARRAY(JSON))
-    user_feedback = Column(Enum('0', '1', '2'))
+    user_feedback = Column(Integer)
     message_id = Column(UUID(as_uuid=True), nullable=True)
 
     # raw_data = relationship("RawData", back_populates="conversation")
