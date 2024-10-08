@@ -237,6 +237,8 @@ class BaseService:
             function_name = tool_call['function']['name']
             if function_name in variables_path:
                 function_variables_path = variables_path[function_name]
+                if isinstance(function_variables_path, list):
+                    continue
                 for key, path in function_variables_path.items():
                     value_to_set = _.objects.get(variables, path)
 
