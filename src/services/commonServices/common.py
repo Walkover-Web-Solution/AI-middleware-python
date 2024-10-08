@@ -211,7 +211,8 @@ async def chat(request: Request):
                 "variables": variables,
                 "prompt": configuration["prompt"]
             })
-            result['modelResponse']['message_id'] = message_id
+            if result.get('modelResponse') and result['modelResponse'].get('data'):
+                result['modelResponse']['data']['message_id'] = message_id
             asyncio.create_task(metrics_service.create([usage], result["historyParams"]))
             asyncio.create_task(sendResponse(response_format, result["modelResponse"],success=True))
         return JSONResponse(status_code=200, content={"success": True, "response": result["modelResponse"]})
