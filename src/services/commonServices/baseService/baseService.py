@@ -36,6 +36,7 @@ class BaseService:
         self.timer = params.get('timer')
         self.func_tool_call_data = []
         self.variables_path = params.get('variables_path')
+        self.message_id = params.get('message_id')
 
 
     async def run_tool(self, responses, service):
@@ -118,7 +119,8 @@ class BaseService:
             'model': self.configuration.get('model'),
             'channel': 'chat',
             'type': "error",
-            'actor': "user" if self.user else "tool"
+            'actor': "user" if self.user else "tool",
+            'message_id' : self.message_id
         }))
         asyncio.create_task(sendResponse(self.response_format, data=response.get('error')))
 # todo
@@ -179,7 +181,8 @@ class BaseService:
             'actor': "user" if self.user else "tool",
             'tools': tools,
             'chatbot_message' : "",
-            'tools_call_data' : self.func_tool_call_data
+            'tools_call_data' : self.func_tool_call_data,
+            'message_id' : self.message_id
         }
     
     def service_formatter(self, configuration : object, service : str ):
