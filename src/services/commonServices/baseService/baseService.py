@@ -233,14 +233,16 @@ class BaseService:
 
         for index, tool_call in enumerate(tool_calls):
             args = json.loads(tool_call['function']['arguments'])
-            for key, path in variables_path.items():
-                value_to_set = _.objects.get(variables, path)
+            function_name = tool_call['function']['name']
+            if function_name in variables_path:
+                function_variables_path = variables_path[function_name]
+                if isinstance(function_variables_path, list):
+                    continue
+                for key, path in function_variables_path.items():
+                    value_to_set = _.objects.get(variables, path)
 
-                if value_to_set is not None:
-                    if _.objects.has(args, key):
+                    if value_to_set is not None:
                         _.objects.set_(args, key, value_to_set)
-                    else:
-                        continue
 
             tool_call['function']['arguments'] = json.dumps(args)
 

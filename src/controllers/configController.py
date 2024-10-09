@@ -256,11 +256,13 @@ async def update_bridge_controller(request,bridge_id):
         name = body.get('name')
         function_id = body.get('functionData', {}).get('function_id', None)
         function_operation = body.get('functionData', {}).get('function_operation')
+        function_name = body.get('functionData', {}).get('function_name',None)
         bridge = await get_bridge_by_id(org_id, bridge_id)
         if new_configuration and 'type' in new_configuration and new_configuration.get('type') != 'fine-tune':
             new_configuration['fine_tune_model'] = {}
             new_configuration['fine_tune_model']['current_model'] = None
         current_configuration = bridge.get('configuration', {})
+        current_variables_path = bridge.get('variables_path',{})
         if apikey_object_id is None:
             apikey = bridge.get('apikey') if apikey is None else Helper.encrypt(apikey)
         function_ids = bridge.get('function_ids') or []
@@ -284,7 +286,8 @@ async def update_bridge_controller(request,bridge_id):
         if name is not None:
             update_fields['name'] = name
         if variables_path is not None:
-            update_fields['variables_path'] = variables_path
+            updated_variables_path = {**current_variables_path, **variables_path}
+            update_fields['variables_path'] = updated_variables_path
         if function_id is not None: 
                 if function_operation is not None:      # to add function id 
                     if function_id not in function_ids:
@@ -293,6 +296,10 @@ async def update_bridge_controller(request,bridge_id):
                         await update_bridge_ids_in_api_calls(function_id, bridge_id, 1)
 
                 elif function_operation is None:        # to remove function id 
+                    if function_name is not None:   
+                         if function_name in  current_variables_path:
+                             del current_variables_path[function_name]
+                             update_fields['variables_path'] = current_variables_path
                     if function_id in function_ids:
                         function_ids.remove(function_id)
                         update_fields['function_ids'] = [ObjectId(fid) for fid in function_ids]
