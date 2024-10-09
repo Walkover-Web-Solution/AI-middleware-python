@@ -4,6 +4,7 @@ import requests
 import httpx
 import json 
 from src.configs.constant import service_name
+import pydash as _
 
 def validate_tool_call(modelOutputConfig, service, response):
     match service:
@@ -71,27 +72,52 @@ if isinstance(result, tuple) and len(result) == 2:
             'status': 0
         }
     
-def transform_required_params_to_required(properties):
+def transform_required_params_to_required(properties, variables={}, variables_path={}, function_name=None, parent_key=None, parentValue = None):
     # Base case: if the input is not a dictionary, return it as-is
     if not isinstance(properties, dict):
         return properties
 
     # Create a new dictionary to hold the transformed data
-    transformed_properties = {}
+    transformed_properties = properties.copy()
+
+    # for key, value in properties.items():
+    #     # If the key is 'required_params', rename it to 'required'
+    #     if key == 'required_params':
+    #         transformed_properties['required'] = value
+    #     else:
+    #         # Recursively apply the transformation to nested objects
+    #         transformed_properties[key] = transform_required_params_to_required(value)
+
 
     for key, value in properties.items():
-        # If the key is 'required_params', rename it to 'required'
-        if key == 'required_params':
-            transformed_properties['required'] = value
-        else:
-            # Recursively apply the transformation to nested objects
-            transformed_properties[key] = transform_required_params_to_required(value)
-
+        if 'required_params' in value and value['required_params'] is not None:
+            transformed_properties[key]['required'] = value['required_params']
+            del transformed_properties[key]['required_params']
+        keyToFind = parent_key + '.' + key if parent_key else key
+        if(variables_path.get(function_name) and keyToFind in variables_path[function_name]):
+            variblePathValue = variables_path[function_name][keyToFind]
+            ifVariablehasValue = _.objects.get(variables, variblePathValue)
+            if(ifVariablehasValue):
+            # delete that key and value from the properties
+                del transformed_properties[key]
+                parentValue['required'].remove(key)
+                continue
+        
+        if value.get('parameter'):
+            transformed_properties[key]['properties'] = transform_required_params_to_required(value['parameter'], variables=variables, variables_path=variables_path, function_name=function_name, parent_key=key, parentValue = value)
+            del transformed_properties[key]['parameter']
+        elif value.get('properties'):
+            transformed_properties[key]['properties'] = transform_required_params_to_required(value['properties'], variables=variables, variables_path=variables_path, function_name=function_name, parent_key=key, parentValue = value)
+        elif value.get('items') and value['items'].get('type') == 'object':
+            transformed_properties[key]['items'] = transform_required_params_to_required(value['items'].get('properties',{}), variables=variables, variables_path=variables_path, function_name=function_name, parent_key=key, parentValue = value)
+        elif value.get('items') and value['items'].get('type') == 'array':
+            transformed_properties[key]['items'] = transform_required_params_to_required(value['items'].get('items',{}), variables=variables, variables_path=variables_path, function_name=function_name, parent_key=key, parentValue = value)
+        
     return transformed_properties
 
-def tool_call_formatter(configuration: dict, service: str) -> dict:
+def tool_call_formatter(configuration: dict, service: str, variables: dict, variables_path: dict) -> dict:
     if service == service_name['openai']:
-        return  [
+        data_to_send =  [
             {
                 'type': 'function',
                 'function': {
@@ -100,13 +126,26 @@ def tool_call_formatter(configuration: dict, service: str) -> dict:
                     'description': transformed_tool['description'],
                     'parameters': {
                         'type': 'object',
-                        'properties': transform_required_params_to_required(transformed_tool.get('properties', {})),
+                        'properties': transform_required_params_to_required(transformed_tool.get('properties', {}), variables=variables, variables_path=variables_path, function_name=transformed_tool['name']),
                         'required': transformed_tool.get('required', []),
                         # "additionalProperties": False,
                     }
                 }
             } for transformed_tool in configuration.get('tools', [])
         ]
+        
+        for key, value in data_to_send[0]['function']['parameters'].items():
+            function_name = data_to_send[0]['function']['name']
+            keyToFind = key
+            if(variables_path.get(function_name) and keyToFind in variables_path[function_name]):
+                variblePathValue = variables_path[function_name][keyToFind]
+                ifVariablehasValue = _.objects.get(variables, variblePathValue)
+                if(ifVariablehasValue):
+                # delete that key and value from the properties
+                    data_to_send[0]['function']['parameters']['required'].remove(key)
+                    continue
+        
+        return data_to_send
     elif service == service_name['anthropic']:
         return  [
             {
@@ -134,7 +173,6 @@ def tool_call_formatter(configuration: dict, service: str) -> dict:
                     },
             } for transformed_tool in configuration.get('tools', [])
         ]
-
 
 async def send_request(url, data, method, headers):
     try:
