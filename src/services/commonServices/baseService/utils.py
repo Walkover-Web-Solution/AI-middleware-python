@@ -18,7 +18,7 @@ def validate_tool_call(modelOutputConfig, service, response):
 
 async def axios_work(data, function_name):
     try:    
-        response = requests.post(f"https://flow.sokt.io/func/{function_name}", json=data)
+        response = requests.post(f"https://flow.sokt.io/func/{function_name}", json=data) # required is not send then it will still hit the curl
         return {
             'response': response.json(),
             'metadata':{
@@ -36,59 +36,8 @@ async def axios_work(data, function_name):
             },
             'status': 0
         }
-    
-# async def axios_work(data, code, is_python=False, function_name=None):
-#     try:
-#         if is_python:
-#             return await axios_work_js(data, code, function_name)
 
-#         try:
-#             if function_name:
-#                 response = requests.post(
-#                     f'https://flow.sokt.io/func/{function_name}',
-#                     json=data,
-#                     headers={'content-type': 'application/json'}
-#                 )
-#                 response.raise_for_status()  # Ensure that HTTP errors raise exceptions
-#             else:
-#                 raise ValueError("Function name must be provided")
-#         except requests.RequestException as e:
-#             return {
-#                 'response': str(e),
-#                 'metadata': {
-#                     'error': str(e),
-#                 },
-#                 'status': 0
-#             }
-
-#         try:
-#             result = response.json()  # Get the JSON response body
-#             headers = json.loads(json.dumps(dict(response.headers)))
-#             return {
-#                 'response': result,
-#                 'metadata': {
-#                     'flowHitId': headers.get('flowHitId', ""),  # Safely access 'flowHitId'
-#                 },
-#                 'status': 1
-#             }
-#         except ValueError as e:
-#             return {
-#                 'response': str(e),
-#                 'metadata': {
-#                     'error': str(e),
-#                 },
-#                 'status': 0
-#             }
-
-#     except Exception as err:
-#         return {
-#             'response': str(err),
-#             'metadata':{
-#                 'error': str(err),
-#             },
-#             'status': 0
-#         }
-
+# [?] won't work for the case addess.name[0]
 def get_nested_value(dictionary, key_path):
     keys = key_path.split('.')
     for key in keys:
@@ -98,6 +47,7 @@ def get_nested_value(dictionary, key_path):
             return None
     return dictionary
 
+# https://docs.google.com/document/d/1WkXnaeAhTUdAfo62SQL0WASoLw-wB9RD9N-IeUXw49Y/edit?tab=t.0 => to see the variables example
 def transform_required_params_to_required(properties, variables={}, variables_path={}, function_name=None, parent_key=None, parentValue=None):
     if not isinstance(properties, dict):
         return properties
