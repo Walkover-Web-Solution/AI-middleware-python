@@ -4,6 +4,8 @@ import requests
 import httpx
 import json 
 from src.configs.constant import service_name
+import pydash as _
+import requests
 
 def validate_tool_call(modelOutputConfig, service, response):
     match service:
@@ -14,12 +16,9 @@ def validate_tool_call(modelOutputConfig, service, response):
         case _:
             return False
 
-async def axios_work_js(data, axios_function):
+async def axios_work(data, function_name):
     try:    
-        pattern = r"https?:\/\/(flow\.sokt\.io|prod-flow-vm\.viasocket\.com)\/func\/([a-zA-Z0-9]+)"
-        match = re.search(pattern, axios_function)
-        script_id = match.group(2)
-        response = requests.post(f"https://flow.sokt.io/func/{script_id}", json=data)
+        response = requests.post(f"https://flow.sokt.io/func/{function_name}", json=data) # required is not send then it will still hit the curl
         return {
             'response': response.json(),
             'metadata':{
@@ -37,61 +36,50 @@ async def axios_work_js(data, axios_function):
             },
             'status': 0
         }
-    
-async def axios_work(data, code, is_python=False):
-    try:
-        if not is_python:
-            return await axios_work_js(data, code)
-        
-        # Append the execution code to the provided code
-        exec_code = code + """
-result = axios_call(params)
-headers = {} 
-if isinstance(result, tuple) and len(result) == 2:
-    result, headers = result
-"""
-        # Prepare the environment for execution
-        local_vars = {'params': data}
-        global_vars = {"requests": requests, "asyncio": __import__('asyncio')}
 
-        exec(exec_code, global_vars, local_vars)
-        return {
-            'response': local_vars.get('result'),
-            'metadata':{
-                'flowHitId': local_vars.get('headers').get('flowHitId'),
-            },
-            'status': 1
-        }
-    except Exception as err:
-        return {
-            'response': str(err),
-            'metadata':{
-                'error': str(err),
-            },
-            'status': 0
-        }
-    
-def transform_required_params_to_required(properties):
-    # Base case: if the input is not a dictionary, return it as-is
+# [?] won't work for the case addess.name[0]
+def get_nested_value(dictionary, key_path):
+    keys = key_path.split('.')
+    for key in keys:
+        if isinstance(dictionary, dict) and key in dictionary:
+            dictionary = dictionary[key]
+        else:
+            return None
+    return dictionary
+
+# https://docs.google.com/document/d/1WkXnaeAhTUdAfo62SQL0WASoLw-wB9RD9N-IeUXw49Y/edit?tab=t.0 => to see the variables example
+def transform_required_params_to_required(properties, variables={}, variables_path={}, function_name=None, parent_key=None, parentValue=None):
     if not isinstance(properties, dict):
         return properties
-
-    # Create a new dictionary to hold the transformed data
-    transformed_properties = {}
-
+    transformed_properties = properties.copy()
     for key, value in properties.items():
-        # If the key is 'required_params', rename it to 'required'
-        if key == 'required_params':
-            transformed_properties['required'] = value
+        if value.get('required_params') is not None:
+            transformed_properties[key]['required'] = value.pop('required_params')
+        key_to_find = f"{parent_key}.{key}" if parent_key else key
+        if variables_path.get(function_name) and key_to_find in variables_path[function_name]:
+            variable_path_value = variables_path[function_name][key_to_find]
+            if_variable_has_value = get_nested_value(variables, variable_path_value)
+            if if_variable_has_value:
+                del transformed_properties[key]
+                if parentValue and 'required' in parentValue and key in parentValue['required']:
+                    parentValue['required'].remove(key)
+                continue
+        for prop_key in ['parameter', 'properties']:
+            if prop_key in value:
+                transformed_properties[key]['properties'] = transform_required_params_to_required(value.pop(prop_key), variables, variables_path, function_name, key, value)
+                break
         else:
-            # Recursively apply the transformation to nested objects
-            transformed_properties[key] = transform_required_params_to_required(value)
-
+            items = value.get('items', {})
+            item_type = items.get('type')
+            if item_type == 'object':
+                transformed_properties[key]['items'] = transform_required_params_to_required( items.get('properties', {}), variables, variables_path, function_name, key, value)
+            elif item_type == 'array':
+                transformed_properties[key]['items'] = transform_required_params_to_required( items.get('items', {}), variables, variables_path, function_name, key, value)
     return transformed_properties
 
-def tool_call_formatter(configuration: dict, service: str) -> dict:
+def tool_call_formatter(configuration: dict, service: str, variables: dict, variables_path: dict) -> dict:
     if service == service_name['openai']:
-        return  [
+        data_to_send =  [
             {
                 'type': 'function',
                 'function': {
@@ -100,13 +88,14 @@ def tool_call_formatter(configuration: dict, service: str) -> dict:
                     'description': transformed_tool['description'],
                     'parameters': {
                         'type': 'object',
-                        'properties': transform_required_params_to_required(transformed_tool.get('properties', {})),
+                        'properties': transform_required_params_to_required(transformed_tool.get('properties', {}), variables=variables, variables_path=variables_path, function_name=transformed_tool['name'], parentValue={'required': transformed_tool.get('required', [])}),
                         'required': transformed_tool.get('required', []),
                         # "additionalProperties": False,
                     }
                 }
             } for transformed_tool in configuration.get('tools', [])
         ]
+        return data_to_send
     elif service == service_name['anthropic']:
         return  [
             {
@@ -114,7 +103,7 @@ def tool_call_formatter(configuration: dict, service: str) -> dict:
                 'description': transformed_tool['description'],
                 'input_schema': {
                     "type": "object",
-                    'properties': transform_required_params_to_required(transformed_tool.get('properties', {})),
+                    'properties': transform_required_params_to_required(transformed_tool.get('properties', {}), variables=variables, variables_path=variables_path, function_name=transformed_tool['name'], parentValue={'required': transformed_tool.get('required', [])}),
                     'required': transformed_tool.get('required', [])
                 }
             } for transformed_tool in configuration.get('tools', [])
@@ -128,13 +117,12 @@ def tool_call_formatter(configuration: dict, service: str) -> dict:
                 "description": transformed_tool['description'],
                 "parameters": {
                     "type": "object",
-                    "properties": transform_required_params_to_required(transformed_tool.get('properties', {})),
+                    "properties": transform_required_params_to_required(transformed_tool.get('properties', {}), variables=variables, variables_path=variables_path, function_name=transformed_tool['name'], parentValue={'required': transformed_tool.get('required', [])}),
                     "required": transformed_tool.get('required', []),
                 },
                     },
             } for transformed_tool in configuration.get('tools', [])
         ]
-
 
 async def send_request(url, data, method, headers):
     try:
@@ -177,11 +165,9 @@ async def sendResponse(response_format, data, success = False):
 
 async def process_data_and_run_tools(codes_mapping, function_code_mapping):
 
-    async def process_code_and_service_data(api_call):
-            axios_instance = api_call.get('code')
-            is_python = api_call.get('is_python')
+    async def process_code_and_service_data(api_call, function_name):
             args= api_call.get("args")
-            api_response = await axios_work(args, axios_instance, is_python)
+            api_response = await axios_work(args, function_name)
             return api_response
 
     try:
@@ -202,7 +188,7 @@ async def process_data_and_run_tools(codes_mapping, function_code_mapping):
 
             # Process the API call if no response exists
             if not tool_data.get("response"):
-                api_response = await process_code_and_service_data(tool_data)
+                api_response = await process_code_and_service_data(tool_data, function_name=name)
                 response = api_response if not tool_data.get('error') else "Args / Input is not proper JSON"
             else:
                 response = tool_data.get("response")
