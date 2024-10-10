@@ -14,7 +14,6 @@ async def auth_and_rate_limit(request: Request):
     await rate_limit(request, key_path='profile.user.id')
 
 @router.post("/{botId}/sendMessage", dependencies=[Depends(auth_and_rate_limit)])
-@handle_exceptions
 async def send_message(request: Request, botId: str):
    # Get the current event loop
    loop = asyncio.get_event_loop()
