@@ -90,15 +90,20 @@ def updateFields(oldFields, newFields, versionCheck):
     def update_recursive(old, new):
         for key in new:
             if key in old:
-                # Update fields based on old_dict values
-                new[key]['description'] = old[key].get('description') if new[key].get('description') == '' else new[key].get('description')
-                new[key]['type'] = old[key].get('type') or new[key].get('type')
-                new[key]['enum'] = old[key].get('enum') if new[key].get('enum') == [] else []
+                new[key]['description'] = old[key].get('description') if not new[key].get('description') else new[key].get('description')
+                new[key]['enum'] = old[key].get('enum') if not new[key].get('enum') else new[key].get('enum')
+
                 if isinstance(old[key], dict) and isinstance(new[key], dict):
-                    # Recursively update nested dictionaries
-                    update_recursive(old[key]['parameter'], new[key]['parameter'])
+                    if old[key].get("type") == "object" and new[key].get('type') == 'object':
+                        update_recursive(old[key].get('parameter', {}), new[key].get('parameter', {}))
+
+                    elif old[key].get("type") == "array" and new[key].get('type') == 'array':
+                        update_recursive(old[key].get('items', {}), new[key].get('items', {}))
+
+                    else:
+                        update_recursive({}, new.get('parameter', {}))
+
             else:
-                # Preserve additional keys in new_dict
                 if isinstance(new[key], dict):
                     update_recursive({}, new[key])  # No update needed if old doesn't have the key
         return new
