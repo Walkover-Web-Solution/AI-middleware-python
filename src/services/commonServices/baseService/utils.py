@@ -203,10 +203,16 @@ async def process_data_and_run_tools(codes_mapping, function_code_mapping):
                 'name': tool_data['name'], 
                 'content': json.dumps(response)
             }
-            replica_code_mapping[tool_call_key] = {
-                **replica_code_mapping[tool_call_key],
-                **response
-            }
+            try:
+                replica_code_mapping[tool_call_key] = {
+                    **replica_code_mapping[tool_call_key],
+                    **response
+                }
+            except Exception:
+                 replica_code_mapping[tool_call_key] = {
+                    **replica_code_mapping[tool_call_key],
+                    'response' : response
+                }
 
             # Append to responses and mapping
             responses.append(formatted_data)
