@@ -204,11 +204,10 @@ async def process_data_and_run_tools(codes_mapping, function_code_mapping):
                 'content': json.dumps(response)
             }
             try:
-                if isinstance (response, dict):
-                    replica_code_mapping[tool_call_key] = {
-                        **replica_code_mapping[tool_call_key],
-                        **response
-                    }
+                replica_code_mapping[tool_call_key] = {
+                    **replica_code_mapping[tool_call_key],
+                    **response
+                }
             except Exception:
                  replica_code_mapping[tool_call_key] = {
                     **replica_code_mapping[tool_call_key],
