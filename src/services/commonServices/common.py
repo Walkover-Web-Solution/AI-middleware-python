@@ -252,3 +252,4 @@ async def chat(request: Request):
             if response_format['type'] != 'default':
                 asyncio.create_task(sendResponse(response_format,result.get("modelResponse", str(error))))
         raise ValueError(error)
+        
