@@ -91,6 +91,7 @@ def updateFields(oldFields, newFields, versionCheck):
         for key in new:
             if key in old:
                 new[key]['description'] = old[key].get('description') if not new[key].get('description') else new[key].get('description')
+                if(new[key].get("type") == 'string'): new[key]["type"] = old[key]["type"]
                 new[key]['enum'] = old[key].get('enum') if not new[key].get('enum') else new[key].get('enum')
 
                 if isinstance(old[key], dict) and isinstance(new[key], dict):
@@ -99,9 +100,6 @@ def updateFields(oldFields, newFields, versionCheck):
 
                     elif old[key].get("type") == "array" and new[key].get('type') == 'array':
                         update_recursive(old[key].get('items', {}), new[key].get('items', {}))
-
-                    else:
-                        update_recursive({}, new.get('parameter', {}))
 
             else:
                 if isinstance(new[key], dict):
