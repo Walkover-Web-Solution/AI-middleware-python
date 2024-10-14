@@ -41,6 +41,8 @@ class BaseService:
 
     async def run_tool(self, responses, service):
         codes_mapping, names  = make_code_mapping_by_service(responses, service)
+        codes_mapping = await self.replace_variables_in_args(codes_mapping)
+       
         api_calls_response = await ConfigurationService.get_api_call_by_names(names, self.org_id)
         if not api_calls_response:
             return await process_data_and_run_tools(codes_mapping, {})
@@ -86,7 +88,6 @@ class BaseService:
         
         if not self.playground:
             asyncio.create_task(sendResponse(self.response_format, data = {'function_call': True}, success = True))
-        model_response = await self.replace_variables_in_args(model_response)
         func_response_data,mapping_response_data, tools_call_data = await self.run_tool(model_response, service)
         self.func_tool_call_data.append(tools_call_data)
         configuration, tools = self.update_configration(model_response, func_response_data, configuration, mapping_response_data, service, tools)
@@ -225,26 +226,25 @@ class BaseService:
             print("chats error=>", e)
             raise ValueError(f"error occurs from openAi api {e.args[0]}")
 
-    async def replace_variables_in_args(self, modal_response):
+    async def replace_variables_in_args(self, codes_mapping):
         variables = self.variables
         variables_path = self.variables_path
         if variables_path is None or isinstance(variables_path, list):
-            return modal_response      
-        tool_calls = modal_response.get('choices', [])[0].get('message', {}).get("tool_calls", [])
+            return args
 
-        for index, tool_call in enumerate(tool_calls):
-            args = json.loads(tool_call['function']['arguments'])
-            function_name = tool_call['function']['name']
-            if function_name in variables_path:
+        for key, value in codes_mapping.items():
+            args = value.get('args')
+            function_name = value.get('name')
+
+            if args is not None and function_name in variables_path:
                 function_variables_path = variables_path[function_name]
-                if isinstance(function_variables_path, list):
-                    continue
-                for key, path in function_variables_path.items():
-                    value_to_set = _.objects.get(variables, path)
+                if not isinstance(function_variables_path, list):
+                    for path_key, path_value in function_variables_path.items():
+                        value_to_set = _.objects.get(variables, path_value)
 
-                    if value_to_set is not None:
-                        _.objects.set_(args, key, value_to_set)
+                        if value_to_set is not None:
+                            _.objects.set_(args, path_key, value_to_set)
 
-            tool_call['function']['arguments'] = json.dumps(args)
+                value['args'] = args
 
-        return modal_response
+        return codes_mapping
