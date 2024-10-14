@@ -9,6 +9,7 @@ class Antrophic(BaseService):
         usage = {}
         tools = {}
         conversation = []
+        options = []
         conversation = ConversationService.createAnthropicConversation(self.configuration.get('conversation')).get('messages', [])        
         self.customConfig['system'] = self.configuration.get('prompt')
         self.customConfig["messages"] =conversation + [{"role": "user", "content":[{ "type": "text","text": self.user }]  }]
@@ -16,6 +17,8 @@ class Antrophic(BaseService):
         self.customConfig =self.service_formatter(self.customConfig, service_name['anthropic'])
         antrophic_response = await self.chats(self.customConfig, self.apikey, service_name['anthropic'])
         modelResponse = antrophic_response.get("modelResponse", {})
+        if self.bridgeType:
+            modelResponse, options = self.extract_response_from_model(model_response=modelResponse)
         if not antrophic_response.get('success'):
             if not self.playground:
                 await self.handle_failure(antrophic_response)
@@ -31,4 +34,4 @@ class Antrophic(BaseService):
         usage = self.calculate_usage(modelResponse)
         if not self.playground:
             historyParams = self.prepare_history_params(modelResponse, tools)
-        return {'success': True, 'modelResponse': modelResponse, 'historyParams': historyParams, 'usage': usage}
+        return {'success': True, 'modelResponse': modelResponse, 'historyParams': historyParams, 'usage': usage, 'options' : options}

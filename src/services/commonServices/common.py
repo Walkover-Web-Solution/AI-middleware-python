@@ -121,6 +121,11 @@ async def chat(request: Request):
             system_prompt = template
             configuration['prompt'], missing_vars = Helper.replace_variables_in_prompt(system_prompt, {"system_prompt": configuration['prompt'], **variables})
 
+        if bridgeType:
+            template_content = (await ConfigurationService.get_template_by_id(Config.CHATBOT_OPTIONS_TEMPLATE_ID)).get('template', '')
+            configuration['prompt'], missing_vars = Helper.replace_variables_in_prompt(template_content, {"system_prompt": configuration['prompt']})
+            customConfig['response_type'] = {"type": "json_object"}
+            
         params = {
             "customConfig": customConfig,
             "configuration": configuration,
@@ -143,7 +148,8 @@ async def chat(request: Request):
             "execution_time_logs" : execution_time_logs,
             "timer" : timer,
             "variables_path" : variables_path,
-            "message_id" : message_id
+            "message_id" : message_id,
+            "bridgeType": bridgeType
         }
 
         result = await executer(params,service)
@@ -213,6 +219,8 @@ async def chat(request: Request):
             })
             if result.get('modelResponse') and result['modelResponse'].get('data'):
                 result['modelResponse']['data']['message_id'] = message_id
+            if bridgeType:
+                result["modelResponse"]['options'] = result.get('options', [])
             asyncio.create_task(sendResponse(response_format, result["modelResponse"],success=True))
             asyncio.create_task(metrics_service.create([usage], result["historyParams"]))
         return JSONResponse(status_code=200, content={"success": True, "response": result["modelResponse"]})

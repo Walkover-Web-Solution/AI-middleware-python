@@ -8,12 +8,15 @@ class Groq(BaseService):
         historyParams = {}
         usage = {}
         tools = {}
+        options = []
         conversation = ConversationService.createOpenAiConversation(self.configuration.get('conversation')).get('messages', [])
         self.customConfig["messages"] = [{"role": "system", "content": self.configuration['prompt']}] + conversation + ([{"role": "user", "content": self.user}] if self.user else []) 
         self.customConfig =self.service_formatter(self.customConfig, service_name['groq'])
         
         groq_response = await self.chats(self.customConfig, self.apikey, 'groq')
         model_response = groq_response.get("modelResponse", {})
+        if self.bridgeType:
+            model_response, options = self.extract_response_from_model(model_response=model_response)
         
         if not groq_response.get('success'):
             if not self.playground:
@@ -35,4 +38,4 @@ class Groq(BaseService):
         if not self.playground:
             historyParams = self.prepare_history_params(model_response, tools)
         
-        return {'success': True, 'modelResponse': model_response, 'historyParams': historyParams, 'usage': usage}
+        return {'success': True, 'modelResponse': model_response, 'historyParams': historyParams, 'usage': usage, 'options': options }

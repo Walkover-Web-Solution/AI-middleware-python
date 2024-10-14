@@ -37,6 +37,7 @@ class BaseService:
         self.func_tool_call_data = []
         self.variables_path = params.get('variables_path')
         self.message_id = params.get('message_id')
+        self.bridgeType = params.get('bridgeType')
 
 
     async def run_tool(self, responses, service):
@@ -184,6 +185,12 @@ class BaseService:
             'tools_call_data' : self.func_tool_call_data,
             'message_id' : self.message_id
         }
+    
+    def extract_response_from_model(self, model_response):
+        content = json.loads(_.get(model_response, self.modelOutputConfig['message'])).get('response', '')
+        options = json.loads(_.get(model_response, self.modelOutputConfig['message'])).get('options', [])
+        _.set_(model_response, self.modelOutputConfig['message'], content)
+        return model_response, options
     
     def service_formatter(self, configuration : object, service : str ):
         try:
