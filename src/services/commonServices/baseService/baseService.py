@@ -245,6 +245,6 @@ class BaseService:
                         if value_to_set is not None:
                             _.objects.set_(args, path_key, value_to_set)
 
-                value['args'] = args
+            value['args'] = args
 
         return codes_mapping
