@@ -229,12 +229,22 @@ class BaseService:
         variables = self.variables
         variables_path = self.variables_path
         if variables_path is None or isinstance(variables_path, list):
-            return modal_response      
-        tool_calls = modal_response.get('choices', [])[0].get('message', {}).get("tool_calls", [])
-
+            return modal_response     
+        service_map = {
+        'openai': lambda response: response.get('choices', [])[0].get('message', {}).get('tool_calls', []),
+        'groq': lambda response: response.get('choices', [])[0].get('message', {}).get('tool_calls', []),
+        'anthropic': lambda response: response.get('content', [])
+        } 
+        tool_calls = service_map.get(self.service, lambda x: [])(modal_response)
         for index, tool_call in enumerate(tool_calls):
-            args = json.loads(tool_call['function']['arguments'])
-            function_name = tool_call['function']['name']
+            if self.service == 'openai' or self.service == 'groq':
+                args = json.loads(tool_call['function']['arguments'])
+                function_name = tool_call['function']['name']
+            elif self.service == 'anthropic':
+                if tool_call['type'] == 'text':
+                    continue
+                args = tool_call['input']
+                function_name = tool_call['name']
             if function_name in variables_path:
                 function_variables_path = variables_path[function_name]
                 if isinstance(function_variables_path, list):
@@ -245,6 +255,9 @@ class BaseService:
                     if value_to_set is not None:
                         _.objects.set_(args, key, value_to_set)
 
-            tool_call['function']['arguments'] = json.dumps(args)
+            if self.service == 'openai' or self.service == 'groq':
+                tool_call['function']['arguments'] = json.dumps(args)
+            elif self.service == 'anthropic':
+                tool_call['input'] = args
 
         return modal_response
