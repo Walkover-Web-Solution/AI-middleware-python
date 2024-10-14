@@ -27,7 +27,8 @@ async def save_api(desc, org_id, api_data=None, code="", required_params=None, f
 
     try:
         if api_data:
-            fields = updateFields(api_data.get('fields',{} if api_data.get('version', 'v1')== 'v2' else []), fields , api_data.get('version', 'v1') == version)
+            old_fields  = api_data.get('fields',{} if api_data.get('version', 'v1')== 'v2' else [])
+            fields = updateFields(old_fields, fields , api_data.get('version', 'v1') == version)
             required_params = [key for key in fields if key not in api_data.get('fields') or key in api_data["required_params"]] if api_data.get('version', 'v1')== 'v2' else required_params
             # Delete certain keys from api_data
             keys_to_delete = ["required_fields", "short_description", 'axios', "optional_fields", "endpoint", 'api_description']  # Replace with actual keys to delete
@@ -39,6 +40,7 @@ async def save_api(desc, org_id, api_data=None, code="", required_params=None, f
             api_data['code'] = code
             api_data['required_params'] = required_params
             api_data['fields'] = fields
+            api_data['old_fields'] = old_fields
             api_data['activated'] = activated
             api_data['updated_at'] = datetime.datetime.now()
             api_data['function_name'] = function_name # script id will be set in this in case of viasocket
