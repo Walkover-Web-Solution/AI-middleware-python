@@ -229,8 +229,8 @@ class BaseService:
     async def replace_variables_in_args(self, codes_mapping):
         variables = self.variables
         variables_path = self.variables_path
-        if variables_path is None or isinstance(variables_path, list):
-            return args
+        if variables_path is None:
+            return codes_mapping
 
         for key, value in codes_mapping.items():
             args = value.get('args')
@@ -238,12 +238,11 @@ class BaseService:
 
             if args is not None and function_name in variables_path:
                 function_variables_path = variables_path[function_name]
-                if not isinstance(function_variables_path, list):
-                    for path_key, path_value in function_variables_path.items():
-                        value_to_set = _.objects.get(variables, path_value)
+                for path_key, path_value in function_variables_path.items():
+                    value_to_set = _.objects.get(variables, path_value)
 
-                        if value_to_set is not None:
-                            _.objects.set_(args, path_key, value_to_set)
+                    if value_to_set is not None:
+                        _.objects.set_(args, path_key, value_to_set)
 
             value['args'] = args
 
