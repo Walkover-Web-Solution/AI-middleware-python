@@ -83,6 +83,7 @@ async def chat(request: Request):
     variables_path = body.get('variables_path')
     message_id = str(uuid.uuid1())
     result = {}
+    suggestions = []
     if isinstance(variables, list):
         variables = {}
 
@@ -154,7 +155,7 @@ async def chat(request: Request):
         }
 
         result = await executer(params,service)
-    
+        base_service_instance = BaseService(params)
         if not result["success"]:
             raise ValueError(result)
 
@@ -179,7 +180,6 @@ async def chat(request: Request):
                         del params['customConfig']['tools']
                     model_response_content = result.get('historyParams').get('message')
                     newresult = await executer(params,service)
-                    base_service_instance = BaseService(params)
                     tokens = base_service_instance.calculate_usage(newresult["modelResponse"])
                     if service == "anthropic":
                         _.set_(result['usage'], "totalTokens", _.get(result['usage'], "totalTokens") + tokens['totalTokens'])
@@ -199,6 +199,10 @@ async def chat(request: Request):
                 except Exception as e:
                     print(f"error in chatbot : {e}")
                     raise RuntimeError(f"error in chatbot : {e}")
+        
+        if bridgeType:
+                suggestions = base_service_instance.extract_response_from_model(model_response=result['modelResponse'])
+                result['suggestions'] = suggestions
                     
         if version == 2:
             result['modelResponse'] = await Response_formatter(result["modelResponse"],service)
@@ -220,8 +224,6 @@ async def chat(request: Request):
             })
             if result.get('modelResponse') and result['modelResponse'].get('data'):
                 result['modelResponse']['data']['message_id'] = message_id
-            if bridgeType:
-                result["modelResponse"]['options'] = result.get('options', [])
             asyncio.create_task(sendResponse(response_format, result["modelResponse"],success=True))
             asyncio.create_task(metrics_service.create([usage], result["historyParams"]))
         return JSONResponse(status_code=200, content={"success": True, "response": result["modelResponse"]})

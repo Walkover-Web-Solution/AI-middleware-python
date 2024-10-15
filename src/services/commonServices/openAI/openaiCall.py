@@ -8,7 +8,6 @@ class UnifiedOpenAICase(BaseService):
         historyParams = {}
         usage = {}
         tools = {}
-        options = []
         conversation = ConversationService.createOpenAiConversation(self.configuration.get('conversation')).get('messages', [])
         self.customConfig["messages"] = [ {"role": "system", "content": self.configuration['prompt']}] + conversation + ([{"role": "user", "content": self.user}] if self.user else []) 
         self.customConfig =self.service_formatter(self.customConfig, service_name['openai'])
@@ -27,11 +26,8 @@ class UnifiedOpenAICase(BaseService):
                 raise ValueError(functionCallRes.get('error'))
             self.update_model_response(modelResponse, functionCallRes)
             tools = functionCallRes.get("tools", {}) 
-
-        if self.bridgeType:
-            modelResponse, options = self.extract_response_from_model(model_response=modelResponse)
             
         usage = self.calculate_usage(modelResponse)
         if not self.playground:
             historyParams = self.prepare_history_params(modelResponse, tools)
-        return {'success': True, 'modelResponse': modelResponse, 'historyParams': historyParams, 'usage': usage, 'options': options }
+        return {'success': True, 'modelResponse': modelResponse, 'historyParams': historyParams, 'usage': usage }

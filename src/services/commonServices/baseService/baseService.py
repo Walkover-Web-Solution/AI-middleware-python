@@ -189,15 +189,11 @@ class BaseService:
     def extract_response_from_model(self, model_response):
         try:
             if (_.get(model_response, self.modelOutputConfig['message'])):
-                content = json.loads(_.get(model_response, self.modelOutputConfig['message'])).get('response', '')
-                options = json.loads(_.get(model_response, self.modelOutputConfig['message'])).get('options', [])
-                _.set_(model_response, self.modelOutputConfig['message'], content)
-                return model_response, options
-            else:
-                return model_response, []
+                suggestions = json.loads(_.get(model_response, self.modelOutputConfig['message'])).get('options', [])
+                return suggestions
         except Exception as e:
             print(f"An error occurred while extracting response: {e}")
-            return model_response, []
+            return []
     
     def service_formatter(self, configuration : object, service : str ):
         try:
