@@ -20,4 +20,5 @@ async def get_all_apicalls(request: Request):
                 "message": "Sucessfully authenticated",
                 "org_id": request.state.profile['org']['id'],
                 "organization_name":  request.state.profile['org']['name'],
+                "proxy_auth_token": request.headers.get('proxy_auth_token')
             })
