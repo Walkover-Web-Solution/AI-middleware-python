@@ -4,7 +4,7 @@ from ..createConversations import ConversationService
 from src.configs.constant import service_name
 
 class Groq(BaseService):
-    async def groq_handler(self):
+    async def execute(self):
         historyParams = {}
         usage = {}
         tools = {}

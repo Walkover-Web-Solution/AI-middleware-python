@@ -4,7 +4,7 @@ from src.configs.constant import service_name
 from ..createConversations import ConversationService
 
 class Antrophic(BaseService):
-    async def antrophic_handler(self):
+    async def execute(self):
         historyParams = {}
         usage = {}
         tools = {}

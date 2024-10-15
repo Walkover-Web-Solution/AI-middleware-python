@@ -33,18 +33,15 @@ from validations.json_models import check_json_support
 
 async def executer(params, service):
     if service == service_name['openai']:
-        openAIInstance = UnifiedOpenAICase(params)
-        result = await openAIInstance.execute()
+        class_obj = UnifiedOpenAICase(params)
     elif service == service_name['gemini']:
-        geminiHandler = GeminiHandler(params)
-        result = await geminiHandler.handle_gemini()
+        class_obj = GeminiHandler(params)
     elif service == service_name['anthropic']:
-        antrophic = Antrophic(params)
-        result = await antrophic.antrophic_handler()
+        class_obj = Antrophic(params)
     elif service == service_name['groq']:
-        groq = Groq(params)
-        result = await groq.groq_handler()
-    return result
+        class_obj = Groq(params)
+        
+    return class_obj
 
 
 @app.post("/chat/{bridge_id}")
@@ -154,8 +151,9 @@ async def chat(request: Request):
             "bridgeType": bridgeType
         }
 
-        result = await executer(params,service)
-        base_service_instance = BaseService(params)
+        class_obj = await executer(params,service)
+        result = await class_obj.execute()
+        
         if not result["success"]:
             raise ValueError(result)
 
@@ -180,7 +178,7 @@ async def chat(request: Request):
                         del params['customConfig']['tools']
                     model_response_content = result.get('historyParams').get('message')
                     newresult = await executer(params,service)
-                    tokens = base_service_instance.calculate_usage(newresult["modelResponse"])
+                    tokens = class_obj.calculate_usage(newresult["modelResponse"])
                     if service == "anthropic":
                         _.set_(result['usage'], "totalTokens", _.get(result['usage'], "totalTokens") + tokens['totalTokens'])
                         _.set_(result['usage'], "inputTokens", _.get(result['usage'], "inputTokens") + tokens['inputTokens'])
@@ -201,7 +199,7 @@ async def chat(request: Request):
                     raise RuntimeError(f"error in chatbot : {e}")
         
         if bridgeType:
-                suggestions = base_service_instance.extract_response_from_model(model_response=result['modelResponse'])
+                suggestions = class_obj.extract_response_from_model(model_response=result['modelResponse'])
                 
                     
         if version == 2:
