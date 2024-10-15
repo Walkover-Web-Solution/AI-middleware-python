@@ -4,7 +4,7 @@ from ..createConversations import ConversationService
 from src.configs.constant import service_name
 
 class Groq(BaseService):
-    async def groq_handler(self):
+    async def execute(self):
         historyParams = {}
         usage = {}
         tools = {}
@@ -30,9 +30,12 @@ class Groq(BaseService):
             self.update_model_response(model_response, functionCallRes)
             tools = functionCallRes.get("tools", {}) 
         
+        # if self.bridgeType:
+        #     model_response, options = self.extract_response_from_model(model_response=model_response)
+            
         usage = self.calculate_usage(model_response)
         
         if not self.playground:
             historyParams = self.prepare_history_params(model_response, tools)
         
-        return {'success': True, 'modelResponse': model_response, 'historyParams': historyParams, 'usage': usage}
+        return {'success': True, 'modelResponse': model_response, 'historyParams': historyParams, 'usage': usage }

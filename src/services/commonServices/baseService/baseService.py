@@ -37,6 +37,7 @@ class BaseService:
         self.func_tool_call_data = []
         self.variables_path = params.get('variables_path')
         self.message_id = params.get('message_id')
+        self.bridgeType = params.get('bridgeType')
 
 
     async def run_tool(self, responses, service):
@@ -184,6 +185,15 @@ class BaseService:
             'tools_call_data' : self.func_tool_call_data,
             'message_id' : self.message_id
         }
+    
+    def extract_response_from_model(self, model_response):
+        try:
+            if (_.get(model_response, self.modelOutputConfig['message'])):
+                suggestions = json.loads(_.get(model_response, self.modelOutputConfig['message'])).get('suggestions', [])
+                return suggestions
+        except Exception as e:
+            print(f"An error occurred while extracting response: {e}")
+            return []
     
     def service_formatter(self, configuration : object, service : str ):
         try:
