@@ -29,9 +29,6 @@ class Groq(BaseService):
             
             self.update_model_response(model_response, functionCallRes)
             tools = functionCallRes.get("tools", {}) 
-        
-        # if self.bridgeType:
-        #     model_response, options = self.extract_response_from_model(model_response=model_response)
             
         usage = self.calculate_usage(model_response)
         

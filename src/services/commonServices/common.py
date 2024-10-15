@@ -178,7 +178,8 @@ async def chat(request: Request):
                         del params['customConfig']['tools']
                     model_response_content = result.get('historyParams').get('message')
                     newresult = await executer(params,service)
-                    tokens = class_obj.calculate_usage(newresult["modelResponse"])
+                    base_service_instance = BaseService(params)
+                    tokens = base_service_instance.calculate_usage(newresult["modelResponse"])
                     if service == "anthropic":
                         _.set_(result['usage'], "totalTokens", _.get(result['usage'], "totalTokens") + tokens['totalTokens'])
                         _.set_(result['usage'], "inputTokens", _.get(result['usage'], "inputTokens") + tokens['inputTokens'])
