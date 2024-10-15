@@ -29,6 +29,7 @@ from copy import deepcopy
 import json
 from ..utils.time import Timer
 from src.handler.executionHandler import handle_exceptions
+from validations.json_models import check_json_support
 
 async def executer(params, service):
     if service == service_name['openai']:
@@ -121,7 +122,7 @@ async def chat(request: Request):
             system_prompt = template
             configuration['prompt'], missing_vars = Helper.replace_variables_in_prompt(system_prompt, {"system_prompt": configuration['prompt'], **variables})
 
-        if bridgeType and service == 'openai':
+        if bridgeType and check_json_support(model, service):
             template_content = (await ConfigurationService.get_template_by_id(Config.CHATBOT_OPTIONS_TEMPLATE_ID)).get('template', '')
             configuration['prompt'], missing_vars = Helper.replace_variables_in_prompt(template_content, {"system_prompt": configuration['prompt']})
             customConfig['response_type'] = {"type": "json_object"}
