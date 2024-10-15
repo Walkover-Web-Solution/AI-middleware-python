@@ -202,10 +202,12 @@ async def chat(request: Request):
         
         if bridgeType:
                 suggestions = base_service_instance.extract_response_from_model(model_response=result['modelResponse'])
-                result['suggestions'] = suggestions
+                
                     
         if version == 2:
             result['modelResponse'] = await Response_formatter(result["modelResponse"],service)
+        if bridgeType and suggestions:
+                result['modelResponse']['options'] = suggestions
         latency = {
             "over_all_time" : timer.stop("Api total time") or "",
             "model_execution_time": sum(execution_time_logs.values()) or "",
