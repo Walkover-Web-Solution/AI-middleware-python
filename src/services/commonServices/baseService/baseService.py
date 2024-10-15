@@ -187,10 +187,13 @@ class BaseService:
         }
     
     def extract_response_from_model(self, model_response):
-        content = json.loads(_.get(model_response, self.modelOutputConfig['message'])).get('response', '')
-        options = json.loads(_.get(model_response, self.modelOutputConfig['message'])).get('options', [])
-        _.set_(model_response, self.modelOutputConfig['message'], content)
-        return model_response, options
+        if (_.get(model_response, self.modelOutputConfig['message'])):
+            content = json.loads(_.get(model_response, self.modelOutputConfig['message'])).get('response', '')
+            options = json.loads(_.get(model_response, self.modelOutputConfig['message'])).get('options', [])
+            _.set_(model_response, self.modelOutputConfig['message'], content)
+            return model_response, options
+        else:
+            return model_response, []
     
     def service_formatter(self, configuration : object, service : str ):
         try:

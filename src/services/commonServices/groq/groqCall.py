@@ -15,8 +15,6 @@ class Groq(BaseService):
         
         groq_response = await self.chats(self.customConfig, self.apikey, 'groq')
         model_response = groq_response.get("modelResponse", {})
-        if self.bridgeType:
-            model_response, options = self.extract_response_from_model(model_response=model_response)
         
         if not groq_response.get('success'):
             if not self.playground:
@@ -33,6 +31,9 @@ class Groq(BaseService):
             self.update_model_response(model_response, functionCallRes)
             tools = functionCallRes.get("tools", {}) 
         
+        # if self.bridgeType:
+        #     model_response, options = self.extract_response_from_model(model_response=model_response)
+            
         usage = self.calculate_usage(model_response)
         
         if not self.playground:
