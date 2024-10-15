@@ -31,7 +31,7 @@ from ..utils.time import Timer
 from src.handler.executionHandler import handle_exceptions
 from validations.json_models import check_json_support
 
-async def executer(params, service):
+async def create_service_handler(params, service):
     if service == service_name['openai']:
         class_obj = UnifiedOpenAICase(params)
     elif service == service_name['gemini']:
@@ -151,7 +151,7 @@ async def chat(request: Request):
             "bridgeType": bridgeType
         }
 
-        class_obj = await executer(params,service)
+        class_obj = await create_service_handler(params,service)
         result = await class_obj.execute()
         
         if not result["success"]:
@@ -177,9 +177,9 @@ async def chat(request: Request):
                     if 'customConfig' in params and 'tools' in params['customConfig']:
                         del params['customConfig']['tools']
                     model_response_content = result.get('historyParams').get('message')
-                    newresult = await executer(params,service)
-                    base_service_instance = BaseService(params)
-                    tokens = base_service_instance.calculate_usage(newresult["modelResponse"])
+                    obj = await create_service_handler(params,service)
+                    newresult = await obj.execute()
+                    tokens = obj.calculate_usage(newresult["modelResponse"])
                     if service == "anthropic":
                         _.set_(result['usage'], "totalTokens", _.get(result['usage'], "totalTokens") + tokens['totalTokens'])
                         _.set_(result['usage'], "inputTokens", _.get(result['usage'], "inputTokens") + tokens['inputTokens'])
