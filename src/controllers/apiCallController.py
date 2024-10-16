@@ -18,16 +18,24 @@ async def get_all_apicalls_controller(request):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e,)
     
 
-async def validate_data_to_update(data_to_update, db_data):
-    def recursive_check(data, expected):
+async def validate_data_to_update(data_to_update: dict, db_data: dict) -> bool:
+    def recursive_check(data, expected, path=''):
         for key in expected:
-            if key not in data:
-                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Missing key: '{key}' in data_to_update")
+            current_path = f"{path}{key}"
 
-            if isinstance(expected[key], dict):
-                recursive_check(data[key], expected[key])
+            if key not in data:
+                if key in ('parameter', 'items'):
+                    continue
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Invalid key: '{current_path}' in data_to_update"
+                )
+
+            if isinstance(expected[key], dict) and isinstance(data[key], dict):
+                recursive_check(data[key], expected[key], f"{current_path}.")
 
     recursive_check(data_to_update, db_data)
+
     return True
 
 
@@ -49,7 +57,7 @@ async def update_apicalls_controller(request, function_id):
         del data['_id']
 
         await validate_data_to_update(data_to_update, data)
-      
+        data_to_update['old_fields'] = data.get('fields',{})
         data_to_update = {**data_to_update, "version": "v2"}
         updated_function = await update_api_call_by_function_id(
             org_id=org_id, function_id=function_id, data_to_update=data_to_update

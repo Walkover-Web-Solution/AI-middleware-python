@@ -27,7 +27,7 @@ class GeminiHandler:
         self.responseSender = ResponseSender()
         self.input = params.get('input')
 
-    async def handle_gemini(self):
+    async def execute(self):
         usage = {}
         historyParams = {}
 

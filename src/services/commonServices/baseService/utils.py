@@ -192,7 +192,7 @@ async def process_data_and_run_tools(codes_mapping, function_code_mapping):
                     'content': json.dumps(tool_data['response'])
                 })
                 # Update tool_call_logs with existing response
-                tool_call_logs[tool_call_key] = {**tool, **tool_data['response']}
+                tool_call_logs[tool_call_key] = {**tool, "response": tool_data['response']}
 
         # Execute all tasks concurrently if any exist
         if tasks:

@@ -287,6 +287,9 @@ async def update_bridge_controller(request,bridge_id):
             update_fields['name'] = name
         if variables_path is not None:
             updated_variables_path = {**current_variables_path, **variables_path}
+            for key, value in updated_variables_path.items():
+                if isinstance(value, list):
+                    updated_variables_path[key] = {}
             update_fields['variables_path'] = updated_variables_path
         if function_id is not None: 
                 if function_operation is not None:      # to add function id 
