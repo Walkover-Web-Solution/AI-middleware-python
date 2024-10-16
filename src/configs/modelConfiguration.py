@@ -3546,7 +3546,7 @@ class ModelsConfig:
             "max_tokens": {
                 "field": "slider",
                 "min": 1,
-                "max": 4096,
+                "max": 8000,
                 "step": 1,
                 "default": 256,
                 "level": 2
@@ -3667,7 +3667,7 @@ class ModelsConfig:
             "max_tokens": {
                 "field": "slider",
                 "min": 1,
-                "max": 4096,
+                "max": 8000,
                 "step": 1,
                 "default": 256,
                 "level": 2
@@ -3788,7 +3788,7 @@ class ModelsConfig:
             "max_tokens": {
                 "field": "slider",
                 "min": 1,
-                "max": 4096,
+                "max": 8192,
                 "step": 1,
                 "default": 256,
                 "level": 2
@@ -3909,7 +3909,7 @@ class ModelsConfig:
             "max_tokens": {
                 "field": "slider",
                 "min": 1,
-                "max": 4096,
+                "max": 8192,
                 "step": 1,
                 "default": 256,
                 "level": 2
@@ -4030,7 +4030,7 @@ class ModelsConfig:
             "max_tokens": {
                 "field": "slider",
                 "min": 1,
-                "max": 4096,
+                "max": 8192,
                 "step": 1,
                 "default": 256,
                 "level": 2
@@ -4151,7 +4151,7 @@ class ModelsConfig:
             "max_tokens": {
                 "field": "slider",
                 "min": 1,
-                "max": 4096,
+                "max": 8192,
                 "step": 1,
                 "default": 256,
                 "level": 2
@@ -4264,7 +4264,7 @@ class ModelsConfig:
             "max_tokens": {
                 "field": "slider",
                 "min": 1,
-                "max": 4096,
+                "max": 32768,
                 "step": 1,
                 "default": 256,
                 "level": 2
@@ -4385,7 +4385,7 @@ class ModelsConfig:
             "max_tokens": {
                 "field": "slider",
                 "min": 1,
-                "max": 4096,
+                "max": 8192,
                 "step": 1,
                 "default": 256,
                 "level": 2
@@ -4506,7 +4506,7 @@ class ModelsConfig:
             "max_tokens": {
                 "field": "slider",
                 "min": 1,
-                "max": 4096,
+                "max": 8192,
                 "step": 1,
                 "default": 256,
                 "level": 2
@@ -4608,122 +4608,3 @@ class ModelsConfig:
             "inputConfig": inputConfig
         }
     
-    # @staticmethod
-    # def whisper_large_v3():
-    #     configuration = {
-    #         "model": {
-    #             "field": "drop",
-    #             "default": "whisper-large-v3",
-    #             "level": 1
-    #         },
-    #         "creativity_level": {
-    #             "field": "slider",
-    #             "min": 0,
-    #             "max": 2,
-    #             "step": 0.1,
-    #             "default": 0,
-    #             "level": 2
-    #         },
-    #         "max_tokens": {
-    #             "field": "slider",
-    #             "min": 1,
-    #             "max": 4096,
-    #             "step": 1,
-    #             "default": 256,
-    #             "level": 2
-    #         },
-    #         "probability_cutoff": {
-    #             "field": "slider",
-    #             "min": 0,
-    #             "max": 1,
-    #             "step": 0.1,
-    #             "default": 1,
-    #             "level": 2
-    #         },
-    #         "log_probability": {
-    #             "field": "boolean",
-    #             "default": False,
-    #             "level": 0,
-    #             "typeOf": "boolean"
-    #         },
-    #         "repetition_penalty": {
-    #             "field": "slider",
-    #             "min": 0,
-    #             "max": 2,
-    #             "step": 0.01,
-    #             "default": 0,
-    #             "level": 2
-    #         },
-    #         "novelty_penalty": {
-    #             "field": "slider",
-    #             "min": 0,
-    #             "max": 2,
-    #             "step": 0.01,
-    #             "default": 0,
-    #             "level": 2
-    #         },
-    #         "response_count": {
-    #             "field": "number",
-    #             "default": 1,
-    #             "typeOf": "number",
-    #             "level": 0
-    #         },
-    #         "stop": {
-    #             "field": "text",
-    #             "default": "",
-    #             "level": 0
-    #         },
-    #         "stream": {
-    #             "field": "boolean",
-    #             "default": False,
-    #             "level": 0,
-    #             "typeOf": "boolean"
-    #         },
-    #         "tools": {
-    #             "field": "array",
-    #             "level": 0,
-    #             "default": [],
-    #             "typeOf": "array"
-    #         },
-    #         "tool_choice": {
-    #             "field": "text",
-    #             "default": "auto",
-    #             "level": 0,
-    #             "typeOf": "string"
-    #         },
-    #         "response_type": {
-    #             "field": "boolean",
-    #             "default": "false",
-    #             "type" : "text",
-    #             "level": 0
-    #         }
-    #     }
-    #     outputConfig = {
-    #         "usage": [{
-    #             "prompt_tokens": "usage.prompt_tokens",
-    #             "completion_tokens": "usage.completion_tokens",
-    #             "total_tokens": "usage.total_tokens",
-    #             "total_cost": {
-    #                 "input_cost": 0.01,
-    #                 "output_cost": 0.03
-    #             }
-    #         }],
-    #         "message": "choices[0].message.content",
-    #         "tools": "choices[0].message.tool_calls",
-    #         "assistant": "choices[0].message",
-    #         "id": "id"
-    #     }
-    #     inputConfig = {
-    #         "system": {
-    #             "role": "system",
-    #             "content": "",
-    #             "contentKey": "content",
-    #             "type": "json"
-    #         },
-    #         "content_location": "prompt[0].content"
-    #     }
-    #     return {
-    #         "configuration": configuration,
-    #         "outputConfig": outputConfig,
-    #         "inputConfig": inputConfig
-    #     }
