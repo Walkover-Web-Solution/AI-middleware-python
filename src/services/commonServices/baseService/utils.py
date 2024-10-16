@@ -2,6 +2,7 @@ import pydash as _
 import re
 import requests
 import httpx
+import asyncio
 import json 
 from src.configs.constant import service_name
 import pydash as _
@@ -56,7 +57,7 @@ def transform_required_params_to_required(properties, variables={}, variables_pa
         if value.get('required_params') is not None:
             transformed_properties[key]['required'] = value.pop('required_params')
         key_to_find = f"{parent_key}.{key}" if parent_key else key
-        if variables_path.get(function_name) and key_to_find in variables_path[function_name]:
+        if variables_path is not None and variables_path.get(function_name) and key_to_find in variables_path[function_name]:
             variable_path_value = variables_path[function_name][key_to_find]
             if_variable_has_value = get_nested_value(variables, variable_path_value)
             if if_variable_has_value:
@@ -163,71 +164,78 @@ async def sendResponse(response_format, data, success = False):
     except Exception as e:
         print("error sending request", e)
 
-async def process_data_and_run_tools(codes_mapping, function_code_mapping):
-
-    async def process_code_and_service_data(api_call, function_name):
-            args= api_call.get("args")
-            api_response = await axios_work(args, function_name)
-            return api_response
-
+async def process_data_and_run_tools(codes_mapping, names):
     try:
         responses = []
-        mapping = {}
-        replica_code_mapping = {**codes_mapping}
+        tool_call_logs = {**codes_mapping} 
 
-        # Iterate through each tool and process the API calls in one loop
+        # Prepare tasks for async execution
+        tasks = []
+
         for tool_call_key, tool in codes_mapping.items():
-            tool_call_id = tool["tool_call"]["id"]
             name = tool['name']
-            
-            # Get the function code mapping for the current tool
-            tool_mapping = function_code_mapping.get(name, {"error": True, "response": "Wrong Function name"})
-            
-            # Combine tool data with function code mapping
+
+            # Get corresponding function code mapping
+            tool_mapping = {} if name in names else {"error": True, "response": "Wrong Function name"}
             tool_data = {**tool, **tool_mapping}
 
-            # Process the API call if no response exists
             if not tool_data.get("response"):
-                api_response = await process_code_and_service_data(tool_data, function_name=name)
-                response = api_response if not tool_data.get('error') else "Args / Input is not proper JSON"
+                # if function is present in db/NO response, create task for async processing
+                task = axios_work(tool_data.get("args"), name)
+                tasks.append((tool_call_key, tool_data, task))
             else:
-                response = tool_data.get("response")
+                # If function is not present in db/response exists, append to responses
+                responses.append({
+                    'tool_call_id': tool_call_key,
+                    'role': 'tool',
+                    'name': tool['name'],
+                    'content': json.dumps(tool_data['response'])
+                })
+                # Update tool_call_logs with existing response
+                tool_call_logs[tool_call_key] = {**tool, "response": tool_data['response']}
 
-            # Store the response
-            tool_data['response'] = response
+        # Execute all tasks concurrently if any exist
+        if tasks:
+            task_results = await asyncio.gather(
+                *[task[2] for task in tasks], return_exceptions=True
+            ) # return_exceptions use for the handle the error occurs from the task
 
-            # Format the data to be returned
-            formatted_data = {
-                'tool_call_id': tool_call_id, 
-                'role': 'tool', 
-                'name': tool_data['name'], 
-                'content': json.dumps(response)
-            }
-            try:
-                replica_code_mapping[tool_call_key] = {
-                    **replica_code_mapping[tool_call_key],
-                    **response
-                }
-            except Exception:
-                 replica_code_mapping[tool_call_key] = {
-                    **replica_code_mapping[tool_call_key],
-                    'response' : response
-                }
+            # Process each result
+            for i, (tool_call_key, tool_data, _) in enumerate(tasks):
+                result = task_results[i]
 
-            # Append to responses and mapping
-            responses.append(formatted_data)
-            mapping[tool_call_id] = formatted_data
-        return responses, mapping, replica_code_mapping
+                # Handle any exceptions or errors
+                if isinstance(result, Exception):
+                    response = {"error": "Error during async task execution", "details": str(result)}
+                elif tool_data.get('error'):
+                    response = "Args / Input is not proper JSON"
+                else:
+                    response = result
+
+                # Append formatted response
+                responses.append({
+                    'tool_call_id': tool_call_key,  # Replacing with tool_call_key
+                    'role': 'tool',
+                    'name': tool_data['name'],
+                    'content': json.dumps(response)
+                })
+
+                # Update tool_call_logs with the response
+                tool_call_logs[tool_call_key] = {**tool_data, **response}
+
+        # Create mapping by tool_call_id (now tool_call_key) for return
+        mapping = {resp['tool_call_id']: resp for resp in responses}
+
+        return responses, mapping, tool_call_logs
 
     except Exception as error:
-        print(f"Error in createMapping: {error}")
+        print(f"Error in process_data_and_run_tools: {error}")
         raise error
-    
+  
 
 
 def make_code_mapping_by_service(responses, service):
     codes_mapping = {}
-    names = []
     match service:
         case 'openai' | 'groq':
 
@@ -242,23 +250,19 @@ def make_code_mapping_by_service(responses, service):
                     }
                     error = True
                 codes_mapping[tool_call["id"]] = {
-                    'tool_call': tool_call,
                     'name': name,
                     'args': args,
                     "error": error
                 }
-                names.append(name)
         case 'anthropic':
             for tool_call in responses['content'][1:]:  # Skip the first item
                 name = tool_call['name']
                 args = tool_call['input']
                 codes_mapping[tool_call["id"]] = {
-                    'tool_call': tool_call,
                     'name': name,
                     'args': args,
                     "error": False
                 }
-                names.append(name)
         case _:
             return False, {}
-    return codes_mapping, names
+    return codes_mapping

@@ -38,16 +38,13 @@ class BaseService:
         self.variables_path = params.get('variables_path')
         self.message_id = params.get('message_id')
         self.bridgeType = params.get('bridgeType')
+        self.names = params.get('names', [])
 
 
     async def run_tool(self, responses, service):
-        codes_mapping, names  = make_code_mapping_by_service(responses, service)
+        codes_mapping = make_code_mapping_by_service(responses, service)
         codes_mapping = await self.replace_variables_in_args(codes_mapping)
-       
-        api_calls_response = await ConfigurationService.get_api_call_by_names(names, self.org_id)
-        if not api_calls_response:
-            return await process_data_and_run_tools(codes_mapping, {})
-        return await process_data_and_run_tools(codes_mapping, api_calls_response[0]['apiCalls'])
+        return await process_data_and_run_tools(codes_mapping, self.names)
 
 
     def update_configration(self, response, function_responses, configuration, mapping_response_data, service, tools):    
