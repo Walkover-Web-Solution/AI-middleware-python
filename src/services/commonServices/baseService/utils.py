@@ -165,64 +165,73 @@ async def sendResponse(response_format, data, success = False):
         print("error sending request", e)
 
 async def process_data_and_run_tools(codes_mapping, function_code_mapping):
-
-    async def process_code_and_service_data(api_call, function_name):
-            args= api_call.get("args")
-            return await axios_work(args, function_name)
-
     try:
         responses = []
-        replica_code_mapping = {**codes_mapping}
+        tool_call_logs = {**codes_mapping} 
 
         # Prepare tasks for async execution
         tasks = []
 
         for tool_call_key, tool in codes_mapping.items():
-            tool_call_id = tool["tool_call"]["id"]
             name = tool['name']
+
+            # Get corresponding function code mapping
             tool_mapping = function_code_mapping.get(name, {"error": True, "response": "Wrong Function name"})
             tool_data = {**tool, **tool_mapping}
 
             if not tool_data.get("response"):
-                # If no response, create a task for async processing
-                tasks.append((tool_call_key, tool_call_id, tool_data, process_code_and_service_data(tool_data, name)))
+                # if function is present in db/NO response, create task for async processing
+                task = axios_work(tool_data.get("args"), name)
+                tasks.append((tool_call_key, tool_data, task))
             else:
-                # If response exists, directly add to responses
+                # If function is not present in db/response exists, append to responses
                 responses.append({
-                    'tool_call_id': tool_call_id,
+                    'tool_call_id': tool_call_key,
                     'role': 'tool',
                     'name': tool['name'],
                     'content': json.dumps(tool_data['response'])
                 })
-                replica_code_mapping[tool_call_key] = {**tool, **tool_data['response']}
+                # Update tool_call_logs with existing response
+                tool_call_logs[tool_call_key] = {**tool, **tool_data['response']}
 
-        # Execute all tasks concurrently
+        # Execute all tasks concurrently if any exist
         if tasks:
-            task_results = await asyncio.gather(*[task[3] for task in tasks], return_exceptions=True)
+            task_results = await asyncio.gather(
+                *[task[2] for task in tasks], return_exceptions=True
+            ) # return_exceptions use for the handle the error occurs from the task
 
-            for i, (tool_call_key, tool_call_id, tool_data, _) in enumerate(tasks):
-                response = task_results[i] if not tool_data.get('error') else "Args / Input is not proper JSON"
-                tool_data['response'] = response
+            # Process each result
+            for i, (tool_call_key, tool_data, _) in enumerate(tasks):
+                result = task_results[i]
+
+                # Handle any exceptions or errors
+                if isinstance(result, Exception):
+                    response = {"error": "Error during async task execution", "details": str(result)}
+                elif tool_data.get('error'):
+                    response = "Args / Input is not proper JSON"
+                else:
+                    response = result
 
                 # Append formatted response
                 responses.append({
-                    'tool_call_id': tool_call_id,
+                    'tool_call_id': tool_call_key,  # Replacing with tool_call_key
                     'role': 'tool',
                     'name': tool_data['name'],
                     'content': json.dumps(response)
                 })
-                # Update replica_code_mapping
-                replica_code_mapping[tool_call_key] = {**tool, **response}
 
-        # Create mapping by tool_call_id for return
+                # Update tool_call_logs with the response
+                tool_call_logs[tool_call_key] = {**tool, **response}
+
+        # Create mapping by tool_call_id (now tool_call_key) for return
         mapping = {resp['tool_call_id']: resp for resp in responses}
 
-        return responses, mapping, replica_code_mapping
+        return responses, mapping, tool_call_logs
 
     except Exception as error:
-        print(f"Error in createMapping: {error}")
+        print(f"Error in process_data_and_run_tools: {error}")
         raise error
-    
+  
 
 
 def make_code_mapping_by_service(responses, service):
@@ -242,7 +251,6 @@ def make_code_mapping_by_service(responses, service):
                     }
                     error = True
                 codes_mapping[tool_call["id"]] = {
-                    'tool_call': tool_call,
                     'name': name,
                     'args': args,
                     "error": error
@@ -253,7 +261,6 @@ def make_code_mapping_by_service(responses, service):
                 name = tool_call['name']
                 args = tool_call['input']
                 codes_mapping[tool_call["id"]] = {
-                    'tool_call': tool_call,
                     'name': name,
                     'args': args,
                     "error": False
