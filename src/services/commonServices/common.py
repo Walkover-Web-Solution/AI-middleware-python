@@ -78,6 +78,7 @@ async def chat(request: Request):
     user_contains = ""
     timer = request.state.timer
     variables_path = body.get('variables_path')
+    names = body.get('names')
     message_id = str(uuid.uuid1())
     result = {}
     suggestions = []
@@ -148,7 +149,8 @@ async def chat(request: Request):
             "timer" : timer,
             "variables_path" : variables_path,
             "message_id" : message_id,
-            "bridgeType": bridgeType
+            "bridgeType": bridgeType,
+            "names":names
         }
 
         class_obj = await create_service_handler(params,service)

@@ -164,7 +164,7 @@ async def sendResponse(response_format, data, success = False):
     except Exception as e:
         print("error sending request", e)
 
-async def process_data_and_run_tools(codes_mapping, function_code_mapping):
+async def process_data_and_run_tools(codes_mapping, names):
     try:
         responses = []
         tool_call_logs = {**codes_mapping} 
@@ -176,7 +176,7 @@ async def process_data_and_run_tools(codes_mapping, function_code_mapping):
             name = tool['name']
 
             # Get corresponding function code mapping
-            tool_mapping = function_code_mapping.get(name, {"error": True, "response": "Wrong Function name"})
+            tool_mapping = {} if name in names else {"error": True, "response": "Wrong Function name"}
             tool_data = {**tool, **tool_mapping}
 
             if not tool_data.get("response"):
@@ -221,7 +221,7 @@ async def process_data_and_run_tools(codes_mapping, function_code_mapping):
                 })
 
                 # Update tool_call_logs with the response
-                tool_call_logs[tool_call_key] = {**tool, **response}
+                tool_call_logs[tool_call_key] = {**tool_data, **response}
 
         # Create mapping by tool_call_id (now tool_call_key) for return
         mapping = {resp['tool_call_id']: resp for resp in responses}
@@ -236,7 +236,6 @@ async def process_data_and_run_tools(codes_mapping, function_code_mapping):
 
 def make_code_mapping_by_service(responses, service):
     codes_mapping = {}
-    names = []
     match service:
         case 'openai' | 'groq':
 
@@ -255,7 +254,6 @@ def make_code_mapping_by_service(responses, service):
                     'args': args,
                     "error": error
                 }
-                names.append(name)
         case 'anthropic':
             for tool_call in responses['content'][1:]:  # Skip the first item
                 name = tool_call['name']
@@ -265,7 +263,6 @@ def make_code_mapping_by_service(responses, service):
                     'args': args,
                     "error": False
                 }
-                names.append(name)
         case _:
             return False, {}
-    return codes_mapping, names
+    return codes_mapping
