@@ -1,7 +1,7 @@
 from fastapi import HTTPException, status
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
-from src.db_services.ConfigurationServices import create_bridge, get_bridge_by_id, get_all_bridges_in_org, update_bridge, update_bridge_ids_in_api_calls, get_bridges_with_tools, get_apikey_creds
+from src.db_services.ConfigurationServices import create_bridge, get_bridge_by_id, get_all_bridges_in_org, update_bridge, update_bridge_ids_in_api_calls, get_bridges_with_tools, get_apikey_creds, get_bridge_varaibles
 from src.configs.modelConfiguration import ModelsConfig as model_configuration
 from src.services.utils.helper import Helper
 import json
@@ -323,3 +323,24 @@ async def update_bridge_controller(request,bridge_id):
     except Exception as e:
         print(e)
         raise HTTPException(status_code=400, detail="Invalid request body!")
+
+
+async def get_bridge_var(request):
+    try:
+        body  = await request.json()
+        org_id = request.state.profile.get("org",{}).get("id","")
+        bridge_id = body.get('bridge_id')
+        data =  await get_bridge_varaibles(bridge_id, org_id)
+        prompt = data.get('bridges',{}).get('configuration',{}).get('prompt')
+        variables = []
+        if prompt is not None:
+            variables = Helper.find_variables_in_string(prompt)
+        variables_path = data.get('bridges',{}).get('variables_path',{})
+        path_variables = []
+        for script_id, vars_dict in variables_path.items():
+            path_variables.extend(vars_dict.keys())
+        all_variables = variables + path_variables
+        return {"succcess": True, "variables": all_variables}
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e,)
+
