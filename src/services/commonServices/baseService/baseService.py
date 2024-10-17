@@ -31,7 +31,6 @@ class BaseService:
         self.playground = params.get('playground')
         self.template = params.get('template')
         self.response_format = params.get('response_format')
-        self.tools_call_data = []
         self.execution_time_logs = params.get('execution_time_logs',{})
         self.timer = params.get('timer')
         self.func_tool_call_data = []
@@ -251,6 +250,6 @@ class BaseService:
                     if value_to_set is not None:
                         _.objects.set_(args, path_key, value_to_set)
 
-            value['args'] = args
+                value['args'] = args
 
         return codes_mapping
