@@ -407,3 +407,33 @@ async def get_apikey_creds(id):
             'success': False,
             'error': "something went wrong!!"
         }
+    
+async def get_bridge_varaibles(bridge_id, org_id):
+    try:
+        pipeline = [
+            {
+                '$match': {'_id': ObjectId(bridge_id), "org_id": org_id}
+            },
+            {
+                '$project': {
+                    'configuration.prompt': 1,
+                    'variables_path': 1
+                }
+            }
+        ]
+        
+        result = list(configurationModel.aggregate(pipeline))
+        
+        if not result:
+            return []
+        
+        return {
+            'success': True,
+            'bridges': result[0]
+        }
+    except Exception as error:
+        print(error)
+        return {
+            'success': False,
+            'error': "something went wrong!!"
+        }

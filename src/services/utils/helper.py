@@ -120,3 +120,7 @@ class Helper:
             return finalResponse
         except json.JSONDecodeError as error:
             return {"success": False, "error": str(error)}
+        
+    def find_variables_in_string(prompt):
+        variables = re.findall(r'{{(.*?)}}', prompt)
+        return variables
