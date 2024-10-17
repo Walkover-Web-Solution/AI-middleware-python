@@ -3610,13 +3610,14 @@ class ModelsConfig:
                 "level": 0,
                 "typeOf": "string"
             },
-            # "response_type": {
-            #     "field": "boolean",
-            #     "default": {
-            #         "type" : "text",
-            #      },
-            #     "level": 0
-            # }
+            "response_type": {
+                "field": "select",
+                "options" : [{"type" : "text"},{"type" : "json_object"}],
+                "default": {
+                "type" : "text",
+                },
+                "level": 0
+            }
         }
         outputConfig = {
             "usage": [{
@@ -3731,13 +3732,14 @@ class ModelsConfig:
                 "level": 0,
                 "typeOf": "string"
             },
-            # "response_type": {
-            #     "field": "boolean",
-            #    "default": {
-            #         "type" : "text",
-            #      },
-            #     "level": 0
-            # }
+            "response_type": {
+                "field": "select",
+                "options" : [{"type" : "text"},{"type" : "json_object"}],
+                "default": {
+                "type" : "text",
+                },
+                "level": 0
+            }
         }
         outputConfig = {
             "usage": [{
@@ -3852,13 +3854,14 @@ class ModelsConfig:
                 "level": 0,
                 "typeOf": "string"
             },
-            # "response_type": {
-            #     "field": "boolean",
-            #      "default": {
-            #         "type" : "text",
-            #      },
-            #     "level": 0
-            # }
+            "response_type": {
+                "field": "select",
+                "options" : [{"type" : "text"},{"type" : "json_object"}],
+                "default": {
+                "type" : "text",
+                },
+                "level": 0
+            }
         }
         outputConfig = {
             "usage": [{
@@ -3973,13 +3976,14 @@ class ModelsConfig:
                 "level": 0,
                 "typeOf": "string"
             },
-            # "response_type": {
-            #     "field": "boolean",
-            #     "default": {
-            #         "type" : "text",
-            #      },
-            #     "level": 0
-            # }
+            "response_type": {
+                "field": "select",
+                "options" : [{"type" : "text"},{"type" : "json_object"}],
+                "default": {
+                "type" : "text",
+                },
+                "level": 0
+            }
         }
         outputConfig = {
             "usage": [{
@@ -4094,13 +4098,14 @@ class ModelsConfig:
                 "level": 0,
                 "typeOf": "string"
             },
-            # "response_type": {
-            #     "field": "boolean",
-            #     "default": {
-            #         "type" : "text",
-            #      },
-            #     "level": 0
-            # }
+            "response_type": {
+                "field": "select",
+                "options" : [{"type" : "text"},{"type" : "json_object"}],
+                "default": {
+                "type" : "text",
+                },
+                "level": 0
+            }
         }
         outputConfig = {
             "usage": [{
@@ -4207,13 +4212,14 @@ class ModelsConfig:
                 "level": 0,
                 "typeOf": "string"
             },
-            # "response_type": {
-            #     "field": "boolean",
-            #     "default": {
-            #         "type" : "text",
-            #      },
-            #     "level": 0
-            # }
+            "response_type": {
+                "field": "select",
+                "options" : [{"type" : "text"},{"type" : "json_object"}],
+                "default": {
+                "type" : "text",
+                },
+                "level": 0
+            }
         }
         outputConfig = {
             "usage": [{
@@ -4328,13 +4334,14 @@ class ModelsConfig:
                 "level": 0,
                 "typeOf": "string"
             },
-            # "response_type": {
-            #     "field": "boolean",
-            #      "default": {
-            #         "type" : "text",
-            #      },
-            #     "level": 0
-            # }
+            "response_type": {
+                "field": "select",
+                "options" : [{"type" : "text"},{"type" : "json_object"}],
+                "default": {
+                "type" : "text",
+                },
+                "level": 0
+            }
         }
         outputConfig = {
             "usage": [{
@@ -4449,13 +4456,14 @@ class ModelsConfig:
                 "level": 0,
                 "typeOf": "string"
             },
-            # "response_type": {
-            #     "field": "boolean",
-            #     "default": {
-            #         "type" : "text",
-            #      },
-            #     "level": 0
-            # }
+            "response_type": {
+                "field": "select",
+                "options" : [{"type" : "text"},{"type" : "json_object"}],
+                "default": {
+                "type" : "text",
+                },
+                "level": 0
+            }
         }
         outputConfig = {
             "usage": [{
@@ -4570,13 +4578,14 @@ class ModelsConfig:
                 "level": 0,
                 "typeOf": "string"
             },
-            # "response_type": {
-            #     "field": "boolean",
-            #     "default": {
-            #     "type" : "text",
-            #     },
-            #     "level": 0
-            # }
+            "response_type": {
+                "field": "select",
+                "options" : [{"type" : "text"},{"type" : "json_object"}],
+                "default": {
+                "type" : "text",
+                },
+                "level": 0
+            }
         }
         outputConfig = {
             "usage": [{
