@@ -84,6 +84,7 @@ async def duplicate_create_bridges(bridges):
         function_ids= bridges.get('function_ids', [])
         actions= bridges.get('actions', {})
         apikey_object_id = bridges.get('apikey_object_id')
+        apiCalls = bridges.get('apiCalls')
 
         result = await create_bridge({
             "configuration": configuration,
@@ -95,7 +96,8 @@ async def duplicate_create_bridges(bridges):
             "bridgeType": bridgeType,
             "function_ids":function_ids,
             "actions": actions,
-            "apikey_object_id":apikey_object_id
+            "apikey_object_id":apikey_object_id,
+            "apiCalls":apiCalls
         })
 
         if result.get("success"):

@@ -1,6 +1,7 @@
 from fastapi import Request
 from fastapi.responses import JSONResponse
 from src.db_services.ConfigurationServices import get_bridges
+from src.db_services.ConfigurationServices import get_bridges_with_tools
 from datetime import datetime, timezone
 from src.controllers.configController import duplicate_create_bridges
 
@@ -11,7 +12,7 @@ async def duplicate_bridge(request : Request):
         body = await request.json()
         org_id = request.state.profile.get("org",{}).get("id","")
         bridge_id = body.get('bridge_id')
-        result = await get_bridges(bridge_id, org_id)
+        result = await get_bridges_with_tools(bridge_id, org_id)
         bridge = result.get('bridges')
         timestamp = datetime.now(timezone.utc).strftime('%d%H%S')
         name = bridge.get('name')
@@ -30,6 +31,7 @@ async def duplicate_bridge(request : Request):
             "function_ids": bridge.get('function_ids'),
             "actions": bridge.get('actions',{}),
             "apikey_object_id": bridge.get('apikey_object_id',""),
+            "apiCalls":bridge.get('apiCalls',{})
         })
         return JSONResponse(status_code=200, content={
             "success": True,
