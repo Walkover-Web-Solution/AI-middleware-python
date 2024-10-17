@@ -24,7 +24,7 @@ async def validate_data_to_update(data_to_update: dict,  db_data: dict) -> bool:
             current_path = f"{path}{key}"
 
             if key not in data:
-                if key in ('parameter', 'items'): # this condition is used for when the type is changed from object->array or vice-versa from frontend
+                if key in ('parameter', 'items'):# this condition is used for when the type is changed from object->array or vice-versa from frontend
                     continue
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
