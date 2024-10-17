@@ -18,16 +18,23 @@ async def get_all_apicalls_controller(request):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e,)
     
 
-async def validate_data_to_update(data_to_update, db_data):
-    def recursive_check(data, expected):
+async def validate_data_to_update(data_to_update: dict,  db_data: dict) -> bool: 
+    def recursive_check(data, expected, path=''):
         for key in expected:
+            current_path = f"{path}{key}"
+
             if key not in data:
-                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Missing key: '{key}' in data_to_update")
+                if key in ('parameter', 'items'): # this condition is used for when the type is changed from object->array or vice-versa from frontend
+                    continue
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Invalid key: '{current_path}' in data_to_update"
+                )
+            if isinstance(expected[key], dict) and isinstance(data[key], dict): # if the type is dict and then it will check recursively, generally it will check fields data
+                recursive_check(data[key], expected[key], f"{current_path}.")
 
-            if isinstance(expected[key], dict):
-                recursive_check(data[key], expected[key])
+    recursive_check(data_to_update,db_data) # validating for data_to_update with db_data if new keys are present then it will allow to add data in db but if old keys are not present in data_to_update then  it  will through an error
 
-    recursive_check(data_to_update, db_data)
     return True
 
 
