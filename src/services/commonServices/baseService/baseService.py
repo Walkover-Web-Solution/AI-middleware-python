@@ -205,7 +205,7 @@ class BaseService:
                     new_config['tool_choice'] = "auto"
 
                 
-                new_config['tools'] = tool_call_formatter(configuration, service)
+                new_config['tools'] = tool_call_formatter(configuration, service, self.variables, self.variables_path)
             elif 'tool_choice' in configuration:
                 del new_config['tool_choice']  
             if 'tools' in new_config and len(new_config['tools']) == 0:
