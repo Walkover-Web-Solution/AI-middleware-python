@@ -29,6 +29,7 @@ from copy import deepcopy
 import json
 from ..utils.time import Timer
 from src.handler.executionHandler import handle_exceptions
+from src.configs.serviceKeys import model_config_change
 
 async def create_service_handler(params, service):
     if service == service_name['openai']:
@@ -124,6 +125,8 @@ async def chat(request: Request):
             template_content = (await ConfigurationService.get_template_by_id(Config.CHATBOT_OPTIONS_TEMPLATE_ID)).get('template', '')
             configuration['prompt'], missing_vars = Helper.replace_variables_in_prompt(template_content, {"system_prompt": configuration['prompt']})
             customConfig['response_type'] = {"type": "json_object"}
+
+        customConfig = await model_config_change(modelObj['configuration'], customConfig)
             
         params = {
             "customConfig": customConfig,
