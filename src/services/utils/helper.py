@@ -106,7 +106,7 @@ class Helper:
             configuration = getattr(model_configuration,model_name,None)
             configurations = configuration()['configuration']
             db_config = response['configuration']
-            if 'apikey' in response:
+            if 'apikey' in response and response['apikey']:
                 decryptedApiKey = Helper.decrypt(response['apikey'])
                 maskedApiKey = Helper.mask_api_key(decryptedApiKey)
                 response['apikey'] = maskedApiKey
