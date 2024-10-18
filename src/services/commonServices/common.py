@@ -67,7 +67,7 @@ async def chat(request: Request):
     model = configuration.get('model')
     is_playground = request.state.is_playground
     bridge = body.get('bridge')
-    pre_tools = body.get('pre_tools', None)
+    pre_tools = body.get('pre_tools')
     version = request.state.version
     fine_tune_model = configuration.get('fine_tune_model', {}).get('current_model', {})
     is_rich_text = configuration.get('is_rich_text',True)   
@@ -98,7 +98,7 @@ async def chat(request: Request):
         if fine_tune_model is not None and len(fine_tune_model) and model in {'gpt-4o-mini-2024-07-18', 'gpt-4o-2024-08-06', 'gpt-4-0613'}:
             customConfig['model'] = fine_tune_model
         if pre_tools:
-            pre_function_response = await axios_work(pre_tools.get('args', {}), pre_tools.get('pre_function_code', ''))
+            pre_function_response = await axios_work(pre_tools.get('args', {}), pre_tools.get('name', ''))
             if pre_function_response.get('status') == 0:
                 variables['pre_function'] = "Error while calling prefunction. Error message: " + pre_function_response.get('response')
             else:

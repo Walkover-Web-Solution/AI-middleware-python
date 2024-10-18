@@ -68,7 +68,7 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
 
         if api_data is None: 
             raise Exception("Didn't find the pre_function")
-        pre_function_code = api_data.get('code', '')
+        name = api_data.get('function_name',api_data.get('endpoint_name',""))
         required_params = api_data.get('required_params', [])
         args = {}
         for param in required_params:
@@ -79,7 +79,7 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
         'success': True,
         'configuration': configuration,
         'bridge': bridge,
-        'pre_tools': {'pre_function_code': pre_function_code, 'args': args} if len(pre_tools)>0 else None,
+        'pre_tools': {'name': name, 'args': args} if len(pre_tools)>0 else None,
         'service': service,
         'apikey': apikey,
         'RTLayer': RTLayer,
