@@ -407,3 +407,21 @@ async def get_apikey_creds(id):
             'success': False,
             'error': "something went wrong!!"
         }
+
+async def update_user_history(bridge_id, user_history, bridge):
+    try:
+        existing_history = bridge.get('user_history', [])
+        existing_history.append(user_history)
+        if len(existing_history) > 20:
+            existing_history = existing_history[-20:]
+
+        configurationModel.update_one(
+            {"_id": ObjectId(bridge_id)},
+            {"$set": {"user_history": existing_history}}
+        )
+    except Exception as error:
+        print(f"Error updating user history: {error}")
+        return {
+            'success': False,
+            'error': error
+        }
