@@ -407,3 +407,66 @@ async def get_apikey_creds(id):
             'success': False,
             'error': "something went wrong!!"
         }
+    
+async def update_user_history(bridge_id, user_history_entry):
+    try:
+        # First, try to update the existing entry in the user_history array
+        update_result = configurationModel.update_one(
+            {
+                '_id': ObjectId(bridge_id),
+                'user_history': {
+                    '$elemMatch': {
+                        'user_id': user_history_entry['user_id'],
+                        'type': user_history_entry['type']
+                    }
+                }
+            },
+            {
+                '$set': {
+                    'user_history.$.time': user_history_entry['time']
+                }
+            }
+        )
+
+        # If no existing entry was updated, add the new entry to the array
+        if update_result.matched_count == 0:
+            configurationModel.update_one(
+                {'_id': ObjectId(bridge_id)},
+                {
+                    '$push': {
+                        'user_history': {
+                            '$each': [user_history_entry],
+                            '$slice': -20  # Ensure the array only keeps the last 20 entries
+                        }
+                    }
+                }
+            )
+
+        return {'success': True, 'message': 'User history updated successfully'}
+
+    except Exception as e:
+        print(f"Error updating user history: {e}")
+        return {'success': False, 'message': 'An error occurred while updating the user history'}
+
+
+async def update_user_history(bridge_id, user_history_entries):
+    try:
+        # Add the new entries to the user_history array and slice to keep only the last 20 entries
+        update_result = configurationModel.update_one(
+            {'_id': ObjectId(bridge_id)},
+            {
+                '$push': {
+                    'user_history': {
+                        '$each': user_history_entries,  # Add multiple entries at once
+                        '$slice': -20  # Ensure the array only keeps the last 20 entries
+                    }
+                }
+            },
+            upsert=False
+        )
+
+        return {'success': True, 'message': 'User history updated successfully'}
+
+    except Exception as e:
+        print(f"Error updating user history: {e}")
+        return {'success': False, 'message': 'An error occurred while updating the user history'}
