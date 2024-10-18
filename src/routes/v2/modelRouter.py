@@ -15,10 +15,10 @@ async def chat_completion(request: Request, db_config: dict = Depends(add_config
     request.state.is_playground = False
     request.state.version = 2
     response_format = request.state.body.get('configuration', {}).get('response_format', {})
-    if response_format is not None and response_format.get('type') != 'default':
-        asyncio.create_task(chat(request))
-        return {"success": True, "message": "Your response will be sent through configured means."}
     loop = asyncio.get_event_loop()
+    if response_format is not None and response_format.get('type') != 'default':
+        await loop.run_in_executor(executor, lambda: asyncio.run(chat(request)))
+        return {"success": True, "message": "Your response will be sent through configured means."}
     result = await loop.run_in_executor(executor, lambda: asyncio.run(chat(request)))
     return result
 
