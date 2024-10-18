@@ -24,6 +24,7 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
     
     # make tools data
     tools = []
+    names =[]
     for key, api_data in result.get('bridges', {}).get('apiCalls', {}).items():
         # if status is paused then only don't include it in tools
         if api_data.get('status') == 0:
@@ -45,6 +46,7 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
                api_data.get("required_params", api_data.get("required_fields"))
             )
         }
+        names.append(api_data.get("function_name", api_data.get("endpoint")))
         tools.append(format)
 
     configuration.pop('tools', None)
@@ -66,7 +68,7 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
 
         if api_data is None: 
             raise Exception("Didn't find the pre_function")
-        pre_function_code = api_data.get('code', '')
+        name = api_data.get('function_name',api_data.get('endpoint_name',""))
         required_params = api_data.get('required_params', [])
         args = {}
         for param in required_params:
@@ -77,11 +79,12 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
         'success': True,
         'configuration': configuration,
         'bridge': bridge,
-        'pre_tools': {'pre_function_code': pre_function_code, 'args': args} if len(pre_tools)>0 else None,
+        'pre_tools': {'name': name, 'args': args} if len(pre_tools)>0 else None,
         'service': service,
         'apikey': apikey,
         'RTLayer': RTLayer,
         'template': template_content.get('template') if template_content else None,
         "user_reference": result.get("bridges", {}).get("user_reference", ""),
-        "variables_path": variables_path or variables_path_bridge
+        "variables_path": variables_path or variables_path_bridge,
+        "names":names
     }

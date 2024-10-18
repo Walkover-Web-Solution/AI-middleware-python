@@ -29,7 +29,6 @@ from copy import deepcopy
 import json
 from ..utils.time import Timer
 from src.handler.executionHandler import handle_exceptions
-from validations.json_models import check_json_support
 
 async def create_service_handler(params, service):
     if service == service_name['openai']:
@@ -68,7 +67,7 @@ async def chat(request: Request):
     model = configuration.get('model')
     is_playground = request.state.is_playground
     bridge = body.get('bridge')
-    pre_tools = body.get('pre_tools', None)
+    pre_tools = body.get('pre_tools')
     version = request.state.version
     fine_tune_model = configuration.get('fine_tune_model', {}).get('current_model', {})
     is_rich_text = configuration.get('is_rich_text',True)   
@@ -78,6 +77,7 @@ async def chat(request: Request):
     user_contains = ""
     timer = request.state.timer
     variables_path = body.get('variables_path')
+    names = body.get('names')
     message_id = str(uuid.uuid1())
     result = {}
     suggestions = []
@@ -99,7 +99,7 @@ async def chat(request: Request):
             customConfig['model'] = fine_tune_model
             del customConfig['creativity_level'] # [?] to be removed
         if pre_tools:
-            pre_function_response = await axios_work(pre_tools.get('args', {}), pre_tools.get('pre_function_code', ''))
+            pre_function_response = await axios_work(pre_tools.get('args', {}), pre_tools.get('name', ''))
             if pre_function_response.get('status') == 0:
                 variables['pre_function'] = "Error while calling prefunction. Error message: " + pre_function_response.get('response')
             else:
@@ -121,7 +121,7 @@ async def chat(request: Request):
             system_prompt = template
             configuration['prompt'], missing_vars = Helper.replace_variables_in_prompt(system_prompt, {"system_prompt": configuration['prompt'], **variables})
 
-        if bridgeType and check_json_support(model, service):
+        if bridgeType and modelConfig.get('response_type'):
             template_content = (await ConfigurationService.get_template_by_id(Config.CHATBOT_OPTIONS_TEMPLATE_ID)).get('template', '')
             configuration['prompt'], missing_vars = Helper.replace_variables_in_prompt(template_content, {"system_prompt": configuration['prompt']})
             customConfig['response_type'] = {"type": "json_object"}
@@ -149,7 +149,8 @@ async def chat(request: Request):
             "timer" : timer,
             "variables_path" : variables_path,
             "message_id" : message_id,
-            "bridgeType": bridgeType
+            "bridgeType": bridgeType,
+            "names":names
         }
 
         class_obj = await create_service_handler(params,service)
@@ -265,3 +266,4 @@ async def chat(request: Request):
             if response_format['type'] != 'default':
                 asyncio.create_task(sendResponse(response_format,result.get("modelResponse", str(error))))
         raise ValueError(error)
+        
