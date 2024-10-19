@@ -230,7 +230,7 @@ class BaseService:
         except Exception as e:
             traceback.print_exc()
             print("chats error=>", e)
-            raise ValueError(f"error occurs from openAi api {e.args[0]}")
+            raise ValueError(f"error occurs from {self.service} api {e.args[0]}")
 
     async def replace_variables_in_args(self, codes_mapping):
         variables = self.variables
