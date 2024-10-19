@@ -1,7 +1,7 @@
 from fastapi import HTTPException, status
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
-from src.db_services.ConfigurationServices import create_bridge, get_bridge_by_id, get_all_bridges_in_org, update_bridge, update_bridge_ids_in_api_calls, get_bridges_with_tools, get_apikey_creds, update_user_history
+from src.db_services.ConfigurationServices import create_bridge, get_bridge_by_id, get_all_bridges_in_org, update_bridge, update_bridge_ids_in_api_calls, get_bridges_with_tools, get_apikey_creds
 from src.configs.modelConfiguration import ModelsConfig as model_configuration
 from src.services.utils.helper import Helper
 import json
@@ -9,7 +9,7 @@ from config import Config
 from ..configs.constant import service_name
 from src.db_services.conversationDbService import storeSystemPrompt
 from bson import ObjectId
-from datetime import datetime 
+from datetime import datetime, timezone
 
 async def create_bridges_controller(request):
     try:
@@ -266,7 +266,6 @@ async def update_bridge_controller(request,bridge_id):
             update_fields['apikey_object_id'] = apikey_object_id
             data = await get_apikey_creds(apikey_object_id)
             apikey = data.get('apikey',"")
-            update_field_and_history(user_history, user_id, 'apikey')
         name = body.get('name')
         function_id = body.get('functionData', {}).get('function_id', None)
         function_operation = body.get('functionData', {}).get('function_operation')
@@ -282,45 +281,33 @@ async def update_bridge_controller(request,bridge_id):
         if prompt:
             result = await storeSystemPrompt(prompt, org_id, bridge_id)
             new_configuration['system_prompt_version_id'] = result.get('id')
-            update_field_and_history(user_history, user_id, 'prompt')
         if slugName is not None:
             update_fields['slugName'] = slugName
-            update_field_and_history(user_history, user_id, 'slugName')
         if user_reference is not None:
             update_fields['user_reference'] = user_reference
-            update_field_and_history(user_history, user_id, 'user_reference')
         if service is not None:
             update_fields['service'] = service
-            update_field_and_history(user_history, user_id, 'service')
         if bridgeType is not None:
             update_fields['bridgeType'] = bridgeType
-            update_field_and_history(user_history, user_id, 'bridgeType')
         if new_configuration is not None:
             updated_configuration = {**current_configuration, **new_configuration}
             update_fields['configuration'] = updated_configuration
-            for key in new_configuration.keys():
-                update_field_and_history(user_history, user_id, key)
         if apikey is not None:
             update_fields['apikey'] = apikey
-            update_field_and_history(user_history, user_id, 'apikey')
         if name is not None:
             update_fields['name'] = name
-            update_field_and_history(user_history, user_id, 'name')
         if variables_path is not None:
             updated_variables_path = {**current_variables_path, **variables_path}
             for key, value in updated_variables_path.items():
                 if isinstance(value, list):
                     updated_variables_path[key] = {}
             update_fields['variables_path'] = updated_variables_path
-            update_field_and_history(user_history, user_id, 'variables_path')
         if function_id is not None: 
                 if function_operation is not None:      # to add function id 
                     if function_id not in function_ids:
                         function_ids.append(function_id)
                         update_fields['function_ids'] = [ObjectId(fid) for fid in function_ids]
                         await update_bridge_ids_in_api_calls(function_id, bridge_id, 1)
-                        update_field_and_history(user_history, user_id, 'function_id')
-
                 elif function_operation is None:        # to remove function id 
                     if function_name is not None:   
                          if function_name in  current_variables_path:
@@ -330,8 +317,28 @@ async def update_bridge_controller(request,bridge_id):
                         function_ids.remove(function_id)
                         update_fields['function_ids'] = [ObjectId(fid) for fid in function_ids]
                         await update_bridge_ids_in_api_calls(function_id, bridge_id, 0)
-            
-        await update_user_history(bridge_id, user_history, bridge)
+        
+        for key, value in body.items():
+            if key == 'configuration':
+                for configuration in value.keys():
+                    user_history.append({
+                        'type': configuration,
+                        'user_id': user_id,
+                        'time': datetime.now(timezone.utc).isoformat()
+                    })
+            else:
+                user_history.append({
+                    'type': key,
+                    'user_id': user_id,
+                    'time': datetime.now(timezone.utc).isoformat()
+                })
+
+        existing_history = bridge.get('user_history', [])
+        existing_history.extend(user_history)
+        if len(existing_history) > 20:
+            existing_history = existing_history[-20:]  
+        update_fields['user_history'] = existing_history
+
         await update_bridge(bridge_id, update_fields) # todo :: add transaction
         result = await get_bridges_with_tools(bridge_id, org_id)
         
@@ -347,11 +354,3 @@ async def update_bridge_controller(request,bridge_id):
     except Exception as e:
         print(e)
         raise HTTPException(status_code=400, detail="Invalid request body!")
-
-
-def update_field_and_history(user_history, user_id, field_type):
-        user_history.append({
-            'type': field_type,
-            'user_id': user_id,
-            'time': datetime.utcnow().isoformat()
-        })
