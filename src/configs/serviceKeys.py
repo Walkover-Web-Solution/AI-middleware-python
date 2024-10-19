@@ -39,5 +39,19 @@ ServiceKeys = {
     }
 }
 
+async def model_config_change(modelConfiguration, custom_config):
+    new_custom_config = custom_config.copy()
+    for key, value in custom_config.items():
+        if value == 'default':
+            del new_custom_config[key]
+        elif value == 'max':
+            max_value = modelConfiguration[key].get('max')
+            new_custom_config[key] = max_value
+
+        elif value == 'min':
+            min_value = modelConfiguration[key].get('min')
+            new_custom_config[key] = min_value 
+    return new_custom_config
+
 # Export the service dictionary
 __all__ = ['ServiceKeys']
