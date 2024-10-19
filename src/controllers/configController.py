@@ -116,7 +116,17 @@ async def duplicate_create_bridges(bridges):
 
 async def get_bridge(request, bridge_id: str):
     try:
-        bridge = await get_bridges_with_tools(bridge_id,request.state.profile.get("org",{}).get("id",""))
+        bridge = await get_bridges_with_tools(bridge_id,request.state.profile['org']['id'])
+        prompt = bridge.get('bridges').get('configuration',{}).get('prompt')
+        variables = []
+        if prompt is not None:
+            variables = Helper.find_variables_in_string(prompt)
+        variables_path = bridge.get('bridges').get('variables_path',{})
+        path_variables = []
+        for script_id, vars_dict in variables_path.items():
+            path_variables.extend(vars_dict.keys())
+        all_variables = variables + path_variables
+        bridge.get('bridges')['all_varaibles'] = all_variables
         return Helper.response_middleware_for_bridge({"succcess": True,"message": "bridge get successfully","bridge":bridge.get("bridges", {})})
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e,)
