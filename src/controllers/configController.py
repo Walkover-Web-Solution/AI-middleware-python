@@ -147,6 +147,35 @@ async def get_all_bridges(request):
             })
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    
+async def get_default_values_controller(service: str):
+    try:
+        service = service.lower()
+        def get_default_values(config):
+            default_values = {}
+            config_items = config.get('configuration', {})
+            
+            for key, value in config_items.items():
+                default_values[key] = value.get('default', None) 
+            
+            return default_values
+
+        if service == service_name['openai']:
+            return  get_default_values(model_configuration.gpt_4o()),
+            
+        elif service == service_name['anthropic']:
+            return  get_default_values(model_configuration.claude_3_5_sonnet_20240620()),
+        
+        elif service == service_name['groq']:
+            return  get_default_values(model_configuration.llama3_8b_8192()),
+        
+        else:
+            raise HTTPException(status_code=404, detail=f"Service '{service}' not found.")
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 async def get_all_service_models_controller(service):
     try:
         service = service.lower()
@@ -287,8 +316,9 @@ async def update_bridge_controller(request,bridge_id):
             update_fields['user_reference'] = user_reference
         if service is not None:
             update_fields['service'] = service
-        if bridgeType is not None:
-            update_fields['bridgeType'] = bridgeType
+            configuration = await get_default_values_controller(service)
+            new_configuration = configuration[0]
+            update_fields['configuration'] = {**current_configuration, **configuration[0]}
         if new_configuration is not None:
             updated_configuration = {**current_configuration, **new_configuration}
             update_fields['configuration'] = updated_configuration
