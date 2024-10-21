@@ -318,7 +318,6 @@ async def update_bridge_controller(request,bridge_id):
             update_fields['service'] = service
             configuration = await get_default_values_controller(service)
             new_configuration = configuration[0]
-            update_fields['configuration'] = {**current_configuration, **configuration[0]}
         if new_configuration is not None:
             updated_configuration = {**current_configuration, **new_configuration}
             update_fields['configuration'] = updated_configuration
