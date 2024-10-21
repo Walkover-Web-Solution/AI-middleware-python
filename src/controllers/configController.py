@@ -9,6 +9,7 @@ from config import Config
 from ..configs.constant import service_name
 from src.db_services.conversationDbService import storeSystemPrompt
 from bson import ObjectId
+from datetime import datetime, timezone
 
 async def create_bridges_controller(request):
     try:
@@ -258,7 +259,9 @@ async def update_bridge_controller(request,bridge_id):
         apikey = body.get('apikey')
         apikey_object_id = body.get('apikey_object_id')
         variables_path = body.get('variables_path')
+        user_id = request.state.profile['user']['id']
         update_fields = {}
+        user_history = []
         if apikey_object_id is not None:
             update_fields['apikey_object_id'] = apikey_object_id
             data = await get_apikey_creds(apikey_object_id)
@@ -273,8 +276,6 @@ async def update_bridge_controller(request,bridge_id):
             new_configuration['fine_tune_model']['current_model'] = None
         current_configuration = bridge.get('configuration', {})
         current_variables_path = bridge.get('variables_path',{})
-        if apikey_object_id is None:
-            apikey = bridge.get('apikey') if apikey is None else Helper.encrypt(apikey)
         function_ids = bridge.get('function_ids') or []
         prompt = new_configuration.get('prompt') if new_configuration else None
         if prompt:
@@ -307,7 +308,6 @@ async def update_bridge_controller(request,bridge_id):
                         function_ids.append(function_id)
                         update_fields['function_ids'] = [ObjectId(fid) for fid in function_ids]
                         await update_bridge_ids_in_api_calls(function_id, bridge_id, 1)
-
                 elif function_operation is None:        # to remove function id 
                     if function_name is not None:   
                          if function_name in  current_variables_path:
@@ -317,7 +317,28 @@ async def update_bridge_controller(request,bridge_id):
                         function_ids.remove(function_id)
                         update_fields['function_ids'] = [ObjectId(fid) for fid in function_ids]
                         await update_bridge_ids_in_api_calls(function_id, bridge_id, 0)
-            
+        
+        for key, value in body.items():
+            if key == 'configuration':
+                for configuration in value.keys():
+                    user_history.append({
+                        'type': configuration,
+                        'user_id': user_id,
+                        'time': datetime.now(timezone.utc).isoformat()
+                    })
+            else:
+                user_history.append({
+                    'type': key,
+                    'user_id': user_id,
+                    'time': datetime.now(timezone.utc).isoformat()
+                })
+
+        existing_history = bridge.get('user_history', [])
+        existing_history.extend(user_history)
+        if len(existing_history) > 20:
+            existing_history = existing_history[-20:]  
+        update_fields['user_history'] = existing_history
+
         await update_bridge(bridge_id, update_fields) # todo :: add transaction
         result = await get_bridges_with_tools(bridge_id, org_id)
         
