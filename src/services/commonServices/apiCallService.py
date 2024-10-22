@@ -30,39 +30,8 @@ async def creates_api(request: Request):
             body_content = payload.get('body') if payload else None
             required_params = []
 
-            if body_content:
-                traversed_body = traverse_body(body_content)
-                required_params = traversed_body.get('required_params', [])
-                axios_code = f"""def axios_call(params):
-    import requests
-
-    def set_nested_value(data, path, value):
-        keys = path.split(".")
-        d = data
-        for key in keys[:-1]:
-            d = d.setdefault(key, {{}})
-        d[keys[-1]] = value
-        return data
-
-    try:
-        data = {json.dumps(body_content)}
-        paths = {json.dumps(traversed_body.get('paths', []))}
-        for path in paths:
-            keys = path.split(".")
-            data = set_nested_value(data, path, params[keys[-1]])
-        response = requests.post('{url}', json=data, headers={{'content-type': 'application/json'}})
-        return response.json(), response.headers
-    except requests.RequestException as e:
-        return str(e)"""
-            else:
-                axios_code = f"""def axios_call(params):
-    import requests
-    try:
-        response = requests.get('{url}', headers={{'content-type': 'application/json'}})
-        return response.json(), response.headers
-    except requests.RequestException as e:
-        return str(e)"""
-
+            traversed_body = traverse_body(body_content)
+            required_params = traversed_body.get('required_params', [])
             fields = [{"variable_name": param, "description": '', "enum": ''} for param in required_params]
             api_data = await get_api_data(org_id, function_name)
             result  = await save_api(desc, org_id, api_data, axios_code, required_params, function_name, fields, True, endpoint_name, 1, 'v1')
