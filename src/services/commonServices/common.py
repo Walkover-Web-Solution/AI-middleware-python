@@ -82,6 +82,7 @@ async def chat(request: Request):
     message_id = str(uuid.uuid1())
     result = {}
     suggestions = []
+    suggestions_flag =False
     if isinstance(variables, list):
         variables = {}
 
@@ -126,6 +127,7 @@ async def chat(request: Request):
             template_content = (await ConfigurationService.get_template_by_id(Config.CHATBOT_OPTIONS_TEMPLATE_ID)).get('template', '')
             configuration['prompt'], missing_vars = Helper.replace_variables_in_prompt(template_content, {"system_prompt": configuration['prompt']})
             customConfig['response_type'] = {"type": "json_object"}
+            suggestions_flag = True
 
         customConfig = await model_config_change(modelObj['configuration'], customConfig)
             
@@ -204,10 +206,11 @@ async def chat(request: Request):
                     print(f"error in chatbot : {e}")
                     raise RuntimeError(f"error in chatbot : {e}")
         
-        if bridgeType:
+        if bridgeType and suggestions_flag:
                 suggestions = class_obj.extract_response_from_model(model_response=result['modelResponse'])
+                message = json.loads(result['historyParams']['message'])
+                result["historyParams"]["message"] = message.get('response','')
                 
-                    
         if version == 2:
             result['modelResponse'] = await Response_formatter(result["modelResponse"],service)
         if bridgeType and suggestions:
