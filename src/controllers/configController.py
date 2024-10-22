@@ -42,7 +42,7 @@ async def create_bridges_controller(request):
         model_data = {}
         for key in keys_to_update:
             if key in configurations:
-                model_data[key] = configurations[key]['default']
+                model_data[key] = 'default'
         model_data['type'] = type
         model_data['response_format'] = {
         "type": "default", # need changes
