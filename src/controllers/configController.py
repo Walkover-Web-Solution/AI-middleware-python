@@ -82,7 +82,9 @@ async def duplicate_create_bridges(bridges):
         configuration = bridges.get('configuration') 
         apikey = bridges.get('apikey') 
         slugName = bridges.get('slugName') 
-        function_ids= [ObjectId(fid) for fid in bridges.get('function_ids', [])]
+        function_ids = []
+        if bridges.get('function_ids'):
+            function_ids = [ObjectId(fid) for fid in bridges.get('function_ids')]
         actions= bridges.get('actions', {})
         apikey_object_id = bridges.get('apikey_object_id')
 
