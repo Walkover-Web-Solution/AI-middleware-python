@@ -3,10 +3,7 @@ from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
-import requests
-import time
 import asyncio
-from concurrent.futures import ThreadPoolExecutor
 
 from config import Config
 from src.controllers.modelController import router as model_router
@@ -15,9 +12,9 @@ from src.routes.apiCall_routes import router as apiCall_router
 from src.routes.config_routes import router as config_router
 from src.controllers.bridgeController import router as bridge_router
 from src.routes.v2.modelRouter import router as v2_router
+from src.services.utils.apiservice import fetch
 # Initialize the FastAPI app
 app = FastAPI(debug=True)
-executor = ThreadPoolExecutor(max_workers= int(Config.max_workers) or 10)
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
@@ -39,21 +36,10 @@ async def healthcheck():
 @app.get("/5-sec")
 async def bloking():
     try:
-        def blocking_io_function():
-                    # Make the API call
-            response = requests.get("https://flow.sokt.io/func/scriDLT6j3lB")
-                    # Check if the request was successful
-            if response.status_code == 200:
-                api_result = response.json()  # Assuming the API returns JSON
-                return api_result
-            else:
-                return {
-                "status": "API call failed",
-                "error": f"Status code: {response.status_code}"
-                }
-
-        loop = asyncio.get_event_loop()
-        result = await loop.run_in_executor(executor, blocking_io_function)
+        async def blocking_io_function():
+            response = await fetch("https://flow.sokt.io/func/scriDLT6j3lB")
+            return response
+        result = await blocking_io_function()
         return JSONResponse(status_code=200, content={
                 "status": "OK running good... v1.1",
                 "api_result": result

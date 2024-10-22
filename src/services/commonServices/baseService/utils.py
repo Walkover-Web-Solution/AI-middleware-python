@@ -1,12 +1,11 @@
 import pydash as _
 import re
-import requests
 import httpx
 import asyncio
 import json 
 from src.configs.constant import service_name
 import pydash as _
-import requests
+from src.services.utils.apiservice import fetch
 
 def validate_tool_call(modelOutputConfig, service, response):
     match service:
@@ -19,11 +18,11 @@ def validate_tool_call(modelOutputConfig, service, response):
 
 async def axios_work(data, function_name):
     try:    
-        response = requests.post(f"https://flow.sokt.io/func/{function_name}", json=data) # required is not send then it will still hit the curl
+        response,rs_headers = await fetch(f"https://flow.sokt.io/func/{function_name}","POST",None,None,data) # required is not send then it will still hit the curl
         return {
-            'response': response.json(),
+            'response': response,
             'metadata':{
-                'flowHitId': response.headers.get('flowHitId'),
+                'flowHitId': rs_headers.get('flowHitId'),
             },
             'status': 1
         }
@@ -127,7 +126,7 @@ def tool_call_formatter(configuration: dict, service: str, variables: dict, vari
 
 async def send_request(url, data, method, headers):
     try:
-        response = requests.request(method, url, json=json.dumps(data), headers=headers)
+        response = await fetch(url,method,headers,None, data)
         response.raise_for_status()
         return response.json()
     except Exception as e:
@@ -136,9 +135,9 @@ async def send_request(url, data, method, headers):
     
 async def send_message(cred, data ):
     try:
-        response = requests.post(
-            url=f"https://api.rtlayer.com/message?apiKey={cred['apikey']}",
-            data={
+        response = await fetch(
+            f"https://api.rtlayer.com/message?apiKey={cred['apikey']}","POST",None,None,
+            {
                 **cred,
                 'message': json.dumps(data)
             }

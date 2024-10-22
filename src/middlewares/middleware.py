@@ -3,19 +3,14 @@ from fastapi import Request, HTTPException
 import traceback
 from config import Config
 
-import requests
-from ..services.utils.time import Timer
+from src.services.utils.apiservice import fetch
+from src.services.utils.time import Timer
 
 async def make_data_if_proxy_token_given(req):
     headers = {
         'proxy_auth_token': req.headers.get('proxy_auth_token')
     }
-    response = requests.get("https://routes.msg91.com/api/c/getDetails", headers=headers)
-
-    if response.status_code != 200 or not response.json():
-        raise Exception("Invalid token")
-
-    response_data = response.json()
+    response_data,rs_header = await fetch("https://routes.msg91.com/api/c/getDetails", "GET", headers)
     data = {
         'ip': "9.255.0.55",
         'user': {
