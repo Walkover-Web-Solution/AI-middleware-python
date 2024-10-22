@@ -11,7 +11,9 @@ async def  Response_formatter(response, service):
             "usage" : {
                 "input_tokens" : response.get("usage", {}).get("prompt_tokens", None),
                 "output_tokens" : response.get("usage", {}).get("completion_tokens", None),
-                "total_tokens" : response.get("usage", {}).get("total_tokens", None)
+                "total_tokens" : response.get("usage", {}).get("total_tokens", None),
+                "cached_tokens" : response.get("usage", {}).get("prompt_tokens_details",{}).get('cached_tokens')
+
             }
         }
     
