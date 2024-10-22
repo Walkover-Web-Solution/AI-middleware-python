@@ -85,3 +85,5 @@ gunicorn
 anthropic==0.31.2
 groq==0.9.0
 redis==5.0.8
+aiohttp==3.10.10
+certifi==2024.6.2
