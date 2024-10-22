@@ -121,7 +121,8 @@ class BaseService:
                 'actor': "user" if self.user else "tool",
                 'message_id' : self.message_id
             }),
-            sendResponse(self.response_format, data=response.get('error'))
+            sendResponse(self.response_format, data=response.get('error')),
+            return_exceptions=True
         )
 # todo
     def update_model_response(self, model_response, functionCallRes={}):

@@ -272,7 +272,8 @@ async def chat(request: Request):
                 }),
                 sendResponse(response_format, error_message),
                 # Only send the second response if the type is not 'default'
-                sendResponse(response_format, result.get("modelResponse", str(error))) if response_format['type'] != 'default' else None
+                sendResponse(response_format, result.get("modelResponse", str(error))) if response_format['type'] != 'default' else None,
+                return_exceptions=True
             )
             print("chat common error=>", error)
             error_message = str(error)
