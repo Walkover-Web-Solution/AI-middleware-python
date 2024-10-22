@@ -2,7 +2,7 @@ from src.configs.modelConfiguration import ModelsConfig as model_configuration
 from ...configs.constant import service_name
 from fastapi import HTTPException
 
-async def get_default_values_controller(service, model, current_configuration: dict):
+async def get_default_values_controller(service, model, current_configuration):
     try:
         service = service.lower()
         
@@ -11,8 +11,7 @@ async def get_default_values_controller(service, model, current_configuration: d
             config_items = config.get('configuration', {})
             
             for key, value in config_items.items():
-                if(key=='type'):
-                    continue
+            
                 if current_configuration.get(key) == "min":
                     default_values[key] = 'min' 
                 elif current_configuration.get(key) == "max":
