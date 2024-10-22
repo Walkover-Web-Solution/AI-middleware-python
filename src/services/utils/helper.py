@@ -67,7 +67,7 @@ class Helper:
         if variables:
             for key, value in variables.items():
                 if key in placeholders:
-                    string_value = repr(value)
+                    string_value = str(value)
                     string_value = string_value[1:-1] if string_value.startswith('"') and string_value.endswith('"') else string_value
                     string_value = string_value.replace("\\", "\\\\")
                     regex = re.compile(r'\{\{' + re.escape(key) + r'\}\}')
