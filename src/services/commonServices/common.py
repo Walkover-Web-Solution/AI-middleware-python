@@ -117,7 +117,7 @@ async def chat(request: Request):
 
         configuration['prompt'], missing_vars  = Helper.replace_variables_in_prompt(configuration['prompt'] , variables)
         if len(missing_vars) > 0:
-            asyncio.create_task(send_error_to_webhook(bridge_id, org_id, missing_vars, type = 'Variable'))
+            await send_error_to_webhook(bridge_id, org_id, missing_vars, type = 'Variable')
 
         if template:
             system_prompt = template
@@ -233,16 +233,20 @@ async def chat(request: Request):
             })
             if result.get('modelResponse') and result['modelResponse'].get('data'):
                 result['modelResponse']['data']['message_id'] = message_id
-            asyncio.create_task(sendResponse(response_format, result["modelResponse"],success=True))
-            asyncio.create_task(metrics_service.create([usage], result["historyParams"]))
+            # Optimize task creation and gathering
+            await asyncio.gather(
+                sendResponse(response_format, result["modelResponse"], success=True),
+                metrics_service.create([usage], result["historyParams"]),
+                return_exceptions=True
+            )
         return JSONResponse(status_code=200, content={"success": True, "response": result["modelResponse"]})
     except Exception as error:
         traceback.print_exc()
         if not is_playground:
             latency = {
-            "over_all_time" : timer.stop("Api total time") or "",
-            "model_execution_time": sum(execution_time_logs.values()) or "",
-            "execution_time_logs" : execution_time_logs or {}
+                "over_all_time": timer.stop("Api total time") or "",
+                "model_execution_time": sum(execution_time_logs.values()) or "",
+                "execution_time_logs": execution_time_logs or {}
             }
             usage.update({
                 **usage,
@@ -253,23 +257,26 @@ async def chat(request: Request):
                 "success": False,
                 "error": str(error)
             })
-            asyncio.create_task(metrics_service.create([usage], {
-                "thread_id": thread_id,
-                "user": user,
-                "message": "",
-                "org_id": org_id,
-                "bridge_id": bridge_id,
-                "model": model or configuration.get("model", None),
-                "channel": 'chat',
-                "type": "error",
-                "actor": "user"
-            }))
+            # Combine the tasks into a single asyncio.gather call
+            await asyncio.gather(
+                metrics_service.create([usage], {
+                    "thread_id": thread_id,
+                    "user": user,
+                    "message": "",
+                    "org_id": org_id,
+                    "bridge_id": bridge_id,
+                    "model": model or configuration.get("model", None),
+                    "channel": 'chat',
+                    "type": "error",
+                    "actor": "user"
+                }),
+                sendResponse(response_format, error_message),
+                # Only send the second response if the type is not 'default'
+                sendResponse(response_format, result.get("modelResponse", str(error))) if response_format['type'] != 'default' else None
+            )
             print("chat common error=>", error)
             error_message = str(error)
             if not result.get('success'):
                 error_message = result.get("modelResponse", str(error))
-            asyncio.create_task(sendResponse(response_format, error_message))
-            if response_format['type'] != 'default':
-                asyncio.create_task(sendResponse(response_format,result.get("modelResponse", str(error))))
         raise ValueError(error)
         

@@ -137,7 +137,7 @@ async def reset_chatBot(request: Request, botId: str):
         }
     }
     if result['success']:
-        asyncio.create_task(sendResponse(response_format, response, True))
+        await sendResponse(response_format, response, True)
         return JSONResponse(status_code=200, content={'success': True, 'message': 'Chatbot reset successfully'})
     else:
         return JSONResponse(status_code=400, content={'success': False, 'message': 'Error resetting chatbot'})

@@ -21,7 +21,7 @@ async def chat_completion(request: Request, db_config: dict = Depends(add_config
 
         # If the response format is not default, handle asynchronously as a background task
         if response_format is not None and response_format.get('type') != 'default':
-            asyncio.create_task(chat(request))  # Schedule chat to run asynchronously
+            await chat(request)
             return {"success": True, "message": "Your response will be sent through configured means."}
 
         # If the response format is default, handle chat directly (potentially blocking)
