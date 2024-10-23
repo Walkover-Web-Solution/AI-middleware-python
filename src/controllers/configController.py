@@ -28,8 +28,8 @@ async def create_bridges_controller(request):
         'model',
         'creativity_level',
         'max_tokens',
-        'probablity_cutoff',
-        'log_probablity'
+        'probability_cutoff',
+        'log_probablity',
         'repetition_penalty',
         'novelty_penalty',
         'n',
@@ -37,12 +37,13 @@ async def create_bridges_controller(request):
         'additional_stop_sequences',
         'stream',
         'stop',
-        'json_mode'
+        'response_type',
+        'tool_choice',
         ]
         model_data = {}
         for key in keys_to_update:
             if key in configurations:
-                model_data[key] = configurations[key]['default'] if key is 'model' else 'default'
+                model_data[key] = configurations[key]['default'] if key == 'model' else 'default'
         model_data['type'] = type
         model_data['response_format'] = {
         "type": "default", # need changes
