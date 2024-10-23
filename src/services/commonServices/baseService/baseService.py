@@ -189,7 +189,7 @@ class BaseService:
     def extract_response_from_model(self, model_response):
         try:
             if (_.get(model_response, self.modelOutputConfig['message'])):
-                suggestions = json.loads(_.get(model_response, self.modelOutputConfig['message'])).get('suggestions', [])
+                suggestions = json.loads(_.get(model_response, self.modelOutputConfig['message'])).get('questions', [])
                 return suggestions
         except Exception as e:
             print(f"An error occurred while extracting response: {e}")

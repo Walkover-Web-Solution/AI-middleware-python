@@ -79,6 +79,7 @@ async def chat(request: Request):
     timer = request.state.timer
     variables_path = body.get('variables_path')
     names = body.get('names')
+    suggest = body.get('suggest',False)
     message_id = str(uuid.uuid1())
     result = {}
     suggestions = []
@@ -123,7 +124,7 @@ async def chat(request: Request):
             system_prompt = template
             configuration['prompt'], missing_vars = Helper.replace_variables_in_prompt(system_prompt, {"system_prompt": configuration['prompt'], **variables})
 
-        if bridgeType and modelConfig.get('response_type'):
+        if bridgeType and modelConfig.get('response_type') and suggest:
             template_content = (await ConfigurationService.get_template_by_id(Config.CHATBOT_OPTIONS_TEMPLATE_ID)).get('template', '')
             configuration['prompt'], missing_vars = Helper.replace_variables_in_prompt(template_content, {"system_prompt": configuration['prompt']})
             customConfig['response_type'] = {"type": "json_object"}
