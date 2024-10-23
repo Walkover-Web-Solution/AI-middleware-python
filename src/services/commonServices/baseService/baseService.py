@@ -84,12 +84,12 @@ class BaseService:
             return response
         
         if not self.playground:
-            asyncio.create_task(sendResponse(self.response_format, data = {'function_call': True}, success = True))
+            await sendResponse(self.response_format, data = {'function_call': True}, success = True)
         func_response_data,mapping_response_data, tools_call_data = await self.run_tool(model_response, service)
         self.func_tool_call_data.append(tools_call_data)
         configuration, tools = self.update_configration(model_response, func_response_data, configuration, mapping_response_data, service, tools)
         if not self.playground:
-            asyncio.create_task(sendResponse(self.response_format, data = {'function_call': True, 'success': True, 'message': 'Going to GPT'}, success=True))
+            await sendResponse(self.response_format, data = {'function_call': True, 'success': True, 'message': 'Going to GPT'}, success=True)
         ai_response = await self.chats(configuration, self.apikey, service)
         ai_response['tools'] = tools
         return await self.function_call(configuration, service, ai_response, l, tools)
@@ -108,19 +108,22 @@ class BaseService:
             'success': False,
             'error': response.get('error')
         }
-        asyncio.create_task(metrics_service.create([usage], {
-            'thread_id': self.thread_id,
-            'user': self.user if self.user else json.dumps(self.tool_call),
-            'message': "",
-            'org_id': self.org_id,
-            'bridge_id': self.bridge_id,
-            'model': self.configuration.get('model'),
-            'channel': 'chat',
-            'type': "error",
-            'actor': "user" if self.user else "tool",
-            'message_id' : self.message_id
-        }))
-        asyncio.create_task(sendResponse(self.response_format, data=response.get('error')))
+        await asyncio.gather(
+            metrics_service.create([usage], {
+                'thread_id': self.thread_id,
+                'user': self.user if self.user else json.dumps(self.tool_call),
+                'message': "",
+                'org_id': self.org_id,
+                'bridge_id': self.bridge_id,
+                'model': self.configuration.get('model'),
+                'channel': 'chat',
+                'type': "error",
+                'actor': "user" if self.user else "tool",
+                'message_id' : self.message_id
+            }),
+            sendResponse(self.response_format, data=response.get('error')),
+            return_exceptions=True
+        )
 # todo
     def update_model_response(self, model_response, functionCallRes={}):
         funcModelResponse = functionCallRes.get("modelResponse", {})

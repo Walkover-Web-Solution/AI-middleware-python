@@ -28,8 +28,8 @@ async def create_bridges_controller(request):
         'model',
         'creativity_level',
         'max_tokens',
-        'probablity_cutoff',
-        'log_probablity'
+        'probability_cutoff',
+        'log_probablity',
         'repetition_penalty',
         'novelty_penalty',
         'n',
@@ -37,12 +37,13 @@ async def create_bridges_controller(request):
         'additional_stop_sequences',
         'stream',
         'stop',
-        'json_mode'
+        'response_type',
+        'tool_choice',
         ]
         model_data = {}
         for key in keys_to_update:
             if key in configurations:
-                model_data[key] = configurations[key]['default']
+                model_data[key] = configurations[key]['default'] if key == 'model' else 'default'
         model_data['type'] = type
         model_data['response_format'] = {
         "type": "default", # need changes
@@ -119,7 +120,17 @@ async def duplicate_create_bridges(bridges):
 
 async def get_bridge(request, bridge_id: str):
     try:
-        bridge = await get_bridges_with_tools(bridge_id,request.state.profile.get("org",{}).get("id",""))
+        bridge = await get_bridges_with_tools(bridge_id,request.state.profile['org']['id'])
+        prompt = bridge.get('bridges').get('configuration',{}).get('prompt')
+        variables = []
+        if prompt is not None:
+            variables = Helper.find_variables_in_string(prompt)
+        variables_path = bridge.get('bridges').get('variables_path',{})
+        path_variables = []
+        for script_id, vars_dict in variables_path.items():
+            path_variables.extend(vars_dict.keys())
+        all_variables = variables + path_variables
+        bridge.get('bridges')['all_varaibles'] = all_variables
         return Helper.response_middleware_for_bridge({"succcess": True,"message": "bridge get successfully","bridge":bridge.get("bridges", {})})
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e,)
