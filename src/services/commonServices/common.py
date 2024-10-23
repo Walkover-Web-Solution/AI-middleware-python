@@ -71,7 +71,7 @@ async def chat(request: Request):
     pre_tools = body.get('pre_tools')
     version = request.state.version
     fine_tune_model = configuration.get('fine_tune_model', {}).get('current_model', {})
-    is_rich_text = configuration.get('is_rich_text',True)   
+    is_rich_text = configuration.get('is_rich_text',False)   
     actions = body.get('actions',{})
     execution_time_logs = body.get('execution_time_logs')
     user_reference = body.get("user_reference", "")
