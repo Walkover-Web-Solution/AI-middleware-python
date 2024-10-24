@@ -1,4 +1,5 @@
-from fastapi import FastAPI, Request, HTTPException
+import json
+from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 import traceback
 import uuid
@@ -19,7 +20,7 @@ from .anthrophic.antrophicCall import Antrophic
 from .groq.groqCall import Groq
 from prompts import mui_prompt
 from .baseService.utils import sendResponse
-from ..utils.ai_middleware_format import Response_formatter
+from ..utils.ai_middleware_format import Response_formatter, validateResponse, send_alert
 app = FastAPI()
 from src.services.commonServices.baseService.utils import axios_work
 from ...configs.constant import service_name
@@ -27,7 +28,6 @@ import src.db_services.ConfigurationServices as ConfigurationService
 from ..utils.send_error_webhook import send_error_to_webhook
 from copy import deepcopy
 import json
-from ..utils.time import Timer
 from src.handler.executionHandler import handle_exceptions
 from src.configs.serviceKeys import model_config_change
 
@@ -184,6 +184,8 @@ async def chat(request: Request):
                     tools = result.get('historyParams').get('tools')
                     if 'customConfig' in params and 'tools' in params['customConfig']:
                         del params['customConfig']['tools']
+                    if params["configuration"].get('conversation'):
+                        del params["configuration"]['conversation']
                     model_response_content = result.get('historyParams').get('message')
                     obj = await create_service_handler(params,service)
                     newresult = await obj.execute()
@@ -235,9 +237,11 @@ async def chat(request: Request):
             if result.get('modelResponse') and result['modelResponse'].get('data'):
                 result['modelResponse']['data']['message_id'] = message_id
             # Optimize task creation and gathering
+            
             await asyncio.gather(
                 sendResponse(response_format, result["modelResponse"], success=True),
                 metrics_service.create([usage], result["historyParams"]),
+                validateResponse(final_response=result['modelResponse'],configration=configuration,bridgeId=bridge_id),
                 return_exceptions=True
             )
         return JSONResponse(status_code=200, content={"success": True, "response": result["modelResponse"]})
@@ -259,7 +263,7 @@ async def chat(request: Request):
                 "error": str(error)
             })
             # Combine the tasks into a single asyncio.gather call
-            await asyncio.gather(
+            tasks = [
                 metrics_service.create([usage], {
                     "thread_id": thread_id,
                     "user": user,
@@ -271,14 +275,12 @@ async def chat(request: Request):
                     "type": "error",
                     "actor": "user"
                 }),
-                sendResponse(response_format, error_message),
                 # Only send the second response if the type is not 'default'
                 sendResponse(response_format, result.get("modelResponse", str(error))) if response_format['type'] != 'default' else None,
-                return_exceptions=True
-            )
+                send_alert(data={"configuration": configuration, "error": str(error), "bridge_id": bridge_id, "message": "Exception for the code"}),
+            ]
+            # Filter out None values
+            await asyncio.gather(*[task for task in tasks if task is not None], return_exceptions=True)
             print("chat common error=>", error)
-            error_message = str(error)
-            if not result.get('success'):
-                error_message = result.get("modelResponse", str(error))
         raise ValueError(error)
         
