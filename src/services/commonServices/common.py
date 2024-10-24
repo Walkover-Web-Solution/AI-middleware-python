@@ -277,10 +277,10 @@ async def chat(request: Request):
                 }),
                 # Only send the second response if the type is not 'default'
                 sendResponse(response_format, result.get("modelResponse", str(error))) if response_format['type'] != 'default' else None,
-                send_alert(data={"configuration": configuration, "error": str(error), "bridge_id": bridge_id}),
+                send_alert(data={"configuration": configuration, "error": str(error), "bridge_id": bridge_id, "message": "Exception for the code"}),
             ]
             # Filter out None values
-            await asyncio.gather(*[task for task in tasks if task is not None])
+            await asyncio.gather(*[task for task in tasks if task is not None], return_exceptions=True)
             print("chat common error=>", error)
         raise ValueError(error)
         
