@@ -24,6 +24,7 @@ async def create_bridges_controller(request):
         modelname = model.replace("-", "_").replace(".", "_")
         configuration = getattr(model_configuration,modelname,None)
         configurations = configuration()['configuration']
+        status = 1
         keys_to_update = [
         'model',
         'creativity_level',
@@ -56,7 +57,8 @@ async def create_bridges_controller(request):
             "slugName": slugName,
             "service": service,
             "bridgeType": bridgeType,
-            "org_id" : org_id
+            "org_id" : org_id,
+            "status": status
         })
         if result.get("success"):
             return JSONResponse(status_code=200, content={
