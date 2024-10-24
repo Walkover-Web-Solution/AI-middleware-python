@@ -4,6 +4,7 @@ from concurrent.futures import ThreadPoolExecutor
 import traceback
 import json
 import copy
+from ...utils.ai_middleware_format import send_alert
 
 async def runModel(configuration, apiKey, execution_time_logs, bridge_id, timer):
     try:
@@ -48,7 +49,8 @@ async def runModel(configuration, apiKey, execution_time_logs, bridge_id, timer)
                 traceback.print_exc()
             return result
         else:
-            # First task did not complete within 40 seconds
+            await send_alert(data={"configuration": configuration, "bridge_id": bridge_id, "message": "retry mechanism started 2nd time"}),
+            # First task did not complete within 60 seconds
             print("First API call did not complete within 60 seconds. Starting second API call.")
             # Start the second API call with 'gpt-4' model
             second_config = copy.deepcopy(configuration)
