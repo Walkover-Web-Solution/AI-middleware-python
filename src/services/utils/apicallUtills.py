@@ -91,29 +91,46 @@ async def save_api(desc, org_id, api_data=None, code="", required_params=None, f
 def updateFields(oldFields, newFields, versionCheck):
     def update_recursive(old, new):
         for key in new:
-            if key in old:
-                new[key]['description'] = old[key].get('description') if not new[key].get('description') else new[key].get('description')
-                if(new[key].get("type") == 'string'): new[key]["type"] = old[key]["type"]
-                new[key]['enum'] = old[key].get('enum') if not new[key].get('enum') else new[key].get('enum')
+                if key in old:
+                    if isinstance(new[key], dict):
+                        if(new[key].get("description") and old[key].get('description')): 
+                            new[key]['description'] = old[key]['description']
+                        if(new[key].get("type") == 'string'): 
+                            old[key].pop('parameter',{})
+                        if(new[key].get("enum") and old[key].get('enum')):
+                            new[key]['enum'] = old[key]['enum']
 
-                if isinstance(old[key], dict) and isinstance(new[key], dict):
-                    if old[key].get("type") == "object" and new[key].get('type') == 'object':
-                        update_recursive(old[key].get('parameter', {}), new[key].get('parameter', {}))
+                        if isinstance(old[key], dict) and isinstance(new[key], dict):
+                            if old[key].get("type") == "object" and new[key].get('type') == 'object':
+                                update_recursive(old[key].get('parameter', {}), new[key].get('parameter', {}))
 
-                    elif old[key].get("type") == "array" and new[key].get('type') == 'array':
-                        update_recursive(old[key].get('items', {}), new[key].get('items', {}))
+                            elif old[key].get("type") == "array" and new[key].get('type') == 'array':
+                                update_recursive(old[key].get('items', {}), new[key].get('items', {}))
+                        # else:
+                        #     if isinstance(new[key], dict):
+                        #         update_recursive({}, new[key])
 
-            else:
-                if isinstance(new[key], dict):
-                    update_recursive({}, new[key])  # No update needed if old doesn't have the key
+                else:
+                    if isinstance(new[key], dict):
+                        update_recursive({}, new[key])  # No update needed if old doesn't have the key
         return new
 
-    if(versionCheck): 
+    if versionCheck: 
         updateField = update_recursive(oldFields, newFields)
     else:
-        transformed_data = {item["variable_name"]: {"description": item["description"], "enum": item["enum"]} for item in oldFields}
+        transformed_data = {
+            item["variable_name"]: {
+                "description": item.get("description", ""), 
+                "enum": item.get("enum", [])
+            } 
+            for item in oldFields
+        }
         updateField = update_recursive(transformed_data, newFields)
     return updateField
+
+
+
+
 
 async def delete_api(function_name, org_id, status = 0):
     try:

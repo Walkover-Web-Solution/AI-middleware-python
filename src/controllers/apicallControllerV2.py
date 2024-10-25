@@ -121,37 +121,80 @@ def traverse_body(body, path=None, paths=None, fields=None, required_params=None
         fields = {}
     if required_params is None:
         required_params = []
+
+    def build_path_str(path, key):
+        full_path = []
+        for p in path:
+            full_path.append(p)
+            full_path.append('parameter')
+        full_path.append(key)
+        return '.'.join(full_path)
+
+    def build_parent_path(path):
+        full_path = []
+        for p in path:
+            full_path.append(p)
+            full_path.append('parameter')
+        if full_path:
+            full_path.pop()  # Remove the last 'parameter'
+        return '.'.join(full_path)
+
     if body:
         for key, value in body.items():
             current_path = path + [key]
+            if path:
+                path_str = build_path_str(path, key)
+                parent_path = build_parent_path(path)
+            else:
+                path_str = key
+                parent_path = ''
+
             if isinstance(value, dict):
-                path_str = '.'.join(path)
-                path_str = f"{path_str}.parameter.{key}" if  path != [] else key
-                _.objects.set_(fields, path_str, {"description": '', "type": "object", "enum": [], "required_params": [], "parameter": {}})
+                # Get existing data at path_str
+                existing_data = _.get(fields, path_str, {})
+                # Define the new data to set, merging with existing data
+                new_data = {
+                    "description": '',
+                    "type": "object",
+                    "enum": [],
+                    "required_params": existing_data.get("required_params", []),
+                    "parameter": existing_data.get("parameter", {})
+                }
+                _.set_(fields, path_str, new_data)
+                # Recurse into the nested dictionary
                 traverse_body(value, current_path, paths, fields, required_params)
-            elif value == "your_value_here":
-                parameter = ""
-                path_str = '.'.join(current_path)
-                paths.append(path_str)
-                required_params.append(key)
-                for i in range(len(path)):
-                    if i == 0:
-                        parameter = path[i]
-                    else:
-                        parameter += '.' + 'parameter.' + path[i]
-        
-                path_str = f"{parameter}.parameter.{key}" if  parameter != "" else key
-                _.objects.set_(fields, path_str, {"description": '', "type": "string", "enum": [], "required_params": [], "parameter": {}})
-            if(path != []):
-                for i in range(len(path)):
-                    if i == 0:
-                        parameter = path[i]
-                    else:
-                        parameter += '.' + 'parameter.' + path[i]
-                path_str = f"{parameter}"
-                existing_data = _.get(fields, path_str, {"required_params": []})
-                existing_data["required_params"].append(key)
-                _.set_(fields, path_str, existing_data)   
+            elif isinstance(value, (list, tuple)):
+                # Set the current field as an array
+                existing_data = _.get(fields, path_str, {})
+                new_data = {
+                    "description": '',
+                    "type": "array",
+                    "items": existing_data.get("items", {})
+                }
+                _.set_(fields, path_str, new_data)
+            else:
+                # Handle primitive types (e.g., strings)
+                existing_data = _.get(fields, path_str, {})
+                new_data = {
+                    "description": '',
+                    "type": "string",
+                    "enum": [],
+                    "required_params": existing_data.get("required_params", []),
+                    "parameter": existing_data.get("parameter", {})
+                }
+                _.set_(fields, path_str, new_data)
+                
+
+            # Update required_params in the parent
+            if parent_path:
+                parent_data = _.get(fields, parent_path, {})
+                parent_required_params = parent_data.get('required_params', [])
+                if key not in parent_required_params:
+                    parent_required_params.append(key)
+                    parent_data['required_params'] = parent_required_params
+                    _.set_(fields, parent_path, parent_data)
+
+
     return {
         "paths": paths,
         "fields": fields,
