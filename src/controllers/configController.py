@@ -128,7 +128,10 @@ async def get_bridge(request, bridge_id: str):
         variables_path = bridge.get('bridges').get('variables_path',{})
         path_variables = []
         for script_id, vars_dict in variables_path.items():
-            path_variables.extend(vars_dict.keys())
+            if isinstance(vars_dict, dict):
+                path_variables.extend(vars_dict.keys())
+            else:
+                path_variables.append(vars_dict)
         all_variables = variables + path_variables
         bridge.get('bridges')['all_varaibles'] = all_variables
         return Helper.response_middleware_for_bridge({"succcess": True,"message": "bridge get successfully","bridge":bridge.get("bridges", {})})
