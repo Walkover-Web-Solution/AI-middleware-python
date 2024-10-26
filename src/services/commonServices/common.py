@@ -201,6 +201,7 @@ async def chat(request: Request):
                         _.set_(result['usage'], "outputTokens", _.get(result['usage'], "outputTokens") + tokens['outputTokens'])
                         _.set_(result['usage'], "expectedCost", _.get(result['usage'], "expectedCost") + tokens['expectedCost'])
                     _.set_(result['modelResponse'], modelOutputConfig['message'], _.get(newresult['modelResponse'], modelOutputConfig['message']))
+                    newresult['historyParams']['tools_call_data'] = result['historyParams']['tools_call_data']
                     result['historyParams'] = deepcopy(newresult.get('historyParams',{}))
                     result['historyParams']['message'] = model_response_content
                     result['historyParams']['chatbot_message'] = newresult['historyParams']['message']
