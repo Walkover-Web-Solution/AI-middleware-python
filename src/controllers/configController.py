@@ -10,7 +10,7 @@ from ..configs.constant import service_name
 from src.db_services.conversationDbService import storeSystemPrompt
 from bson import ObjectId
 from datetime import datetime, timezone
-
+from src.services.utils.getDefaultValue import get_default_values_controller
 async def create_bridges_controller(request):
     try:
         bridges = await request.json()
@@ -295,9 +295,21 @@ async def update_bridge_controller(request,bridge_id):
             update_fields['user_reference'] = user_reference
         if service is not None:
             update_fields['service'] = service
+            model = new_configuration['model']
+            configuration = await get_default_values_controller(service,model,current_configuration)
+            type = new_configuration.get('type', 'chat')
+            configuration['type'] = type
+            new_configuration = configuration
         if bridgeType is not None:
             update_fields['bridgeType'] = bridgeType
         if new_configuration is not None:
+            if(new_configuration.get('model') and service is None):
+                service = bridge.get('service')
+                model = new_configuration.get('model')
+                configuration = await get_default_values_controller(service,model,current_configuration)
+                type = new_configuration.get('type', 'chat')
+                configuration['type'] = type
+                new_configuration = {**new_configuration,**configuration}
             updated_configuration = {**current_configuration, **new_configuration}
             update_fields['configuration'] = updated_configuration
         if apikey is not None:
