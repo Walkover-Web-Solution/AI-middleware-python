@@ -185,6 +185,9 @@ async def chat(request: Request):
                     if 'customConfig' in params and 'tools' in params['customConfig']:
                         del params['customConfig']['tools']
                     model_response_content = result.get('historyParams').get('message')
+                    # custom config for the rich text
+                    params['customConfig']['response_type'] = {"type": "json_object"}
+                    params['customConfig']['max_tokens'] = modelConfig['max_tokens']['max']
                     obj = await create_service_handler(params,service)
                     newresult = await obj.execute()
                     tokens = obj.calculate_usage(newresult["modelResponse"])
