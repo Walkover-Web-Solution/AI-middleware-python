@@ -174,7 +174,12 @@ async def chat(request: Request):
                         if _.get(result["modelResponse"], modelOutputConfig["tools"]):
                             raise RuntimeError("Function calling has been done 6 times, limit exceeded.")
                         raise RuntimeError(e)
-                    system_prompt =  (await ConfigurationService.get_template_by_id(Config.MUI_TEMPLATE_ID)).get('template', '')
+                    
+                    if actions: 
+                        system_prompt =  (await ConfigurationService.get_template_by_id(Config.MUI_TEMPLATE_ID)).get('template', '')
+                    else: 
+                        system_prompt =  (await ConfigurationService.get_template_by_id(Config.MUI_TEMPLATE_ID_WITHOUT_ACTION)).get('template', '')
+                        
                     if user_reference: 
                         user_reference = f"\"user reference\": \"{user_reference}\""
                         user_contains = "on the base of user reference"
