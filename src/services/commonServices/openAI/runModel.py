@@ -28,9 +28,8 @@ async def runModel(configuration, apiKey, execution_time_logs, bridge_id, timer)
         # Start the first API call
         first_config = copy.deepcopy(configuration)
         first_task = loop.run_in_executor(executor, api_call, first_config)
-        print("Started first API call.")
 
-        # Wait for the first task to complete or 60 seconds, whichever comes first
+        # Wait for the first task to complete or 40 seconds, whichever comes first
         done, pending = await asyncio.wait(
             [first_task],
             timeout=60,
@@ -47,6 +46,8 @@ async def runModel(configuration, apiKey, execution_time_logs, bridge_id, timer)
             else:
                 print("runmodel error=>", result['error'])
                 traceback.print_exc()
+            for task in pending:
+                task.cancel()
             return result
         else:
             await send_alert(data={"configuration": configuration, "bridge_id": bridge_id, "message": "retry mechanism started 2nd time"}),
@@ -54,7 +55,7 @@ async def runModel(configuration, apiKey, execution_time_logs, bridge_id, timer)
             print("First API call did not complete within 60 seconds. Starting second API call.")
             # Start the second API call with 'gpt-4' model
             second_config = copy.deepcopy(configuration)
-            second_config['model'] = 'gpt-4o' if configuration['model'] == 'gpt-4o-2024-08-06' else 'gpt-4o-2024-08-06' 
+            second_config['model'] = 'gpt-4o-2024-08-06' if configuration['model'] == 'gpt-4o' else 'gpt-4o'
             second_task = loop.run_in_executor(executor, api_call, second_config)
 
             # Wait for either the first or second task to complete
@@ -81,6 +82,8 @@ async def runModel(configuration, apiKey, execution_time_logs, bridge_id, timer)
                 else:
                     print("runmodel error=>", result['error'])
                     traceback.print_exc()
+                for task in pending:
+                    task.cancel()
                 return result
 
             # If no tasks completed successfully
