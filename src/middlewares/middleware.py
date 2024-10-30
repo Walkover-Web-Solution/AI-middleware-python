@@ -30,7 +30,7 @@ async def jwt_middleware(request: Request):
             timer = Timer()
             timer.start()
             request.state.timer = timer
-            print(f"{json.dumps(request.headers)} check_token 111111")
+            print(f"{request.headers.get('Authorization', request.headers.get('proxy_auth_token'))} check_token 111111")
             if request.headers.get('Authorization') :
                 token = request.headers.get('Authorization')
                 if not token:
