@@ -41,6 +41,7 @@ async def jwt_middleware(request: Request):
                 check_token = await make_data_if_proxy_token_given(request)
 
             if check_token:
+                print(f"{check_token} check_token 111111")
                 check_token['org']['id'] = str(check_token['org']['id'])
                 request.state.profile = check_token
                 request.state.org_id = str(check_token.get('org', {}).get('id'))
