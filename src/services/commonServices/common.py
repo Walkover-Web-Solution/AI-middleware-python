@@ -222,7 +222,7 @@ async def chat(request: Request):
                 result["historyParams"]["message"] = message.get('response','')
                 
         if version == 2:
-            result['modelResponse'] = await Response_formatter(result["modelResponse"],service)
+            result['modelResponse'] = await Response_formatter(result["modelResponse"],service, result["historyParams"].get('tools',{}))
         if bridgeType and suggestions:
                 result['modelResponse']['options'] = suggestions
         latency = {
