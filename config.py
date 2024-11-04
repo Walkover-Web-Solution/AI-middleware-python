@@ -32,4 +32,5 @@ class Config:
     TEMPLATE_ID = os.getenv('TEMPLATE_ID')
     max_workers = os.getenv('max_workers')
     MUI_TEMPLATE_ID = os.getenv('MUI_TEMPLATE_ID')
+    MUI_TEMPLATE_ID_WITHOUT_ACTION = os.getenv('MUI_TEMPLATE_ID_WITHOUT_ACTION')
     CHATBOT_OPTIONS_TEMPLATE_ID = os.getenv('CHATBOT_OPTIONS_TEMPLATE_ID')
