@@ -7,7 +7,7 @@ from src.services.utils.helper import Helper
 import json
 from config import Config
 from ..configs.constant import service_name
-from src.db_services.conversationDbService import storeSystemPrompt
+from src.db_services.conversationDbService import storeSystemPrompt, add_bulk_user_entries
 from bson import ObjectId
 from datetime import datetime, timezone
 from src.services.utils.getDefaultValue import get_default_values_controller
@@ -341,26 +341,27 @@ async def update_bridge_controller(request,bridge_id):
         for key, value in body.items():
             if key == 'configuration':
                 for configuration in value.keys():
-                    user_history.append({
-                        'type': configuration,
-                        'user_id': user_id,
-                        'time': datetime.now(timezone.utc).isoformat()
-                    })
+                    user_history.append(
+                        {
+                            'user_id': user_id,
+                            'org_id': org_id,
+                            'bridge_id': bridge_id,
+                            'type': configuration
+                        }
+                    )
             else:
-                user_history.append({
-                    'type': key,
-                    'user_id': user_id,
-                    'time': datetime.now(timezone.utc).isoformat()
-                })
-
-        existing_history = bridge.get('user_history', [])
-        existing_history.extend(user_history)
-        if len(existing_history) > 20:
-            existing_history = existing_history[-20:]  
-        update_fields['user_history'] = existing_history
+                user_history.append(
+                    {
+                        'user_id': user_id,
+                        'org_id': org_id,
+                        'bridge_id': bridge_id,
+                        'type': key,
+                    }
+                )
 
         await update_bridge(bridge_id, update_fields) # todo :: add transaction
         result = await get_bridges_with_tools(bridge_id, org_id)
+        await add_bulk_user_entries(user_history)
         
         if result.get("success"):
             return Helper.response_middleware_for_bridge({
