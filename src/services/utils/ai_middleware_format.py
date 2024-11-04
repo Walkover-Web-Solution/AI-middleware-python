@@ -1,7 +1,3 @@
-<<<<<<< Updated upstream
-async def  Response_formatter(response, service):
-=======
-from src.services.utils.apiservice import fetch
 import json
 
 async def Response_formatter(response, service, tools={}):
@@ -14,7 +10,6 @@ async def Response_formatter(response, service, tools={}):
                         except json.JSONDecodeError:
                             pass
                         
->>>>>>> Stashed changes
     if service == 'openai':
         return {
             "data" : {
