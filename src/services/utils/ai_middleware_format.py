@@ -1,4 +1,5 @@
 import json
+from src.services.utils.apiservice import fetch
 
 async def Response_formatter(response, service, tools={}):
     tools_data = tools
@@ -64,3 +65,11 @@ async def Response_formatter(response, service, tools={}):
                 "total_tokens" : response.get("usage", {}).get("total_tokens", None)
             }
         }
+
+async def validateResponse(final_response,configration,bridgeId):
+    parsed_data = final_response.get("data",{}).get("content","").replace(" ", "").replace("\n", "")
+    if(parsed_data == ''):
+        await send_alert(data={"final_response":final_response,"configration":configration,"bridgeId":bridgeId, "message": "\n issue occurs"})
+
+async def send_alert(data):
+    await fetch("https://flow.sokt.io/func/scriYP8m551q",method='POST',json_body=data)
