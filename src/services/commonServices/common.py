@@ -46,16 +46,20 @@ async def create_service_handler(params, service):
 
 @app.post("/chat/{bridge_id}")
 @handle_exceptions
-async def chat(request: Request):
-    body = await request.json()
-    if(hasattr(request.state, 'body')): 
-        body.update(request.state.body) 
+async def chat(request_body):
+    # body = await request_body.json()
+    body = request_body.get('body',{});
+    state = request_body.get('state',{})
+    path_params = request_body.get('path_params',{})
+    
+    if(hasattr(state, 'body')): 
+        body.update(state['body']) 
 
     apikey = body.get("apikey")
-    bridge_id = request.path_params.get('bridge_id') or body.get("bridge_id")
+    bridge_id = path_params.get('bridge_id') or body.get("bridge_id")
     configuration = body.get("configuration")
     thread_id = body.get("thread_id")
-    org_id = request.state.profile.get('org',{}).get('id','')
+    org_id = state['profile'].get('org',{}).get('id','')
     user = body.get("user")
     tools =  configuration.get('tools')
     service = body.get("service")
@@ -66,17 +70,17 @@ async def chat(request: Request):
     customConfig = {}
     response_format = configuration.get("response_format")
     model = configuration.get('model')
-    is_playground = request.state.is_playground
+    is_playground = state['is_playground']
     bridge = body.get('bridge')
     pre_tools = body.get('pre_tools')
-    version = request.state.version
+    version = state['version']
     fine_tune_model = configuration.get('fine_tune_model', {}).get('current_model', {})
     is_rich_text = configuration.get('is_rich_text',True)   
     actions = body.get('actions',{})
     execution_time_logs = body.get('execution_time_logs')
     user_reference = body.get("user_reference", "")
     user_contains = ""
-    timer = request.state.timer
+    timer = state['timer']
     variables_path = body.get('variables_path')
     names = body.get('names')
     suggest = body.get('suggest',False)
@@ -145,7 +149,7 @@ async def chat(request: Request):
             "thread_id": thread_id,
             "model": model,
             "service": service,
-            "req": request, 
+            "req": request_body, 
             "modelOutputConfig": modelOutputConfig,
             "playground": is_playground,
             "template": template,
@@ -228,7 +232,7 @@ async def chat(request: Request):
         if bridgeType and suggestions:
                 result['modelResponse']['options'] = suggestions
         latency = {
-            "over_all_time" : timer.stop("Api total time") or "",
+            # "over_all_time" : timer.stop("Api total time") or "", todo
             "model_execution_time": sum(execution_time_logs.values()) or "",
             "execution_time_logs" : execution_time_logs or {}
         }
@@ -258,7 +262,7 @@ async def chat(request: Request):
         traceback.print_exc()
         if not is_playground:
             latency = {
-                "over_all_time": timer.stop("Api total time") or "",
+                # "over_all_time": timer.stop("Api total time") or "", todo
                 "model_execution_time": sum(execution_time_logs.values()) or "",
                 "execution_time_logs": execution_time_logs or {}
             }

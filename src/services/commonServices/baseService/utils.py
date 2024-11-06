@@ -7,6 +7,7 @@ from src.configs.constant import service_name
 import pydash as _
 from src.services.utils.apiservice import fetch
 from fastapi import Request
+import datetime
 
 def validate_tool_call(modelOutputConfig, service, response):
     match service:
@@ -267,27 +268,62 @@ def make_code_mapping_by_service(responses, service):
             return False, {}
     return codes_mapping
 
+# async def make_request_data(request: Request):
+#     body = await request.json()
+#     print(request.path_params)
+#     state_data = {}
+#     path_params = {}
+#     if hasattr(request.state, 'body'):
+#         state_data['body'] = request.state.body
+#     if hasattr(request.state, 'is_playground'):
+#         state_data['is_playground'] = request.state.is_playground
+#     if hasattr(request.state, 'version'):
+#         state_data['version'] = request.state.version
+#     if hasattr(request.state, 'profile'):
+#         state_data['profile'] = request.state.profile
+#     if hasattr(request.state, 'chatbot'):
+#         state_data['chatbot'] = request.state.chatbot
+#     if hasattr(request.state, 'timer'):
+#         # Convert the Timer object to a string representation
+#         state_data['timer'] = request.state.timer.start_time.isoformat() if hasattr(request.state.timer, 'start_time') else None
+#     if hasattr(request, 'path_params'):
+#         path_params = request.path_params
+    
+#     state_data['body']['bridge']['createdAt'] = state_data['body']['bridge']['createdAt'].isoformat()
+#     state_data['body']['bridge']['updatedAt'] = state_data['body']['bridge']['updatedAt'].isoformat()
+    
+#     return {
+#         'body': body,
+#         'state': state_data,
+#         'path_params': path_params
+#     }
+    
 async def make_request_data(request: Request):
     body = await request.json()
     state_data = {}
-    if hasattr(request.state, 'body'):
-        state_data['body'] = request.state.body
-    if hasattr(request.state, 'is_playground'):
-        state_data['is_playground'] = request.state.is_playground
-    if hasattr(request.state, 'version'):
-        state_data['version'] = request.state.version
-    if hasattr(request.state, 'profile'):
-        state_data['profile'] = request.state.profile
-    if hasattr(request.state, 'chatbot'):
-        state_data['chatbot'] = request.state.chatbot
-    if hasattr(request.state, 'timer'):
-        # Convert the Timer object to a string representation
-        state_data['timer'] = str(request.state.timer)
+    path_params = {}
     
-    state_data['body']['bridge']['createdAt'] = state_data['body']['bridge']['createdAt'].isoformat()
-    state_data['body']['bridge']['updatedAt'] = state_data['body']['bridge']['updatedAt'].isoformat()
+    attributes = ['body', 'is_playground', 'version', 'profile', 'chatbot']
+    for attr in attributes:
+        if hasattr(request.state, attr):
+            state_data[attr] = getattr(request.state, attr)
+    
+    if hasattr(request.state, 'timer'):
+        state_data['timer'] = str(request.state.timer)
+        
+    if hasattr(request, 'path_params'):
+        path_params = request.path_params
+    
+    # Ensure 'bridge' and its keys exist to avoid AttributeError
+    if 'body' in state_data and 'bridge' in state_data['body']:
+        bridge = state_data['body']['bridge']
+        if isinstance(bridge.get('createdAt'), datetime.datetime):
+            bridge['createdAt'] = bridge['createdAt'].isoformat()
+        if isinstance(bridge.get('updatedAt'), datetime.datetime):
+            bridge['updatedAt'] = bridge['updatedAt'].isoformat()
     
     return {
         'body': body,
-        'state': state_data
+        'state': state_data,
+        'path_params': path_params
     }

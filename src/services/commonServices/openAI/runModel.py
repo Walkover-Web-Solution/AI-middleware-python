@@ -23,7 +23,7 @@ async def runModel(configuration, apiKey, execution_time_logs, bridge_id, timer)
                 return {'success': False, 'error': str(error)}
 
       # Start timer  
-        timer.start()
+        # timer.start() todo
 
         # Start the first API call
         first_config = copy.deepcopy(configuration)
@@ -39,7 +39,7 @@ async def runModel(configuration, apiKey, execution_time_logs, bridge_id, timer)
         if first_task in done:
             # First task completed within 60 seconds
             result = first_task.result()
-            execution_time_logs[len(execution_time_logs) + 1] = timer.stop("OpenAI chat completion")
+            # execution_time_logs[len(execution_time_logs) + 1] = timer.stop("OpenAI chat completion") todo
             print("First API call completed within 60 seconds.")
             if result['success']:
                 print(11, json.dumps(first_config), 22, bridge_id)
@@ -69,7 +69,7 @@ async def runModel(configuration, apiKey, execution_time_logs, bridge_id, timer)
             # Get the result from the task that completed first
             for task in done:
                 result = task.result()
-                execution_time_logs[len(execution_time_logs) + 1] = timer.stop("OpenAI chat completion")
+                # execution_time_logs[len(execution_time_logs) + 1] = timer.stop("OpenAI chat completion") todo
                 if task == first_task:
                     print("First API call completed first.")
                     config_used = first_config
@@ -87,13 +87,13 @@ async def runModel(configuration, apiKey, execution_time_logs, bridge_id, timer)
                 return result
 
             # If no tasks completed successfully
-            execution_time_logs[len(execution_time_logs) + 1] = timer.stop("OpenAI chat completion")
+            # execution_time_logs[len(execution_time_logs) + 1] = timer.stop("OpenAI chat completion") todo
             return {
                 'success': False,
                 'error': 'No API call completed successfully.'
             }
     except Exception as error:
-        execution_time_logs[len(execution_time_logs) + 1] = timer.stop("OpenAI chat completion")
+        # execution_time_logs[len(execution_time_logs) + 1] = timer.stop("OpenAI chat completion") todo
         print("runmodel error=>", error)
         traceback.print_exc()
         return {
