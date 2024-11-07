@@ -1,5 +1,5 @@
-from src.services.utils.apiservice import fetch
 import json
+from src.services.utils.apiservice import fetch
 
 async def Response_formatter(response, service, tools={}):
     tools_data = tools
