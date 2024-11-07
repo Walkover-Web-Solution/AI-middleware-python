@@ -28,7 +28,7 @@ async def lifespan(app: FastAPI):
     await queue_obj.create_queue_if_not_exists()
     
     consume_task = None
-    if Config.IS_CONSUMER.lower() == "true":
+    if Config.CONSUMER_STATUS.lower() == "true":
         consume_task = asyncio.create_task(consume_messages_in_executor())
     
     yield  # Startup logic is complete

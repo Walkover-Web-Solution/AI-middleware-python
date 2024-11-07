@@ -38,4 +38,4 @@ class Config:
     QUEUE_NAME = os.getenv('QUEUE_NAME')
     REQUEUE_NAME = os.getenv('REQUEUE_NAME')
     PREFETCH_COUNT = os.getenv('PREFETCH_COUNT')
-    IS_CONSUMER = os.getenv('IS_CONSUMER')
+    CONSUMER_STATUS = os.getenv('CONSUMER_STATUS')

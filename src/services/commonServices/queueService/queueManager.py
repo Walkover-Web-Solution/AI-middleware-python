@@ -1,215 +1,215 @@
 
-import asyncio
-import importlib
-import json
-import subprocess
-import time
-from collections import defaultdict
-from aio_pika.abc import AbstractIncomingMessage
-from aio_pika import connect_robust, Message
-from config import Config
-from components.config import RABBIT_URL, CONSUMER_MAP_JSON, ENVIRONMENT, REPORTS_RABBITMQ_URL, REPORTS_MAP_JSON
+# import asyncio
+# import importlib
+# import json
+# import subprocess
+# import time
+# from collections import defaultdict
+# from aio_pika.abc import AbstractIncomingMessage
+# from aio_pika import connect_robust, Message
+# from config import Config
+# from components.config import RABBIT_URL, CONSUMER_MAP_JSON, ENVIRONMENT, REPORTS_RABBITMQ_URL, REPORTS_MAP_JSON
 
 
-class QueueManager:
-    connection = None
-    channel = None
-    queues_declared = False
-    consumers = defaultdict(list)
+# class QueueManager:
+#     connection = None
+#     channel = None
+#     queues_declared = False
+#     consumers = defaultdict(list)
 
-    def __init__(self, rabbit_url, consumer_map = '{}'):
-        self.connection_url = Config.QUEUE_CONNECTIONURL
-        self.queue_name = Config.QUEUE_NAME
-        self.consumer_map = json.loads(consumer_map)
+#     def __init__(self, rabbit_url, consumer_map = '{}'):
+#         self.connection_url = Config.QUEUE_CONNECTIONURL
+#         self.queue_name = Config.QUEUE_NAME
+#         self.consumer_map = json.loads(consumer_map)
 
-    async def connect(self):
-        try:
-            if not self.connection or self.connection.is_closed:
-                self.connection = await connect_robust(self.connection_url)
-                self.channel = await self.connection.channel()
-            return True
-        except Exception as E:
-            print(f"Error while connecting to RabbitMQ: {E}")
-            return False
+#     async def connect(self):
+#         try:
+#             if not self.connection or self.connection.is_closed:
+#                 self.connection = await connect_robust(self.connection_url)
+#                 self.channel = await self.connection.channel()
+#             return True
+#         except Exception as E:
+#             print(f"Error while connecting to RabbitMQ: {E}")
+#             return False
 
-    async def disconnect(self):
-        if self.channel:
-            await self.channel.close()
-        if self.connection:
-            await self.connection.close()
+#     async def disconnect(self):
+#         if self.channel:
+#             await self.channel.close()
+#         if self.connection:
+#             await self.connection.close()
 
-    async def create_queue_if_not_exists(self):
-        if not self.queues_declared and await self.connect():
-            # for queue_name in self.consumer_map.keys():
-            #     await self.channel.declare_queue(queue_name, durable=True)
-            await self.channel.declare_queue(self.qu, durable=True)
-            self.queues_declared = True
+#     async def create_queue_if_not_exists(self):
+#         if not self.queues_declared and await self.connect():
+#             # for queue_name in self.consumer_map.keys():
+#             #     await self.channel.declare_queue(queue_name, durable=True)
+#             await self.channel.declare_queue(self.qu, durable=True)
+#             self.queues_declared = True
 
-    async def initialize_consumers(self):
-        if await self.connect():
-            for queue_name, limits in self.consumer_map.items():
-                app_name = limits.get('app_name', "customBot")
-                for num in range(limits['min']):
-                    await self.consumer_process(app_name, queue_name, "start", num)
-                    # logger.info(f"Started consumer for {queue_name}. Current: {len(self.consumers[queue_name])}")
-                    print(f"Started consumer for {queue_name}. Current: {len(self.consumers[queue_name])}")
+#     async def initialize_consumers(self):
+#         if await self.connect():
+#             for queue_name, limits in self.consumer_map.items():
+#                 app_name = limits.get('app_name', "customBot")
+#                 for num in range(limits['min']):
+#                     await self.consumer_process(app_name, queue_name, "start", num)
+#                     # logger.info(f"Started consumer for {queue_name}. Current: {len(self.consumers[queue_name])}")
+#                     print(f"Started consumer for {queue_name}. Current: {len(self.consumers[queue_name])}")
                     
 
-    async def terminate_consumers(self):
-        if await self.connect():
-            for queue_name, limits in self.consumer_map.items():
-                app_name = limits.get('app_name', "customBot")
-                for _ in range(len(self.consumers[queue_name])):
-                    await self.consumer_process(app_name, queue_name, "stop")
-                    print(f"Stopped consumer for {queue_name}. Current: {len(self.consumers[queue_name])}")
-            print("Stopped All consumer and Disconnected")
+#     async def terminate_consumers(self):
+#         if await self.connect():
+#             for queue_name, limits in self.consumer_map.items():
+#                 app_name = limits.get('app_name', "customBot")
+#                 for _ in range(len(self.consumers[queue_name])):
+#                     await self.consumer_process(app_name, queue_name, "stop")
+#                     print(f"Stopped consumer for {queue_name}. Current: {len(self.consumers[queue_name])}")
+#             print("Stopped All consumer and Disconnected")
 
-    async def consumer_process(self, app_name, queue_name, action, consumer_no=None):
-        if action == "start":
-            command = ['python', 'consumer.py', app_name, queue_name, str(consumer_no)]
-            process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            self.consumers[queue_name].append(process)
-            print(f"Started consumer process for {queue_name}. PID: {process.pid}")
-        elif action == "stop":
-            processes = self.consumers[queue_name]
-            if processes:
-                process = processes.pop()
-                process.terminate()
-                # logger.info(f"Stopped consumer process for {queue_name}. PID: {process.pid}")
-                print(f"Stopped consumer process for {queue_name}. PID: {process.pid}")
-            else:
-                # logger.info(f"No active consumer process found for {queue_name}")
-                print(f"No active consumer process found for {queue_name}")
-        else:
-            print(f"Invalid active given, Expected - start, stop : Given - {action}")
+#     async def consumer_process(self, app_name, queue_name, action, consumer_no=None):
+#         if action == "start":
+#             command = ['python', 'consumer.py', app_name, queue_name, str(consumer_no)]
+#             process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+#             self.consumers[queue_name].append(process)
+#             print(f"Started consumer process for {queue_name}. PID: {process.pid}")
+#         elif action == "stop":
+#             processes = self.consumers[queue_name]
+#             if processes:
+#                 process = processes.pop()
+#                 process.terminate()
+#                 # logger.info(f"Stopped consumer process for {queue_name}. PID: {process.pid}")
+#                 print(f"Stopped consumer process for {queue_name}. PID: {process.pid}")
+#             else:
+#                 # logger.info(f"No active consumer process found for {queue_name}")
+#                 print(f"No active consumer process found for {queue_name}")
+#         else:
+#             print(f"Invalid active given, Expected - start, stop : Given - {action}")
 
-    async def adjust_consumer_count(self):
-        start_time = time.time()
-        if await self.connect():
-            for queue_name in self.consumer_map.keys():
-                data_count = await self.get_queue_data_count(queue_name)
-                # Determine consumer count based on predefined thresholds
-                app_name = self.consumer_map[queue_name].get('app_name', "customBot")
-                current_consumers = len(self.consumers[queue_name])
-                expected_consumers = max(self.consumer_map[queue_name]["min"],
-                                         min(data_count // 100, self.consumer_map[queue_name]["max"]))
-                if expected_consumers > current_consumers:
-                    await self.consumer_process(app_name, queue_name, "start", current_consumers + 1)
-                    # logger.info(f"Increased consumer for {queue_name}. Total: {len(self.consumers[queue_name])}")
-                    print(f"Increased consumer for {queue_name}. Total: {len(self.consumers[queue_name])}")
-                elif expected_consumers < current_consumers:
-                    await self.consumer_process(app_name, queue_name, "stop")
-                    # logger.info(f"Decreased consumer for {queue_name}. Total: {len(self.consumers[queue_name])}")
-                    print(f"Decreased consumer for {queue_name}. Total: {len(self.consumers[queue_name])}")
+#     async def adjust_consumer_count(self):
+#         start_time = time.time()
+#         if await self.connect():
+#             for queue_name in self.consumer_map.keys():
+#                 data_count = await self.get_queue_data_count(queue_name)
+#                 # Determine consumer count based on predefined thresholds
+#                 app_name = self.consumer_map[queue_name].get('app_name', "customBot")
+#                 current_consumers = len(self.consumers[queue_name])
+#                 expected_consumers = max(self.consumer_map[queue_name]["min"],
+#                                          min(data_count // 100, self.consumer_map[queue_name]["max"]))
+#                 if expected_consumers > current_consumers:
+#                     await self.consumer_process(app_name, queue_name, "start", current_consumers + 1)
+#                     # logger.info(f"Increased consumer for {queue_name}. Total: {len(self.consumers[queue_name])}")
+#                     print(f"Increased consumer for {queue_name}. Total: {len(self.consumers[queue_name])}")
+#                 elif expected_consumers < current_consumers:
+#                     await self.consumer_process(app_name, queue_name, "stop")
+#                     # logger.info(f"Decreased consumer for {queue_name}. Total: {len(self.consumers[queue_name])}")
+#                     print(f"Decreased consumer for {queue_name}. Total: {len(self.consumers[queue_name])}")
 
-                for num, process in enumerate(self.consumers[queue_name]):
-                    if process.poll() is not None:  # Process has terminated
-                        # logger.warning(f"Consumer process for {queue_name} with PID {process.pid} terminated with return code {process.poll()}")
-                        print(f"Consumer process for {queue_name} with PID {process.pid} terminated with return code {process.poll()}")
-                        self.consumers[queue_name].remove(process)
-                        process.terminate()
-                        await self.consumer_process(app_name, queue_name, "start", num)
-                        # logger.info(f"Restart 1 consumer for {queue_name}. Total: {len(self.consumers[queue_name])}")
-                        print(f"Restart 1 consumer for {queue_name}. Total: {len(self.consumers[queue_name])}")
+#                 for num, process in enumerate(self.consumers[queue_name]):
+#                     if process.poll() is not None:  # Process has terminated
+#                         # logger.warning(f"Consumer process for {queue_name} with PID {process.pid} terminated with return code {process.poll()}")
+#                         print(f"Consumer process for {queue_name} with PID {process.pid} terminated with return code {process.poll()}")
+#                         self.consumers[queue_name].remove(process)
+#                         process.terminate()
+#                         await self.consumer_process(app_name, queue_name, "start", num)
+#                         # logger.info(f"Restart 1 consumer for {queue_name}. Total: {len(self.consumers[queue_name])}")
+#                         print(f"Restart 1 consumer for {queue_name}. Total: {len(self.consumers[queue_name])}")
 
-    async def get_queue_data_count(self, queue_name: str):
-        if await self.connect():
-            queue = await self.channel.declare_queue(queue_name, durable=True)
-            message_count = queue.declaration_result.message_count
-            return message_count
+#     async def get_queue_data_count(self, queue_name: str):
+#         if await self.connect():
+#             queue = await self.channel.declare_queue(queue_name, durable=True)
+#             message_count = queue.declaration_result.message_count
+#             return message_count
 
-    async def publish_message(self, queue_name: str, module: str, method: str, args: list = None, kwargs: dict = None,
-                              message: dict = None, modify_queue_name: bool = True):
-        queue_name = f"bot_{queue_name}_{ENVIRONMENT[0:4]}" if modify_queue_name else queue_name
-        if not message:
-            message = {
-                "module": module,
-                "method": method,
-                "args": [],
-                "kwargs": {}
-            }
-            if args is not None:
-                message['args'] = args
-            if kwargs is not None:
-                message['kwargs'] = kwargs
-        await self.connect()
-        await self.channel.default_exchange.publish(
-            Message(body=json.dumps(message).encode()),
-            routing_key=queue_name
-        )
+#     async def publish_message(self, queue_name: str, module: str, method: str, args: list = None, kwargs: dict = None,
+#                               message: dict = None, modify_queue_name: bool = True):
+#         queue_name = f"bot_{queue_name}_{ENVIRONMENT[0:4]}" if modify_queue_name else queue_name
+#         if not message:
+#             message = {
+#                 "module": module,
+#                 "method": method,
+#                 "args": [],
+#                 "kwargs": {}
+#             }
+#             if args is not None:
+#                 message['args'] = args
+#             if kwargs is not None:
+#                 message['kwargs'] = kwargs
+#         await self.connect()
+#         await self.channel.default_exchange.publish(
+#             Message(body=json.dumps(message).encode()),
+#             routing_key=queue_name
+#         )
 
-    async def publish_message_with_delay(self, queue_name: str, module: str, method: str, args: list = None,
-                                         kwargs: dict = None, message: dict = None, modify_queue_name: bool = True,
-                                         delay_ms: int = 0):
+#     async def publish_message_with_delay(self, queue_name: str, module: str, method: str, args: list = None,
+#                                          kwargs: dict = None, message: dict = None, modify_queue_name: bool = True,
+#                                          delay_ms: int = 0):
 
-        queue_name = f"bot_{queue_name}_{ENVIRONMENT[0:4]}" if modify_queue_name else queue_name
-        if not message:
-            message = {
-                "module": module,
-                "method": method,
-                "args": args if args is not None else [],
-                "kwargs": kwargs if kwargs is not None else {}
-            }
+#         queue_name = f"bot_{queue_name}_{ENVIRONMENT[0:4]}" if modify_queue_name else queue_name
+#         if not message:
+#             message = {
+#                 "module": module,
+#                 "method": method,
+#                 "args": args if args is not None else [],
+#                 "kwargs": kwargs if kwargs is not None else {}
+#             }
 
-        await self.connect()
+#         await self.connect()
 
-        delay_queue_name = f"delay_{delay_ms}_{queue_name}"
-        await self.channel.declare_queue(
-            delay_queue_name,
-            arguments={
-                "x-expires": delay_ms + 10000,
-                "x-message-ttl": delay_ms,
-                "x-dead-letter-exchange": self.channel.default_exchange.name,
-                "x-dead-letter-routing-key": queue_name
-            }
-        )
+#         delay_queue_name = f"delay_{delay_ms}_{queue_name}"
+#         await self.channel.declare_queue(
+#             delay_queue_name,
+#             arguments={
+#                 "x-expires": delay_ms + 10000,
+#                 "x-message-ttl": delay_ms,
+#                 "x-dead-letter-exchange": self.channel.default_exchange.name,
+#                 "x-dead-letter-routing-key": queue_name
+#             }
+#         )
 
-        await self.channel.default_exchange.publish(
-            Message(body=json.dumps(message).encode()),
-            routing_key=delay_queue_name
-        )
+#         await self.channel.default_exchange.publish(
+#             Message(body=json.dumps(message).encode()),
+#             routing_key=delay_queue_name
+#         )
 
-    async def consume_message(self, app_name, queue_name):
-        if await self.connect():
-            await self.channel.set_qos(prefetch_count=10)
-            queue = await self.channel.get_queue(queue_name)
+#     async def consume_message(self, app_name, queue_name):
+#         if await self.connect():
+#             await self.channel.set_qos(prefetch_count=10)
+#             queue = await self.channel.get_queue(queue_name)
 
-            async def message_handler(message: AbstractIncomingMessage):
-                async with message.process():
-                    try:
-                        message_body = message.body.decode()
-                        message_data = json.loads(message_body)
-                        module_name = message_data.get("module")
-                        class_name = module_name[0].upper() + module_name[1:]
-                        method_name = message_data.get("method")
-                        args = message_data.get("args", [])
-                        kwargs = message_data.get("kwargs", {})
+#             async def message_handler(message: AbstractIncomingMessage):
+#                 async with message.process():
+#                     try:
+#                         message_body = message.body.decode()
+#                         message_data = json.loads(message_body)
+#                         module_name = message_data.get("module")
+#                         class_name = module_name[0].upper() + module_name[1:]
+#                         method_name = message_data.get("method")
+#                         args = message_data.get("args", [])
+#                         kwargs = message_data.get("kwargs", {})
 
-                        # Dynamically import the class and call the method
-                        module = importlib.import_module(f"apps.{app_name}.bgtasks.{module_name}")
-                        klass = getattr(module, class_name)
-                        method = getattr(klass, method_name)
-                        if method:
-                            await method(*args, **kwargs)
-                            # TODO : Check It :await asyncio.wait_for(method(*args, **kwargs), 60)
-                        else:
-                            # logger.error(f"Method {method_name} not found")
-                            print(f"Method {method_name} not found")
-                    except Exception as E:
-                        # logger.exception(E)
-                        print(E)
-                        from components.services.alertServices import AlertServices
-                        AlertServices.slack_alert(str(E), "message_handler", "Consumer Error", json.loads(message.body.decode()))
+#                         # Dynamically import the class and call the method
+#                         module = importlib.import_module(f"apps.{app_name}.bgtasks.{module_name}")
+#                         klass = getattr(module, class_name)
+#                         method = getattr(klass, method_name)
+#                         if method:
+#                             await method(*args, **kwargs)
+#                             # TODO : Check It :await asyncio.wait_for(method(*args, **kwargs), 60)
+#                         else:
+#                             # logger.error(f"Method {method_name} not found")
+#                             print(f"Method {method_name} not found")
+#                     except Exception as E:
+#                         # logger.exception(E)
+#                         print(E)
+#                         from components.services.alertServices import AlertServices
+#                         AlertServices.slack_alert(str(E), "message_handler", "Consumer Error", json.loads(message.body.decode()))
 
-            # logger.info(f"Started consuming from queue {queue_name}")
-            print(f"Started consuming from queue {queue_name}")
-            await queue.consume(message_handler)
-            while True:
-                await asyncio.sleep(1)  # Keeps the consumer running indefinitely, can do something work too if needed
+#             # logger.info(f"Started consuming from queue {queue_name}")
+#             print(f"Started consuming from queue {queue_name}")
+#             await queue.consume(message_handler)
+#             while True:
+#                 await asyncio.sleep(1)  # Keeps the consumer running indefinitely, can do something work too if needed
 
 
-queue_manager = QueueManager(RABBIT_URL, CONSUMER_MAP_JSON)
-# reports_queue_manager = QueueManager(REPORTS_RABBITMQ_URL, REPORTS_MAP_JSON)
+# queue_manager = QueueManager(RABBIT_URL, CONSUMER_MAP_JSON)
+# # reports_queue_manager = QueueManager(REPORTS_RABBITMQ_URL, REPORTS_MAP_JSON)
 
 
 
