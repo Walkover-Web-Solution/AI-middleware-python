@@ -267,36 +267,6 @@ def make_code_mapping_by_service(responses, service):
         case _:
             return False, {}
     return codes_mapping
-
-# async def make_request_data(request: Request):
-#     body = await request.json()
-#     print(request.path_params)
-#     state_data = {}
-#     path_params = {}
-#     if hasattr(request.state, 'body'):
-#         state_data['body'] = request.state.body
-#     if hasattr(request.state, 'is_playground'):
-#         state_data['is_playground'] = request.state.is_playground
-#     if hasattr(request.state, 'version'):
-#         state_data['version'] = request.state.version
-#     if hasattr(request.state, 'profile'):
-#         state_data['profile'] = request.state.profile
-#     if hasattr(request.state, 'chatbot'):
-#         state_data['chatbot'] = request.state.chatbot
-#     if hasattr(request.state, 'timer'):
-#         # Convert the Timer object to a string representation
-#         state_data['timer'] = request.state.timer.start_time.isoformat() if hasattr(request.state.timer, 'start_time') else None
-#     if hasattr(request, 'path_params'):
-#         path_params = request.path_params
-    
-#     state_data['body']['bridge']['createdAt'] = state_data['body']['bridge']['createdAt'].isoformat()
-#     state_data['body']['bridge']['updatedAt'] = state_data['body']['bridge']['updatedAt'].isoformat()
-    
-#     return {
-#         'body': body,
-#         'state': state_data,
-#         'path_params': path_params
-#     }
     
 async def make_request_data(request: Request):
     body = await request.json()

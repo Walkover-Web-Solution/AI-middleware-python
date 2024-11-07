@@ -42,7 +42,8 @@ async def runModel(configuration, apiKey, execution_time_logs, bridge_id, timer)
             # execution_time_logs[len(execution_time_logs) + 1] = timer.stop("OpenAI chat completion") todo
             print("First API call completed within 60 seconds.")
             if result['success']:
-                print(11, json.dumps(first_config), 22, bridge_id)
+                # print(11, json.dumps(first_config), 22, bridge_id)
+                pass
             else:
                 print("runmodel error=>", result['error'])
                 traceback.print_exc()

@@ -12,8 +12,9 @@ from src.routes.chatBot_routes import router as chatbot_router
 from src.routes.apiCall_routes import router as apiCall_router
 from src.routes.config_routes import router as config_router
 from src.controllers.bridgeController import router as bridge_router
-from src.routes.v2.modelRouter import router as v2_router, queue_obj
+from src.routes.v2.modelRouter import router as v2_router
 from src.services.utils.apiservice import fetch
+from src.services.commonServices.queueService.queueService import queue_obj
 
 async def consume_messages_in_executor():
     await queue_obj.consume_messages()

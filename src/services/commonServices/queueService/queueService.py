@@ -69,7 +69,7 @@ class Queue:
             )
             print(f"Message published to {self.queue_name}")
         except Exception as e:
-            print(f"Failed to publish message: {e}")
+            print(f"Failed to publish message ===: {e}")
             
 
     async def process_messages(self, messages):
@@ -80,7 +80,6 @@ class Queue:
         # for message in messages:
             # await loop.run_in_executor(executor, lambda: asyncio.run(chat(message)))
         await loop.run_in_executor(executor, lambda: asyncio.run(chat(messages)))
-        # await asyncio.sleep(3)
 
     async def consume_messages(self):
         try:
@@ -115,3 +114,5 @@ class Queue:
                     await asyncio.sleep(1)  # Keeps the consumer running indefinitely, can do something work too if needed
         except Exception as e:
             print(f"Error while consuming messages: {e}")
+
+queue_obj = Queue()
