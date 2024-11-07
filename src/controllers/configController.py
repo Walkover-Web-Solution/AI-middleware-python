@@ -7,10 +7,10 @@ from src.services.utils.helper import Helper
 import json
 from config import Config
 from ..configs.constant import service_name
-from src.db_services.conversationDbService import storeSystemPrompt
+from src.db_services.conversationDbService import storeSystemPrompt, add_bulk_user_entries
 from bson import ObjectId
 from datetime import datetime, timezone
-
+from src.services.utils.getDefaultValue import get_default_values_controller
 async def create_bridges_controller(request):
     try:
         bridges = await request.json()
@@ -24,6 +24,7 @@ async def create_bridges_controller(request):
         modelname = model.replace("-", "_").replace(".", "_")
         configuration = getattr(model_configuration,modelname,None)
         configurations = configuration()['configuration']
+        status = 1
         keys_to_update = [
         'model',
         'creativity_level',
@@ -56,7 +57,8 @@ async def create_bridges_controller(request):
             "slugName": slugName,
             "service": service,
             "bridgeType": bridgeType,
-            "org_id" : org_id
+            "org_id" : org_id,
+            "status": status
         })
         if result.get("success"):
             return JSONResponse(status_code=200, content={
@@ -293,9 +295,21 @@ async def update_bridge_controller(request,bridge_id):
             update_fields['user_reference'] = user_reference
         if service is not None:
             update_fields['service'] = service
+            model = new_configuration['model']
+            configuration = await get_default_values_controller(service,model,current_configuration)
+            type = new_configuration.get('type', 'chat')
+            configuration['type'] = type
+            new_configuration = configuration
         if bridgeType is not None:
             update_fields['bridgeType'] = bridgeType
         if new_configuration is not None:
+            if(new_configuration.get('model') and service is None):
+                service = bridge.get('service')
+                model = new_configuration.get('model')
+                configuration = await get_default_values_controller(service,model,current_configuration)
+                type = new_configuration.get('type', 'chat')
+                configuration['type'] = type
+                new_configuration = {**new_configuration,**configuration}
             updated_configuration = {**current_configuration, **new_configuration}
             update_fields['configuration'] = updated_configuration
         if apikey is not None:
@@ -327,26 +341,27 @@ async def update_bridge_controller(request,bridge_id):
         for key, value in body.items():
             if key == 'configuration':
                 for configuration in value.keys():
-                    user_history.append({
-                        'type': configuration,
-                        'user_id': user_id,
-                        'time': datetime.now(timezone.utc).isoformat()
-                    })
+                    user_history.append(
+                        {
+                            'user_id': user_id,
+                            'org_id': org_id,
+                            'bridge_id': bridge_id,
+                            'type': configuration
+                        }
+                    )
             else:
-                user_history.append({
-                    'type': key,
-                    'user_id': user_id,
-                    'time': datetime.now(timezone.utc).isoformat()
-                })
-
-        existing_history = bridge.get('user_history', [])
-        existing_history.extend(user_history)
-        if len(existing_history) > 20:
-            existing_history = existing_history[-20:]  
-        update_fields['user_history'] = existing_history
+                user_history.append(
+                    {
+                        'user_id': user_id,
+                        'org_id': org_id,
+                        'bridge_id': bridge_id,
+                        'type': key,
+                    }
+                )
 
         await update_bridge(bridge_id, update_fields) # todo :: add transaction
         result = await get_bridges_with_tools(bridge_id, org_id)
+        await add_bulk_user_entries(user_history)
         
         if result.get("success"):
             return Helper.response_middleware_for_bridge({

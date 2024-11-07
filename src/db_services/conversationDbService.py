@@ -6,7 +6,7 @@ from sqlalchemy.exc import SQLAlchemyError
 import asyncio
 import traceback
 from datetime import datetime
-from models.postgres.pg_models import Conversation, RawData, system_prompt_versionings
+from models.postgres.pg_models import Conversation, RawData, system_prompt_versionings, user_bridge_config_history
 
 pg = models['pg']
 
@@ -135,6 +135,20 @@ async def reset_chat_history(org_id, bridge_id, thread_id):
             'message': 'Error resetting chatbot',
             'result': error
         }
+    finally:
+        session.close()
+
+
+async def add_bulk_user_entries(entries):
+    session = pg['session']()
+    try:
+        user_history = [user_bridge_config_history(**data) for data in entries]
+        session.add_all(user_history)
+        session.commit()
+        print("Bulk entries added successfully!")
+    except Exception as e:
+        session.rollback()
+        print(f"Error: {e}")
     finally:
         session.close()
 

@@ -2,7 +2,6 @@ import jwt
 from fastapi import Request, HTTPException
 import traceback
 from config import Config
-
 from src.services.utils.apiservice import fetch
 from src.services.utils.time import Timer
 
@@ -30,7 +29,6 @@ async def jwt_middleware(request: Request):
             timer = Timer()
             timer.start()
             request.state.timer = timer
-            
             if request.headers.get('Authorization') :
                 token = request.headers.get('Authorization')
                 if not token:

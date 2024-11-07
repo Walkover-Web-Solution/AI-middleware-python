@@ -1,4 +1,5 @@
 import json
+from config import Config
 from src.services.utils.apiservice import fetch
 
 async def Response_formatter(response, service, tools={}):
@@ -66,10 +67,12 @@ async def Response_formatter(response, service, tools={}):
             }
         }
 
-async def validateResponse(final_response,configration,bridgeId):
-    parsed_data = final_response.get("data",{}).get("content","").replace(" ", "").replace("\n", "")
-    if(parsed_data == ''):
-        await send_alert(data={"final_response":final_response,"configration":configration,"bridgeId":bridgeId, "message": "\n issue occurs"})
+async def validateResponse(final_response,configration,bridgeId, message_id, org_id):
+    content = final_response.get("data",{}).get("content","")
+    parsed_data = content.replace(" ", "").replace("\n", "")
+    if(parsed_data == '' and content):
+        await send_alert(data={"response":content,"configration":configration,"message_id":message_id,"bridge_id":bridgeId, "org_id": org_id, "message": "\n issue occurs"})
 
 async def send_alert(data):
-    await fetch("https://flow.sokt.io/func/scriYP8m551q",method='POST',json_body=data)
+    dataTosend = {**data, "ENVIROMENT":Config.ENVIROMENT} if Config.ENVIROMENT else data
+    await fetch("https://flow.sokt.io/func/scriYP8m551q",method='POST',json_body=dataTosend)
