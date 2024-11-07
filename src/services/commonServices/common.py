@@ -3,22 +3,17 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 import traceback
 import uuid
-import time
 from config import Config
-from src.configs.models import services
 from src.configs.modelConfiguration import ModelsConfig
 from ...controllers.conversationController import getThread 
-from operator import itemgetter
 from ...db_services import metrics_service as metrics_service
 from .openAI.openaiCall import UnifiedOpenAICase
-from .baseService.baseService import BaseService
 from .Google.geminiCall import GeminiHandler
 import pydash as _
 from ..utils.helper import Helper
 import asyncio
 from .anthrophic.antrophicCall import Antrophic
 from .groq.groqCall import Groq
-from prompts import mui_prompt
 from .baseService.utils import sendResponse
 from ..utils.ai_middleware_format import Response_formatter, validateResponse, send_alert
 app = FastAPI()
@@ -250,7 +245,7 @@ async def chat(request: Request):
             await asyncio.gather(
                 sendResponse(response_format, result["modelResponse"], success=True),
                 metrics_service.create([usage], result["historyParams"]),
-                validateResponse(final_response=result['modelResponse'],configration=configuration,bridgeId=bridge_id),
+                validateResponse(final_response=result['modelResponse'],configration=configuration,bridgeId=bridge_id,message_id=message_id),
                 return_exceptions=True
             )
         return JSONResponse(status_code=200, content={"success": True, "response": result["modelResponse"]})
@@ -286,7 +281,7 @@ async def chat(request: Request):
                 }),
                 # Only send the second response if the type is not 'default'
                 sendResponse(response_format, result.get("modelResponse", str(error))) if response_format['type'] != 'default' else None,
-                send_alert(data={"configuration": configuration, "error": str(error), "bridge_id": bridge_id, "message": "Exception for the code"}),
+                send_alert(data={"configuration": configuration, "error": str(error),"message_id":message_id, "bridge_id": bridge_id, "message": "Exception for the code"}),
             ]
             # Filter out None values
             await asyncio.gather(*[task for task in tasks if task is not None], return_exceptions=True)
