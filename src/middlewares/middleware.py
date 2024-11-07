@@ -2,7 +2,6 @@ import jwt
 from fastapi import Request, HTTPException
 import traceback
 from config import Config
-import json
 from src.services.utils.apiservice import fetch
 from src.services.utils.time import Timer
 
