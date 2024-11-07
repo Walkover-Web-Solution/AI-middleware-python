@@ -87,4 +87,4 @@ groq>=0.9.0,<1.0.0
 redis>=5.0.8,<6.0.0
 aiohttp>=3.10.10,<4.0.0
 certifi>=2024.6.2,<2025.0.0
-aio_pika
+aio-pika
