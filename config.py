@@ -5,6 +5,7 @@ load_dotenv(override=True)
 
 
 class Config:
+    ENVIROMENT = os.getenv('ENVIROMENT')
     MONGODB_CONNECTION_URI = os.getenv('MONGODB_CONNECTION_URI')
     MONGODB_DATABASE_NAME = os.getenv('MONGODB_DATABASE_NAME')
     JWT_TOKEN_SECRET = os.getenv('JWT_TOKEN_SECRET')

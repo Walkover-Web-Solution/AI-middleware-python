@@ -6,7 +6,7 @@ import json
 import copy
 from ...utils.ai_middleware_format import send_alert
 
-async def runModel(configuration, apiKey, execution_time_logs, bridge_id, timer):
+async def runModel(configuration, apiKey, execution_time_logs, bridge_id,timer,message_id=None):
     try:
         # Initialize OpenAI service
         OpenAIConfig = OpenAIInitializer(apiKey)
@@ -50,7 +50,7 @@ async def runModel(configuration, apiKey, execution_time_logs, bridge_id, timer)
                 task.cancel()
             return result
         else:
-            await send_alert(data={"configuration": configuration, "bridge_id": bridge_id, "message": "retry mechanism started 2nd time"}),
+            await send_alert(data={"configuration": configuration,"message_id":message_id, "bridge_id": bridge_id, "message": "retry mechanism started 2nd time"}),
             # First task did not complete within 60 seconds
             print("First API call did not complete within 60 seconds. Starting second API call.")
             # Start the second API call with 'gpt-4' model
