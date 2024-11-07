@@ -1,5 +1,16 @@
+import json
 from src.services.utils.apiservice import fetch
-async def  Response_formatter(response, service):
+
+async def Response_formatter(response, service, tools={}):
+    tools_data = tools
+    if isinstance(tools_data, dict):
+                for key, value in tools_data.items():
+                    if isinstance(value, str):
+                        try:
+                            tools_data[key] = json.loads(value)
+                        except json.JSONDecodeError:
+                            pass
+                        
     if service == 'openai':
         return {
             "data" : {
@@ -7,7 +18,8 @@ async def  Response_formatter(response, service):
                 "content" : response.get("choices", [{}])[0].get("message", {}).get("content", None),
                 "model" : response.get("model", None),
                 "role" : response.get("choices", [{}])[0].get("message", {}).get("role", None),
-                "finish_reason" : response.get("choices", [{}])[0].get("finish_reason", None)
+                "finish_reason" : response.get("choices", [{}])[0].get("finish_reason", None),
+                "tools_data": tools_data or {}
             },
             "usage" : {
                 "input_tokens" : response.get("usage", {}).get("prompt_tokens", None),
@@ -25,7 +37,8 @@ async def  Response_formatter(response, service):
                 "content" : response.get("content", [{}])[0].get("text", None),
                 "model" : response.get("model", None),
                 "role" : response.get("role", None),
-                "finish_reason" : response.get("stop_reason", None)
+                "finish_reason" : response.get("stop_reason", None),
+                "tools_data": tools_data or {}
             },
             "usage" : {
                 "input_tokens" : response.get("usage", {}).get("input_tokens", None),
@@ -43,7 +56,8 @@ async def  Response_formatter(response, service):
                 "content" : response.get("choices", [{}])[0].get("message", {}).get("content", None),
                 "model" : response.get("model", None),
                 "role" : response.get("choices", [{}])[0].get("message", {}).get("role", None),
-                "finish_reason" : response.get("choices", [{}])[0].get("finish_reason", None)
+                "finish_reason" : response.get("choices", [{}])[0].get("finish_reason", None),
+                "tools_data": tools_data or {}
             },
             "usage" : {
                 "input_tokens" : response.get("usage", {}).get("prompt_tokens", None),
