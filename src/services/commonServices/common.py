@@ -245,7 +245,7 @@ async def chat(request: Request):
             await asyncio.gather(
                 sendResponse(response_format, result["modelResponse"], success=True),
                 metrics_service.create([usage], result["historyParams"]),
-                validateResponse(final_response=result['modelResponse'],configration=configuration,bridgeId=bridge_id,message_id=message_id),
+                validateResponse(final_response=result['modelResponse'],configration=configuration,bridgeId=bridge_id,message_id=message_id, org_id=org_id),
                 return_exceptions=True
             )
         return JSONResponse(status_code=200, content={"success": True, "response": result["modelResponse"]})
@@ -281,7 +281,7 @@ async def chat(request: Request):
                 }),
                 # Only send the second response if the type is not 'default'
                 sendResponse(response_format, result.get("modelResponse", str(error))) if response_format['type'] != 'default' else None,
-                send_alert(data={"configuration": configuration, "error": str(error),"message_id":message_id, "bridge_id": bridge_id, "message": "Exception for the code"}),
+                send_alert(data={"configuration": configuration, "error": str(error),"message_id":message_id, "bridge_id": bridge_id, "message": "Exception for the code", "org_id":org_id}),
             ]
             # Filter out None values
             await asyncio.gather(*[task for task in tasks if task is not None], return_exceptions=True)
