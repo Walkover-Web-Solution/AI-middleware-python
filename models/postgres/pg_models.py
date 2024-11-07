@@ -4,8 +4,6 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 import uuid
 from models.postgres.pg_connection import Base
-import pytz
-from datetime import datetime
 
 class Conversation(Base):
     __tablename__ = 'conversations'
@@ -72,4 +70,4 @@ class user_bridge_config_history(Base):
     org_id = Column(String, nullable=False)
     bridge_id = Column(String, nullable=False)
     type = Column(String, nullable=False)
-    time = Column(DateTime, nullable=False, default=lambda: datetime.now(pytz.timezone('Asia/Kolkata')))
+    time = Column(DateTime, nullable=False, default=func.now())
