@@ -279,7 +279,7 @@ async def make_request_data(request: Request):
             state_data[attr] = getattr(request.state, attr)
     
     if hasattr(request.state, 'timer'):
-        state_data['timer'] = str(request.state.timer)
+        state_data['timer'] = request.state.timer
         
     if hasattr(request, 'path_params'):
         path_params = request.path_params

@@ -8,7 +8,6 @@ from config import Config
 from src.configs.models import services
 from src.configs.modelConfiguration import ModelsConfig
 from ...controllers.conversationController import getThread 
-from operator import itemgetter
 from ...db_services import metrics_service as metrics_service
 from .openAI.openaiCall import UnifiedOpenAICase
 from .baseService.baseService import BaseService
@@ -18,7 +17,6 @@ from ..utils.helper import Helper
 import asyncio
 from .anthrophic.antrophicCall import Antrophic
 from .groq.groqCall import Groq
-from prompts import mui_prompt
 from .baseService.utils import sendResponse
 from ..utils.ai_middleware_format import Response_formatter, validateResponse, send_alert
 app = FastAPI()
@@ -30,6 +28,7 @@ from copy import deepcopy
 import json
 from src.handler.executionHandler import handle_exceptions
 from src.configs.serviceKeys import model_config_change
+from src.services.utils.time import Timer
 
 async def create_service_handler(params, service):
     if service == service_name['openai']:
@@ -48,6 +47,8 @@ async def create_service_handler(params, service):
 @handle_exceptions
 async def chat(request_body):
     # body = await request_body.json()
+    timer_obj = Timer()
+    timer_obj.defaultStart(request_body['state']['timer'] or [])
     body = request_body.get('body',{});
     state = request_body.get('state',{})
     path_params = request_body.get('path_params',{})
@@ -80,7 +81,7 @@ async def chat(request_body):
     execution_time_logs = body.get('execution_time_logs')
     user_reference = body.get("user_reference", "")
     user_contains = ""
-    timer = state['timer']
+    timer = timer_obj
     variables_path = body.get('variables_path')
     names = body.get('names')
     suggest = body.get('suggest',False)
@@ -232,7 +233,7 @@ async def chat(request_body):
         if bridgeType and suggestions:
                 result['modelResponse']['options'] = suggestions
         latency = {
-            # "over_all_time" : timer.stop("Api total time") or "", todo
+            "over_all_time" : timer.stop("Api total time") or "",
             "model_execution_time": sum(execution_time_logs.values()) or "",
             "execution_time_logs" : execution_time_logs or {}
         }
@@ -262,7 +263,7 @@ async def chat(request_body):
         traceback.print_exc()
         if not is_playground:
             latency = {
-                # "over_all_time": timer.stop("Api total time") or "", todo
+                "over_all_time": timer.stop("Api total time") or "",
                 "model_execution_time": sum(execution_time_logs.values()) or "",
                 "execution_time_logs": execution_time_logs or {}
             }

@@ -26,15 +26,20 @@ async def lifespan(app: FastAPI):
     # Run the consumer in the background without blocking the main event loop
     await queue_obj.connect()
     await queue_obj.create_queue_if_not_exists()
-    consume_task = asyncio.create_task(consume_messages_in_executor())
-    # consume_task = await consumer_queue_obj.consume_messages();
+    
+    consume_task = None
+    if Config.IS_CONSUMER.lower() == "true":
+        consume_task = asyncio.create_task(consume_messages_in_executor())
     
     yield  # Startup logic is complete
     # Shutdown logic
-    consume_task.cancel()
+    print("Shutting down...")
+    if consume_task:
+        consume_task.cancel()
     await queue_obj.disconnect()
     try:
-        await consume_task
+        if consume_task:
+            await consume_task
     except asyncio.CancelledError:
         print("Consumer task was cancelled during shutdown.")
 

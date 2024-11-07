@@ -1,5 +1,6 @@
 import asyncio
-from aio_pika import connect_robust, Message, DeliveryMode
+from aio_pika import connect_robust, Message, DeliveryMode, RobustConnection
+from aio_pika.abc import AbstractRobustConnection
 import json
 from config import Config
 from src.services.commonServices.common import chat
@@ -20,19 +21,32 @@ class Queue:
         if not hasattr(self, 'initialized'):  # Ensure initialization happens only once
             print("Queue Service Initialized")
             self.queue_name = Config.QUEUE_NAME
+            self.failed_queue_name = Config.REQUEUE_NAME
             self.connection_url = Config.QUEUE_CONNECTIONURL
+            self.prefetch_count = Config.PREFETCH_COUNT
             self.connection = None
             self.channel = None
             self.initialized = True
             self.queues_declared = False
-            
+    
+    # async def on_connection_lost(connection: AbstractRobustConnection, exc: Exception):
+    #     print("Connection lost!")
+    #     if exc:
+    #         print(f"Error: {exc}")
+
+    # async def on_reconnected(connection: AbstractRobustConnection):
+    #     print("Reconnected to RabbitMQ!")
 
     async def connect(self):
         try:
             if not self.connection or self.connection.is_closed:
-                self.connection = await connect_robust(self.connection_url)
+                self.connection: RobustConnection = await connect_robust(self.connection_url)
                 self.channel = await self.connection.channel()
-                print(f"Queue '{self.queue_name}' declared and connection established.")
+                
+                    # Register event listeners for connection events
+                # self.connection.add_on_close_callback(self.on_connection_lost)
+                # self.connection._on_connected(self.on_reconnected)
+                print(f"Channel created and connection established.")
             return True
         except Exception as E:
             print(f"Error while connecting to RabbitMQ: {E}")
@@ -51,6 +65,9 @@ class Queue:
             # for queue_name in self.consumer_map.keys():
             #     await self.channel.declare_queue(queue_name, durable=True)
             await self.channel.declare_queue(self.queue_name, durable=True)
+            print(f"Queue {self.queue_name} declared")
+            await self.channel.declare_queue(self.failed_queue_name, durable=True)
+            print(f"Queue {self.failed_queue_name} declared")
             self.queues_declared = True
             
             
@@ -70,22 +87,37 @@ class Queue:
             print(f"Message published to {self.queue_name}")
         except Exception as e:
             print(f"Failed to publish message ===: {e}")
-            
+         
+         
+    async def publish_message_to_failed_queue(self, message={'name': 'Hello'}):
+        try:
+            # Ensure the connection and channel are active
+            await self.connect()
+            # Check if the channel is open before publishing
+            if self.channel.is_closed:
+                raise Exception("Channel is closed, cannot publish message.")
+            # Publish the message
+            message_body = json.dumps(message)
+            await self.channel.default_exchange.publish(
+                Message(body=message_body.encode(), delivery_mode=DeliveryMode.PERSISTENT, headers={'retry_count': 1}),
+                routing_key=self.failed_queue_name,
+            )
+            print(f"Message published to {self.failed_queue_name}")
+        except Exception as e:
+            print(f"Failed to publish message ===: {e}")
+        
 
     async def process_messages(self, messages):
         """Implement your batch processing logic here."""
-        # print(f"Processing batch of {len(messages)} messages")
         print(f"Processing message")
         loop = asyncio.get_event_loop()
-        # for message in messages:
-            # await loop.run_in_executor(executor, lambda: asyncio.run(chat(message)))
         await loop.run_in_executor(executor, lambda: asyncio.run(chat(messages)))
 
     async def consume_messages(self):
         try:
             if await self.connect():
                 messages = []
-                await self.channel.set_qos(prefetch_count=10)
+                await self.channel.set_qos(prefetch_count=int(self.prefetch_count))
                 queue = await self.channel.declare_queue(self.queue_name, durable=True)
                 # queue = await self.channel.get_queue(self.queue_name)
 
@@ -95,18 +127,16 @@ class Queue:
                             print(f" [x] Received")
                             message_body = message.body.decode()
                             message_data = json.loads(message_body)
-                            # messages.append(message_data)
-                            # try:
-                            await self.process_messages(message_data)
-                            # messages.clear()
-                            # except Exception as e:
-                            #     print(f"Error processing batch: {e}")
+                            await self.process_messages(message_data)  # Process the message and get status
+                            
                         except json.JSONDecodeError as e:
                             print(f"Failed to decode message: {e}")
                             await message.reject(requeue=False)
+                            await self.publish_message_to_failed_queue(message_data)
                         except Exception as e:
                             print(f"Error in processing message: {e}")
                             await message.reject(requeue=False)
+                            await self.publish_message_to_failed_queue(message_data)
 
                 print(f"Started consuming from queue {self.queue_name}")
                 await queue.consume(message_handler)

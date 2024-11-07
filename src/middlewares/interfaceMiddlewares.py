@@ -8,7 +8,6 @@ import json
 from .getDataUsingBridgeId import add_configuration_data_to_body
 from ..db_services.conversationDbService import reset_chat_history
 from ..services.commonServices.baseService.utils import sendResponse
-import asyncio
 from ..services.utils.time import Timer
 
 async def send_data_middleware(request: Request, botId: str):
@@ -77,9 +76,10 @@ async def send_data_middleware(request: Request, botId: str):
         return JSONResponse(status_code=400, content={'error': str(error)})
 
 async def chat_bot_auth(request: Request):
-    timer = Timer()
-    timer.start()
-    request.state.timer = timer
+    timer_obj = Timer()
+    timer_obj.start()
+    # request.state.timer = timer
+    request.state.timer = timer_obj.getTime();
     token = request.headers.get('Authorization')
     if token:
         token = token.split(' ')[1] if ' ' in token else token

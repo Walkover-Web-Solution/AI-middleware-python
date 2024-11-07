@@ -22,8 +22,8 @@ async def runModel(configuration, apiKey, execution_time_logs, bridge_id, timer)
             except Exception as error:
                 return {'success': False, 'error': str(error)}
 
-      # Start timer  
-        # timer.start() todo
+    #   Start timer  
+        timer.start()
 
         # Start the first API call
         first_config = copy.deepcopy(configuration)
@@ -39,7 +39,7 @@ async def runModel(configuration, apiKey, execution_time_logs, bridge_id, timer)
         if first_task in done:
             # First task completed within 60 seconds
             result = first_task.result()
-            # execution_time_logs[len(execution_time_logs) + 1] = timer.stop("OpenAI chat completion") todo
+            execution_time_logs[len(execution_time_logs) + 1] = timer.stop("OpenAI chat completion")
             print("First API call completed within 60 seconds.")
             if result['success']:
                 # print(11, json.dumps(first_config), 22, bridge_id)
@@ -70,7 +70,7 @@ async def runModel(configuration, apiKey, execution_time_logs, bridge_id, timer)
             # Get the result from the task that completed first
             for task in done:
                 result = task.result()
-                # execution_time_logs[len(execution_time_logs) + 1] = timer.stop("OpenAI chat completion") todo
+                execution_time_logs[len(execution_time_logs) + 1] = timer.stop("OpenAI chat completion")
                 if task == first_task:
                     print("First API call completed first.")
                     config_used = first_config
