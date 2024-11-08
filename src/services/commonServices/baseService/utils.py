@@ -297,6 +297,13 @@ async def make_request_data(request: Request):
             value['created_at'] = value['created_at'].isoformat()
         if isinstance(value.get('updated_at'), datetime.datetime):
             value['updated_at'] = value['updated_at'].isoformat()
+            
+    if 'bridge' in body:
+        bridge = body['bridge']
+        if isinstance(bridge.get('createdAt'), datetime.datetime):
+            bridge['createdAt'] = bridge['createdAt'].isoformat()
+        if isinstance(bridge.get('updatedAt'), datetime.datetime):
+            bridge['updatedAt'] = bridge['updatedAt'].isoformat()
         
     result = {
         'body': body,

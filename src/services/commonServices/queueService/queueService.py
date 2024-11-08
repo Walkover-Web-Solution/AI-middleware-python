@@ -21,8 +21,13 @@ class Queue:
     def __init__(self):
         if not hasattr(self, 'initialized'):  # Ensure initialization happens only once
             print("Queue Service Initialized")
+            # Production
             self.queue_name = "AI-MIDDLEWARE-TESTING"
             self.failed_queue_name = "AI-MIDDLEWARE-TESTING-FAILED"
+            
+            # local
+            # self.queue_name = "AI-Middleware-test"
+            # self.failed_queue_name = "AI-Middleware-test-failed"
             # self.failed_exchange_name = f"{self.failed_queue_name}-exchange"
             self.binding_key = None
             self.initialized = True
