@@ -17,7 +17,6 @@ async def chat_completion(request: Request, db_config: dict = Depends(add_config
     request.state.is_playground = False
     request.state.version = 2
     data_to_send = await make_request_data(request)
-    print(data_to_send)
     if (data_to_send['body'].get('chatbot', False)):
         try:
             # Publish the message to the queue
