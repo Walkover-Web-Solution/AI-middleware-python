@@ -181,9 +181,11 @@ async def chat(request_body):
                         raise RuntimeError(e)
                     
                     if actions: 
-                        system_prompt =  (await ConfigurationService.get_template_by_id(Config.MUI_TEMPLATE_ID)).get('template', '')
+                        template_data = await ConfigurationService.get_template_by_id(Config.MUI_TEMPLATE_ID)
+                        system_prompt = template_data.get('template', '') if template_data else ''
                     else: 
-                        system_prompt =  (await ConfigurationService.get_template_by_id(Config.MUI_TEMPLATE_ID_WITHOUT_ACTION)).get('template', '')
+                        template_data = await ConfigurationService.get_template_by_id(Config.MUI_TEMPLATE_ID_WITHOUT_ACTION)
+                        system_prompt = template_data.get('template', '') if template_data else ''
                         
                     if user_reference: 
                         user_reference = f"\"user reference\": \"{user_reference}\""
