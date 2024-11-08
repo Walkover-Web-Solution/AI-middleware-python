@@ -53,8 +53,8 @@ async def chat(request_body):
     state = request_body.get('state',{})
     path_params = request_body.get('path_params',{})
     
-    if(hasattr(state, 'body')): 
-        body.update(state['body']) 
+    # if(hasattr(state, 'body')): 
+    #     body.update(state['body']) 
 
     apikey = body.get("apikey")
     bridge_id = path_params.get('bridge_id') or body.get("bridge_id")

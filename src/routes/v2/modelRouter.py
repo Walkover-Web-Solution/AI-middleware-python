@@ -28,7 +28,7 @@ async def chat_completion(request: Request, db_config: dict = Depends(add_config
             print(f"Failed to publish message: {e}")
             raise HTTPException(status_code=500, detail="Failed to publish message.")
     else:
-        response_format = request.state.body.get('configuration', {}).get('response_format', {})
+        response_format = data_to_send.get('body',{}).get('configuration', {}).get('response_format', {})
         loop = asyncio.get_event_loop()
         if response_format is not None and response_format.get('type') != 'default':
             await loop.run_in_executor(executor, lambda: asyncio.run(chat(data_to_send)))
@@ -53,7 +53,7 @@ async def playground_chat_completion(request: Request, db_config: dict = Depends
             print(f"Failed to publish message: {e}")
             raise HTTPException(status_code=500, detail="Failed to publish message.")
     else:
-        response_format = request.state.body.get('configuration', {}).get('response_format', {})
+        response_format = data_to_send.get('body',{}).get('configuration', {}).get('response_format', {})
         loop = asyncio.get_event_loop()
         if response_format is not None and response_format.get('type') != 'default':
             await loop.run_in_executor(executor, lambda: asyncio.run(chat(data_to_send)))

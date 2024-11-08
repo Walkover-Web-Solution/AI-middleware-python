@@ -292,8 +292,15 @@ async def make_request_data(request: Request):
         if isinstance(bridge.get('updatedAt'), datetime.datetime):
             bridge['updatedAt'] = bridge['updatedAt'].isoformat()
     
-    return {
+    for key, value in body['bridge']['apiCalls'].items():
+        if isinstance(value.get('created_at'), datetime.datetime):
+            value['created_at'] = value['created_at'].isoformat()
+        if isinstance(value.get('updated_at'), datetime.datetime):
+            value['updated_at'] = value['updated_at'].isoformat()
+        
+    result = {
         'body': body,
         'state': state_data,
         'path_params': path_params
     }
+    return result

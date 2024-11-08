@@ -52,23 +52,29 @@ class Queue:
             await self.channel.close()
         if self.connection:
             await self.connection.close()
+        self.connection = None
+        self.channel = None
             
 
     async def create_queue_if_not_exists(self):
-        if not self.queues_declared and await self.connect():
-            # for queue_name in self.consumer_map.keys():
-            #     await self.channel.declare_queue(queue_name, durable=True)
-            await self.channel.declare_queue(self.queue_name, durable=True)
-            print(f"Queue {self.queue_name} declared")
-            
-            # failed_exchange = await self.channel.declare_exchange(
-            #     self.failed_exchange_name, ExchangeType.DIRECT, durable=True
-            # )
-            await self.channel.declare_queue(self.failed_queue_name, durable=True)
-            print(f"Queue {self.failed_queue_name} declared")
-            # await failed_queue.bind(failed_exchange, routing_key=self.failed_queue_name)
-            # print(f"Queue {self.failed_queue_name} declared and bound to {self.failed_exchange_name}")
-            self.queues_declared = True
+        try:
+            if not self.queues_declared and await self.connect():
+                # for queue_name in self.consumer_map.keys():
+                #     await self.channel.declare_queue(queue_name, durable=True)
+                await self.channel.declare_queue(self.queue_name, durable=True)
+                print(f"Queue {self.queue_name} declared")
+                
+                # failed_exchange = await self.channel.declare_exchange(
+                #     self.failed_exchange_name, ExchangeType.DIRECT, durable=True
+                # )
+                await self.channel.declare_queue(self.failed_queue_name, durable=True)
+                print(f"Queue {self.failed_queue_name} declared")
+                # await failed_queue.bind(failed_exchange, routing_key=self.failed_queue_name)
+                # print(f"Queue {self.failed_queue_name} declared and bound to {self.failed_exchange_name}")
+                self.queues_declared = True
+        except Exception as e:
+            print(f"Failed to declare queue: {e}")
+            raise ValueError(f"Failed to declare queue: {e}")
             
             
     async def publish_message(self, message={'name': 'Hello'}):
@@ -87,6 +93,7 @@ class Queue:
             print(f"Message published to {self.queue_name}")
         except Exception as e:
             print(f"Failed to publish message ===: {e}")
+            raise ValueError(f"Failed to publish message ===: {e}")
          
          
     async def publish_message_to_failed_queue(self, message={'name': 'Hello'}):
@@ -106,6 +113,7 @@ class Queue:
             print(f"Message published to {self.failed_queue_name}")
         except Exception as e:
             print(f"Failed to publish message ===: {e}")
+            raise ValueError(f"Failed to publish message ===: {e}")
         
 
     async def process_messages(self, messages):
