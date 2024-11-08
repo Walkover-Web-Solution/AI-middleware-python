@@ -1,5 +1,5 @@
 import asyncio
-from aio_pika import connect_robust, Message, DeliveryMode, RobustConnection
+from aio_pika import connect_robust, Message, DeliveryMode, RobustConnection, ExchangeType
 from aio_pika.abc import AbstractRobustConnection
 import json
 from config import Config
@@ -18,34 +18,26 @@ class Queue:
     
 
     def __init__(self):
-        if not hasattr(self, 'initialized'):  # Ensure initialization happens only once
+        if not getattr(self, 'initialized', False):  # Ensure initialization happens only once
             print("Queue Service Initialized")
-            self.queue_name = "AI-MIDDLEWARE-TESTING"
-            self.failed_queue_name = "AI-MIDDLEWARE-TESTING-FAILED"
+            self.queue_name = "AI-Middleware-test"
+            self.failed_queue_name = "AI-Middleware-test-failed"
+            self.failed_exchange_name = f"{self.failed_queue_name}-exchange"
+            self.binding_key = None
+            self.initialized = True
             self.connection_url = Config.QUEUE_CONNECTIONURL
             self.prefetch_count = 50
             self.connection = None
             self.channel = None
             self.initialized = True
             self.queues_declared = False
-    
-    # async def on_connection_lost(connection: AbstractRobustConnection, exc: Exception):
-    #     print("Connection lost!")
-    #     if exc:
-    #         print(f"Error: {exc}")
-
-    # async def on_reconnected(connection: AbstractRobustConnection):
-    #     print("Reconnected to RabbitMQ!")
+            
 
     async def connect(self):
         try:
             if not self.connection or self.connection.is_closed:
                 self.connection: RobustConnection = await connect_robust(self.connection_url)
                 self.channel = await self.connection.channel()
-                
-                    # Register event listeners for connection events
-                # self.connection.add_on_close_callback(self.on_connection_lost)
-                # self.connection._on_connected(self.on_reconnected)
                 print(f"Channel created and connection established.")
             return True
         except Exception as E:
@@ -66,8 +58,13 @@ class Queue:
             #     await self.channel.declare_queue(queue_name, durable=True)
             await self.channel.declare_queue(self.queue_name, durable=True)
             print(f"Queue {self.queue_name} declared")
+            
+            # failed_exchange = await self.channel.declare_exchange(
+            #     self.failed_exchange_name, ExchangeType.DIRECT, durable=True
+            # )
             await self.channel.declare_queue(self.failed_queue_name, durable=True)
-            print(f"Queue {self.failed_queue_name} declared")
+            # await failed_queue.bind(failed_exchange, routing_key=self.failed_queue_name)
+            print(f"Queue {self.failed_queue_name} declared and bound to {self.failed_exchange_name}")
             self.queues_declared = True
             
             
@@ -98,8 +95,9 @@ class Queue:
                 raise Exception("Channel is closed, cannot publish message.")
             # Publish the message
             message_body = json.dumps(message)
+            # failed_exchange = await self.channel.get_exchange(self.failed_exchange_name)
             await self.channel.default_exchange.publish(
-                Message(body=message_body.encode(), delivery_mode=DeliveryMode.PERSISTENT, headers={'retry_count': 1}),
+                Message(body=message_body.encode(), delivery_mode=DeliveryMode.PERSISTENT),
                 routing_key=self.failed_queue_name,
             )
             print(f"Message published to {self.failed_queue_name}")
@@ -118,7 +116,7 @@ class Queue:
             if await self.connect():
                 messages = []
                 await self.channel.set_qos(prefetch_count=int(self.prefetch_count))
-                queue = await self.channel.declare_queue(self.queue_name, durable=True)
+                primary_queue = await self.channel.declare_queue(self.queue_name, durable=True)
                 # queue = await self.channel.get_queue(self.queue_name)
 
                 async def message_handler(message: AbstractIncomingMessage):
@@ -131,15 +129,14 @@ class Queue:
                             
                         except json.JSONDecodeError as e:
                             print(f"Failed to decode message: {e}")
-                            await message.reject(requeue=False)
-                            await self.publish_message_to_failed_queue(message_data)
+                            # await message.reject(requeue=False)
+                            await self.publish_message_to_failed_queue({'error': 'Failed to decode message'})
                         except Exception as e:
                             print(f"Error in processing message: {e}")
-                            await message.reject(requeue=False)
                             await self.publish_message_to_failed_queue(message_data)
 
                 print(f"Started consuming from queue {self.queue_name}")
-                await queue.consume(message_handler)
+                await primary_queue.consume(message_handler)
                 while True:
                     await asyncio.sleep(1)  # Keeps the consumer running indefinitely, can do something work too if needed
         except Exception as e:
