@@ -18,11 +18,11 @@ class Queue:
     
 
     def __init__(self):
-        if not getattr(self, 'initialized', False):  # Ensure initialization happens only once
+        if not hasattr(self, 'initialized'):  # Ensure initialization happens only once
             print("Queue Service Initialized")
-            self.queue_name = "AI-Middleware-test"
-            self.failed_queue_name = "AI-Middleware-test-failed"
-            self.failed_exchange_name = f"{self.failed_queue_name}-exchange"
+            self.queue_name = "AI-MIDDLEWARE-TESTING"
+            self.failed_queue_name = "AI-MIDDLEWARE-TESTING-FAILED"
+            # self.failed_exchange_name = f"{self.failed_queue_name}-exchange"
             self.binding_key = None
             self.initialized = True
             self.connection_url = Config.QUEUE_CONNECTIONURL
@@ -63,8 +63,9 @@ class Queue:
             #     self.failed_exchange_name, ExchangeType.DIRECT, durable=True
             # )
             await self.channel.declare_queue(self.failed_queue_name, durable=True)
+            print(f"Queue {self.failed_queue_name} declared")
             # await failed_queue.bind(failed_exchange, routing_key=self.failed_queue_name)
-            print(f"Queue {self.failed_queue_name} declared and bound to {self.failed_exchange_name}")
+            # print(f"Queue {self.failed_queue_name} declared and bound to {self.failed_exchange_name}")
             self.queues_declared = True
             
             
