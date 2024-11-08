@@ -88,13 +88,13 @@ async def runModel(configuration, apiKey, execution_time_logs, bridge_id, timer)
                 return result
 
             # If no tasks completed successfully
-            # execution_time_logs[len(execution_time_logs) + 1] = timer.stop("OpenAI chat completion") todo
+            execution_time_logs[len(execution_time_logs) + 1] = timer.stop("OpenAI chat completion") 
             return {
                 'success': False,
                 'error': 'No API call completed successfully.'
             }
     except Exception as error:
-        # execution_time_logs[len(execution_time_logs) + 1] = timer.stop("OpenAI chat completion") todo
+        execution_time_logs[len(execution_time_logs) + 1] = timer.stop("OpenAI chat completion") 
         print("runmodel error=>", error)
         traceback.print_exc()
         return {
