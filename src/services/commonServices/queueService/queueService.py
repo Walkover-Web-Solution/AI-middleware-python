@@ -32,7 +32,6 @@ class Queue:
             self.initialized = True
             self.queues_declared = False
             
-
     async def connect(self):
         try:
             if not self.connection or self.connection.is_closed:
