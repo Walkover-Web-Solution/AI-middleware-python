@@ -6,6 +6,7 @@ from config import Config
 from src.services.commonServices.common import chat
 from concurrent.futures import ThreadPoolExecutor
 from aio_pika.abc import AbstractIncomingMessage
+from src.services.utils.logger import logger
 
 executor = ThreadPoolExecutor(max_workers= int(Config.max_workers) or 10)
 class Queue:
@@ -37,10 +38,12 @@ class Queue:
             if not self.connection or self.connection.is_closed:
                 self.connection: RobustConnection = await connect_robust(self.connection_url)
                 self.channel = await self.connection.channel()
-                print(f"Channel created and connection established.")
+                # print(f"Channel created and connection established.")
+                logger.info(f"Channel created and connection established.")
             return True
         except Exception as E:
-            print(f"Error while connecting to RabbitMQ: {E}")
+            # print(f"Error while connecting to RabbitMQ: {E}")
+            logger.error(f"Error while connecting to RabbitMQ: {E}")
             return False
         
 
@@ -107,7 +110,6 @@ class Queue:
 
     async def process_messages(self, messages):
         """Implement your batch processing logic here."""
-        print(f"Processing message")
         loop = asyncio.get_event_loop()
         await loop.run_in_executor(executor, lambda: asyncio.run(chat(messages)))
 
@@ -117,7 +119,6 @@ class Queue:
                 messages = []
                 await self.channel.set_qos(prefetch_count=int(self.prefetch_count))
                 primary_queue = await self.channel.declare_queue(self.queue_name, durable=True)
-                # queue = await self.channel.get_queue(self.queue_name)
 
                 async def message_handler(message: AbstractIncomingMessage):
                     async with message.process():
@@ -128,18 +129,22 @@ class Queue:
                             await self.process_messages(message_data)  # Process the message and get status
                             
                         except json.JSONDecodeError as e:
-                            print(f"Failed to decode message: {e}")
+                            # print(f"Failed to decode message: {e}")
+                            logger.error(f"Failed to decode message: {e}")
                             # await message.reject(requeue=False)
                             await self.publish_message_to_failed_queue({'error': 'Failed to decode message'})
                         except Exception as e:
                             print(f"Error in processing message: {e}")
+                            logger.error(f"Error in processing message: {e}")
                             await self.publish_message_to_failed_queue(message_data)
 
                 print(f"Started consuming from queue {self.queue_name}")
+                logger.info(f"Started consuming from queue {self.queue_name}")
                 await primary_queue.consume(message_handler)
                 while True:
                     await asyncio.sleep(1)  # Keeps the consumer running indefinitely, can do something work too if needed
         except Exception as e:
-            print(f"Error while consuming messages: {e}")
+            # print(f"Error while consuming messages: {e}")
+            logger.error(f"Error while consuming messages: {e}")
 
 queue_obj = Queue()

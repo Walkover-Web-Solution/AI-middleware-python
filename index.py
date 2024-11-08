@@ -15,6 +15,7 @@ from src.controllers.bridgeController import router as bridge_router
 from src.routes.v2.modelRouter import router as v2_router
 from src.services.utils.apiservice import fetch
 from src.services.commonServices.queueService.queueService import queue_obj
+from src.services.utils.logger import logger
 
 async def consume_messages_in_executor():
     await queue_obj.consume_messages()
@@ -23,6 +24,7 @@ async def consume_messages_in_executor():
 async def lifespan(app: FastAPI):
     """Handle startup and shutdown events."""
     print("Starting up...")
+    logger.info("Starting up...")
     # Run the consumer in the background without blocking the main event loop
     await queue_obj.connect()
     await queue_obj.create_queue_if_not_exists()
@@ -34,6 +36,7 @@ async def lifespan(app: FastAPI):
     yield  # Startup logic is complete
     # Shutdown logic
     print("Shutting down...")
+    logger.info("Shutting down...")
     if consume_task:
         consume_task.cancel()
     await queue_obj.disconnect()
