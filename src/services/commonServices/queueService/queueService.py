@@ -62,13 +62,15 @@ class Queue:
                 # for queue_name in self.consumer_map.keys():
                 #     await self.channel.declare_queue(queue_name, durable=True)
                 await self.channel.declare_queue(self.queue_name, durable=True)
-                print(f"Queue {self.queue_name} declared")
+                # print(f"Queue {self.queue_name} declared")
+                logger.info(f"Queue {self.queue_name} declared")
                 
                 # failed_exchange = await self.channel.declare_exchange(
                 #     self.failed_exchange_name, ExchangeType.DIRECT, durable=True
                 # )
                 await self.channel.declare_queue(self.failed_queue_name, durable=True)
                 print(f"Queue {self.failed_queue_name} declared")
+                logger.info(f"Queue {self.failed_queue_name} declared")
                 # await failed_queue.bind(failed_exchange, routing_key=self.failed_queue_name)
                 # print(f"Queue {self.failed_queue_name} declared and bound to {self.failed_exchange_name}")
                 self.queues_declared = True
