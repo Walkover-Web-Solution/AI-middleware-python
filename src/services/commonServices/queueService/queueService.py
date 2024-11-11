@@ -98,13 +98,19 @@ class Queue:
             raise ValueError(f"Failed to publish message ===: {e}")
          
          
-    async def publish_message_to_failed_queue(self, message={'name': 'Hello'}):
+    async def publish_message_to_failed_queue(self, message={'name': 'Hello'}, error=None):
         try:
             # Ensure the connection and channel are active
             await self.connect()
             # Check if the channel is open before publishing
             if self.channel.is_closed:
                 raise Exception("Channel is closed, cannot publish message.")
+            # Include error information in the message
+            if error:
+                try:
+                    message['error'] = str(error)
+                except Exception as e:
+                    logger.error(f"Failed to include error in message: {e}")
             # Publish the message
             message_body = json.dumps(message)
             # failed_exchange = await self.channel.get_exchange(self.failed_exchange_name)
@@ -146,7 +152,7 @@ class Queue:
                         except Exception as e:
                             print(f"Error in processing message: {e}")
                             logger.error(f"Error in processing message: {e}")
-                            await self.publish_message_to_failed_queue(message_data)
+                            await self.publish_message_to_failed_queue(message_data, e)
 
                 print(f"Started consuming from queue {self.queue_name}")
                 logger.info(f"Started consuming from queue {self.queue_name}")
