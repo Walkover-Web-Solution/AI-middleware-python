@@ -18,27 +18,20 @@ async def chat_completion(request: Request, db_config: dict = Depends(add_config
         request.state.is_playground = False
         request.state.version = 1
         data_to_send = await make_request_data(request)
-        if (data_to_send['body'].get('chatbot', False)):
+        response_format = data_to_send.get('body',{}).get('configuration', {}).get('response_format', {})
+
+        if (data_to_send['body'].get('chatbot', False)) and response_format.get('type') == 'RTLayer':
             try:
                 # Publish the message to the queue
                 await queue_obj.publish_message(data_to_send)
                 return {"success": True, "message": "Your response will be sent through configured means."}
             except Exception as e:
-                # Log the error and return a meaningful error response
                 print(f"Failed to publish message: {e}")
                 raise HTTPException(status_code=500, detail="Failed to publish message.")
         else:
-            response_format = data_to_send.get('body',{}).get('configuration', {}).get('response_format', {})
-            if response_format is not None and response_format.get('type') != 'default':
-                await chat(request)
-                return {"success": True, "message": "Your response will be sent through configured means."}
-
-            # If the response format is default, handle chat directly (potentially blocking)
-            loop = asyncio.get_event_loop()
-
             # Assuming chat is an async function that could be blocking
+            loop = asyncio.get_event_loop()
             result = await loop.run_in_executor(executor, lambda: asyncio.run(chat(request)))
-
             return result
 
     except Exception as e:
@@ -54,8 +47,6 @@ async def playground_chat_completion(request: Request, db_config: dict = Depends
     
     # Get the current event loop
     loop = asyncio.get_event_loop()
-
     # Run the async function in a separate thread to avoid blocking
     result = await loop.run_in_executor(executor, lambda: asyncio.run(chat(request)))
-
     return result

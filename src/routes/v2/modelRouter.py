@@ -17,7 +17,8 @@ async def chat_completion(request: Request, db_config: dict = Depends(add_config
     request.state.is_playground = False
     request.state.version = 2
     data_to_send = await make_request_data(request)
-    if (data_to_send['body'].get('chatbot', False)):
+    response_format = data_to_send.get('body',{}).get('configuration', {}).get('response_format', {})
+    if (data_to_send['body'].get('chatbot', False)) and response_format.get('type') == 'RTLayer':
         try:
             # Publish the message to the queue
             await queue_obj.publish_message(data_to_send)
@@ -27,11 +28,8 @@ async def chat_completion(request: Request, db_config: dict = Depends(add_config
             print(f"Failed to publish message: {e}")
             raise HTTPException(status_code=500, detail="Failed to publish message.")
     else:
-        response_format = data_to_send.get('body',{}).get('configuration', {}).get('response_format', {})
+        # Assuming chat is an async function that could be blocking
         loop = asyncio.get_event_loop()
-        if response_format is not None and response_format.get('type') != 'default':
-            await loop.run_in_executor(executor, lambda: asyncio.run(chat(data_to_send)))
-            return {"success": True, "message": "Your response will be sent through configured means."}
         result = await loop.run_in_executor(executor, lambda: asyncio.run(chat(data_to_send)))
         return result
 
@@ -40,22 +38,7 @@ async def chat_completion(request: Request, db_config: dict = Depends(add_config
 async def playground_chat_completion(request: Request, db_config: dict = Depends(add_configuration_data_to_body)):
     request.state.is_playground = True
     request.state.version = 2
-    
     data_to_send = await make_request_data(request)
-    if (data_to_send['body'].get('chatbot', False)):
-        try:
-            # Publish the message to the queue
-            await queue_obj.publish_message(data_to_send)
-            return {"success": True, "message": "Your response will be sent through configured means."}
-        except Exception as e:
-            # Log the error and return a meaningful error response
-            print(f"Failed to publish message: {e}")
-            raise HTTPException(status_code=500, detail="Failed to publish message.")
-    else:
-        response_format = data_to_send.get('body',{}).get('configuration', {}).get('response_format', {})
-        loop = asyncio.get_event_loop()
-        if response_format is not None and response_format.get('type') != 'default':
-            await loop.run_in_executor(executor, lambda: asyncio.run(chat(data_to_send)))
-            return {"success": True, "message": "Your response will be sent through configured means."}
-        result = await loop.run_in_executor(executor, lambda: asyncio.run(chat(data_to_send)))
-        return result
+    loop = asyncio.get_event_loop()
+    result = await loop.run_in_executor(executor, lambda: asyncio.run(chat(data_to_send)))
+    return result
