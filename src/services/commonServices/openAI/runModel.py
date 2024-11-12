@@ -22,7 +22,7 @@ async def runModel(configuration, apiKey, execution_time_logs, bridge_id, timer,
             except Exception as error:
                 return {'success': False, 'error': str(error)}
 
-      # Start timer  
+    #   Start timer  
         timer.start()
 
         # Start the first API call
@@ -42,7 +42,8 @@ async def runModel(configuration, apiKey, execution_time_logs, bridge_id, timer,
             execution_time_logs[len(execution_time_logs) + 1] = timer.stop("OpenAI chat completion")
             print("First API call completed within 60 seconds.")
             if result['success']:
-                print(11, json.dumps(first_config), 22, bridge_id)
+                # print(11, json.dumps(first_config), 22, bridge_id)
+                pass
             else:
                 print("runmodel error=>", result['error'])
                 traceback.print_exc()
@@ -87,13 +88,13 @@ async def runModel(configuration, apiKey, execution_time_logs, bridge_id, timer,
                 return result
 
             # If no tasks completed successfully
-            execution_time_logs[len(execution_time_logs) + 1] = timer.stop("OpenAI chat completion")
+            execution_time_logs[len(execution_time_logs) + 1] = timer.stop("OpenAI chat completion") 
             return {
                 'success': False,
                 'error': 'No API call completed successfully.'
             }
     except Exception as error:
-        execution_time_logs[len(execution_time_logs) + 1] = timer.stop("OpenAI chat completion")
+        execution_time_logs[len(execution_time_logs) + 1] = timer.stop("OpenAI chat completion") 
         print("runmodel error=>", error)
         traceback.print_exc()
         return {
