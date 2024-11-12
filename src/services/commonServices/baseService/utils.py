@@ -128,9 +128,7 @@ def tool_call_formatter(configuration: dict, service: str, variables: dict, vari
 
 async def send_request(url, data, method, headers):
     try:
-        response = await fetch(url,method,headers,None, data)
-        response.raise_for_status()
-        return response.json()
+        return await fetch(url,method,headers,None, data)
     except Exception as e:
         print('Unexpected error:', e)
         return {'error': 'Unexpected error', 'details': str(e)}

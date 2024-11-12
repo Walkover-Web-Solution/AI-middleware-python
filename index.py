@@ -23,7 +23,6 @@ async def consume_messages_in_executor():
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Handle startup and shutdown events."""
-    print("Starting up...")
     logger.info("Starting up...")
     # Run the consumer in the background without blocking the main event loop
     await queue_obj.connect()
@@ -35,7 +34,6 @@ async def lifespan(app: FastAPI):
     
     yield  # Startup logic is complete
     # Shutdown logic
-    print("Shutting down...")
     logger.info("Shutting down...")
     if consume_task:
         consume_task.cancel()

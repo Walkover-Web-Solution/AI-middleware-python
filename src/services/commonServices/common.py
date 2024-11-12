@@ -49,9 +49,6 @@ async def chat(request_body):
     body = request_body.get('body',{});
     state = request_body.get('state',{})
     path_params = request_body.get('path_params',{})
-    
-    # if(hasattr(state, 'body')): 
-    #     body.update(state['body']) 
 
     apikey = body.get("apikey")
     bridge_id = path_params.get('bridge_id') or body.get("bridge_id")
@@ -75,7 +72,7 @@ async def chat(request_body):
     fine_tune_model = configuration.get('fine_tune_model', {}).get('current_model', {})
     is_rich_text = configuration.get('is_rich_text',True)   
     actions = body.get('actions',{})
-    execution_time_logs = body.get('execution_time_logs')
+    execution_time_logs = {}
     user_reference = body.get("user_reference", "")
     user_contains = ""
     timer = timer_obj
@@ -178,11 +175,9 @@ async def chat(request_body):
                         raise RuntimeError(e)
                     
                     if actions: 
-                        template_data = await ConfigurationService.get_template_by_id(Config.MUI_TEMPLATE_ID)
-                        system_prompt = template_data.get('template', '') if template_data else ''
+                        system_prompt =  (await ConfigurationService.get_template_by_id(Config.MUI_TEMPLATE_ID)).get('template', '')
                     else: 
-                        template_data = await ConfigurationService.get_template_by_id(Config.MUI_TEMPLATE_ID_WITHOUT_ACTION)
-                        system_prompt = template_data.get('template', '') if template_data else ''
+                        system_prompt =  (await ConfigurationService.get_template_by_id(Config.MUI_TEMPLATE_ID_WITHOUT_ACTION)).get('template', '')
                         
                     if user_reference: 
                         user_reference = f"\"user reference\": \"{user_reference}\""
