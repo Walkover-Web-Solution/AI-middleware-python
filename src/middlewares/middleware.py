@@ -26,9 +26,10 @@ async def make_data_if_proxy_token_given(req):
         
 async def jwt_middleware(request: Request):
         try:
-            timer = Timer()
-            timer.start()
-            request.state.timer = timer
+            timer_obj = Timer()
+            timer_obj.start()
+            request.state.timer = timer_obj.getTime()
+            # request.state.timer = timer
             if request.headers.get('Authorization') :
                 token = request.headers.get('Authorization')
                 if not token:
