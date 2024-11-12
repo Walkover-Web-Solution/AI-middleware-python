@@ -4,6 +4,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 import asyncio
+from contextlib import asynccontextmanager
 
 from config import Config
 from src.controllers.modelController import router as model_router
@@ -13,8 +14,40 @@ from src.routes.config_routes import router as config_router
 from src.controllers.bridgeController import router as bridge_router
 from src.routes.v2.modelRouter import router as v2_router
 from src.services.utils.apiservice import fetch
+from src.services.commonServices.queueService.queueService import queue_obj
+from src.services.utils.logger import logger
+
+async def consume_messages_in_executor():
+    await queue_obj.consume_messages()
+    
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Handle startup and shutdown events."""
+    print("Starting up...")
+    logger.info("Starting up...")
+    # Run the consumer in the background without blocking the main event loop
+    await queue_obj.connect()
+    await queue_obj.create_queue_if_not_exists()
+    
+    consume_task = None
+    if Config.CONSUMER_STATUS.lower() == "true":
+        consume_task = asyncio.create_task(consume_messages_in_executor())
+    
+    yield  # Startup logic is complete
+    # Shutdown logic
+    print("Shutting down...")
+    logger.info("Shutting down...")
+    if consume_task:
+        consume_task.cancel()
+    await queue_obj.disconnect()
+    try:
+        if consume_task:
+            await consume_task
+    except asyncio.CancelledError:
+        print("Consumer task was cancelled during shutdown.")
+
 # Initialize the FastAPI app
-app = FastAPI(debug=True)
+app = FastAPI(debug=True, lifespan=lifespan)
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,

@@ -25,6 +25,7 @@ from copy import deepcopy
 import json
 from src.handler.executionHandler import handle_exceptions
 from src.configs.serviceKeys import model_config_change
+from src.services.utils.time import Timer
 
 async def create_service_handler(params, service):
     if service == service_name['openai']:
@@ -41,16 +42,22 @@ async def create_service_handler(params, service):
 
 @app.post("/chat/{bridge_id}")
 @handle_exceptions
-async def chat(request: Request):
-    body = await request.json()
-    if(hasattr(request.state, 'body')): 
-        body.update(request.state.body) 
+async def chat(request_body):
+    # body = await request_body.json()
+    timer_obj = Timer()
+    timer_obj.defaultStart(request_body['state']['timer'] or [])
+    body = request_body.get('body',{});
+    state = request_body.get('state',{})
+    path_params = request_body.get('path_params',{})
+    
+    # if(hasattr(state, 'body')): 
+    #     body.update(state['body']) 
 
     apikey = body.get("apikey")
-    bridge_id = request.path_params.get('bridge_id') or body.get("bridge_id")
+    bridge_id = path_params.get('bridge_id') or body.get("bridge_id")
     configuration = body.get("configuration")
     thread_id = body.get("thread_id")
-    org_id = request.state.profile.get('org',{}).get('id','')
+    org_id = state['profile'].get('org',{}).get('id','')
     user = body.get("user")
     tools =  configuration.get('tools')
     service = body.get("service")
@@ -61,17 +68,17 @@ async def chat(request: Request):
     customConfig = {}
     response_format = configuration.get("response_format")
     model = configuration.get('model')
-    is_playground = request.state.is_playground
+    is_playground = state['is_playground']
     bridge = body.get('bridge')
     pre_tools = body.get('pre_tools')
-    version = request.state.version
+    version = state['version']
     fine_tune_model = configuration.get('fine_tune_model', {}).get('current_model', {})
     is_rich_text = configuration.get('is_rich_text',True)   
     actions = body.get('actions',{})
     execution_time_logs = body.get('execution_time_logs')
     user_reference = body.get("user_reference", "")
     user_contains = ""
-    timer = request.state.timer
+    timer = timer_obj
     variables_path = body.get('variables_path')
     names = body.get('names')
     suggest = body.get('suggest',False)
@@ -140,7 +147,7 @@ async def chat(request: Request):
             "thread_id": thread_id,
             "model": model,
             "service": service,
-            "req": request, 
+            "req": request_body, 
             "modelOutputConfig": modelOutputConfig,
             "playground": is_playground,
             "template": template,
@@ -171,9 +178,11 @@ async def chat(request: Request):
                         raise RuntimeError(e)
                     
                     if actions: 
-                        system_prompt =  (await ConfigurationService.get_template_by_id(Config.MUI_TEMPLATE_ID)).get('template', '')
+                        template_data = await ConfigurationService.get_template_by_id(Config.MUI_TEMPLATE_ID)
+                        system_prompt = template_data.get('template', '') if template_data else ''
                     else: 
-                        system_prompt =  (await ConfigurationService.get_template_by_id(Config.MUI_TEMPLATE_ID_WITHOUT_ACTION)).get('template', '')
+                        template_data = await ConfigurationService.get_template_by_id(Config.MUI_TEMPLATE_ID_WITHOUT_ACTION)
+                        system_prompt = template_data.get('template', '') if template_data else ''
                         
                     if user_reference: 
                         user_reference = f"\"user reference\": \"{user_reference}\""

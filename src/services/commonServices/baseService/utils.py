@@ -6,6 +6,8 @@ import json
 from src.configs.constant import service_name
 import pydash as _
 from src.services.utils.apiservice import fetch
+from fastapi import Request
+import datetime
 
 def validate_tool_call(modelOutputConfig, service, response):
     match service:
@@ -265,3 +267,62 @@ def make_code_mapping_by_service(responses, service):
         case _:
             return False, {}
     return codes_mapping
+    
+def convert_datetime(obj):
+    """Recursively convert datetime objects in a dictionary or list to ISO format strings."""
+    if isinstance(obj, dict):
+        return {k: convert_datetime(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [convert_datetime(item) for item in obj]
+    elif isinstance(obj, datetime.datetime):
+        return obj.isoformat()  # Convert datetime to ISO format string
+    else:
+        return obj
+
+async def make_request_data(request: Request):
+    body = await request.json()
+    state_data = {}
+    path_params = {}
+    
+    attributes = ['body', 'is_playground', 'version', 'profile', 'chatbot']
+    for attr in attributes:
+        if hasattr(request.state, attr):
+            state_data[attr] = getattr(request.state, attr)
+    
+    if hasattr(request.state, 'timer'):
+        state_data['timer'] = request.state.timer
+        
+    if hasattr(request, 'path_params'):
+        path_params = request.path_params
+    
+    # Ensure 'bridge' and its keys exist to avoid AttributeError
+    # if 'body' in state_data and 'bridge' in state_data['body']:
+    #     bridge = state_data['body']['bridge']
+    #     if isinstance(bridge.get('createdAt'), datetime.datetime):
+    #         bridge['createdAt'] = bridge['createdAt'].isoformat()
+    #     if isinstance(bridge.get('updatedAt'), datetime.datetime):
+    #         bridge['updatedAt'] = bridge['updatedAt'].isoformat()
+    
+    # for key, value in body['bridge']['apiCalls'].items():
+    #     if isinstance(value.get('created_at'), datetime.datetime):
+    #         value['created_at'] = value['created_at'].isoformat()
+    #     if isinstance(value.get('updated_at'), datetime.datetime):
+    #         value['updated_at'] = value['updated_at'].isoformat()
+            
+    # if 'bridge' in body:
+    #     bridge = body['bridge']
+    #     if isinstance(bridge.get('createdAt'), datetime.datetime):
+    #         bridge['createdAt'] = bridge['createdAt'].isoformat()
+    #     if isinstance(bridge.get('updatedAt'), datetime.datetime):
+    #         bridge['updatedAt'] = bridge['updatedAt'].isoformat()
+    
+        # Convert datetime objects in body and state_data
+    body = convert_datetime(body)
+    state_data = convert_datetime(state_data)
+        
+    result = {
+        'body': body,
+        'state': state_data,
+        'path_params': path_params
+    }
+    return result
