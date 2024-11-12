@@ -79,7 +79,7 @@ async def chat_bot_auth(request: Request):
     timer_obj = Timer()
     timer_obj.start()
     # request.state.timer = timer
-    request.state.timer = timer_obj.getTime();
+    request.state.timer = timer_obj.getTime()
     token = request.headers.get('Authorization')
     if token:
         token = token.split(' ')[1] if ' ' in token else token
