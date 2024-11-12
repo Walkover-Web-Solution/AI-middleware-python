@@ -292,6 +292,7 @@ async def get_all_bridges_in_org(org_id):
       "configuration.prompt": 1,
       "bridgeType": 1,
       "slugName":1,
+      "status": 1
     })
     bridges_list = []
     for bridge in bridges:

@@ -3,4 +3,4 @@ WORKDIR /app
 COPY . /app
 RUN pip install --trusted-host --no-cache-dir -r req.txt
 EXPOSE 8080
-CMD ["gunicorn", "index:app", "-k", " uvicorn.workers.UvicornWorker", "--timeout", "90"]
+CMD ["gunicorn", "-w", "4", "-k", "uvicorn.workers.UvicornWorker", "-b", "0.0.0.0:8080", "index:app"]

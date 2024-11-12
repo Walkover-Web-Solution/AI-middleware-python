@@ -60,3 +60,14 @@ class system_prompt_versionings(Base):
     system_prompt = Column(Text, nullable=False)
     bridge_id = Column(String, nullable=False)
     org_id = Column(String, nullable=False)
+
+class user_bridge_config_history(Base):
+    __tablename__ = 'user_bridge_config_history'
+    __table_args__ = {'extend_existing': True}
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, nullable=False)
+    org_id = Column(String, nullable=False)
+    bridge_id = Column(String, nullable=False)
+    type = Column(String, nullable=False)
+    time = Column(DateTime, nullable=False, default=func.now())
