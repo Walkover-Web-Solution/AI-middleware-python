@@ -46,7 +46,7 @@ async def chat(request_body):
     # body = await request_body.json()
     timer_obj = Timer()
     timer_obj.defaultStart(request_body['state']['timer'] or [])
-    body = request_body.get('body',{});
+    body = request_body.get('body',{})
     state = request_body.get('state',{})
     path_params = request_body.get('path_params',{})
 

@@ -8,7 +8,7 @@ import traceback
 async def add_configuration_data_to_body(request: Request):
 
     try:
-        body = await request.json();
+        body = await request.json()
         chatbotData = getattr(request.state, "chatbot", None)
         if chatbotData:
             body.update(chatbotData)
