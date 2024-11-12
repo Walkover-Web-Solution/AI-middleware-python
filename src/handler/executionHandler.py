@@ -12,10 +12,6 @@ def handle_exceptions(func):
     async def wrapper(request_body, *args, **kwargs):
         try:
             body = request_body.get('body', {})
-            if 'state' in request_body and 'body' in request_body['state']:
-                body.update(request_body['state']['body'])
-            request_body['state']['body'] = body
-            request_body['state']['body']['execution_time_logs'] = {}
             return await func(request_body, *args, **kwargs)
         
         except Exception as exc:
