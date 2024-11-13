@@ -17,7 +17,7 @@ async def add_configuration_data_to_body(request: Request):
         if not db_config.get("success"):
                 raise HTTPException(status_code=400, detail={"success": False, "error": db_config["error"]}) 
         body.update(db_config)
-        request.state.body = body
+        # request.state.body = body
         service = body.get("service")
         model = body.get("configuration").get('model')
         if not (service in services and model in services[service]["chat"]):
