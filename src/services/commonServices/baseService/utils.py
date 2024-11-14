@@ -282,7 +282,7 @@ async def make_request_data(request: Request):
     state_data = {}
     path_params = {}
     
-    attributes = ['body', 'is_playground', 'version', 'profile', 'chatbot']
+    attributes = ['is_playground', 'version', 'profile']
     for attr in attributes:
         if hasattr(request.state, attr):
             state_data[attr] = getattr(request.state, attr)
@@ -292,29 +292,7 @@ async def make_request_data(request: Request):
         
     if hasattr(request, 'path_params'):
         path_params = request.path_params
-    
-    # Ensure 'bridge' and its keys exist to avoid AttributeError
-    # if 'body' in state_data and 'bridge' in state_data['body']:
-    #     bridge = state_data['body']['bridge']
-    #     if isinstance(bridge.get('createdAt'), datetime.datetime):
-    #         bridge['createdAt'] = bridge['createdAt'].isoformat()
-    #     if isinstance(bridge.get('updatedAt'), datetime.datetime):
-    #         bridge['updatedAt'] = bridge['updatedAt'].isoformat()
-    
-    # for key, value in body['bridge']['apiCalls'].items():
-    #     if isinstance(value.get('created_at'), datetime.datetime):
-    #         value['created_at'] = value['created_at'].isoformat()
-    #     if isinstance(value.get('updated_at'), datetime.datetime):
-    #         value['updated_at'] = value['updated_at'].isoformat()
-            
-    # if 'bridge' in body:
-    #     bridge = body['bridge']
-    #     if isinstance(bridge.get('createdAt'), datetime.datetime):
-    #         bridge['createdAt'] = bridge['createdAt'].isoformat()
-    #     if isinstance(bridge.get('updatedAt'), datetime.datetime):
-    #         bridge['updatedAt'] = bridge['updatedAt'].isoformat()
-    
-        # Convert datetime objects in body and state_data
+        
     body = convert_datetime(body)
     state_data = convert_datetime(state_data)
         

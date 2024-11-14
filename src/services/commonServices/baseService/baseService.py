@@ -26,7 +26,6 @@ class BaseService:
         self.thread_id = params.get('thread_id')
         self.model = params.get('model')
         self.service = params.get('service')
-        self.req = params.get('req')
         self.modelOutputConfig = params.get('modelOutputConfig')
         self.playground = params.get('playground')
         self.template = params.get('template')
