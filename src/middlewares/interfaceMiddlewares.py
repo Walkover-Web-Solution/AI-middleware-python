@@ -6,7 +6,7 @@ from config import Config
 from ..routes.v2.modelRouter import chat_completion
 import json
 from .getDataUsingBridgeId import add_configuration_data_to_body
-from ..db_services.conversationDbService import reset_chat_history
+from ..db_services.conversationDbService import reset_and_mode_chat_history
 from ..services.commonServices.baseService.utils import sendResponse
 from ..services.utils.time import Timer
 
@@ -116,6 +116,7 @@ async def reset_chatBot(request: Request, botId: str):
     userId = profile['user']['id']
     org_id = request.state.profile['org']['id']
     slugName = body.get("slugName")
+    purpose = body.get("purpose")
     
     bridge_response = await ConfigurationServices.get_bridge_by_slugname(org_id, slugName)
     bridges = bridge_response['bridges'] if bridge_response['success'] else {}
@@ -123,7 +124,10 @@ async def reset_chatBot(request: Request, botId: str):
         raise HTTPException(status_code=400, detail="Invalid bridge Id")
     else:
         bridge_id = str(bridges.get('_id', ''))
-    result = await reset_chat_history(org_id, bridge_id, thread_id)
+    if purpose == 'is_reset':
+        result = await reset_and_mode_chat_history(org_id, bridge_id, thread_id, 'is_reset', True)
+    elif purpose == 'human':
+        result = await reset_and_mode_chat_history(org_id, bridge_id, thread_id, 'mode', 1)
     response_format = {
         "type": "RTLayer",
         "cred": {
@@ -134,7 +138,8 @@ async def reset_chatBot(request: Request, botId: str):
     }
     response = {
         "data": {
-            "role": "reset"
+            "role": "reset",
+            **({"mode": "human"} if purpose == 'human' else {})
         }
     }
     if result['success']:
