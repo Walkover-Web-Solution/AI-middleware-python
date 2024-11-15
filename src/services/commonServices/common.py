@@ -144,7 +144,6 @@ async def chat(request_body):
             "thread_id": thread_id,
             "model": model,
             "service": service,
-            "req": request_body, 
             "modelOutputConfig": modelOutputConfig,
             "playground": is_playground,
             "template": template,
