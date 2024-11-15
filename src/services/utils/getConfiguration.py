@@ -78,7 +78,6 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
     return {
         'success': True,
         'configuration': configuration,
-        'bridge': bridge,
         'pre_tools': {'name': name, 'args': args} if len(pre_tools)>0 else None,
         'service': service,
         'apikey': apikey,
