@@ -83,7 +83,7 @@ async def chat(request_body):
     result = {}
     suggestions = []
     suggestions_flag =False
-    reasoning = True or body.get('reasoning',False)
+    reasoning = body.get('reasoning',False)
     
     if isinstance(variables, list):
         variables = {}
