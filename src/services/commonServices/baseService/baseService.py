@@ -37,6 +37,7 @@ class BaseService:
         self.message_id = params.get('message_id')
         self.bridgeType = params.get('bridgeType')
         self.names = params.get('names', [])
+        self.reasoning_model = params.get('reasoning_model')
 
 
     async def run_tool(self, responses, service):
