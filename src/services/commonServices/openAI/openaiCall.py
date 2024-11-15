@@ -9,10 +9,13 @@ class UnifiedOpenAICase(BaseService):
         usage = {}
         tools = {}
         conversation = ConversationService.createOpenAiConversation(self.configuration.get('conversation')).get('messages', [])
-        self.customConfig["messages"] = [ {"role": "system", "content": self.configuration['prompt']}] + conversation + ([{"role": "user", "content": self.user}] if self.user else []) 
-        self.customConfig =self.service_formatter(self.customConfig, service_name['openai'])
-        if 'tools' not in self.customConfig and 'parallel_tool_calls' in self.customConfig:
-            del self.customConfig['parallel_tool_calls']
+        if self.reasoning:
+            self.customConfig["messages"] =  + conversation + ([{"role": "user", "content": self.user}] if self.user else []) 
+        else:
+            self.customConfig["messages"] = [ {"role": "system", "content": self.configuration['prompt']}] + conversation + ([{"role": "user", "content": self.user}] if self.user else []) 
+            self.customConfig =self.service_formatter(self.customConfig, service_name['openai'])
+            if 'tools' not in self.customConfig and 'parallel_tool_calls' in self.customConfig:
+                del self.customConfig['parallel_tool_calls']
         openAIResponse = await self.chats(self.customConfig, self.apikey, service_name['openai'])
         modelResponse = openAIResponse.get("modelResponse", {})
         if not openAIResponse.get('success'):
