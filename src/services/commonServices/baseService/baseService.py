@@ -37,6 +37,7 @@ class BaseService:
         self.message_id = params.get('message_id')
         self.bridgeType = params.get('bridgeType')
         self.names = params.get('names', [])
+        self.reasoning_model = params.get('reasoning_model')
 
 
     async def run_tool(self, responses, service):
@@ -172,7 +173,7 @@ class BaseService:
         return {
             'thread_id': self.thread_id,
             'user': self.user if self.user else json.dumps(self.tool_call),
-            'message': _.get(model_response, self.modelOutputConfig['message']) if _.get(model_response, self.modelOutputConfig['tools']) else _.get(model_response, self.modelOutputConfig['message']),
+            'message': _.get(model_response, self.modelOutputConfig['message']) if _.get(model_response, self.modelOutputConfig.get('tools')) else _.get(model_response, self.modelOutputConfig['message']),
             'org_id': self.org_id,
             'bridge_id': self.bridge_id,
             'model': self.configuration.get('model'),
