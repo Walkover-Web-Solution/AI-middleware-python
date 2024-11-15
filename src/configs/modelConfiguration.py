@@ -2239,14 +2239,6 @@ class ModelsConfig:
                 "field": "drop",
                 "default": "o1-preview",
                 "level": 1
-            },
-            "max_tokens": {
-                "field": "slider",
-                "min": 1,
-                "max": 32768,
-                "step": 1,
-                "default": 256,
-                "level": 2
             }
         }
         outputConfig = {
@@ -2260,7 +2252,6 @@ class ModelsConfig:
                 }
             }],
             "message": "choices[0].message.content",
-            "tools": "choices[0].message.tool_calls",
             "assistant": "choices[0].message",
             "id": "id"
         }
@@ -2279,6 +2270,44 @@ class ModelsConfig:
             "inputConfig": inputConfig
         }
     
+
+    @staticmethod
+    def o1_mini():
+        configuration = {
+            "model": {
+                "field": "drop",
+                "default": "o1-mini",
+                "level": 1
+            }
+        }
+        outputConfig = {
+            "usage": [{
+                "prompt_tokens": "usage.prompt_tokens",
+                "completion_tokens": "usage.completion_tokens",
+                "total_tokens": "usage.total_tokens",
+                "total_cost": {
+                    "input_cost": 0.01,
+                    "output_cost": 0.03
+                }
+            }],
+            "message": "choices[0].message.content",
+            "assistant": "choices[0].message",
+            "id": "id"
+        }
+        inputConfig = {
+            "system": {
+                "role": "system",
+                "content": "",
+                "contentKey": "content",
+                "type": "json"
+            },
+            "content_location": "prompt[0].content"
+        }
+        return {
+            "configuration": configuration,
+            "outputConfig": outputConfig,
+            "inputConfig": inputConfig
+        }
 
     @staticmethod
     def text_embedding_3_large():

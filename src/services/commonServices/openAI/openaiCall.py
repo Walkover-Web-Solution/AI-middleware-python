@@ -10,7 +10,7 @@ class UnifiedOpenAICase(BaseService):
         tools = {}
         conversation = ConversationService.createOpenAiConversation(self.configuration.get('conversation')).get('messages', [])
         if self.reasoning:
-            self.customConfig["messages"] =  + conversation + ([{"role": "user", "content": self.user}] if self.user else []) 
+            self.customConfig["messages"] = conversation + ([{"role": "user", "content": self.user}] if self.user else []) 
         else:
             self.customConfig["messages"] = [ {"role": "system", "content": self.configuration['prompt']}] + conversation + ([{"role": "user", "content": self.user}] if self.user else []) 
             self.customConfig =self.service_formatter(self.customConfig, service_name['openai'])

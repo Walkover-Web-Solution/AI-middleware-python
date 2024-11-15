@@ -193,13 +193,16 @@ async def get_all_service_models_controller(service):
                     "gpt-4o": restructure_configuration(model_configuration.gpt_4o()),
                     "chatgpt-4o-latest": restructure_configuration(model_configuration.chatgpt_4o_latest()),
                     "gpt-4o-mini": restructure_configuration(model_configuration.gpt_4o_mini()),
-                    "o1-preview" : restructure_configuration(model_configuration.o1_preview())
                 },
                 "fine-tune" : {
                      "gpt-4-0613": restructure_configuration(model_configuration.gpt_4_0613()),
                      "gpt-4o-2024-08-06": restructure_configuration(model_configuration.gpt_4o_2024_08_06()),
                      "gpt-4o-mini-2024-07-18": restructure_configuration(model_configuration.gpt_4o_mini_2024_07_18()),
 
+                },
+                "reasoning" : {
+                    "o1-preview" : restructure_configuration(model_configuration.o1_preview()),
+                    "o1-mini" : restructure_configuration(model_configuration.o1_mini())
                 }
                 # "embedding": {
                 #     "text-embedding-3-large": restructure_configuration(model_configuration.text_embedding_3_large()),
