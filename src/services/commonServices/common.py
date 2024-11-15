@@ -169,7 +169,7 @@ async def chat(request_body):
         if not result["success"]:
             raise ValueError(result)
 
-        if is_rich_text and bridgeType:
+        if is_rich_text and bridgeType and reasoning_model == False:
                 try:
                     try:
                         # validation for the check response
