@@ -83,8 +83,11 @@ async def chat(request_body):
     result = {}
     suggestions = []
     suggestions_flag =False
-    reasoning = body.get('reasoning',False)
+    reasoning_model = False
     
+    if model == 'o1-preview' or model == 'o1-mini':
+        reasoning_model = True
+
     if isinstance(variables, list):
         variables = {}
 
@@ -158,7 +161,7 @@ async def chat(request_body):
             "message_id" : message_id,
             "bridgeType": bridgeType,
             "names":names,
-            "reasoning" : reasoning,
+            "reasoning_model" : reasoning_model,
         }
 
         class_obj = await create_service_handler(params,service)
