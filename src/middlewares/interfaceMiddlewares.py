@@ -21,8 +21,8 @@ async def send_data_middleware(request: Request, botId: str):
         userId = profile['user']['id']
         chatBotId = botId
         flag = body.get("flag") or False
-        if(message != ""):
-            return JSONResponse(status_code=400, content="Message cannot be null")
+        if(message == ""):
+            return JSONResponse(status_code=400, content={'error':"Message cannot be null"})
 
         channelId = f"{chatBotId}{threadId.strip() if threadId and threadId.strip() else userId}"
 
