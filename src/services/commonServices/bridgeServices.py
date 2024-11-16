@@ -2,6 +2,7 @@ from fastapi import Request
 from fastapi.responses import JSONResponse
 from src.db_services.ConfigurationServices import get_bridges
 from datetime import datetime, timezone
+from src.services.utils.apiservice import fetch
 from src.controllers.configController import duplicate_create_bridges
 
 import json
@@ -37,5 +38,32 @@ async def duplicate_bridge(request : Request):
             "result" : json.loads(json.dumps(res, default=str))
 
         })
+    except Exception as e:
+        return {'error': str(e)}
+    
+
+async def optimize_prompt_controller(request : Request, bridge_id: str):
+    try:
+        org_id = request.state.profile.get("org",{}).get("id","")
+        result = await get_bridges(bridge_id, org_id)
+        bridge = result.get('bridges')
+        prompt = bridge.get('configuration',{}).get('prompt',"")
+        bridgeName = bridge.get('name')
+        result = ""
+        try:    
+            response,rs_headers = await fetch(f"https://flow.sokt.io/func/scrivbjJBCa3","POST", None,None, {"prompt": prompt, "threadId": bridgeName}) # required is not send then it will still hit the curl
+            if response.get('success') == False:
+                raise Exception(response.get('message'))
+            else:
+                result = response.get('response',{}).get('data',{}).get('content',"")
+                
+        except Exception as err:
+            print("Error calling function=>", err)
+        return JSONResponse(status_code=200, content={
+            "success": True,
+            "message": "Prompt optimized successfully",
+            "result" : result
+        })
+        
     except Exception as e:
         return {'error': str(e)}
