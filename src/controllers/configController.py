@@ -123,7 +123,9 @@ async def duplicate_create_bridges(bridges):
 async def get_bridge(request, bridge_id: str):
     try:
         bridge = await get_bridges_with_tools(bridge_id,request.state.profile['org']['id'])
-        prompt = bridge.get('bridges').get('configuration',{}).get('prompt')
+        if(bridge.get('bridges') is None):
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Bridge not found")
+        prompt = bridge.get('bridges',{}).get('configuration',{}).get('prompt')
         variables = []
         if prompt is not None:
             variables = Helper.find_variables_in_string(prompt)
