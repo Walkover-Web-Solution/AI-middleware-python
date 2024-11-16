@@ -1957,6 +1957,14 @@ class ModelsConfig:
                 "default": False,
                 "level": 0,
                 "typeOf": "boolean"
+            },
+            "response_type": {
+                "field": "select",
+                "options" : [{"type" : "text"},{"type" : "json_object"}],
+                "default": {
+                "type" : "text",
+                },
+                "level": 0
             }
         }
         outputConfig = {
