@@ -24,9 +24,10 @@ async def create_bridge_version(bridge_data):
             del bridge_version_data['slugName']
         if 'bridgeType' in bridge_version_data:
             del bridge_version_data['bridgeType']
-
+        bridge_version_data['drafted'] = True
+        bridge_version_data['parent_id'] = bridge_data['_id']
         bridge_version_data['_id'] = ObjectId()
-        result = version_model.insert_one(bridge_version_data)
+        version_model.insert_one(bridge_version_data)
         return  str(bridge_version_data['_id'])
     except Exception as e:
         print("error:", e)
@@ -72,4 +73,130 @@ async def update_bridge(bridge_id, update_fields):
         return {
             'success': False,
             'error': 'Something went wrong!'
+        }
+    
+async def get_bridge_by_version_id(org_id, bridge_id):
+    pipeline = [
+        {
+            '$match': {'_id': ObjectId(bridge_id), 'org_id': org_id}
+        },
+        {
+            '$addFields': {
+                '_id': {'$toString': '$_id'},
+                'function_ids': {
+                    '$map': {
+                        'input': '$function_ids',
+                        'as': 'fid',
+                        'in': {'$toString': '$$fid'}
+                    }
+                }
+            }
+        }
+    ]
+    
+    result = list(version_model.aggregate(pipeline))
+    bridge = result[0] if result else None
+    return bridge
+
+async def update_version(bridge_id, update_fields):
+    try:
+        updated_bridge = version_model.find_one_and_update(
+            {'_id': ObjectId(bridge_id)},
+            {'$set': update_fields},
+            return_document=True,
+            upsert=True
+        )
+
+        if not updated_bridge:
+            return {
+                'success': False,
+                'error': 'No records updated or bridge not found'
+            }
+        if updated_bridge:
+            updated_bridge['_id'] = str(updated_bridge['_id'])  # Convert ObjectId to string
+            if 'function_ids' in updated_bridge:
+                updated_bridge['function_ids'] = [str(fid) for fid in updated_bridge['function_ids']]  # Convert function_ids to string
+        return {
+            'success': True,
+            'result': updated_bridge
+        }
+
+    except Exception as error:
+        print(error)
+        return {
+            'success': False,
+            'error': 'Something went wrong!'
+        }
+
+async def get_version_with_tools(bridge_id, org_id):
+    try:
+        pipeline = [
+            {
+                '$match': {'_id': ObjectId(bridge_id), "org_id": org_id}
+            },
+            {
+                '$lookup': {
+                    'from': 'apicalls',
+                    'localField': 'function_ids', 
+                    'foreignField': '_id',
+                    'as': 'apiCalls'
+                }
+            },
+            {
+                '$addFields': {
+                    '_id': {'$toString': '$_id'},
+                    'function_ids': {
+                        '$map': {
+                            'input': '$function_ids',
+                            'as': 'fid',
+                            'in': {'$toString': '$$fid'}
+                        }
+                    },
+                    'apiCalls': {
+                        '$arrayToObject': {
+                            '$map': {
+                                'input': '$apiCalls',
+                                'as': 'api_call',
+                                'in': {
+                                    'k': {'$toString': '$$api_call._id'},
+                                    'v': {
+                                        '$mergeObjects': [
+                                            '$$api_call',
+                                            {
+                                                '_id': {'$toString': '$$api_call._id'},
+                                                'bridge_ids': {
+                                                    '$map': {
+                                                        'input': '$$api_call.bridge_ids',
+                                                        'as': 'bid',
+                                                        'in': {'$toString': '$$bid'}
+                                                    }
+                                                }
+                                            }
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        ]
+        
+        result = list(version_model.aggregate(pipeline))
+        
+        if not result:
+            return {
+                'success': False,
+                'error': 'No matching records found'
+            }
+        
+        return {
+            'success': True,
+            'bridges': result[0]
+        }
+    except Exception as error:
+        print(error)
+        return {
+            'success': False,
+            'error': "something went wrong!!"
         }

@@ -12,6 +12,7 @@ from bson import ObjectId
 from datetime import datetime, timezone
 from src.services.utils.getDefaultValue import get_default_values_controller
 from src.db_services.bridge_version_services import create_bridge_version, update_bridge
+from src.db_services.bridge_version_services import get_bridge_by_version_id, update_version, get_version_with_tools
 async def create_bridges_controller(request):
     try:
         bridges = await request.json()
@@ -263,7 +264,7 @@ async def get_all_service_models_controller(service):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-async def update_bridge_controller(request,bridge_id):
+async def update_bridge_controller(request, bridge_id=None, version_id=None):
     try:
         body  = await request.json()
         org_id = request.state.profile['org']['id']
@@ -286,7 +287,10 @@ async def update_bridge_controller(request,bridge_id):
         function_id = body.get('functionData', {}).get('function_id', None)
         function_operation = body.get('functionData', {}).get('function_operation')
         function_name = body.get('functionData', {}).get('function_name',None)
-        bridge = await get_bridge_by_id(org_id, bridge_id)
+        if bridge_id is not None:
+            bridge = await get_bridge_by_id(org_id, bridge_id)
+        if version_id is not None:
+            bridge = await get_bridge_by_version_id(org_id, version_id)
         if new_configuration and 'type' in new_configuration and new_configuration.get('type') != 'fine-tune':
             new_configuration['fine_tune_model'] = {}
             new_configuration['fine_tune_model']['current_model'] = None
@@ -295,7 +299,7 @@ async def update_bridge_controller(request,bridge_id):
         function_ids = bridge.get('function_ids') or []
         prompt = new_configuration.get('prompt') if new_configuration else None
         if prompt:
-            result = await storeSystemPrompt(prompt, org_id, bridge_id)
+            result = await storeSystemPrompt(prompt, org_id, bridge_id if bridge_id is not None else version_id)
             new_configuration['system_prompt_version_id'] = result.get('id')
         if slugName is not None:
             update_fields['slugName'] = slugName
@@ -335,7 +339,7 @@ async def update_bridge_controller(request,bridge_id):
                     if function_id not in function_ids:
                         function_ids.append(function_id)
                         update_fields['function_ids'] = [ObjectId(fid) for fid in function_ids]
-                        await update_bridge_ids_in_api_calls(function_id, bridge_id, 1)
+                        await update_bridge_ids_in_api_calls(function_id, bridge_id if bridge_id is not None else version_id, 1)
                 elif function_operation is None:        # to remove function id 
                     if function_name is not None:   
                          if function_name in  current_variables_path:
@@ -344,7 +348,7 @@ async def update_bridge_controller(request,bridge_id):
                     if function_id in function_ids:
                         function_ids.remove(function_id)
                         update_fields['function_ids'] = [ObjectId(fid) for fid in function_ids]
-                        await update_bridge_ids_in_api_calls(function_id, bridge_id, 0)
+                        await update_bridge_ids_in_api_calls(function_id, bridge_id if bridge_id is not None else version_id, 0)
         
         for key, value in body.items():
             if key == 'configuration':
@@ -366,9 +370,13 @@ async def update_bridge_controller(request,bridge_id):
                         'type': key,
                     }
                 )
-
-        await update_bridge(bridge_id, update_fields) # todo :: add transaction
-        result = await get_bridges_with_tools(bridge_id, org_id)
+        result = {}
+        if bridge_id is not None:
+            await update_bridge(bridge_id, update_fields) # todo :: add transaction
+            result = await get_bridges_with_tools(bridge_id, org_id)
+        if version_id is not None:
+            await update_version(version_id, update_fields) # todo :: add transaction
+            result = await get_version_with_tools(version_id, org_id)
         await add_bulk_user_entries(user_history)
         
         if result.get("success"):

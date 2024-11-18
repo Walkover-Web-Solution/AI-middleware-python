@@ -323,7 +323,6 @@ async def get_bridge_by_id(org_id, bridge_id):
     bridge = result[0] if result else None
     return bridge
 
-
 async def get_bridge_by_slugname(org_id, slug_name):
     try:
         bridge =  configurationModel.find_one({
