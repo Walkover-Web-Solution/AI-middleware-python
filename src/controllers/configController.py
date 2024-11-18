@@ -11,6 +11,7 @@ from src.db_services.conversationDbService import storeSystemPrompt, add_bulk_us
 from bson import ObjectId
 from datetime import datetime, timezone
 from src.services.utils.getDefaultValue import get_default_values_controller
+from src.db_services.bridge_version_services import create_bridge_version, update_bridge
 async def create_bridges_controller(request):
     try:
         bridges = await request.json()
@@ -61,6 +62,9 @@ async def create_bridges_controller(request):
             "status": status
         })
         if result.get("success"):
+            create_version = await create_bridge_version(result['bridge'])
+            update_fields = {'versions' : [create_version]}
+            await update_bridge(str(result['bridge']['_id']), update_fields)
             return JSONResponse(status_code=200, content={
                 "success": True,
                 "message": "Bridge created successfully",

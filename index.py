@@ -16,6 +16,7 @@ from src.routes.v2.modelRouter import router as v2_router
 from src.services.utils.apiservice import fetch
 from src.services.commonServices.queueService.queueService import queue_obj
 from src.services.utils.logger import logger
+from src.routes.bridge_version_routes import router as bridge_version
 
 async def consume_messages_in_executor():
     await queue_obj.consume_messages()
@@ -107,6 +108,7 @@ app.include_router(chatbot_router, prefix="/chatbot")
 app.include_router(bridge_router, prefix="/bridge")
 app.include_router(config_router, prefix="/api/v1/config")
 app.include_router(apiCall_router, prefix="/functions")
+app.include_router(bridge_version, prefix="/bridge/versions" )
 
 if __name__ == "__main__":
     PORT = int(Config.PORT)
