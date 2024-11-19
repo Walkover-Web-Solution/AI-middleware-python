@@ -42,7 +42,7 @@ async def get_bridges(bridge_id, org_id):
             'error': "something went wrong!!"
         }
 # todo
-async def get_bridges_with_tools(bridge_id, org_id, version_id):
+async def get_bridges_with_tools(bridge_id, org_id, version_id=None):
     try:
         model = version_model if version_id else configurationModel
         id_to_use = ObjectId(version_id) if version_id else ObjectId(bridge_id)
@@ -295,7 +295,9 @@ async def get_all_bridges_in_org(org_id):
       "configuration.prompt": 1,
       "bridgeType": 1,
       "slugName":1,
-      "status": 1
+      "status": 1,
+      "versions": 1,
+      "published_version_id": 1
     })
     bridges_list = []
     for bridge in bridges:

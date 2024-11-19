@@ -17,7 +17,7 @@ async def get_bridge(org_id, bridge_id):
 
 async def create_bridge_version(bridge_data):
     try:
-        bridge_version_data = bridge_data
+        bridge_version_data = bridge_data.copy()
         if 'name' in bridge_version_data:
             del bridge_version_data['name']
         if 'slugName' in bridge_version_data:
