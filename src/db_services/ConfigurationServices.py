@@ -6,6 +6,7 @@ configurationModel = db["configurations"]
 apiCallModel = db['apicalls']
 templateModel = db['templates']
 apikeyCredentialsModel = db['apikeycredentials']
+version_model = db['configuration_versions']
 
 async def get_bridges(bridge_id, org_id):
     try:
@@ -41,11 +42,13 @@ async def get_bridges(bridge_id, org_id):
             'error': "something went wrong!!"
         }
 # todo
-async def get_bridges_with_tools(bridge_id, org_id):
+async def get_bridges_with_tools(bridge_id, org_id, version_id):
     try:
+        model = version_model if version_id else configurationModel
+        id_to_use = ObjectId(version_id) if version_id else ObjectId(bridge_id)
         pipeline = [
             {
-                '$match': {'_id': ObjectId(bridge_id), "org_id": org_id}
+                '$match': {'_id': ObjectId(id_to_use), "org_id": org_id}
             },
             {
                 '$lookup': {
@@ -95,7 +98,7 @@ async def get_bridges_with_tools(bridge_id, org_id):
             }
         ]
         
-        result = list(configurationModel.aggregate(pipeline))
+        result = list(model.aggregate(pipeline))
         
         if not result:
             return {

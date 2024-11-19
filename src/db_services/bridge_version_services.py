@@ -200,3 +200,49 @@ async def get_version_with_tools(bridge_id, org_id):
             'success': False,
             'error': "something went wrong!!"
         }
+    
+async def publish(org_id, version_id):
+    try:
+        get_version_data = version_model.find_one({'_id': ObjectId(version_id), 'org_id': org_id})
+        
+        if not get_version_data:
+            return {
+                "success": False,
+                "error": "Version data not found"
+            }
+        parent_id = str(get_version_data.get('parent_id'))
+        if not parent_id:
+            return {
+                "success": False,
+                "error": "Parent ID not found in version data"
+            }
+        parent_configuration = configurationModel.find_one({'_id': ObjectId(parent_id)})
+        
+        if not parent_configuration:
+            return {
+                "success": False,
+                "error": "Parent configuration not found"
+            }
+        published_version_id = str(get_version_data['_id'])
+        get_version_data.pop('_id', None)
+        updated_configuration = {**parent_configuration, **get_version_data}
+        updated_configuration['published_version_id'] = published_version_id
+        
+        # Update the document in the configurationModel
+        configurationModel.update_one(
+            {'_id': ObjectId(parent_id)},
+            {'$set': updated_configuration}
+        )
+        version_model.update_one({'_id': ObjectId(published_version_id)}, {'$set': {'draft': False}})
+        
+        return {
+            "success": True,
+            "message": "Configuration updated successfully"
+        }
+    
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return {
+            "success": False,
+            "error": str(e)
+        }
