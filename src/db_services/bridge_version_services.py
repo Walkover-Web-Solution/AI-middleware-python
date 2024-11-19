@@ -24,7 +24,7 @@ async def create_bridge_version(bridge_data):
             del bridge_version_data['slugName']
         if 'bridgeType' in bridge_version_data:
             del bridge_version_data['bridgeType']
-        bridge_version_data['drafted'] = True
+        bridge_version_data['is_drafted'] = True
         bridge_version_data['parent_id'] = bridge_data['_id']
         bridge_version_data['_id'] = ObjectId()
         version_model.insert_one(bridge_version_data)
@@ -233,7 +233,7 @@ async def publish(org_id, version_id):
             {'_id': ObjectId(parent_id)},
             {'$set': updated_configuration}
         )
-        version_model.update_one({'_id': ObjectId(published_version_id)}, {'$set': {'draft': False}})
+        version_model.update_one({'_id': ObjectId(published_version_id)}, {'$set': {'is_drafted': False}})
         
         return {
             "success": True,
