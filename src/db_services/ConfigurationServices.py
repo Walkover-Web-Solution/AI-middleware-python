@@ -351,10 +351,12 @@ async def get_bridge_by_slugname(org_id, slug_name):
             'error': "something went wrong!!"
         }
 
-async def update_bridge(bridge_id, update_fields):
+async def update_bridge(bridge_id, update_fields, version_id):
     try:
-        updated_bridge = configurationModel.find_one_and_update(
-            {'_id': ObjectId(bridge_id)},
+        model = version_model if version_id else configurationModel
+        id_to_use = ObjectId(version_id) if version_id else ObjectId(bridge_id)
+        updated_bridge = model.find_one_and_update(
+            {'_id': ObjectId(id_to_use)},
             {'$set': update_fields},
             return_document=True,
             upsert=True

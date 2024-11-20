@@ -4,10 +4,7 @@ from src.db_services.ConfigurationServices import get_bridges, update_bridge, ge
 from src.services.utils.helper import Helper
 from src.services.utils.apicallUtills import  get_api_data, save_api, delete_api
 import pydash as _
-import json
 import datetime 
-from models.mongo_connection import db
-apiCallModel = db['apicalls']
 
 
 async def creates_api(request: Request):
@@ -80,6 +77,7 @@ async def creates_api(request: Request):
 async def updates_api(request: Request, bridge_id: str):
     try:
         body = await request.json()
+        version_id = body.get('version_id')
         org_id = request.state.org_id if hasattr(request.state, 'org_id') else None
         pre_tools = body.get('pre_tools')
 
@@ -93,7 +91,7 @@ async def updates_api(request: Request, bridge_id: str):
     
         data_to_update = {}
         data_to_update['pre_tools'] = pre_tools
-        result = await update_bridge(bridge_id, data_to_update)
+        result = await update_bridge(bridge_id = bridge_id, data_to_update = data_to_update, version_id = version_id)
 
         result = await get_bridges_with_tools(bridge_id, org_id)
 
