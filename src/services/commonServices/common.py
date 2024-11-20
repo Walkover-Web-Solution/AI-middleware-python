@@ -87,6 +87,8 @@ async def chat(request_body):
     
     if model == 'o1-preview' or model == 'o1-mini':
         reasoning_model = True
+        configuration['prompt'] = ''
+        variables = {}
 
     if isinstance(variables, list):
         variables = {}
@@ -104,7 +106,6 @@ async def chat(request_body):
                 customConfig[key] = configuration.get(key, modelConfig[key]["default"])
         if fine_tune_model is not None and len(fine_tune_model) and model in {'gpt-4o-mini-2024-07-18', 'gpt-4o-2024-08-06', 'gpt-4-0613'}:
             customConfig['model'] = fine_tune_model
-            del customConfig['creativity_level'] # [?] to be removed
         if pre_tools:
             pre_function_response = await axios_work(pre_tools.get('args', {}), pre_tools.get('name', ''))
             if pre_function_response.get('status') == 0:
