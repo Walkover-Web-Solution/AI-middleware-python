@@ -1,7 +1,7 @@
 import json
 from fastapi import HTTPException, status
 from fastapi.responses import JSONResponse
-from ..db_services.bridge_version_services import get_bridge, create_bridge_version, update_bridge, get_version_with_tools, publish
+from ..db_services.bridge_version_services import get_bridge, create_bridge_version, update_bridge, publish
 from src.services.utils.helper import Helper
 async def create_version(request):
     try:
