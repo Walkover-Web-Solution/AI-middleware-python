@@ -307,10 +307,12 @@ async def get_all_bridges_in_org(org_id):
         bridges_list.append(bridge)
     return bridges_list
 
-async def get_bridge_by_id(org_id, bridge_id):
+async def get_bridge_by_id(org_id, bridge_id, version_id=None):
+    model = version_model if version_id else configurationModel
+    id_to_use = ObjectId(version_id) if version_id else ObjectId(bridge_id)
     pipeline = [
         {
-            '$match': {'_id': ObjectId(bridge_id), 'org_id': org_id}
+            '$match': {'_id': ObjectId(id_to_use), 'org_id': org_id}
         },
         {
             '$addFields': {
@@ -326,7 +328,7 @@ async def get_bridge_by_id(org_id, bridge_id):
         }
     ]
     
-    result = list(configurationModel.aggregate(pipeline))
+    result = list(model.aggregate(pipeline))
     bridge = result[0] if result else None
     return bridge
 

@@ -12,7 +12,6 @@ from bson import ObjectId
 from datetime import datetime, timezone
 from src.services.utils.getDefaultValue import get_default_values_controller
 from src.db_services.bridge_version_services import create_bridge_version, update_bridge
-from src.db_services.bridge_version_services import get_bridge_by_version_id, update_version, get_version_with_tools
 async def create_bridges_controller(request):
     try:
         bridges = await request.json()
@@ -287,11 +286,7 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
         function_id = body.get('functionData', {}).get('function_id', None)
         function_operation = body.get('functionData', {}).get('function_operation')
         function_name = body.get('functionData', {}).get('function_name',None)
-        if bridge_id is not None:
-            bridge = await get_bridge_by_id(org_id, bridge_id)
-        if version_id is not None:
-            bridge = await get_bridge_by_version_id(org_id, version_id)
-            update_fields['is_drafted'] = True
+        bridge = await get_bridge_by_id(org_id, bridge_id, version_id)
         if new_configuration and 'type' in new_configuration and new_configuration.get('type') != 'fine-tune':
             new_configuration['fine_tune_model'] = {}
             new_configuration['fine_tune_model']['current_model'] = None
@@ -371,13 +366,9 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
                         'type': key,
                     }
                 )
-        result = {}
-        if bridge_id is not None:
-            await update_bridge(bridge_id, update_fields) # todo :: add transaction
-            result = await get_bridges_with_tools(bridge_id, org_id)
-        if version_id is not None:
-            await update_version(version_id, update_fields) # todo :: add transaction
-            result = await get_version_with_tools(version_id, org_id)
+                
+        await update_bridge(bridge_id, update_fields, version_id) # todo :: add transaction
+        result = await get_bridges_with_tools(bridge_id, org_id, version_id)
         await add_bulk_user_entries(user_history)
         
         if result.get("success"):
