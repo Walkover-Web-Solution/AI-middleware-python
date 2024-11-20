@@ -32,7 +32,7 @@ async def runModel(configuration, apiKey, execution_time_logs, bridge_id, timer,
         # Wait for the first task to complete or 40 seconds, whichever comes first
         done, pending = await asyncio.wait(
             [first_task],
-            timeout=60,
+            timeout = 120 if configuration['model'] in ['o1-preview', 'o1-mini'] else 60,
             return_when=asyncio.FIRST_COMPLETED
         )
 
@@ -56,7 +56,7 @@ async def runModel(configuration, apiKey, execution_time_logs, bridge_id, timer,
             print("First API call did not complete within 60 seconds. Starting second API call.")
             # Start the second API call with 'gpt-4' model
             second_config = copy.deepcopy(configuration)
-            second_config['model'] = 'gpt-4o-2024-08-06' if configuration['model'] == 'gpt-4o' else 'gpt-4o'
+            second_config['model'] = 'o1-preview' if configuration['model'] == 'o1-preview' else ('gpt-4o-2024-08-06' if configuration['model'] == 'gpt-4o' else 'gpt-4o')
             second_task = loop.run_in_executor(executor, api_call, second_config)
 
             # Wait for either the first or second task to complete
