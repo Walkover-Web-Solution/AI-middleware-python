@@ -11,7 +11,7 @@ from src.db_services.conversationDbService import storeSystemPrompt, add_bulk_us
 from bson import ObjectId
 from datetime import datetime, timezone
 from src.services.utils.getDefaultValue import get_default_values_controller
-from src.db_services.bridge_version_services import create_bridge_version, update_bridge
+from src.db_services.bridge_version_services import create_bridge_version
 async def create_bridges_controller(request):
     try:
         bridges = await request.json()
@@ -367,7 +367,7 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
                     }
                 )
                 
-        await update_bridge(bridge_id, update_fields, version_id) # todo :: add transaction
+        await update_bridge(bridge_id=bridge_id, update_fields=update_fields, version_id=version_id) # todo :: add transaction
         result = await get_bridges_with_tools(bridge_id, org_id, version_id)
         await add_bulk_user_entries(user_history)
         

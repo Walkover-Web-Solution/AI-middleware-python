@@ -355,7 +355,7 @@ async def get_bridge_by_slugname(org_id, slug_name):
             'error': "something went wrong!!"
         }
 
-async def update_bridge(bridge_id, update_fields, version_id = None):
+async def update_bridge(bridge_id = None, update_fields = None, version_id = None):
     try:
         model = version_model if version_id else configurationModel
         id_to_use = ObjectId(version_id) if version_id else ObjectId(bridge_id)
