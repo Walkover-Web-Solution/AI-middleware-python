@@ -291,6 +291,7 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
             bridge = await get_bridge_by_id(org_id, bridge_id)
         if version_id is not None:
             bridge = await get_bridge_by_version_id(org_id, version_id)
+            update_fields['is_drafted'] = True
         if new_configuration and 'type' in new_configuration and new_configuration.get('type') != 'fine-tune':
             new_configuration['fine_tune_model'] = {}
             new_configuration['fine_tune_model']['current_model'] = None
