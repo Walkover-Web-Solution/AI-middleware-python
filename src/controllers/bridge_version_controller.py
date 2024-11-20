@@ -12,7 +12,7 @@ async def create_version(request):
        if bridge_data is None:
            return JSONResponse({"success": False, "message": "no version found"})
        parent_id = bridge_data.get('parent_id')
-       create_new_version = await create_bridge_version(bridge_data)
+       create_new_version = await create_bridge_version(bridge_data, parent_id=parent_id)
        update_fields = {'versions' : [create_new_version]}
        await update_bridge(parent_id, update_fields)
        return {

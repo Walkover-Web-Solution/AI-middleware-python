@@ -15,7 +15,7 @@ async def get_bridge(org_id, bridge_id):
         traceback.print_exc()
         return None
 
-async def create_bridge_version(bridge_data):
+async def create_bridge_version(bridge_data, parent_id=None):
     try:
         bridge_version_data = bridge_data.copy()
         if 'name' in bridge_version_data:
@@ -25,10 +25,10 @@ async def create_bridge_version(bridge_data):
         if 'bridgeType' in bridge_version_data:
             del bridge_version_data['bridgeType']
         bridge_version_data['is_drafted'] = True
-        bridge_version_data['parent_id'] = bridge_data['_id']
+        bridge_version_data['parent_id'] = parent_id or str(bridge_data['_id'])
         bridge_version_data['_id'] = ObjectId()
         version_model.insert_one(bridge_version_data)
-        return  str(bridge_version_data['_id'])
+        return str(bridge_version_data['_id'])
     except Exception as e:
         print("error:", e)
         return {
