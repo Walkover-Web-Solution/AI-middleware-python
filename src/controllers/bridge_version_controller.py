@@ -1,8 +1,9 @@
 import json
 from fastapi import HTTPException, status
 from fastapi.responses import JSONResponse
-from ..db_services.bridge_version_services import get_bridge, create_bridge_version, update_bridge, get_version_with_tools, publish
+from ..db_services.bridge_version_services import get_bridge, create_bridge_version, update_bridges, get_version_with_tools, publish
 from src.services.utils.helper import Helper
+from ..db_services.ConfigurationServices import get_bridges_with_tools, update_bridge
 async def create_version(request):
     try:
        body = await request.json()
@@ -14,7 +15,7 @@ async def create_version(request):
        parent_id = bridge_data.get('parent_id')
        create_new_version = await create_bridge_version(bridge_data, parent_id=parent_id)
        update_fields = {'versions' : [create_new_version]}
-       await update_bridge(parent_id, update_fields)
+       await update_bridges(parent_id, update_fields)
        return {
            "success": True,
            "message" : "version created successfully",
@@ -54,3 +55,22 @@ async def publish_version(request, version_id):
             return JSONResponse({"success": True, "message": "version published successfully", "version_id": version_id})
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e)
+
+
+async def discard_version(request):
+    org_id = request.state.profile['org']['id']
+    body = await request.json()
+    version_id = body.get('version_id')
+    bridge_id = body.get('bridge_id')
+
+    bridge_data = await get_bridges_with_tools(bridge_id, org_id)
+    del bridge_data['bridges']['name']
+    del bridge_data['bridges']['slugName']
+    del bridge_data['bridges']['bridgeType']
+    del bridge_data['bridges']['_id']
+    result = await update_bridge(version_id=version_id, update_fields=bridge_data['bridges'])
+    if 'success' in result:
+        return JSONResponse({"success": True, "message": "version changes discarded successfully", "version_id": version_id})
+    return result
+    
+    

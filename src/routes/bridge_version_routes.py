@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Request
 from ..middlewares.middleware import jwt_middleware
 from validations.validation import Bridge_update as bridge_update_validation
-from ..controllers.bridge_version_controller import create_version, get_version, publish_version
+from ..controllers.bridge_version_controller import create_version, get_version, publish_version, discard_version
 from ..controllers.configController import update_bridge_controller
 router = APIRouter()
 @router.post('/create', dependencies=[Depends(jwt_middleware)])
@@ -19,3 +19,7 @@ async def get_bridge(request: Request,version_id: str):
 @router.post('/publish/{version_id}', dependencies=[Depends(jwt_middleware)])
 async def publish(request: Request,version_id: str):
     return await publish_version(request, version_id)
+
+@router.post('/discard',dependencies=[Depends(jwt_middleware)])
+async def discard(request: Request):
+    return await discard_version(request)

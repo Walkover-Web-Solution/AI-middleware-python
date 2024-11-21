@@ -35,7 +35,7 @@ async def create_bridge_version(bridge_data, parent_id=None):
            'success': False,
             'error': str(e)
         }
-async def update_bridge(bridge_id, update_fields):
+async def update_bridges(bridge_id, update_fields):
     try:
         update_query = {}
 
