@@ -9,9 +9,9 @@ async def getAllThreads(bridge_id, org_id, page, pageSize):
         print("getAllThreads =>", err)
         return { 'success': False, 'message': str(err) }
 
-async def getThread(thread_id, org_id, bridge_id, bridgeType):
+async def getThread(thread_id, sub_thread_id, org_id, bridge_id, bridgeType):
     try:
-        chats = await chatbotDbService.find(org_id, thread_id, bridge_id)
+        chats = await chatbotDbService.find(org_id, thread_id, sub_thread_id, bridge_id)
         if bridgeType:
             filtered_chats = []
             for chat in chats:
@@ -42,10 +42,11 @@ async def getThreadHistory(thread_id, org_id, bridge_id):
         print(err)
         return { 'success': False, 'message': str(err) }
 
-async def savehistory(thread_id, userMessage, botMessage, org_id, bridge_id, model_name, type, messageBy, userRole="user", tools={}, chatbot_message = "",tools_call_data = [],message_id = None):
+async def savehistory(thread_id, sub_thread_id, userMessage, botMessage, org_id, bridge_id, model_name, type, messageBy, userRole="user", tools={}, chatbot_message = "",tools_call_data = [],message_id = None):
     try:
         chatToSave = [{
             'thread_id': thread_id,
+            'sub_thread_id': sub_thread_id,
             'org_id': org_id,
             'model_name': model_name,
             'message': userMessage or "",
@@ -58,6 +59,7 @@ async def savehistory(thread_id, userMessage, botMessage, org_id, bridge_id, mod
         if tools:
             chatToSave.append({
                 'thread_id': thread_id,
+                'sub_thread_id': sub_thread_id,
                 'org_id': org_id,
                 'model_name': model_name,
                 'message': "",
@@ -72,6 +74,7 @@ async def savehistory(thread_id, userMessage, botMessage, org_id, bridge_id, mod
         if botMessage:
             chatToSave.append({
                 'thread_id': thread_id,
+                'sub_thread_id': sub_thread_id,
                 'org_id': org_id,
                 'model_name': model_name,
                 'message': "" if messageBy == "tool_calls" else botMessage,

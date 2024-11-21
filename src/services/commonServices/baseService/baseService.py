@@ -24,6 +24,7 @@ class BaseService:
         self.bridge_id = params.get('bridge_id')
         self.bridge = params.get('bridge')
         self.thread_id = params.get('thread_id')
+        self.sub_thread_id = params.get('sub_thread_id')
         self.model = params.get('model')
         self.service = params.get('service')
         self.modelOutputConfig = params.get('modelOutputConfig')
@@ -111,6 +112,7 @@ class BaseService:
         await asyncio.gather(
             metrics_service.create([usage], {
                 'thread_id': self.thread_id,
+                'sub_thread_id': self.sub_thread_id,
                 'user': self.user if self.user else json.dumps(self.tool_call),
                 'message': "",
                 'org_id': self.org_id,
@@ -172,6 +174,7 @@ class BaseService:
     def prepare_history_params(self, model_response, tools):
         return {
             'thread_id': self.thread_id,
+            'sub_thread_id': self.sub_thread_id,
             'user': self.user if self.user else json.dumps(self.tool_call),
             'message': _.get(model_response, self.modelOutputConfig['message']) if _.get(model_response, self.modelOutputConfig.get('tools')) else _.get(model_response, self.modelOutputConfig['message']),
             'org_id': self.org_id,
