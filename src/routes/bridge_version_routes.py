@@ -20,6 +20,6 @@ async def get_bridge(request: Request,version_id: str):
 async def publish(request: Request,version_id: str):
     return await publish_version(request, version_id)
 
-@router.post('/discard',dependencies=[Depends(jwt_middleware)])
-async def discard(request: Request):
-    return await discard_version(request)
+@router.post('/discard/{version_id}',dependencies=[Depends(jwt_middleware)])
+async def discard(request: Request, version_id: str):
+    return await discard_version(request, version_id)

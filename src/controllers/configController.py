@@ -287,6 +287,7 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
         function_operation = body.get('functionData', {}).get('function_operation')
         function_name = body.get('functionData', {}).get('function_name',None)
         bridge = await get_bridge_by_id(org_id, bridge_id, version_id)
+        parent_id = bridge.get('parent_id')
         if new_configuration and 'type' in new_configuration and new_configuration.get('type') != 'fine-tune':
             new_configuration['fine_tune_model'] = {}
             new_configuration['fine_tune_model']['current_model'] = None
@@ -295,7 +296,7 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
         function_ids = bridge.get('function_ids') or []
         prompt = new_configuration.get('prompt') if new_configuration else None
         if prompt:
-            result = await storeSystemPrompt(prompt, org_id, bridge_id if bridge_id is not None else version_id)
+            result = await storeSystemPrompt(prompt, org_id, parent_id if parent_id is not None else version_id)
             new_configuration['system_prompt_version_id'] = result.get('id')
         if slugName is not None:
             update_fields['slugName'] = slugName
