@@ -366,7 +366,8 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
                         'type': key,
                     }
                 )
-                
+        if version_id is not None:
+            update_fields['is_drafted'] = True
         await update_bridge(bridge_id=bridge_id, update_fields=update_fields, version_id=version_id) # todo :: add transaction
         result = await get_bridges_with_tools(bridge_id, org_id, version_id)
         await add_bulk_user_entries(user_history)
