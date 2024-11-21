@@ -7,7 +7,7 @@ from src.services.utils.helper import Helper
 import json
 from config import Config
 from ..configs.constant import service_name
-from src.db_services.conversationDbService import storeSystemPrompt, add_bulk_user_entries
+from src.db_services.conversationDbService import storeSystemPrompt, add_bulk_user_entries, getuser_history_service
 from bson import ObjectId
 from datetime import datetime, timezone
 from src.services.utils.getDefaultValue import get_default_values_controller
@@ -73,7 +73,23 @@ async def create_bridges_controller(request):
                 "message": json.loads(json.dumps(result.get('error'), default=str))
             })
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e)    
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e)
+      
+async def getuser_history_controller(request, limit: int, user_id: int):
+    try:
+        if user_id not in (7343, 7304): #add userId for other teammates as well dev + test
+            return JSONResponse(status_code=401, content={
+                "success": False,
+                "message": "User not found."
+            })
+        content = await getuser_history_service(limit=limit)
+        return JSONResponse(status_code=200, content={
+            "success": True,
+            "message": "User History queried successfully",
+            "content": content,
+        })
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 async def duplicate_create_bridges(bridges):
     try:

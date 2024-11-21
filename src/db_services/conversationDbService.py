@@ -150,3 +150,29 @@ async def add_bulk_user_entries(entries):
         print(f"Error: {e}")
     finally:
         session.close()
+
+async def getuser_history_service(limit: int):
+    session = pg['session']()
+    try:
+        history_entries = (
+            session.query(
+                user_bridge_config_history.id,
+                user_bridge_config_history.user_id,
+                user_bridge_config_history.org_id,
+                user_bridge_config_history.bridge_id,
+                user_bridge_config_history.type,
+                func.to_char(user_bridge_config_history.time, 'YYYY-MM-DD HH24:MI:SS').label('time')  # Format datetime
+            )
+            .order_by(user_bridge_config_history.id.desc())
+            .limit(limit)
+        )
+        print("Fetched all user History!")
+        content = [entry._asdict() for entry in history_entries]
+        
+        return content
+    except Exception as e:
+        print(f"An error occurred: {str(e)}")
+        return []
+    finally:
+        session.close()
+
