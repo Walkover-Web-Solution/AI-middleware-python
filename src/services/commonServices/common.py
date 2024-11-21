@@ -136,7 +136,7 @@ async def chat(request_body):
 
         customConfig = await model_config_change(modelObj['configuration'], customConfig)
         if is_playground == False and bridgeType is None:
-            if 'flag' in body and body['flag'] == True:
+            if 'is_text' in body and body['is_text'] == True:
                 customConfig['response_type'] = {"type": "text"}
             elif modelConfig.get('response_type'):
                 customConfig['response_type'] = {"type": "json_object"}
