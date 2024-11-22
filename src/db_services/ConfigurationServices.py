@@ -6,12 +6,15 @@ configurationModel = db["configurations"]
 apiCallModel = db['apicalls']
 templateModel = db['templates']
 apikeyCredentialsModel = db['apikeycredentials']
+version_model = db['configuration_versions']
 
-async def get_bridges(bridge_id, org_id):
+async def get_bridges(bridge_id, org_id, version_id = None):
     try:
+        model = version_model if version_id else configurationModel
+        id_to_use = ObjectId(version_id) if version_id else ObjectId(bridge_id)
         pipeline = [
             {
-                '$match': {'_id': ObjectId(bridge_id), 'org_id': org_id}
+                '$match': {'_id': ObjectId(id_to_use), 'org_id': org_id}
             },
             {
                 '$addFields': {
@@ -27,7 +30,7 @@ async def get_bridges(bridge_id, org_id):
             }
         ]
         
-        result = list(configurationModel.aggregate(pipeline))
+        result = list(model.aggregate(pipeline))
         bridges = result[0] if result else {}
 
         return {
@@ -41,11 +44,13 @@ async def get_bridges(bridge_id, org_id):
             'error': "something went wrong!!"
         }
 # todo
-async def get_bridges_with_tools(bridge_id, org_id):
+async def get_bridges_with_tools(bridge_id, org_id, version_id=None):
     try:
+        model = version_model if version_id else configurationModel
+        id_to_use = ObjectId(version_id) if version_id else ObjectId(bridge_id)
         pipeline = [
             {
-                '$match': {'_id': ObjectId(bridge_id), "org_id": org_id}
+                '$match': {'_id': ObjectId(id_to_use), "org_id": org_id}
             },
             {
                 '$lookup': {
@@ -95,7 +100,7 @@ async def get_bridges_with_tools(bridge_id, org_id):
             }
         ]
         
-        result = list(configurationModel.aggregate(pipeline))
+        result = list(model.aggregate(pipeline))
         
         if not result:
             return {
@@ -292,7 +297,9 @@ async def get_all_bridges_in_org(org_id):
       "configuration.prompt": 1,
       "bridgeType": 1,
       "slugName":1,
-      "status": 1
+      "status": 1,
+      "versions": 1,
+      "published_version_id": 1
     })
     bridges_list = []
     for bridge in bridges:
@@ -300,10 +307,12 @@ async def get_all_bridges_in_org(org_id):
         bridges_list.append(bridge)
     return bridges_list
 
-async def get_bridge_by_id(org_id, bridge_id):
+async def get_bridge_by_id(org_id, bridge_id, version_id=None):
+    model = version_model if version_id else configurationModel
+    id_to_use = ObjectId(version_id) if version_id else ObjectId(bridge_id)
     pipeline = [
         {
-            '$match': {'_id': ObjectId(bridge_id), 'org_id': org_id}
+            '$match': {'_id': ObjectId(id_to_use), 'org_id': org_id}
         },
         {
             '$addFields': {
@@ -319,10 +328,9 @@ async def get_bridge_by_id(org_id, bridge_id):
         }
     ]
     
-    result = list(configurationModel.aggregate(pipeline))
+    result = list(model.aggregate(pipeline))
     bridge = result[0] if result else None
     return bridge
-
 
 async def get_bridge_by_slugname(org_id, slug_name):
     try:
@@ -347,10 +355,12 @@ async def get_bridge_by_slugname(org_id, slug_name):
             'error': "something went wrong!!"
         }
 
-async def update_bridge(bridge_id, update_fields):
+async def update_bridge(bridge_id = None, update_fields = None, version_id = None):
     try:
-        updated_bridge = configurationModel.find_one_and_update(
-            {'_id': ObjectId(bridge_id)},
+        model = version_model if version_id else configurationModel
+        id_to_use = ObjectId(version_id) if version_id else ObjectId(bridge_id)
+        updated_bridge = model.find_one_and_update(
+            {'_id': ObjectId(id_to_use)},
             {'$set': update_fields},
             return_document=True,
             upsert=True

@@ -24,7 +24,7 @@ async def create_bridge(request: Request):
 
 @router.post('/update_bridge/{bridge_id}',dependencies=[Depends(jwt_middleware)])
 async def update_bridge(request: Request,bridge_id: str):
-    return await update_bridge_controller(request,bridge_id)
+    return await update_bridge_controller(request,bridge_id = bridge_id)
 
 @router.post('/createapi', dependencies=[Depends(jwt_middleware)])
 async def create_api(request: Request):

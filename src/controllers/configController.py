@@ -11,6 +11,7 @@ from src.db_services.conversationDbService import storeSystemPrompt, add_bulk_us
 from bson import ObjectId
 from datetime import datetime, timezone
 from src.services.utils.getDefaultValue import get_default_values_controller
+from src.db_services.bridge_version_services import create_bridge_version
 async def create_bridges_controller(request):
     try:
         bridges = await request.json()
@@ -61,10 +62,13 @@ async def create_bridges_controller(request):
             "status": status
         })
         if result.get("success"):
+            create_version = await create_bridge_version(result['bridge'])
+            update_fields = {'versions' : [create_version]}
+            updated_bridge_result = (await update_bridge(str(result['bridge']['_id']), update_fields)).get('result',{})
             return JSONResponse(status_code=200, content={
                 "success": True,
                 "message": "Bridge created successfully",
-                "bridge" : json.loads(json.dumps(result.get('bridge'), default=str))
+                "bridge" : json.loads(json.dumps(updated_bridge_result, default=str))
 
             })
         else:
@@ -259,7 +263,7 @@ async def get_all_service_models_controller(service):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-async def update_bridge_controller(request,bridge_id):
+async def update_bridge_controller(request, bridge_id=None, version_id=None):
     try:
         body  = await request.json()
         org_id = request.state.profile['org']['id']
@@ -282,7 +286,8 @@ async def update_bridge_controller(request,bridge_id):
         function_id = body.get('functionData', {}).get('function_id', None)
         function_operation = body.get('functionData', {}).get('function_operation')
         function_name = body.get('functionData', {}).get('function_name',None)
-        bridge = await get_bridge_by_id(org_id, bridge_id)
+        bridge = await get_bridge_by_id(org_id, bridge_id, version_id)
+        parent_id = bridge.get('parent_id')
         if new_configuration and 'type' in new_configuration and new_configuration.get('type') != 'fine-tune':
             new_configuration['fine_tune_model'] = {}
             new_configuration['fine_tune_model']['current_model'] = None
@@ -291,7 +296,7 @@ async def update_bridge_controller(request,bridge_id):
         function_ids = bridge.get('function_ids') or []
         prompt = new_configuration.get('prompt') if new_configuration else None
         if prompt:
-            result = await storeSystemPrompt(prompt, org_id, bridge_id)
+            result = await storeSystemPrompt(prompt, org_id, parent_id if parent_id is not None else version_id)
             new_configuration['system_prompt_version_id'] = result.get('id')
         if slugName is not None:
             update_fields['slugName'] = slugName
@@ -331,7 +336,7 @@ async def update_bridge_controller(request,bridge_id):
                     if function_id not in function_ids:
                         function_ids.append(function_id)
                         update_fields['function_ids'] = [ObjectId(fid) for fid in function_ids]
-                        await update_bridge_ids_in_api_calls(function_id, bridge_id, 1)
+                        await update_bridge_ids_in_api_calls(function_id, bridge_id if bridge_id is not None else version_id, 1)
                 elif function_operation is None:        # to remove function id 
                     if function_name is not None:   
                          if function_name in  current_variables_path:
@@ -340,7 +345,7 @@ async def update_bridge_controller(request,bridge_id):
                     if function_id in function_ids:
                         function_ids.remove(function_id)
                         update_fields['function_ids'] = [ObjectId(fid) for fid in function_ids]
-                        await update_bridge_ids_in_api_calls(function_id, bridge_id, 0)
+                        await update_bridge_ids_in_api_calls(function_id, bridge_id if bridge_id is not None else version_id, 0)
         
         for key, value in body.items():
             if key == 'configuration':
@@ -362,9 +367,10 @@ async def update_bridge_controller(request,bridge_id):
                         'type': key,
                     }
                 )
-
-        await update_bridge(bridge_id, update_fields) # todo :: add transaction
-        result = await get_bridges_with_tools(bridge_id, org_id)
+        if version_id is not None:
+            update_fields['is_drafted'] = True
+        await update_bridge(bridge_id=bridge_id, update_fields=update_fields, version_id=version_id) # todo :: add transaction
+        result = await get_bridges_with_tools(bridge_id, org_id, version_id)
         await add_bulk_user_entries(user_history)
         
         if result.get("success"):
