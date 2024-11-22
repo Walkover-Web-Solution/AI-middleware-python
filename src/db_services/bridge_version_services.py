@@ -6,9 +6,9 @@ configurationModel = db["configurations"]
 version_model = db['configuration_versions']
 
 
-async def get_bridge(org_id, bridge_id):
+async def get_version(org_id, version_id):
     try:
-        bridge = version_model.find_one({'_id' : ObjectId(bridge_id), 'org_id' : org_id})
+        bridge = version_model.find_one({'_id' : ObjectId(version_id), 'org_id' : org_id})
         return bridge
     except Exception as e:
         print(f"An error occurred: {e}")
@@ -75,59 +75,6 @@ async def update_bridges(bridge_id, update_fields):
             'error': 'Something went wrong!'
         }
     
-async def get_bridge_by_version_id(org_id, bridge_id):
-    pipeline = [
-        {
-            '$match': {'_id': ObjectId(bridge_id), 'org_id': org_id}
-        },
-        {
-            '$addFields': {
-                '_id': {'$toString': '$_id'},
-                'function_ids': {
-                    '$map': {
-                        'input': '$function_ids',
-                        'as': 'fid',
-                        'in': {'$toString': '$$fid'}
-                    }
-                }
-            }
-        }
-    ]
-    
-    result = list(version_model.aggregate(pipeline))
-    bridge = result[0] if result else None
-    return bridge
-
-async def update_version(bridge_id, update_fields):
-    try:
-        updated_bridge = version_model.find_one_and_update(
-            {'_id': ObjectId(bridge_id)},
-            {'$set': update_fields},
-            return_document=True,
-            upsert=True
-        )
-
-        if not updated_bridge:
-            return {
-                'success': False,
-                'error': 'No records updated or bridge not found'
-            }
-        if updated_bridge:
-            updated_bridge['_id'] = str(updated_bridge['_id'])  # Convert ObjectId to string
-            if 'function_ids' in updated_bridge:
-                updated_bridge['function_ids'] = [str(fid) for fid in updated_bridge['function_ids']]  # Convert function_ids to string
-        return {
-            'success': True,
-            'result': updated_bridge
-        }
-
-    except Exception as error:
-        print(error)
-        return {
-            'success': False,
-            'error': 'Something went wrong!'
-        }
-
 async def get_version_with_tools(bridge_id, org_id):
     try:
         pipeline = [

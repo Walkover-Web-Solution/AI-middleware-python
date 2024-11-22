@@ -1,7 +1,7 @@
 import json
 from fastapi import HTTPException, status
 from fastapi.responses import JSONResponse
-from ..db_services.bridge_version_services import get_bridge, create_bridge_version, update_bridges, get_version_with_tools, publish
+from ..db_services.bridge_version_services import get_version, create_bridge_version, update_bridges, get_version_with_tools, publish
 from src.services.utils.helper import Helper
 from ..db_services.ConfigurationServices import get_bridges_with_tools, update_bridge
 async def create_version(request):
@@ -9,7 +9,7 @@ async def create_version(request):
        body = await request.json()
        version_id = body.get('version_id')
        org_id = request.state.profile['org']['id']
-       bridge_data = await get_bridge(org_id, version_id)
+       bridge_data = await get_version(org_id, version_id)
        if bridge_data is None:
            return JSONResponse({"success": False, "message": "no version found"})
        parent_id = bridge_data.get('parent_id')
@@ -53,6 +53,7 @@ async def publish_version(request, version_id):
         result = await publish(org_id, version_id)
         if result['success']:
             return JSONResponse({"success": True, "message": "version published successfully", "version_id": version_id})
+        return result
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e)
 
