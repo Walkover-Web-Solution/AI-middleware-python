@@ -65,6 +65,9 @@ async def chat(request_body):
     usage = {}
     customConfig = {}
     response_format = configuration.get("response_format")
+    if(response_format):
+        if response_format.type == 'json_schema':
+            response_format.type = 'json_schema' if response_format['json_schema'] else 'json_object'
     model = configuration.get('model')
     is_playground = state['is_playground']
     bridge = body.get('bridge')
