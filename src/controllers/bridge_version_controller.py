@@ -9,11 +9,11 @@ async def create_version(request):
        body = await request.json()
        version_id = body.get('version_id')
        org_id = request.state.profile['org']['id']
-       bridge_data = await get_version(org_id, version_id)
+       bridge_data = await get_version(request, version_id)
        if bridge_data is None:
            return JSONResponse({"success": False, "message": "no version found"})
-       parent_id = bridge_data.get('parent_id')
-       create_new_version = await create_bridge_version(bridge_data, parent_id=parent_id)
+       parent_id = bridge_data.get('bridge').get('parent_id')
+       create_new_version = await create_bridge_version(bridge_data.get('bridge'), parent_id=parent_id)
        update_fields = {'versions' : [create_new_version]}
        await update_bridges(parent_id, update_fields)
        return {
@@ -27,8 +27,8 @@ async def create_version(request):
 
 async def get_version(request, version_id: str):
     try:
-
-        bridge = await get_version_with_tools(version_id,request.state.profile['org']['id'])
+        org_id = request.state.profile.get("org",{}).get("id","")
+        bridge = await get_version_with_tools(version_id, org_id)
         prompt = bridge.get('bridges').get('configuration',{}).get('prompt')
         variables = []
         if prompt is not None:
