@@ -114,7 +114,18 @@ class Helper:
             for key in configurations.keys():
                 config[key] = db_config.get(key, response['configuration'].get(key, configurations[key].get("default", '')))
             for key in ['prompt','response_format','type', 'pre_tools','fine_tune_model', 'is_rich_text']:
-                config[key] = db_config.get(key, response['configuration'].get(key, {"type":'default',"cred":{}} if key == 'response_format' else ''))
+                if key == 'response_format':
+                    config[key] = db_config.get(key, response['configuration'].get(key, {"type":'default',"cred":{}}))
+                elif key == 'fine_tune_model':
+                    config[key] = db_config.get(key, response['configuration'].get(key, {}))
+                elif key == 'type':
+                    config[key] = db_config.get(key, response['configuration'].get(key, 'chat'))
+                elif key == 'pre_tools':
+                    config[key] = db_config.get(key, response['configuration'].get(key, []))
+                elif key == 'is_rich_text':
+                    config[key] = db_config.get(key, response['configuration'].get(key, True))
+                else:
+                    config[key] = db_config.get(key, response['configuration'].get(key, ''))
             response['configuration'] = config
             finalResponse['bridge'] = response
             return finalResponse
