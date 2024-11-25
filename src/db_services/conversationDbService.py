@@ -34,7 +34,7 @@ async def insertRawData(raw_data) :
         session.rollback()
         raise e
 
-async def find(org_id, thread_id, bridge_id):
+async def find(org_id, thread_id, sub_thread_id, bridge_id):
     try:
         session = pg['session']()
         conversations = (
