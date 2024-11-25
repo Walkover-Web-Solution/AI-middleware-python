@@ -1605,7 +1605,7 @@ class ModelsConfig:
             },
            "response_type": {
                 "field": "select",
-                "options" : [{"type" : "text"},{"type" : "json_object"}],
+                "options" : [{"type" : "text"},{"type" : "json_object"},{"type" : "json_schema"}],
                 "default": {
                 "type" : "text",
                 },
@@ -1729,7 +1729,7 @@ class ModelsConfig:
             },
             "response_type": {
                 "field": "select",
-                "options" : [{"type" : "text"},{"type" : "json_object"}],
+                "options" : [{"type" : "text"},{"type" : "json_object"},{"type" : "json_schema"}],
                 "default": {
                 "type" : "text",
                 },
@@ -1851,7 +1851,7 @@ class ModelsConfig:
             },
             "response_type": {
                 "field": "select",
-                "options" : [{"type" : "text"},{"type" : "json_object"}],
+                "options" : [{"type" : "text"},{"type" : "json_object"},{"type" : "json_schema"}],
                 "default": {
                 "type" : "text",
                 },
@@ -1960,7 +1960,7 @@ class ModelsConfig:
             },
             "response_type": {
                 "field": "select",
-                "options" : [{"type" : "text"},{"type" : "json_object"}],
+                "options" : [{"type" : "text"},{"type" : "json_object"},{"type" : "json_schema"}],
                 "default": {
                 "type" : "text",
                 },
