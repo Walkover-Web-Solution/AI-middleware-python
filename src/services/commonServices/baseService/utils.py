@@ -207,7 +207,7 @@ async def process_data_and_run_tools(codes_mapping, names):
                 if isinstance(result, Exception):
                     response = {"error": "Error during async task execution", "details": str(result)}
                 elif tool_data.get('error'):
-                    response = "Args / Input is not proper JSON"
+                    response = {"error":"Args / Input is not proper JSON"}
                 else:
                     response = result
 
