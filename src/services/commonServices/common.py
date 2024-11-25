@@ -54,6 +54,7 @@ async def chat(request_body):
     bridge_id = path_params.get('bridge_id') or body.get("bridge_id")
     configuration = body.get("configuration")
     thread_id = body.get("thread_id")
+    sub_thread_id = body.get('sub_thread_id',thread_id)
     org_id = state['profile'].get('org',{}).get('id','')
     user = body.get("user")
     tools =  configuration.get('tools')
@@ -114,11 +115,12 @@ async def chat(request_body):
 
         if thread_id:
             thread_id = thread_id.strip()
-            result = await getThread(thread_id, org_id, bridge_id,bridgeType)
+            result = await getThread(thread_id, sub_thread_id, org_id, bridge_id,bridgeType)
             if result["success"]:
                 configuration["conversation"] = result.get("data", [])
         else:
             thread_id = str(uuid.uuid1())
+            sub_thread_id = thread_id
 
         configuration['prompt'], missing_vars  = Helper.replace_variables_in_prompt(configuration['prompt'] , variables)
         if len(missing_vars) > 0:
@@ -135,7 +137,9 @@ async def chat(request_body):
             suggestions_flag = True
 
         customConfig = await model_config_change(modelObj['configuration'], customConfig)
-            
+        if not is_playground and bridgeType is None and modelConfig.get('response_type'):
+            customConfig['response_type'] = {"type": "text"} if body.get('is_text') else {"type": "json_object"}
+                              
         params = {
             "customConfig": customConfig,
             "configuration": configuration,
@@ -147,6 +151,7 @@ async def chat(request_body):
             "bridge_id": bridge_id,
             "bridge": bridge,
             "thread_id": thread_id,
+            "sub_thread_id":sub_thread_id,
             "model": model,
             "service": service,
             "modelOutputConfig": modelOutputConfig,
@@ -279,6 +284,7 @@ async def chat(request_body):
             tasks = [
                 metrics_service.create([usage], {
                     "thread_id": thread_id,
+                    "sub_thread_id":sub_thread_id,
                     "user": user,
                     "message": "",
                     "org_id": org_id,
