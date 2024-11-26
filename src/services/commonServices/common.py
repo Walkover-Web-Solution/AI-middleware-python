@@ -137,8 +137,6 @@ async def chat(request_body):
             suggestions_flag = True
 
         customConfig = await model_config_change(modelObj['configuration'], customConfig)
-        if not is_playground and bridgeType is None and modelConfig.get('response_type'):
-            customConfig['response_type'] = {"type": "text"} if body.get('is_text') else {"type": "json_object"}
                               
         params = {
             "customConfig": customConfig,
