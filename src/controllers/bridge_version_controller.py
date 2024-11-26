@@ -4,6 +4,7 @@ from fastapi.responses import JSONResponse
 from ..db_services.bridge_version_services import create_bridge_version, update_bridges, get_version_with_tools, publish
 from src.services.utils.helper import Helper
 from ..db_services.ConfigurationServices import get_bridges_with_tools, update_bridge, get_bridges_without_tools
+from bson import ObjectId
 async def create_version(request):
     try:
        body = await request.json()
@@ -69,7 +70,8 @@ async def discard_version(request, version_id):
     del bridge_data['bridges']['bridgeType']
     del bridge_data['bridges']['_id']
     bridge_data['bridges']['is_drafted'] = False
-    
+    function_ids = bridge_data['bridges'].get('function_ids', [])
+    bridge_data['bridges']['function_ids'] = [ObjectId(fid) for fid in function_ids]
     result = await update_bridge(version_id=version_id, update_fields=bridge_data['bridges'])
     if 'success' in result:
         return JSONResponse({"success": True, "message": "version changes discarded successfully", "version_id": version_id})
