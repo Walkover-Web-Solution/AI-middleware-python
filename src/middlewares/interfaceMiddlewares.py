@@ -19,10 +19,11 @@ async def send_data_middleware(request: Request, botId: str):
         profile = request.state.profile
         message = body.get("message")
         userId = profile['user']['id']
+        subThreadId = body.get("subThreadId")
         chatBotId = botId
         flag = body.get("flag") or False
         
-        channelId = f"{chatBotId}{threadId.strip() if threadId and threadId.strip() else userId}"
+        channelId = f"{chatBotId}{threadId.strip() if threadId and threadId.strip() else userId}{subThreadId.strip() if subThreadId and subThreadId.strip() else userId}"
 
         bridge_response = await ConfigurationServices.get_bridge_by_slugname(org_id, slugName)
         bridges = bridge_response['bridges'] if bridge_response['success'] else {}
