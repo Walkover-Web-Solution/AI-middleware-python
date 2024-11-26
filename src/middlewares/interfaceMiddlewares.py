@@ -50,6 +50,7 @@ async def send_data_middleware(request: Request, botId: str):
             "bridge_id": str(bridges.get('_id', '')),
             "user": message,
             "thread_id": threadId,
+            "sub_thread_id":subThreadId,
             "variables": {**body.get('interfaceContextData', {}), **body.get('variables',{}), **json.loads(profile.get('variables', "{}"))},
             "configuration": {
                  "response_format": {
