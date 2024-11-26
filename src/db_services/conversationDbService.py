@@ -34,7 +34,7 @@ async def insertRawData(raw_data) :
         session.rollback()
         raise e
 
-async def find(org_id, thread_id, bridge_id):
+async def find(org_id, thread_id, sub_thread_id, bridge_id):
     try:
         session = pg['session']()
         conversations = (
@@ -53,6 +53,7 @@ async def find(org_id, thread_id, bridge_id):
                     Conversation.org_id == org_id,
                     Conversation.thread_id == thread_id,
                     Conversation.bridge_id == bridge_id,
+                    Conversation.sub_thread_id == sub_thread_id,
                     or_(RawData.error == '', RawData.error.is_(None)),
                     Conversation.message_by.in_(["user", "assistant"])
                 )

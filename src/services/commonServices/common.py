@@ -65,9 +65,10 @@ async def chat(request_body):
     usage = {}
     customConfig = {}
     response_format = configuration.get("response_format")
-    if(response_format):
-        if response_format.type == 'json_schema':
-            response_format.type = 'json_schema' if response_format['json_schema'] else 'json_object'
+    response_type = configuration.get("response_type")
+    if isinstance(response_type, dict):
+        if response_type.get("type") == 'json_schema':
+            response_type['type'] = 'json_schema' if response_type['json_schema'] else 'json_object'
     model = configuration.get('model')
     is_playground = state['is_playground']
     bridge = body.get('bridge')
@@ -140,7 +141,10 @@ async def chat(request_body):
             suggestions_flag = True
 
         customConfig = await model_config_change(modelObj['configuration'], customConfig)
-            
+        if not is_playground and bridgeType is None and modelConfig.get('response_type'):
+            res = body.get('response_type', 'json_object')
+            customConfig['response_type'] = {"type": res}
+                              
         params = {
             "customConfig": customConfig,
             "configuration": configuration,

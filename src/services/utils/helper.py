@@ -106,15 +106,26 @@ class Helper:
             configuration = getattr(model_configuration,model_name,None)
             configurations = configuration()['configuration']
             db_config = response['configuration']
-            if response.get('apikey'):
-                decryptedApiKey = Helper.decrypt(response['apikey'])
-                maskedApiKey = Helper.mask_api_key(decryptedApiKey)
-                response['apikey'] = maskedApiKey
+            # if response.get('apikey'):
+            #     decryptedApiKey = Helper.decrypt(response['apikey'])
+            #     maskedApiKey = Helper.mask_api_key(decryptedApiKey)
+            #     response['apikey'] = maskedApiKey
             config = {}
             for key in configurations.keys():
                 config[key] = db_config.get(key, response['configuration'].get(key, configurations[key].get("default", '')))
             for key in ['prompt','response_format','type', 'pre_tools','fine_tune_model', 'is_rich_text']:
-                config[key] = db_config.get(key, response['configuration'].get(key, {"type":'default',"cred":{}} if key == 'response_format' else ''))
+                if key == 'response_format':
+                    config[key] = db_config.get(key, response['configuration'].get(key, {"type":'default',"cred":{}}))
+                elif key == 'fine_tune_model':
+                    config[key] = db_config.get(key, response['configuration'].get(key, {}))
+                elif key == 'type':
+                    config[key] = db_config.get(key, response['configuration'].get(key, 'chat'))
+                elif key == 'pre_tools':
+                    config[key] = db_config.get(key, response['configuration'].get(key, []))
+                elif key == 'is_rich_text':
+                    config[key] = db_config.get(key, response['configuration'].get(key, True))
+                else:
+                    config[key] = db_config.get(key, response['configuration'].get(key, ''))
             response['configuration'] = config
             finalResponse['bridge'] = response
             return finalResponse

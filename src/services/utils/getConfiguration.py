@@ -7,12 +7,11 @@ apiCallModel = db['apicalls']
 # from src.services.commonServices.generateToken import generateToken
 # from src.configs.modelConfiguration import ModelsConfig
 
-async def getConfiguration(configuration, service, bridge_id, apikey, template_id=None, variables = {}, org_id="", variables_path = None):
+async def getConfiguration(configuration, service, bridge_id, apikey, template_id=None, variables = {}, org_id="", variables_path = None, version_id=None):
     RTLayer = False
     bridge = None
-    result = await ConfigurationService.get_bridges_with_tools(bridge_id, org_id)
+    result = await ConfigurationService.get_bridges_with_tools(bridge_id = bridge_id, org_id = org_id, version_id=version_id)
     if not result['success']:
-
         return {
             'success': False,
             'error': "bridge_id does not exist"
