@@ -8,7 +8,7 @@ templateModel = db['templates']
 apikeyCredentialsModel = db['apikeycredentials']
 version_model = db['configuration_versions']
 
-async def get_bridges(bridge_id, org_id, version_id = None):
+async def get_bridges(bridge_id = None, org_id = None, version_id = None):
     try:
         model = version_model if version_id else configurationModel
         id_to_use = ObjectId(version_id) if version_id else ObjectId(bridge_id)
@@ -44,6 +44,22 @@ async def get_bridges(bridge_id, org_id, version_id = None):
             'error': "something went wrong!!"
         }
 # todo
+async def get_bridges_without_tools(bridge_id = None, org_id = None, version_id = None):
+    try:
+        model = version_model if version_id else configurationModel
+        id_to_use = ObjectId(version_id) if version_id else ObjectId(bridge_id)
+        bridge_data = model.find_one({'_id' : ObjectId(id_to_use)})
+        return {
+            'success': True,
+            'bridges': bridge_data,
+        }
+    except Exception as error:
+        print(error)
+        return {
+            'success': False,
+            'error': "something went wrong!!"
+        }
+        
 async def get_bridges_with_tools(bridge_id, org_id, version_id=None):
     try:
         model = version_model if version_id else configurationModel

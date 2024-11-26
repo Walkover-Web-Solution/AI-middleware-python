@@ -27,7 +27,6 @@ class Conversation(Base):
     message_id = Column(UUID(as_uuid=True), nullable=True)
     mode = Column(Integer, default=0)
     sub_thread_id = Column(String, nullable=True)
-
     # raw_data = relationship("RawData", back_populates="conversation")
 
 class RawData(Base):
