@@ -3042,9 +3042,22 @@ class ModelsConfig:
                 "min": 0,
                 "max": 1,
                 "step": 0.1,
-                "default": 1,
+                "default": 0.9,
                 "level": 2
             },
+            "top_k": {
+                "field": "slider",
+                "min": 0.,
+                "max": 500,
+                "step": 10,
+                "default": 0,
+                "level": 2
+            },
+            # "stop_sequences":{
+            #     "field": "text",
+            #     "default": "",
+            #     "level": 0
+            # },
             # "logprobs": {
             #     "field": "boolean",
             #     "default": False,
@@ -3159,9 +3172,22 @@ class ModelsConfig:
                 "min": 0,
                 "max": 1,
                 "step": 0.1,
-                "default": 1,
+                "default": 0.9,
                 "level": 2
             },
+            "top_k": {
+                "field": "slider",
+                "min": 0.,
+                "max": 500,
+                "step": 10,
+                "default": 0,
+                "level": 2
+            },
+            # "stop_sequences":{
+            #     "field": "text",
+            #     "default": "",
+            #     "level": 0
+            # },
             # "logprobs": {
             #     "field": "boolean",
             #     "default": False,
@@ -3279,8 +3305,21 @@ class ModelsConfig:
                 "min": 0,
                 "max": 1,
                 "step": 0.1,
-                "default": 1,
+                "default": 0.9,
                 "level": 2
+            },
+            "top_k": {
+                "field": "slider",
+                "min": 0.,
+                "max": 500,
+                "step": 10,
+                "default": 0,
+                "level": 2
+            },
+            "stop_sequences":{
+                "field": "text",
+                "default": "",
+                "level": 0
             },
             # "logprobs": {
             #     "field": "boolean",
@@ -3399,9 +3438,22 @@ class ModelsConfig:
                 "min": 0,
                 "max": 1,
                 "step": 0.1,
-                "default": 1,
+                "default": 0.9,
                 "level": 2
             },
+            "top_k": {
+                "field": "slider",
+                "min": 0.,
+                "max": 500,
+                "step": 10,
+                "default": 0,
+                "level": 2
+            },
+            # "stop_sequences":{
+            #     "field": "text",
+            #     "default": "",
+            #     "level": 0
+            # },
             # "logprobs": {
             #     "field": "boolean",
             #     "default": False,
