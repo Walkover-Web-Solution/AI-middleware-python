@@ -26,6 +26,10 @@ import json
 from src.handler.executionHandler import handle_exceptions
 from src.configs.serviceKeys import model_config_change
 from src.services.utils.time import Timer
+from models.mongo_connection import db
+
+configurationModel = db["configurations"]
+ThreadModel = db['Thread']
 
 async def create_service_handler(params, service):
     if service == service_name['openai']:
@@ -54,7 +58,11 @@ async def chat(request_body):
     bridge_id = path_params.get('bridge_id') or body.get("bridge_id")
     configuration = body.get("configuration")
     thread_id = body.get("thread_id")
-    sub_thread_id = body.get('sub_thread_id',thread_id)
+    sub_thread_id = body.get('sub_thread_id')
+    is_sub_thread_id = True
+    if sub_thread_id is None:
+        sub_thread_id = thread_id
+        is_sub_thread_id = False
     org_id = state['profile'].get('org',{}).get('id','')
     user = body.get("user")
     tools =  configuration.get('tools')
@@ -120,6 +128,13 @@ async def chat(request_body):
         if thread_id:
             thread_id = thread_id.strip()
             result = await getThread(thread_id, sub_thread_id, org_id, bridge_id,bridgeType)
+            if not is_sub_thread_id: 
+                ThreadModel.insert_one({
+                        "thread_id": thread_id,
+                        "sub_thread_id": sub_thread_id,
+                        "display_name": thread_id,
+                        "org_id": org_id,
+                })
             if result["success"]:
                 configuration["conversation"] = result.get("data", [])
         else:
