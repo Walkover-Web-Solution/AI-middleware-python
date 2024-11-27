@@ -87,8 +87,6 @@ async def chat(request_body):
     suggest = body.get('suggest',False)
     message_id = str(uuid.uuid1())
     result = {}
-    suggestions = []
-    suggestions_flag =False
     reasoning_model = False
     
     if model == 'o1-preview' or model == 'o1-mini':
@@ -139,12 +137,11 @@ async def chat(request_body):
             template_content = (await ConfigurationService.get_template_by_id(Config.CHATBOT_OPTIONS_TEMPLATE_ID)).get('template', '')
             configuration['prompt'], missing_vars = Helper.replace_variables_in_prompt(template_content, {"system_prompt": configuration['prompt']})
             customConfig['response_type'] = {"type": "json_object"}
-            suggestions_flag = True
 
         customConfig = await model_config_change(modelObj['configuration'], customConfig)
-        # if not is_playground and bridgeType is None and modelConfig.get('response_type'):
-        #     res = body.get('response_type', 'json_object')
-        #     customConfig['response_type'] = {"type": res}
+        if not is_playground and bridgeType is None and modelConfig.get('response_type'):
+            res = body.get('response_type', 'json_object')
+            customConfig['response_type'] = {"type": res}
                               
         params = {
             "customConfig": customConfig,
@@ -235,8 +232,7 @@ async def chat(request_body):
                 
         if version == 2:
             result['modelResponse'] = await Response_formatter(result["modelResponse"],service, result["historyParams"].get('tools',{}))
-        if bridgeType and suggestions:
-                result['modelResponse']['options'] = suggestions
+
         latency = {
             "over_all_time" : timer.stop("Api total time") or "",
             "model_execution_time": sum(execution_time_logs.values()) or "",
@@ -257,14 +253,15 @@ async def chat(request_body):
                 result['modelResponse']['data']['message_id'] = message_id
             # Optimize task creation and gathering
             
-            await asyncio.gather(
+            tasks = [
                 sendResponse(response_format, result["modelResponse"], success=True),
                 metrics_service.create([usage], result["historyParams"]),
-                validateResponse(final_response=result['modelResponse'],configration=configuration,bridgeId=bridge_id,message_id=message_id, org_id=org_id),
-                return_exceptions=True
-            )
+                validateResponse(final_response=result['modelResponse'],configration=configuration,bridgeId=bridge_id,message_id=message_id, org_id=org_id)
+            ]
             if bridgeType:
-                await chatbot_suggestions(configuration['conversation'], response_format, result['modelResponse'], user)
+                tasks.append(chatbot_suggestions(configuration['conversation'], response_format, result['modelResponse'], user))
+            
+            await asyncio.gather(*tasks, return_exceptions=True)
         return JSONResponse(status_code=200, content={"success": True, "response": result["modelResponse"]})
     except Exception as error:
         traceback.print_exc()
