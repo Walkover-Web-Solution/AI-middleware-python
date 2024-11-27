@@ -63,9 +63,9 @@ async def chat(request_body):
     sub_thread_id = body.get('sub_thread_id')
     is_sub_thread_id = True 
     if not sub_thread_id:
-
         sub_thread_id = thread_id
         is_sub_thread_id = False
+        
     org_id = state['profile'].get('org',{}).get('id','')
     user = body.get("user")
     tools =  configuration.get('tools')
