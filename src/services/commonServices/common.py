@@ -30,7 +30,8 @@ from models.mongo_connection import db
 from src.services.commonServices.suggestion import chatbot_suggestions
 
 configurationModel = db["configurations"]
-ThreadModel = db['Thread']
+ThreadModel = db['threads']
+
 
 async def create_service_handler(params, service):
     if service == service_name['openai']:
@@ -60,8 +61,9 @@ async def chat(request_body):
     configuration = body.get("configuration")
     thread_id = body.get("thread_id")
     sub_thread_id = body.get('sub_thread_id')
-    is_sub_thread_id = True
-    if sub_thread_id is None:
+    is_sub_thread_id = True 
+    if not sub_thread_id:
+
         sub_thread_id = thread_id
         is_sub_thread_id = False
     org_id = state['profile'].get('org',{}).get('id','')
