@@ -26,6 +26,7 @@ import json
 from src.handler.executionHandler import handle_exceptions
 from src.configs.serviceKeys import model_config_change
 from src.services.utils.time import Timer
+from src.services.commonServices.suggestion import chatbot_suggestions
 
 async def create_service_handler(params, service):
     if service == service_name['openai']:
@@ -231,11 +232,6 @@ async def chat(request_body):
                 except Exception as e:
                     print(f"error in chatbot : {e}")
                     raise RuntimeError(f"error in chatbot : {e}")
-        
-        if bridgeType and suggestions_flag:
-                suggestions = class_obj.extract_response_from_model(model_response=result['modelResponse'])
-                message = json.loads(result['historyParams']['message'])
-                result["historyParams"]["message"] = message.get('response','')
                 
         if version == 2:
             result['modelResponse'] = await Response_formatter(result["modelResponse"],service, result["historyParams"].get('tools',{}))
@@ -267,6 +263,8 @@ async def chat(request_body):
                 validateResponse(final_response=result['modelResponse'],configration=configuration,bridgeId=bridge_id,message_id=message_id, org_id=org_id),
                 return_exceptions=True
             )
+            if bridgeType:
+                await chatbot_suggestions(configuration['conversation'], response_format, result['modelResponse'], user)
         return JSONResponse(status_code=200, content={"success": True, "response": result["modelResponse"]})
     except Exception as error:
         traceback.print_exc()
