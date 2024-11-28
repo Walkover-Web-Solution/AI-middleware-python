@@ -26,9 +26,9 @@ async def send_error_to_webhook(bridge_id, org_id, details, type):
             webhook_config = entry.get('webhookConfiguration')
             bridges = entry.get('bridges', [])
             details = {
-                 details,
-                 bridge_id,
-                 org_id
+                 "details":details,
+                 "bridge_id":bridge_id,
+                 "org_id":org_id
             }
             if type in entry['alertType'] and (bridge_id in bridges or 'all' in bridges):
                     webhook_url = webhook_config.get('url')
