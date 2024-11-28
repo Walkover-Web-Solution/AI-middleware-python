@@ -276,7 +276,7 @@ async def chat(request_body):
                 validateResponse(final_response=result['modelResponse'],configration=configuration,bridgeId=bridge_id,message_id=message_id, org_id=org_id)
             ]
             if bridgeType:
-                tasks.append(chatbot_suggestions(configuration['conversation'], response_format, result['modelResponse'], user))
+                tasks.append(chatbot_suggestions(response_format, result['modelResponse'], user))
             
             await asyncio.gather(*tasks, return_exceptions=True)
         return JSONResponse(status_code=200, content={"success": True, "response": result["modelResponse"]})
