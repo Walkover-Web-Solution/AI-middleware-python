@@ -357,7 +357,8 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
                             'user_id': user_id,
                             'org_id': org_id,
                             'bridge_id': bridge_id,
-                            'type': configuration
+                            'type': configuration,
+                            'version_id' : version_id
                         }
                     )
             else:
@@ -367,6 +368,7 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
                         'org_id': org_id,
                         'bridge_id': bridge_id,
                         'type': key,
+                        'version_id' : version_id
                     }
                 )
         if version_id is not None:
