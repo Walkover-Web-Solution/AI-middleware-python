@@ -15,7 +15,7 @@ async def chatbot_suggestions(response_format, assistant, user_msg):
         if response.get('success') == False:
             raise Exception(response.get('message'))
         else:
-            response['response']['data']['suggestion'] = json.loads(response.get('response',{}).get('data',{}).get('content',""))
+            response['response']['data']['suggestions'] = json.loads(response.get('response',{}).get('data',{}).get('content',""))
             await sendResponse(response_format, response.get('response'), success=True)
             return 
             
