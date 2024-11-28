@@ -25,9 +25,11 @@ async def send_error_to_webhook(bridge_id, org_id, details, type):
         for entry in data:
             webhook_config = entry.get('webhookConfiguration')
             bridges = entry.get('bridges', [])
-            
-            if not webhook_config:
-                continue
+            details = {
+                 details,
+                 bridge_id,
+                 org_id
+            }
             if type in entry['alertType'] and (bridge_id in bridges or 'all' in bridges):
                     webhook_url = webhook_config.get('url')
                     if webhook_url:
