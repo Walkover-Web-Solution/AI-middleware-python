@@ -44,7 +44,7 @@ async def duplicate_bridge(request : Request):
 
 async def optimize_prompt_controller(request : Request, bridge_id: str):
     try:
-        body = await request.json();
+        body = await request.json()
         purpose = body.get('purpose', "optimize")
         prompt_description = body.get('prompt_description', "")
         org_id = request.state.profile.get("org",{}).get("id","")
