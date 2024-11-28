@@ -1,5 +1,5 @@
 from fastapi import Request, HTTPException
-from fastapi.responses import JSONResponse
+from src.middlewares.response_model import Json_response
 from ..db_services import ConfigurationServices
 import jwt
 from config import Config
@@ -23,7 +23,8 @@ async def send_data_middleware(request: Request, botId: str):
         chatBotId = botId
         flag = body.get("flag") or False
         if(message == ""):
-            return JSONResponse(status_code=400, content={'error':"Message cannot be null"})
+            return Json_response(status_code=400, success = False,message=None, data= {'error':"Message cannot be null"})
+
 
         channelId = f"{chatBotId}{threadId.strip() if threadId and threadId.strip() else userId}{subThreadId.strip() if subThreadId and subThreadId.strip() else userId}"
 
@@ -77,7 +78,7 @@ async def send_data_middleware(request: Request, botId: str):
     except HTTPException as http_error:
         raise http_error  # Re-raise HTTP exceptions for proper handling
     except Exception as error: 
-        return JSONResponse(status_code=400, content={'error': str(error)})
+        return Json_response(status_code=400, success = False,message=None, data= {'error': str(error)})
 
 async def chat_bot_auth(request: Request):
     timer_obj = Timer()
@@ -151,6 +152,6 @@ async def reset_chatBot(request: Request, botId: str):
     }
     if result['success']:
         await sendResponse(response_format, response, True)
-        return JSONResponse(status_code=200, content={'success': True, 'message': 'Chatbot reset successfully'})
+        return Json_response(status_code=200, success = True, message="Chatbot reset successfully", data=None)
     else:
-        return JSONResponse(status_code=400, content={'success': False, 'message': 'Error resetting chatbot'})
+        return Json_response(status_code=400, success = False,message="Error resetting chatbot", data=None)

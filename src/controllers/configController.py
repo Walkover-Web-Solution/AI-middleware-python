@@ -1,5 +1,4 @@
 from fastapi import HTTPException, status
-from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 from src.db_services.ConfigurationServices import create_bridge, get_bridge_by_id, get_all_bridges_in_org, update_bridge, update_bridge_ids_in_api_calls, get_bridges_with_tools, get_apikey_creds
 from src.configs.modelConfiguration import ModelsConfig as model_configuration
@@ -9,6 +8,7 @@ from config import Config
 from ..configs.constant import service_name
 from src.db_services.conversationDbService import storeSystemPrompt, add_bulk_user_entries
 from bson import ObjectId
+from src.middlewares.response_model import Json_response
 from datetime import datetime, timezone
 from src.services.utils.getDefaultValue import get_default_values_controller
 from src.db_services.bridge_version_services import create_bridge_version
@@ -65,17 +65,19 @@ async def create_bridges_controller(request):
             create_version = await create_bridge_version(result['bridge'])
             update_fields = {'versions' : [create_version]}
             updated_bridge_result = (await update_bridge(str(result['bridge']['_id']), update_fields)).get('result',{})
-            return JSONResponse(status_code=200, content={
-                "success": True,
-                "message": "Bridge created successfully",
-                "bridge" : json.loads(json.dumps(updated_bridge_result, default=str))
-
-            })
+            return Json_response(
+                status_code=200,
+                success = True,
+                message="Bridge created successfully",
+                data=json.loads(json.dumps(updated_bridge_result, default=str))
+            )
         else:
-            return JSONResponse(status_code=400, content={
-                "success": False,
-                "message": json.loads(json.dumps(result.get('error'), default=str))
-            })
+           return Json_response(
+               status_code=400,
+               success = False,
+               message=json.loads(json.dumps(result.get('error'), default=str)),
+               data=None
+           )  
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e)    
 
@@ -151,14 +153,13 @@ async def get_all_bridges(request):
         org_id = request.state.profile['org']['id']
         bridges = await get_all_bridges_in_org(org_id)
         embed_token = Helper.generate_token({ "org_id": Config.ORG_ID, "project_id": Config.PROJECT_ID, "user_id": org_id },Config.Access_key )
-        return JSONResponse(status_code=200, content={
-                "success": True,
-                "message": "Get all bridges successfully",
-                "bridge" : bridges,
-                "embed_token": embed_token,
-                "org_id": org_id
-
-            })
+        response = Json_response(
+            status_code=200,
+            success = True,
+            message="Get all bridges successfully",
+            data={"bridges": bridges, "embed_token": embed_token, "org_id": org_id}
+        )
+        return response
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 async def get_all_service_models_controller(service):

@@ -1,5 +1,4 @@
 from fastapi import Request, HTTPException
-from fastapi.responses import JSONResponse
 from ..services.utils.getConfiguration import getConfiguration
 from src.configs.models import services
 from src.services.commonServices.common import chat

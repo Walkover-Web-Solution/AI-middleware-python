@@ -1,9 +1,9 @@
 from fastapi import Request
-from fastapi.responses import JSONResponse
 from src.db_services.ConfigurationServices import get_bridges
 from datetime import datetime, timezone
 from src.services.utils.apiservice import fetch
 from src.controllers.configController import duplicate_create_bridges
+from src.middlewares.response_model import Json_response
 
 import json
 
@@ -32,12 +32,12 @@ async def duplicate_bridge(request : Request):
             "actions": bridge.get('actions',{}),
             "apikey_object_id": bridge.get('apikey_object_id',""),
         })
-        return JSONResponse(status_code=200, content={
-            "success": True,
-            "message": "Bridge duplicated successfully",
-            "result" : json.loads(json.dumps(res, default=str))
-
-        })
+        return Json_response(
+            status_code=200,
+            success = True,
+            message="Bridge duplicated successfully",
+            data= json.loads(json.dumps(res, default=str))
+        )
     except Exception as e:
         return {'error': str(e)}
     
@@ -62,11 +62,12 @@ async def optimize_prompt_controller(request : Request, bridge_id: str):
                 
         except Exception as err:
             print("Error calling function=>", err)
-        return JSONResponse(status_code=200, content={
-            "success": True,
-            "message": "Prompt optimized successfully",
-            "result" : result
-        })
-        
+        return Json_response(
+            message="Prompt optimized successfully",
+            success = True,
+            status_code=200,
+            data = result
+        )
+    
     except Exception as e:
         return {'error': str(e)}

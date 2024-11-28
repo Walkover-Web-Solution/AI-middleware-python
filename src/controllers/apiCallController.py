@@ -1,19 +1,19 @@
 from fastapi import HTTPException, status
-from fastapi.responses import JSONResponse
 from src.db_services.apiCallDbService import get_all_api_calls_by_org_id
 from src.db_services.apiCallDbService import update_api_call_by_function_id
 from src.db_services.apiCallDbService import get_function_by_id
+from src.middlewares.response_model import Json_response
 
 async def get_all_apicalls_controller(request):
     try:
         org_id = request.state.profile['org']['id']
         functions = await get_all_api_calls_by_org_id(org_id=org_id)
-        return JSONResponse(status_code=200, content={
-                "success": True,
-                "message": "Get all functions of a org successfully",
-                "data" : functions,
-                "org_id": org_id # [?] is it really needed
-            })
+        return Json_response(
+            status_code=200,
+            success = True,
+            message="Get all functions of a org successfully",
+            data = {"functions": functions,"org_id": org_id}
+        )
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e,)
     
@@ -61,11 +61,12 @@ async def update_apicalls_controller(request, function_id):
         updated_function = await update_api_call_by_function_id(
             org_id=org_id, function_id=function_id, data_to_update=data_to_update
         )
-        
-        return JSONResponse(status_code=200, content={
-            "success": True,
-            "data": updated_function
-        })
+        return Json_response(
+            status_code=200,
+            success = True,
+            message=None,
+            data= updated_function
+        )
     
     except Exception as e:
         print(f"Error updating function: {e}")
