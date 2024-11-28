@@ -155,7 +155,7 @@ async def chat(request_body):
             configuration['prompt'], missing_vars = Helper.replace_variables_in_prompt(template_content, {"system_prompt": configuration['prompt']})
             customConfig['response_type'] = {"type": "json_object"}
 
-        customConfig = await model_config_change(modelObj['configuration'], customConfig)
+        customConfig = await model_config_change(modelObj['configuration'], customConfig, service)
         if not is_playground and bridgeType is None and modelConfig.get('response_type'):
             res = body.get('response_type', 'json_object')
             customConfig['response_type'] = {"type": res}
