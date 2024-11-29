@@ -46,7 +46,7 @@ async def model_config_change(modelConfiguration, custom_config, service):
             if not (service == 'anthropic' and key == 'max_tokens'):
                 del new_custom_config[key]
             else:
-                new_custom_config[key] = 256
+                new_custom_config[key] = modelConfiguration[key].get('default')
         elif value == 'max':
             max_value = modelConfiguration[key].get('max')
             new_custom_config[key] = max_value
