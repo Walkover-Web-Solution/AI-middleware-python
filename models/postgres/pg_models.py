@@ -72,3 +72,4 @@ class user_bridge_config_history(Base):
     bridge_id = Column(String, nullable=False)
     type = Column(String, nullable=False)
     time = Column(DateTime, nullable=False, default=func.now())
+    version_id = Column(String)
