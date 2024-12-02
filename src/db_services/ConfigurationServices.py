@@ -30,7 +30,7 @@ async def get_bridges(bridge_id = None, org_id = None, version_id = None):
             }
         ]
         
-        result = list(model.aggregate(pipeline))
+        result = await model.aggregate(pipeline).to_list(length=None)
         bridges = result[0] if result else {}
 
         return {
@@ -48,7 +48,7 @@ async def get_bridges_without_tools(bridge_id = None, org_id = None, version_id 
     try:
         model = version_model if version_id else configurationModel
         id_to_use = ObjectId(version_id) if version_id else ObjectId(bridge_id)
-        bridge_data = model.find_one({'_id' : ObjectId(id_to_use)})
+        bridge_data = await model.find_one({'_id' : ObjectId(id_to_use)})
         return {
             'success': True,
             'bridges': bridge_data,
@@ -116,7 +116,7 @@ async def get_bridges_with_tools(bridge_id, org_id, version_id=None):
             }
         ]
         
-        result = list(model.aggregate(pipeline))
+        result = await model.aggregate(pipeline).to_list(length=None)
         
         if not result:
             return {
@@ -137,7 +137,7 @@ async def get_bridges_with_tools(bridge_id, org_id, version_id=None):
 
 async def update_api_call(id, update_fields):
     try: 
-        data = apiCallModel.find_one_and_update(
+        data = await apiCallModel.find_one_and_update(
                 {'_id': ObjectId(id)},
                 {'$set': update_fields},
                 return_document=True,
@@ -174,7 +174,7 @@ async def update_bridge_ids_in_api_calls(function_id, bridge_id, add=1):
         else:
             to_update['$pull'] = {'bridge_ids': ObjectId(bridge_id)}
                                   
-        data = apiCallModel.find_one_and_update(
+        data = await apiCallModel.find_one_and_update(
                 {'_id': ObjectId(function_id)},
                 to_update,
                 return_document=True,
@@ -274,8 +274,7 @@ async def get_api_call_by_names(names, org_id):
         }
     }
 ]
-
-        return list(apiCallModel.aggregate(pipeline))
+        return await apiCallModel.aggregate(pipeline).to_list(length=None)
 
     except Exception as error:
         print(f"error: {error}")
@@ -283,7 +282,7 @@ async def get_api_call_by_names(names, org_id):
 
 async def get_template_by_id(template_id):
     try:
-        template_content = templateModel.find_one({'_id' : ObjectId(template_id)})
+        template_content = await templateModel.find_one({'_id' : ObjectId(template_id)})
         return template_content
     except Exception as error : 
         print(f"template id error : {error}")
@@ -291,7 +290,7 @@ async def get_template_by_id(template_id):
     
 async def create_bridge(data):
     try:
-        result = configurationModel.insert_one(data)
+        result = await configurationModel.insert_one(data)
         return {
             'success': True,
             'bridge': {**data, '_id': result.inserted_id}
@@ -304,23 +303,23 @@ async def create_bridge(data):
         }
 
 async def get_all_bridges_in_org(org_id):
-    bridges = configurationModel.find({"org_id": org_id}, {
-      "_id": 1,
-      "name": 1,
-      "service": 1,
-      "org_id": 1,
-      "configuration.model": 1,
-      "configuration.prompt": 1,
-      "bridgeType": 1,
-      "slugName":1,
-      "status": 1,
-      "versions": 1,
-      "published_version_id": 1
+    cursor = configurationModel.find({"org_id": org_id}, {
+        "_id": 1,
+        "name": 1,
+        "service": 1,
+        "org_id": 1,
+        "configuration.model": 1,
+        "configuration.prompt": 1,
+        "bridgeType": 1,
+        "slugName":1,
+        "status": 1,
+        "versions": 1,
+        "published_version_id": 1
     })
-    bridges_list = []
-    for bridge in bridges:
-        bridge['_id'] = str(bridge['_id'])  # Convert ObjectId to string
-        bridges_list.append(bridge)
+    bridges_list = await cursor.to_list(length=None)
+    for bridge in bridges_list:
+        bridge['_id'] = str(bridge['_id'])
+           
     return bridges_list
 
 async def get_bridge_by_id(org_id, bridge_id, version_id=None):
@@ -344,20 +343,20 @@ async def get_bridge_by_id(org_id, bridge_id, version_id=None):
         }
     ]
     
-    result = list(model.aggregate(pipeline))
+    result = await model.aggregate(pipeline).to_list(length=None)
     bridge = result[0] if result else None
     return bridge
 
 async def get_bridge_by_slugname(org_id, slug_name):
     try:
-        bridge =  configurationModel.find_one({
+        bridge =  await configurationModel.find_one({
             'slugName': slug_name,
             'org_id': org_id
         })
 
         if bridge and 'responseRef' in bridge:
             response_ref_id = bridge['responseRef']
-            response_ref = configurationModel.find_one({'_id': response_ref_id})
+            response_ref = await configurationModel.find_one({'_id': response_ref_id})
             bridge['responseRef'] = response_ref
 
         return {
@@ -375,7 +374,7 @@ async def update_bridge(bridge_id = None, update_fields = None, version_id = Non
     try:
         model = version_model if version_id else configurationModel
         id_to_use = ObjectId(version_id) if version_id else ObjectId(bridge_id)
-        updated_bridge = model.find_one_and_update(
+        updated_bridge = await model.find_one_and_update(
             {'_id': ObjectId(id_to_use)},
             {'$set': update_fields},
             return_document=True,
@@ -405,7 +404,7 @@ async def update_bridge(bridge_id = None, update_fields = None, version_id = Non
 
 async def update_tools_calls(bridge_id, org_id, configuration):
     try:
-        configurationModel.find_one_and_update(
+        await configurationModel.find_one_and_update(
             {'_id': ObjectId(bridge_id), 'org_id': org_id},
             {'$set': {
                 'configuration': configuration,
@@ -424,7 +423,7 @@ async def update_tools_calls(bridge_id, org_id, configuration):
         }
 async def get_apikey_creds(id):
     try:
-        return apikeyCredentialsModel.find_one(
+        return await apikeyCredentialsModel.find_one(
             {'_id': ObjectId(id)},
             {'apikey' : 1}
         )

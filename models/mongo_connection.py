@@ -1,9 +1,9 @@
-from pymongo import MongoClient, errors
+from motor.motor_asyncio import AsyncIOMotorClient
 from config import Config
 import certifi
 
 try:
-    client = MongoClient(
+    client = AsyncIOMotorClient(
         Config.MONGODB_CONNECTION_URI,
         tls=True,  # Use 'tls' instead of 'ssl'
         tlsCAFile=certifi.where()  # Use 'tlsCAFile' instead of 'ssl_ca_certs'

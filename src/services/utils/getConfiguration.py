@@ -63,7 +63,7 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
     pre_tools = bridge.get('pre_tools', [])
     variables_path_bridge = bridge.get('variables_path', None)
     if len(pre_tools)>0:
-        api_data = apiCallModel.find_one({"_id": ObjectId( pre_tools[0]), "org_id": org_id})
+        api_data = await apiCallModel.find_one({"_id": ObjectId( pre_tools[0]), "org_id": org_id})
 
         if api_data is None: 
             raise Exception("Didn't find the pre_function")
