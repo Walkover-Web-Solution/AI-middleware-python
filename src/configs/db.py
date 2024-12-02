@@ -1,4 +1,4 @@
-from pymongo import MongoClient
+from motor.motor_asyncio import AsyncIOMotorClient
 
 class MongoDBSingleton:
     _instance = None
@@ -6,8 +6,8 @@ class MongoDBSingleton:
     def __new__(cls, *args, **kwargs):
         if cls._instance is None:
             cls._instance = super().__new__(cls, *args, **kwargs)
-            # Initialize MongoDB client here
-            cls._instance.client = MongoClient(Config.MONGODB_CONNECTION_URI)
+            # Initialize MongoDB client asynchronously
+            cls._instance.client = AsyncIOMotorClient(Config.MONGODB_CONNECTION_URI)
         return cls._instance
 
     @classmethod

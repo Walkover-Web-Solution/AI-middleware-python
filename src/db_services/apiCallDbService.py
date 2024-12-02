@@ -34,7 +34,7 @@ async def get_all_api_calls_by_org_id(org_id):
                 }
             }}
         ]
-        api_calls = list(apiCallModel.aggregate(pipeline))
+        api_calls = await apiCallModel.aggregate(pipeline).to_list(length=None)
         
         for index, api_data in enumerate(api_calls):
             fields = api_data.get('fields', {})
@@ -63,7 +63,7 @@ async def get_all_api_calls_by_org_id(org_id):
 
 async def update_api_call_by_function_id(org_id, function_id, data_to_update):
     try:      
-        updated_document = apiCallModel.find_one_and_update(
+        updated_document = await apiCallModel.find_one_and_update(
             {
             '_id': ObjectId(function_id),  
             'org_id': org_id  
@@ -98,7 +98,7 @@ async def get_function_by_id(function_id):
         if not ObjectId.is_valid(function_id):
             return {"success": False, "message": "Invalid function_id format."}
         
-        db_data =  apiCallModel.find_one({"_id": ObjectId(function_id)})
+        db_data =  await apiCallModel.find_one({"_id": ObjectId(function_id)})
                 
         return {"success": True, "data": db_data}
     

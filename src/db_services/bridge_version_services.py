@@ -8,7 +8,7 @@ version_model = db['configuration_versions']
 
 async def get_version(org_id, version_id):
     try:
-        bridge = version_model.find_one({'_id' : ObjectId(version_id), 'org_id' : org_id})
+        bridge = await version_model.find_one({'_id' : ObjectId(version_id), 'org_id' : org_id})
         return bridge
     except Exception as e:
         print(f"An error occurred: {e}")
@@ -27,7 +27,7 @@ async def create_bridge_version(bridge_data, parent_id=None):
         bridge_version_data['is_drafted'] = True
         bridge_version_data['parent_id'] = parent_id or str(bridge_data['_id'])
         bridge_version_data['_id'] = ObjectId()
-        version_model.insert_one(bridge_version_data)
+        await version_model.insert_one(bridge_version_data)
         return str(bridge_version_data['_id'])
     except Exception as e:
         print("error:", e)
@@ -47,7 +47,7 @@ async def update_bridges(bridge_id, update_fields):
         if update_fields:
             update_query['$set'] = update_fields
 
-        updated_bridge = configurationModel.find_one_and_update(
+        updated_bridge = await configurationModel.find_one_and_update(
             {'_id': ObjectId(bridge_id)},
             update_query,
             return_document=True,
@@ -128,8 +128,8 @@ async def get_version_with_tools(bridge_id, org_id):
                 }
             }
         ]
-        
-        result = list(version_model.aggregate(pipeline))
+
+        result = await version_model.aggregate(pipeline).to_list(length=None)
         
         if not result:
             return {
@@ -150,7 +150,7 @@ async def get_version_with_tools(bridge_id, org_id):
     
 async def publish(org_id, version_id):
     try:
-        get_version_data = version_model.find_one({'_id': ObjectId(version_id), 'org_id': org_id})
+        get_version_data = await version_model.find_one({'_id': ObjectId(version_id), 'org_id': org_id})
         
         if not get_version_data:
             return {
@@ -163,7 +163,7 @@ async def publish(org_id, version_id):
                 "success": False,
                 "error": "Parent ID not found in version data"
             }
-        parent_configuration = configurationModel.find_one({'_id': ObjectId(parent_id)})
+        parent_configuration = await configurationModel.find_one({'_id': ObjectId(parent_id)})
         
         if not parent_configuration:
             return {
@@ -176,11 +176,11 @@ async def publish(org_id, version_id):
         updated_configuration['published_version_id'] = published_version_id
         
         # Update the document in the configurationModel
-        configurationModel.update_one(
+        await configurationModel.update_one(
             {'_id': ObjectId(parent_id)},
             {'$set': updated_configuration}
         )
-        version_model.update_one({'_id': ObjectId(published_version_id)}, {'$set': {'is_drafted': False}})
+        await version_model.update_one({'_id': ObjectId(published_version_id)}, {'$set': {'is_drafted': False}})
         
         return {
             "success": True,
