@@ -1,6 +1,5 @@
 import json
 from fastapi import HTTPException, status
-from fastapi.responses import JSONResponse
 from ..db_services.bridge_version_services import create_bridge_version, update_bridges, get_version_with_tools, publish
 from src.services.utils.helper import Helper
 from ..db_services.ConfigurationServices import get_bridges_with_tools, update_bridge, get_bridges_without_tools
@@ -12,7 +11,10 @@ async def create_version(request):
        org_id = request.state.profile['org']['id']
        bridge_data = await get_bridges_without_tools(org_id=org_id, version_id= version_id)
        if bridge_data is None:
-           return JSONResponse({"success": False, "message": "no version found"})
+           response_data = {"success": False,"message": "no version found","data": None}
+           request.state.statusCode = 400
+           request.state.response = response_data
+           return {}
        parent_id = bridge_data.get('bridges').get('parent_id')
        create_new_version = await create_bridge_version(bridge_data.get('bridges'), parent_id=parent_id)
        update_fields = {'versions' : [create_new_version]}
@@ -53,7 +55,10 @@ async def publish_version(request, version_id):
         org_id = request.state.profile['org']['id']
         result = await publish(org_id, version_id)
         if result['success']:
-            return JSONResponse({"success": True, "message": "version published successfully", "version_id": version_id})
+           response_data = {"success": True,"message": "version published successfully","data": {"version_id": version_id}}
+           request.state.statusCode = 200
+           request.state.response = response_data
+           return {}
         return result
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e)
@@ -74,7 +79,10 @@ async def discard_version(request, version_id):
     bridge_data['bridges']['function_ids'] = [ObjectId(fid) for fid in function_ids]
     result = await update_bridge(version_id=version_id, update_fields=bridge_data['bridges'])
     if 'success' in result:
-        return JSONResponse({"success": True, "message": "version changes discarded successfully", "version_id": version_id})
+        response_data = {"success": True,"message": "version changes discarded successfully","data": {"version_id": version_id}}
+        request.state.statusCode = 200
+        request.state.response = response_data
+        return {}
     return result
     
     

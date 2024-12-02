@@ -1,5 +1,4 @@
 from fastapi import Request, HTTPException
-from fastapi.responses import JSONResponse
 from src.db_services.ConfigurationServices import get_bridges, update_bridge, get_bridges_with_tools
 from src.services.utils.helper import Helper
 from src.services.utils.apicallUtills import  get_api_data, save_api, delete_api
@@ -46,24 +45,28 @@ async def creates_api(request: Request):
                 raise HTTPException(status_code=400, detail="Something went wrong!")
 
             if result.get('success'):
-                return JSONResponse(status_code=200, content={
-                    "message": "API saved successfully",
-                    "success": True,
-                    "activated": True,
-                    "data": result['api_data']
-                })
+                response_data = {
+                        "success": True,
+                        "message": "API saved successfully",
+                        "data": {"activated": True,"data": result['api_data']}
+                }
+                request.state.statusCode = 200
+                request.state.response = response_data
+                return {}
             else:
                 raise HTTPException(status_code=400, detail=result)
 
         elif status in ["delete", "paused"]:
             result = await delete_api(function_name, org_id)
             if result:
-                return JSONResponse(status_code=200, content={
-                    "message": "API deleted successfully",
-                    "success": True,
-                    "deleted": True,
-                    "data": result
-                })
+                response_data = {
+                        "success": True,
+                        "message": "API deleted successfully",
+                        "data": {"deleted": True,"data": result}
+                }
+                request.state.statusCode = 200
+                request.state.response = response_data
+                return {}
             else:
                 raise HTTPException(status_code=400, detail=result)
 
@@ -103,7 +106,14 @@ async def updates_api(request: Request, bridge_id: str):
 
             })
         else:
-            return JSONResponse(status_code=400, content=result)
+            response_data = {
+                    "success": False,
+                    "message": None,
+                    "data": result
+            }
+            request.state.statusCode = 400
+            request.state.response = response_data
+            return {}
 
     except Exception as error:
         print(f"error in viasocket embed get api => {error}")

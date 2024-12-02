@@ -17,6 +17,7 @@ from src.services.utils.apiservice import fetch
 from src.services.commonServices.queueService.queueService import queue_obj
 from src.services.utils.logger import logger
 from src.routes.bridge_version_routes import router as bridge_version
+from src.middlewares.response_middleware import ResponseMiddleware
 
 async def consume_messages_in_executor():
     await queue_obj.consume_messages()
@@ -56,6 +57,8 @@ app.add_middleware(
     allow_headers=["*"],
     max_age=86400
 )
+# Add middleware
+app.add_middleware(ResponseMiddleware)
 
 # Healthcheck route
 @app.get("/healthcheck")
