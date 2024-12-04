@@ -123,10 +123,12 @@ async def chat(request_body):
             thread_id = str(uuid.uuid1())
             sub_thread_id = thread_id
         id =  thread_id + '_' + bridge_id
+        variables['threadID'] = id
+        variables_path['threadID'] = 'threadID'
         response, rs_headers = await fetch(f"https://flow.sokt.io/func/scriCJLHynCG","POST", None, None, {"threadID": id})
         if isinstance(response, str):
             variables['memory'] = response
-            variables['threadID'] = id
+            
         configuration['prompt'], missing_vars  = Helper.replace_variables_in_prompt(configuration['prompt'] , variables)
         if len(missing_vars) > 0:
             await send_error_to_webhook(bridge_id, org_id, missing_vars, type = 'Variable')
