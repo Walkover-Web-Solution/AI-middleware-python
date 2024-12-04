@@ -50,7 +50,8 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
 
     configuration.pop('tools', None)
     configuration['tools'] = tools
-
+    additional_tools = [{'type': 'function', 'name': 'scri235kjBYi', 'description': 'Name: GPT_Memory_storage, Description: this function stores  the context or purpose of user in GPT memory.', 'properties': {'message': {'description': '', 'type': 'string', 'enum': [], 'required_params': [], 'parameter': {}}, 'threadID': {'description': '', 'type': 'string', 'enum': [], 'required_params': [], 'parameter': {}}}, 'required': ['message', 'threadID']}]
+    configuration['tools'].extend(additional_tools)
     service = service or (result.get('bridges', {}).get('service', '').lower())
     db_api_key = result.get('bridges', {}).get('apikey')
     if not (apikey or db_api_key): 
