@@ -151,6 +151,8 @@ async def get_all_bridges(request):
         org_id = request.state.profile['org']['id']
         bridges = await get_all_bridges_in_org(org_id)
         embed_token = Helper.generate_token({ "org_id": Config.ORG_ID, "project_id": Config.PROJECT_ID, "user_id": org_id },Config.Access_key )
+        for bridge in bridges:
+            bridge['apikey'] = Helper.decrypt(bridge['apikey']) if bridge.get('apikey') else ''
         return JSONResponse(status_code=200, content={
                 "success": True,
                 "message": "Get all bridges successfully",

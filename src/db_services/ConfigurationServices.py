@@ -306,16 +306,17 @@ async def create_bridge(data):
 async def get_all_bridges_in_org(org_id):
     bridges = configurationModel.find({"org_id": org_id}, {
       "_id": 1,
-      "name": 1,
-      "service": 1,
-      "org_id": 1,
-      "configuration.model": 1,
-      "configuration.prompt": 1,
-      "bridgeType": 1,
-      "slugName":1,
-      "status": 1,
-      "versions": 1,
-      "published_version_id": 1
+    #   "name": 1,
+    #   "service": 1,
+    #   "org_id": 1,
+    #   "configuration.model": 1,
+    #   "configuration.prompt": 1,
+    #   "bridgeType": 1,
+    #   "slugName":1,
+    #   "status": 1,
+    #   "versions": 1,
+    #   "published_version_id": 1
+    "apikey" : 1
     })
     bridges_list = []
     for bridge in bridges:
