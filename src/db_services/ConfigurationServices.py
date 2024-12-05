@@ -303,7 +303,7 @@ async def create_bridge(data):
         }
 
 async def get_all_bridges_in_org(org_id):
-    cursor = configurationModel.find({"org_id": org_id}, {
+    bridge = configurationModel.find({"org_id": org_id}, {
         "_id": 1,
         "name": 1,
         "service": 1,
@@ -316,9 +316,9 @@ async def get_all_bridges_in_org(org_id):
         "versions": 1,
         "published_version_id": 1
     })
-    bridges_list = await cursor.to_list(length=None)
-    for bridge in bridges_list:
-        bridge['_id'] = str(bridge['_id'])
+    bridges_list = await bridge.to_list(length=None)
+    for itr in bridges_list:
+        itr['_id'] = str(itr['_id'])
            
     return bridges_list
 
