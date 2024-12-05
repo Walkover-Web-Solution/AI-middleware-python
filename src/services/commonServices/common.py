@@ -60,7 +60,7 @@ async def chat(request_body):
     user = body.get("user")
     tools =  configuration.get('tools')
     service = body.get("service")
-    variables = body.get("variables", {})
+    variables = body.get("variables") or {}
     bridgeType = body.get('chatbot')
     template = body.get('template')
     usage = {}
@@ -78,7 +78,7 @@ async def chat(request_body):
     user_reference = body.get("user_reference", "")
     user_contains = ""
     timer = timer_obj
-    variables_path = body.get('variables_path')
+    variables_path = body.get('variables_path') or {} 
     names = body.get('names')
     suggest = body.get('suggest',False)
     message_id = str(uuid.uuid1())
