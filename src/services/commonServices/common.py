@@ -122,10 +122,10 @@ async def chat(request_body):
         else:
             thread_id = str(uuid.uuid1())
             sub_thread_id = thread_id
-        id =  thread_id + '_' + bridge_id
-        variables['threadID'] = id
-        variables_path['scri235kjBYi'] = { 'threadID': 'threadID' }
         if service == 'openai':
+            id =  thread_id + '_' + bridge_id
+            variables['threadID'] = id
+            variables_path['scri235kjBYi'] = { 'threadID': 'threadID' }
             response, rs_headers = await fetch(f"https://flow.sokt.io/func/scriCJLHynCG","POST", None, None, {"threadID": id})
             if isinstance(response, str):
                 variables['memory'] = response
