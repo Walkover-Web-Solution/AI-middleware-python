@@ -4,7 +4,7 @@ apiCallModel = db['apicalls']
 
 async def get_api_data(org_id, function_name):
     try:
-        api_call_data =  apiCallModel.find_one(
+        api_call_data =  await apiCallModel.find_one(
         {
             "$or": [
                 {"org_id": org_id, "function_name": function_name},  # new data  function_name
@@ -50,7 +50,7 @@ async def save_api(desc, org_id, api_data=None, code="", required_params=None, f
             api_data['version']= version
 
             # saving updated fields in the db with same id
-            saved_api =  apiCallModel.replace_one({"_id": api_data["_id"]}, api_data)
+            saved_api = await apiCallModel.replace_one({"_id": api_data["_id"]}, api_data)
             if saved_api.modified_count == 1:
                 return {
                     "success": True,
@@ -72,7 +72,7 @@ async def save_api(desc, org_id, api_data=None, code="", required_params=None, f
                 "updated_at": datetime.datetime.now(),
                 "version": version
             }
-            new_api =  apiCallModel.insert_one(api_data)
+            new_api =  await apiCallModel.insert_one(api_data)
             return {
                 "success": True,
                  "api_data": {
@@ -117,7 +117,7 @@ def updateFields(oldFields, newFields, versionCheck):
 
 async def delete_api(function_name, org_id, status = 0):
     try:
-        data = apiCallModel.find_one_and_update({
+        data = await apiCallModel.find_one_and_update({
             "$or": [
                 {"org_id": org_id, "endpoint": function_name},
                 {"org_id": org_id, "function_name": function_name},
