@@ -125,10 +125,10 @@ async def chat(request_body):
         id =  thread_id + '_' + bridge_id
         variables['threadID'] = id
         variables_path['scri235kjBYi'] = { 'threadID': 'threadID' }
-
-        response, rs_headers = await fetch(f"https://flow.sokt.io/func/scriCJLHynCG","POST", None, None, {"threadID": id})
-        if isinstance(response, str):
-            variables['memory'] = response
+        if service == 'openai':
+            response, rs_headers = await fetch(f"https://flow.sokt.io/func/scriCJLHynCG","POST", None, None, {"threadID": id})
+            if isinstance(response, str):
+                variables['memory'] = response
             
         configuration['prompt'], missing_vars  = Helper.replace_variables_in_prompt(configuration['prompt'] , variables)
         if len(missing_vars) > 0:
