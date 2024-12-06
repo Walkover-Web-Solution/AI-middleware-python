@@ -51,7 +51,8 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
     configuration.pop('tools', None)
     configuration['tools'] = tools
     service = service or (result.get('bridges', {}).get('service', '').lower())
-    if service is not None and service == 'openai':
+    gpt_memory = result.get('bridges', {}).get('gpt_memory')
+    if gpt_memory is not None and gpt_memory == True:
         additional_tools = [{'type': 'function', 'name': 'scri235kjBYi', 'description': 'Name: GPT_Memory_storage, Description: Use this function to store and recall crucial details (e.g., the user’s name and stated goals) throughout the conversation. By maintaining a record of important information, it ensures the AI remains aligned with the user’s original purpose and context over multiple turns.', 'properties': {'message': {'description': '', 'type': 'string', 'enum': [], 'required_params': [], 'parameter': {}}, 'threadID': {'description': '', 'type': 'string', 'enum': [], 'required_params': [], 'parameter': {}}}, 'required': ['message', 'threadID']}]
         configuration['tools'].extend(additional_tools)
     db_api_key = result.get('bridges', {}).get('apikey')
@@ -86,5 +87,6 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
         'template': template_content.get('template') if template_content else None,
         "user_reference": result.get("bridges", {}).get("user_reference", ""),
         "variables_path": variables_path or variables_path_bridge,
-        "names":names
+        "names":names,
+        "gpt_memory" : gpt_memory
     }
