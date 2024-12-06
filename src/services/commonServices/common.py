@@ -86,6 +86,7 @@ async def chat(request_body):
     suggestions = []
     suggestions_flag =False
     reasoning_model = False
+    gpt_memory = body.get('gpt_memory')
     
     if model == 'o1-preview' or model == 'o1-mini':
         reasoning_model = True
@@ -122,7 +123,7 @@ async def chat(request_body):
         else:
             thread_id = str(uuid.uuid1())
             sub_thread_id = thread_id
-        if service == 'openai':
+        if gpt_memory: 
             id =  thread_id + '_' + bridge_id
             variables['threadID'] = id
             variables_path['scri235kjBYi'] = { 'threadID': 'threadID' }
