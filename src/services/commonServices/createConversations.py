@@ -2,9 +2,11 @@ import traceback
 from fastapi import HTTPException
 class ConversationService:
     @staticmethod
-    def createOpenAiConversation(conversation):
+    def createOpenAiConversation(conversation, purpose):
         try:
             threads = []
+            if purpose is not None:
+                threads.append({'role': 'user', 'content': purpose })
             for message in conversation or []:
                 if message['role'] != "tools_call" and message['role'] != "tool":
                     threads.append({'role': message['role'], 'content': message['content']})
