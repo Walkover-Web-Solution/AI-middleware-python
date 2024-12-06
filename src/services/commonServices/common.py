@@ -71,7 +71,7 @@ async def chat(request_body):
     user = body.get("user")
     tools =  configuration.get('tools')
     service = body.get("service")
-    variables = body.get("variables", {})
+    variables = body.get("variables") or {}
     bridgeType = body.get('chatbot')
     template = body.get('template')
     usage = {}
@@ -93,12 +93,13 @@ async def chat(request_body):
     user_reference = body.get("user_reference", "")
     user_contains = ""
     timer = timer_obj
-    variables_path = body.get('variables_path')
+    variables_path = body.get('variables_path') or {} 
     names = body.get('names')
     suggest = body.get('suggest',False)
     message_id = str(uuid.uuid1())
     result = {}
     reasoning_model = False
+    gpt_memory = body.get('gpt_memory')
     
     if model == 'o1-preview' or model == 'o1-mini':
         reasoning_model = True
@@ -142,12 +143,13 @@ async def chat(request_body):
         else:
             thread_id = str(uuid.uuid1())
             sub_thread_id = thread_id
-        id =  thread_id + '_' + bridge_id
-        variables['threadID'] = id
-        variables_path['threadID'] = 'threadID'
-        response, rs_headers = await fetch(f"https://flow.sokt.io/func/scriCJLHynCG","POST", None, None, {"threadID": id})
-        if isinstance(response, str):
-            variables['memory'] = response
+        if gpt_memory: 
+            id =  thread_id + '_' + bridge_id
+            variables['threadID'] = id
+            variables_path['scri235kjBYi'] = { 'threadID': 'threadID' }
+            response, rs_headers = await fetch(f"https://flow.sokt.io/func/scriCJLHynCG","POST", None, None, {"threadID": id})
+            if isinstance(response, str):
+                variables['memory'] = response
             
         configuration['prompt'], missing_vars  = Helper.replace_variables_in_prompt(configuration['prompt'] , variables)
         if len(missing_vars) > 0:
