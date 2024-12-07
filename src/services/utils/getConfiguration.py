@@ -52,9 +52,6 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
     configuration['tools'] = tools
     service = service or (result.get('bridges', {}).get('service', '').lower())
     gpt_memory = result.get('bridges', {}).get('gpt_memory')
-    if bridge_id == '6752d9fc232e8659b2b65f0d' :
-        additional_tools = [{'type': 'function', 'name': 'scri235kjBYi', 'description': 'Name: GPT_Memory_storage, Description: Use this function to store and recall crucial details (e.g., the user’s name and stated goals) throughout the conversation. By maintaining a record of important information, it ensures the AI remains aligned with the user’s original purpose and context over multiple turns.', 'properties': {'message': {'description': '', 'type': 'string', 'enum': [], 'required_params': [], 'parameter': {}}, 'threadID': {'description': '', 'type': 'string', 'enum': [], 'required_params': [], 'parameter': {}}}, 'required': ['message', 'threadID']}]
-        configuration['tools'].extend(additional_tools)
     db_api_key = result.get('bridges', {}).get('apikey')
     if not (apikey or db_api_key): 
         raise Exception('Could not find api key')

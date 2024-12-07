@@ -87,7 +87,7 @@ async def chat(request_body):
     suggestions = []
     suggestions_flag =False
     reasoning_model = False
-    gpt_memory = body.get('gpt_memory')
+    gpt_memory = body.get('gpt_memory') or True
     purpose = None
     version_id = body.get('version_id')
     
@@ -128,7 +128,6 @@ async def chat(request_body):
             sub_thread_id = thread_id
         id = thread_id + '_' + (bridge_id if bridge_id is not None else version_id)
         if gpt_memory: 
-            variables_path['scri235kjBYi'] = { 'threadID': 'threadID' }
             response, rs_headers = await fetch(f"https://flow.sokt.io/func/scriCJLHynCG","POST", None, None, {"threadID": id})
             if isinstance(response, str):
                purpose = response
@@ -187,7 +186,7 @@ async def chat(request_body):
             raise ValueError(result)
         
         if gpt_memory:
-            asyncio.create_task(handle_gpt_memory(id, user, result['modelResponse']))
+            asyncio.create_task(handle_gpt_memory(id, user, result['modelResponse'], purpose))
 
         if is_rich_text and bridgeType and reasoning_model == False:
                 try:

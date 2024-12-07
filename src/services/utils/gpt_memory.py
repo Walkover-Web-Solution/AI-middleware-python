@@ -1,8 +1,8 @@
 from .apiservice import fetch
 
-async def handle_gpt_memory(id, user, assistant):
+async def handle_gpt_memory(id, user, assistant, purpose):
     try:
-        variables = {'threadID': id}
+        variables = {'threadID': id, 'memory' : purpose}
         content = assistant.get('choices', [{}])[0].get('message', {}).get('content', '')
         response, rs_headers = await fetch(
             f"https://proxy.viasocket.com/proxy/api/1258584/29gjrmh24/api/v2/model/chat/completion",
@@ -13,7 +13,7 @@ async def handle_gpt_memory(id, user, assistant):
             },
             None,
             {
-                "conversation": [{"role": "user", "content": user}, {"role": "assistant", "content": content}],
+                "configuration" : {"conversation": [{"role": "user", "content": user}, {"role": "assistant", "content": content}]},
                 "user": "use the function to store the memory if the user message and history is related to the or important to store else don't call the function and ignore it.",
                 "bridge_id": "6752d9fc232e8659b2b65f0d",
                 "response_type": "text",
