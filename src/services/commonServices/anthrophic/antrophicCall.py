@@ -9,7 +9,7 @@ class Antrophic(BaseService):
         usage = {}
         tools = {}
         conversation = []
-        conversation = ConversationService.createAnthropicConversation(self.configuration.get('conversation')).get('messages', [])        
+        conversation = ConversationService.createAnthropicConversation(self.configuration.get('conversation'), self.memory).get('messages', [])        
         self.customConfig['system'] = self.configuration.get('prompt')
         self.customConfig["messages"] =conversation + [{"role": "user", "content":[{ "type": "text","text": self.user }]  }]
         self.customConfig['tools'] = self.tool_call if self.tool_call and len(self.tool_call) != 0 else []
