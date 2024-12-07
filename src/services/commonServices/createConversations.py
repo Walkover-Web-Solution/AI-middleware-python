@@ -2,11 +2,11 @@ import traceback
 from fastapi import HTTPException
 class ConversationService:
     @staticmethod
-    def createOpenAiConversation(conversation, purpose):
+    def createOpenAiConversation(conversation, memory):
         try:
             threads = []
-            if purpose is not None:
-                threads.append({'role': 'user', 'content': purpose })
+            if memory is not None:
+                threads.append({'role': 'user', 'content': memory })
             for message in conversation or []:
                 if message['role'] != "tools_call" and message['role'] != "tool":
                     threads.append({'role': message['role'], 'content': message['content']})
@@ -53,12 +53,15 @@ class ConversationService:
             }
 
     @staticmethod
-    def createAnthropicConversation(conversation):
+    def createAnthropicConversation(conversation, memory):
         try:
             if conversation == None:
                 conversation = []
             threads = []
             expected_role = 'user'
+            if memory is not None:
+                threads.append({'role': 'user', 'content': [{"type": "text", "text": f"GPT-Memory Data:- {memory}"}]})
+                threads.append({'role': 'assistant', 'content': [{"type": "text", "text": "memory updated."}]})
 
             for i, message in enumerate(conversation):
                 if message['role'] not in ['assistant', 'user']:
