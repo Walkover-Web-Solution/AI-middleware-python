@@ -45,10 +45,11 @@ async def duplicate_bridge(request : Request):
 async def optimize_prompt_controller(request : Request, bridge_id: str):
     try:
         body = await request.json()
+        version_id = body.get('version_id')
         purpose = body.get('purpose', "optimize")
         prompt_description = body.get('prompt_description', "")
         org_id = request.state.profile.get("org",{}).get("id","")
-        result = await get_bridges(bridge_id, org_id)
+        result = await get_bridges(bridge_id, org_id, version_id)
         bridge = result.get('bridges')
         prompt = bridge.get('configuration',{}).get('prompt',"")
         bridgeName = bridge.get('name')
