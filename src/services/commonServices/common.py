@@ -251,8 +251,7 @@ async def chat(request_body):
             "model_execution_time": sum(execution_time_logs.values()) or "",
             "execution_time_logs" : execution_time_logs or {}
         }
-        if gpt_memory:
-            asyncio.create_task(handle_gpt_memory(id, user, result['modelResponse'], memory))
+        
         if not is_playground:
             usage.update({
                 **result.get("usage", {}),
@@ -266,15 +265,16 @@ async def chat(request_body):
             })
             if result.get('modelResponse') and result['modelResponse'].get('data'):
                 result['modelResponse']['data']['message_id'] = message_id
-            # Optimize task creation and gathering
-            
-            
-            await asyncio.gather(
+            tasks = [
                 sendResponse(response_format, result["modelResponse"], success=True),
                 metrics_service.create([usage], result["historyParams"]),
-                validateResponse(final_response=result['modelResponse'],configration=configuration,bridgeId=bridge_id,message_id=message_id, org_id=org_id),
-                return_exceptions=True
-            )
+                validateResponse(final_response=result['modelResponse'], configration=configuration, bridgeId=bridge_id, message_id=message_id, org_id=org_id),
+            ]
+
+            if gpt_memory:
+                tasks.append(handle_gpt_memory(id, user, result['modelResponse'], memory))
+            await asyncio.gather(*tasks, return_exceptions=True)
+
         return JSONResponse(status_code=200, content={"success": True, "response": result["modelResponse"]})
     except Exception as error:
         traceback.print_exc()
@@ -316,3 +316,5 @@ async def chat(request_body):
             print("chat common error=>", error)
         raise ValueError(error)
         
+
+
