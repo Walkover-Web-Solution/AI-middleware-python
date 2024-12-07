@@ -27,6 +27,7 @@ from src.handler.executionHandler import handle_exceptions
 from src.configs.serviceKeys import model_config_change
 from src.services.utils.time import Timer
 from src.services.utils.apiservice import fetch
+from src.services.utils.gpt_memory import handle_gpt_memory
 
 async def create_service_handler(params, service):
     if service == service_name['openai']:
@@ -87,6 +88,8 @@ async def chat(request_body):
     suggestions_flag =False
     reasoning_model = False
     gpt_memory = body.get('gpt_memory')
+    memory = None
+    version_id = body.get('version_id')
     
     if model == 'o1-preview' or model == 'o1-mini':
         reasoning_model = True
@@ -123,13 +126,11 @@ async def chat(request_body):
         else:
             thread_id = str(uuid.uuid1())
             sub_thread_id = thread_id
+        id = thread_id + '_' + (bridge_id if bridge_id is not None else version_id)
         if gpt_memory: 
-            id =  thread_id + '_' + bridge_id
-            variables['threadID'] = id
-            variables_path['scri235kjBYi'] = { 'threadID': 'threadID' }
             response, rs_headers = await fetch(f"https://flow.sokt.io/func/scriCJLHynCG","POST", None, None, {"threadID": id})
             if isinstance(response, str):
-                variables['memory'] = response
+               memory = response
             
         configuration['prompt'], missing_vars  = Helper.replace_variables_in_prompt(configuration['prompt'] , variables)
         if len(missing_vars) > 0:
@@ -176,14 +177,13 @@ async def chat(request_body):
             "bridgeType": bridgeType,
             "names":names,
             "reasoning_model" : reasoning_model,
+            "memory": memory,
         }
-
         class_obj = await create_service_handler(params,service)
         result = await class_obj.execute()
         
         if not result["success"]:
             raise ValueError(result)
-
         if is_rich_text and bridgeType and reasoning_model == False:
                 try:
                     try:
@@ -251,6 +251,8 @@ async def chat(request_body):
             "model_execution_time": sum(execution_time_logs.values()) or "",
             "execution_time_logs" : execution_time_logs or {}
         }
+        if gpt_memory:
+            asyncio.create_task(handle_gpt_memory(id, user, result['modelResponse'], memory))
         if not is_playground:
             usage.update({
                 **result.get("usage", {}),
@@ -265,6 +267,7 @@ async def chat(request_body):
             if result.get('modelResponse') and result['modelResponse'].get('data'):
                 result['modelResponse']['data']['message_id'] = message_id
             # Optimize task creation and gathering
+            
             
             await asyncio.gather(
                 sendResponse(response_format, result["modelResponse"], success=True),
