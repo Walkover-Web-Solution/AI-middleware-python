@@ -7,12 +7,17 @@ from ...middlewares.getDataUsingBridgeId import add_configuration_data_to_body
 from concurrent.futures import ThreadPoolExecutor
 from config import Config
 from src.services.commonServices.queueService.queueService import queue_obj
+from src.middlewares.ratelimitMiddleware import rate_limit
 
 router = APIRouter()
 
 executor = ThreadPoolExecutor(max_workers= int(Config.max_workers) or 10)
 
-@router.post('/chat/completion', dependencies=[Depends(jwt_middleware)])
+async def auth_and_rate_limit(request: Request):
+    await jwt_middleware(request)
+    await rate_limit(request, key_path='profile.user.id', points=10)
+
+@router.post('/chat/completion', dependencies=[Depends(auth_and_rate_limit)])
 async def chat_completion(request: Request, db_config: dict = Depends(add_configuration_data_to_body)):
     request.state.is_playground = False
     request.state.version = 2
@@ -34,7 +39,7 @@ async def chat_completion(request: Request, db_config: dict = Depends(add_config
         return result
 
 
-@router.post('/playground/chat/completion/{bridge_id}', dependencies=[Depends(jwt_middleware)])
+@router.post('/playground/chat/completion/{bridge_id}', dependencies=[Depends(auth_and_rate_limit)])
 async def playground_chat_completion(request: Request, db_config: dict = Depends(add_configuration_data_to_body)):
     request.state.is_playground = True
     request.state.version = 2
