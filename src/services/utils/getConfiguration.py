@@ -62,6 +62,7 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
     template_content = await ConfigurationService.get_template_by_id(template_id) if template_id else None
     pre_tools = bridge.get('pre_tools', [])
     variables_path_bridge = bridge.get('variables_path', None)
+    gpt_memory_context = bridge.get('gpt_memory_context')
     if len(pre_tools)>0:
         api_data = await apiCallModel.find_one({"_id": ObjectId( pre_tools[0]), "org_id": org_id})
 
@@ -86,5 +87,6 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
         "variables_path": variables_path or variables_path_bridge,
         "names":names,
         "gpt_memory" : gpt_memory,
-        "version_id" : version_id
+        "version_id" : version_id,
+        "gpt_memory_context" :  gpt_memory_context
     }
