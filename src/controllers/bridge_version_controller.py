@@ -71,7 +71,8 @@ async def discard_version(request, version_id):
     del bridge_data['bridges']['_id']
     bridge_data['bridges']['is_drafted'] = False
     function_ids = bridge_data['bridges'].get('function_ids', [])
-    bridge_data['bridges']['function_ids'] = [ObjectId(fid) for fid in function_ids]
+    if function_ids is not None:
+        bridge_data['bridges']['function_ids'] = [ObjectId(fid) for fid in function_ids]
     result = await update_bridge(version_id=version_id, update_fields=bridge_data['bridges'])
     if 'success' in result:
         return JSONResponse({"success": True, "message": "version changes discarded successfully", "version_id": version_id})
