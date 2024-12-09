@@ -40,5 +40,5 @@ async def playground_chat_completion(request: Request, db_config: dict = Depends
     request.state.version = 2
     data_to_send = await make_request_data(request)
     loop = asyncio.get_event_loop()
-    result = await chat(data_to_send)
+    result = await loop.run_in_executor(executor, lambda: asyncio.run(chat(data_to_send)))
     return result
