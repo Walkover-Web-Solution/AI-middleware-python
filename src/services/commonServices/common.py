@@ -103,6 +103,7 @@ async def chat(request_body):
     gpt_memory = body.get('gpt_memory')
     memory = None
     version_id = body.get('version_id')
+    gpt_memory_context = body.get('gpt_memory_context') 
     
     if model == 'o1-preview' or model == 'o1-mini':
         reasoning_model = True
@@ -289,8 +290,7 @@ async def chat(request_body):
             if bridgeType:
                 tasks.append(chatbot_suggestions(response_format, result['modelResponse'], user))
             if gpt_memory:
-                tasks.append(handle_gpt_memory(id, user, result['modelResponse'], memory))
-                
+                tasks.append(handle_gpt_memory(id, user, result['modelResponse'], memory, gpt_memory_context))
             await asyncio.gather(*tasks, return_exceptions=True)
         return JSONResponse(status_code=200, content={"success": True, "response": result["modelResponse"]})
     except Exception as error:
