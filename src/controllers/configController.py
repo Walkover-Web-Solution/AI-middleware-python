@@ -277,6 +277,8 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
         apikey = body.get('apikey')
         apikey_object_id = body.get('apikey_object_id')
         variables_path = body.get('variables_path')
+        gpt_memory = body.get('gpt_memory')
+        gpt_memory_context = body.get('gpt_memory_context')
         user_id = request.state.profile['user']['id']
         update_fields = {}
         user_history = []
@@ -304,6 +306,10 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
             update_fields['slugName'] = slugName
         if user_reference is not None:
             update_fields['user_reference'] = user_reference
+        if gpt_memory is not None:
+            update_fields['gpt_memory'] = gpt_memory
+        if gpt_memory_context is not None:
+            update_fields['gpt_memory_context'] = gpt_memory_context
         if service is not None:
             update_fields['service'] = service
             model = new_configuration['model']
