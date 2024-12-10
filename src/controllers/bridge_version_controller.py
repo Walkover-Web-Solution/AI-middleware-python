@@ -14,13 +14,10 @@ async def create_version(request):
        update_fields = {'versions' : [create_new_version]}
        await update_bridges(parent_id, update_fields)
        return {
-           "success": True,
-           "message" : "version created successfully",
            "version_id" : create_new_version
        }
 
 async def get_version(request, version_id: str):
-    try:
         org_id = request.state.profile.get("org",{}).get("id","")
         bridge = await get_version_with_tools(version_id, org_id)
         prompt = bridge.get('bridges').get('configuration',{}).get('prompt')
@@ -36,21 +33,16 @@ async def get_version(request, version_id: str):
                 path_variables.append(vars_dict)
         all_variables = variables + path_variables
         bridge.get('bridges')['all_varaibles'] = all_variables
-        return Helper.response_middleware_for_bridge({"succcess": True,"message": "bridge get successfully","bridge":bridge.get("bridges", {})})
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e,)
+        return Helper.response_middleware_for_bridge({"bridge":bridge.get("bridges", {})})
     
 
 async def publish_version(request, version_id):
-    try:
         org_id = request.state.profile['org']['id']
         result = await publish(org_id, version_id)
         if result['success']:
            response_data = {"version_id": version_id}
            return response_data
         return result
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e)
 
 
 async def discard_version(request, version_id):
@@ -67,9 +59,10 @@ async def discard_version(request, version_id):
     function_ids = bridge_data['bridges'].get('function_ids', [])
     bridge_data['bridges']['function_ids'] = [ObjectId(fid) for fid in function_ids]
     result = await update_bridge(version_id=version_id, update_fields=bridge_data['bridges'])
-    if 'success' in result:
+    if 'result' in result and result['result']:
         response_data = {"version_id": version_id}
         return response_data
     return result
+
     
     

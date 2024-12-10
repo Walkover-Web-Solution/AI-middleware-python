@@ -1,5 +1,6 @@
 from models.mongo_connection import db
 from bson import ObjectId
+from fastapi import HTTPException, status
 import traceback
 
 configurationModel = db["configurations"]
@@ -347,7 +348,6 @@ async def get_bridge_by_slugname(org_id, slug_name):
         }
 
 async def update_bridge(bridge_id = None, update_fields = None, version_id = None):
-    try:
         model = version_model if version_id else configurationModel
         id_to_use = ObjectId(version_id) if version_id else ObjectId(bridge_id)
         updated_bridge = model.find_one_and_update(
@@ -358,24 +358,16 @@ async def update_bridge(bridge_id = None, update_fields = None, version_id = Non
         )
 
         if not updated_bridge:
-            return {
-                'success': False,
-                'error': 'No records updated or bridge not found'
-            }
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="No records updated or bridge not found"
+            )
         if updated_bridge:
             updated_bridge['_id'] = str(updated_bridge['_id'])  # Convert ObjectId to string
             if 'function_ids' in updated_bridge:
                 updated_bridge['function_ids'] = [str(fid) for fid in updated_bridge['function_ids']]  # Convert function_ids to string
         return {
-            'success': True,
             'result': updated_bridge
-        }
-
-    except Exception as error:
-        print(error)
-        return {
-            'success': False,
-            'error': 'Something went wrong!'
         }
 
 async def update_tools_calls(bridge_id, org_id, configuration):

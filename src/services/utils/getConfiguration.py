@@ -1,4 +1,5 @@
 import src.db_services.ConfigurationServices as ConfigurationService
+from fastapi import HTTPException, status
 from .helper import Helper
 from bson import ObjectId
 from models.mongo_connection import db
@@ -11,11 +12,11 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
     RTLayer = False
     bridge = None
     result = await ConfigurationService.get_bridges_with_tools(bridge_id = bridge_id, org_id = org_id, version_id=version_id)
-    if not result['success']:
-        return {
-            'success': False,
-            'error': "bridge_id does not exist"
-        }
+    if not result:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="bridge_id does not exist"
+        )
     db_configuration = result.get('bridges', {}).get('configuration', {})
     if configuration:
         db_configuration.update(configuration)

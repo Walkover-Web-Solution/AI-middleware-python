@@ -4,13 +4,10 @@ from src.db_services.apiCallDbService import update_api_call_by_function_id
 from src.db_services.apiCallDbService import get_function_by_id
 
 async def get_all_apicalls_controller(request):
-    try:
         org_id = request.state.profile['org']['id']
         functions = await get_all_api_calls_by_org_id(org_id=org_id)
         response_data = {"functions": functions,"org_id": org_id}
         return response_data
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e,)
     
 
 async def validate_data_to_update(data_to_update: dict,  db_data: dict) -> bool: 
@@ -34,7 +31,6 @@ async def validate_data_to_update(data_to_update: dict,  db_data: dict) -> bool:
 
 
 async def update_apicalls_controller(request, function_id):
-    try:
         org_id = request.state.profile['org']['id']
         body = await request.json()  
         data_to_update = body.get('dataToSend')  
@@ -58,7 +54,3 @@ async def update_apicalls_controller(request, function_id):
         )
         response_data = {updated_function}
         return response_data
-    
-    except Exception as e:
-        print(f"Error updating function: {e}")
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))

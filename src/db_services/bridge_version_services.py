@@ -149,7 +149,6 @@ async def get_version_with_tools(bridge_id, org_id):
         }
     
 async def publish(org_id, version_id):
-    try:
         get_version_data = version_model.find_one({'_id': ObjectId(version_id), 'org_id': org_id})
         
         if not get_version_data:
@@ -185,11 +184,4 @@ async def publish(org_id, version_id):
         return {
             "success": True,
             "message": "Configuration updated successfully"
-        }
-    
-    except Exception as e:
-        print(f"An error occurred: {e}")
-        return {
-            "success": False,
-            "error": str(e)
         }

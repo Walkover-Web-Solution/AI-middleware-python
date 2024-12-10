@@ -7,7 +7,6 @@ from src.controllers.configController import duplicate_create_bridges
 import json
 
 async def duplicate_bridge(request : Request):
-    try:
         body = await request.json()
         org_id = request.state.profile.get("org",{}).get("id","")
         bridge_id = body.get('bridge_id')
@@ -33,12 +32,9 @@ async def duplicate_bridge(request : Request):
         })
         response_data = {json.loads(json.dumps(res, default=str))}
         return response_data
-    except Exception as e:
-        return {'error': str(e)}
     
 
 async def optimize_prompt_controller(request : Request, bridge_id: str):
-    try:
         body = await request.json();
         purpose = body.get('purpose', "optimize")
         prompt_description = body.get('prompt_description', "")
@@ -59,6 +55,3 @@ async def optimize_prompt_controller(request : Request, bridge_id: str):
             print("Error calling function=>", err)
         response_data = {result}
         return response_data
-    
-    except Exception as e:
-        return {'error': str(e)}

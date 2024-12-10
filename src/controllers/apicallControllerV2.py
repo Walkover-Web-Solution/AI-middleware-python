@@ -7,7 +7,6 @@ import datetime
 
 
 async def creates_api(request: Request):
-    try:
         body = await request.json()
         org_id = request.state.profile.get("org",{}).get("id","")
         function_name = body.get('id')
@@ -60,9 +59,6 @@ async def creates_api(request: Request):
 
         raise HTTPException(status_code=400, detail="Something went wrong!")
 
-    except Exception as error:
-        print(f"error in viasocket embed get api=> {error}")
-        raise HTTPException(status_code=400, detail=str(error))
 
 
 async def updates_api(request: Request, bridge_id: str):
@@ -86,10 +82,7 @@ async def updates_api(request: Request, bridge_id: str):
         result = await get_bridges_with_tools(bridge_id, org_id, version_id)
 
         return Helper.response_middleware_for_bridge({
-            "success": True,
-            "message": "Bridge Updated successfully",
             "bridge" : result.get('bridges')
-
         })
 
 

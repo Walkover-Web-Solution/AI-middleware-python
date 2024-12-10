@@ -66,8 +66,6 @@ async def create_bridges_controller(request):
         return response_data   
 
 async def duplicate_create_bridges(bridges):
-    try:
-
         org_id = bridges.get('org_id')
         service = bridges.get('service') 
         bridgeType = bridges.get('bridgeType')
@@ -104,14 +102,8 @@ async def duplicate_create_bridges(bridges):
 
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=result)
 
-    except HTTPException as e:
-        raise e
-    except Exception as error:
-        print(f"common error=> {error}")
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="An unexpected error occurred while creating the bridge. Please try again later.")
 
 async def get_bridge(request, bridge_id: str):
-    try:
         bridge = await get_bridges_with_tools(bridge_id,request.state.profile['org']['id'])
         if(bridge.get('bridges') is None):
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Bridge not found")
@@ -128,12 +120,9 @@ async def get_bridge(request, bridge_id: str):
                 path_variables.append(vars_dict)
         all_variables = variables + path_variables
         bridge.get('bridges')['all_varaibles'] = all_variables
-        return Helper.response_middleware_for_bridge({"succcess": True,"message": "bridge get successfully","bridge":bridge.get("bridges", {})})
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e,)
+        return Helper.response_middleware_for_bridge({"bridge":bridge.get("bridges", {})})
 
 async def get_all_bridges(request):
-    try:
         org_id = request.state.profile['org']['id']
         bridges = await get_all_bridges_in_org(org_id)
         embed_token = Helper.generate_token({ "org_id": Config.ORG_ID, "project_id": Config.PROJECT_ID, "user_id": org_id },Config.Access_key )
@@ -143,10 +132,8 @@ async def get_all_bridges(request):
                 "org_id": org_id 
         }
         return response_data
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+
 async def get_all_service_models_controller(service):
-    try:
         service = service.lower()
         def restructure_configuration(config):
             model_field = config.get("configuration", {}).get("model", "")
@@ -245,12 +232,8 @@ async def get_all_service_models_controller(service):
             }
 
 
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
 
 async def update_bridge_controller(request, bridge_id=None, version_id=None):
-    try:
         body  = await request.json()
         org_id = request.state.profile['org']['id']
         slugName = body.get('slugName')
@@ -359,15 +342,6 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
         result = await get_bridges_with_tools(bridge_id, org_id, version_id)
         await add_bulk_user_entries(user_history)
         
-        if result.get("success"):
-            return Helper.response_middleware_for_bridge({
-                "success": True,
-                "message": "Bridge Updated successfully",
-                "bridge" : result.get('bridges')
-
-            })
-    except ValidationError as e:
-        raise HTTPException(status_code=400, detail=f"Validation error: {e.json()}")
-    except Exception as e:
-        print(e)
-        raise HTTPException(status_code=400, detail="Invalid request body!")
+        return Helper.response_middleware_for_bridge({
+            "bridge" : result.get('bridges')
+        })
