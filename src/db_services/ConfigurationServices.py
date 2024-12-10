@@ -45,23 +45,14 @@ async def get_bridges(bridge_id = None, org_id = None, version_id = None):
         }
 # todo
 async def get_bridges_without_tools(bridge_id = None, org_id = None, version_id = None):
-    try:
         model = version_model if version_id else configurationModel
         id_to_use = ObjectId(version_id) if version_id else ObjectId(bridge_id)
         bridge_data = model.find_one({'_id' : ObjectId(id_to_use)})
         return {
-            'success': True,
             'bridges': bridge_data,
-        }
-    except Exception as error:
-        print(error)
-        return {
-            'success': False,
-            'error': "something went wrong!!"
         }
         
 async def get_bridges_with_tools(bridge_id, org_id, version_id=None):
-    try:
         model = version_model if version_id else configurationModel
         id_to_use = ObjectId(version_id) if version_id else ObjectId(bridge_id)
         pipeline = [
@@ -120,19 +111,11 @@ async def get_bridges_with_tools(bridge_id, org_id, version_id=None):
         
         if not result:
             return {
-                'success': False,
                 'error': 'No matching records found'
             }
         
         return {
-            'success': True,
             'bridges': result[0]
-        }
-    except Exception as error:
-        print(error)
-        return {
-            'success': False,
-            'error': "something went wrong!!"
         }
 
 async def update_api_call(id, update_fields):

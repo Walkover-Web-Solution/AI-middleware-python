@@ -71,7 +71,6 @@ async def creates_api(request: Request):
 
 
 async def updates_api(request: Request, bridge_id: str):
-    try:
         body = await request.json()
         org_id = request.state.org_id if hasattr(request.state, 'org_id') else None
         pre_tools = body.get('pre_tools')
@@ -90,25 +89,13 @@ async def updates_api(request: Request, bridge_id: str):
 
         result = await get_bridges_with_tools(bridge_id, org_id)
 
-        if result.get("success"):
-            return Helper.response_middleware_for_bridge({
-                "success": True,
-                "message": "Bridge Updated successfully",
-                "bridge" : result.get('bridges')
+        return Helper.response_middleware_for_bridge({
+            "success": True,
+            "message": "Bridge Updated successfully",
+            "bridge" : result.get('bridges')
 
-            })
-        else:
-            response_data = {
-                "success": False,
-                "message": None,
-                "data": result  
-                }
-            request.state.statusCode = 400
-            return response_data
+        })
 
-    except Exception as error:
-        print(f"error in viasocket embed get api => {error}")
-        raise HTTPException(status_code=400, detail=str(error))
 
 
 def traverse_body(body, required_params=None, path="", paths=None):

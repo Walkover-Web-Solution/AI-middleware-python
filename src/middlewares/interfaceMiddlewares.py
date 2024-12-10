@@ -10,7 +10,6 @@ from ..services.commonServices.baseService.utils import sendResponse
 from ..services.utils.time import Timer
 
 async def send_data_middleware(request: Request, botId: str):
-    try:
         body = await request.json()
         org_id = request.state.profile['org']['id']
         slugName = body.get("slugName")
@@ -20,10 +19,11 @@ async def send_data_middleware(request: Request, botId: str):
         userId = profile['user']['id']
         chatBotId = botId
         flag = body.get("flag") or False
-        if(message == ""):
-           response_data = {"success": False,"message": None,"data": {'error':"Message cannot be null"}}
-           request.state.statusCode = 400
-           return response_data
+        if message == "":
+            raise HTTPException(
+                status_code=400,
+                detail={"success": False, "message": "Message cannot be null", "data": {'error': "Message cannot be null"}}
+        )
 
         channelId = f"{chatBotId}{threadId.strip() if threadId and threadId.strip() else userId}"
 
@@ -73,12 +73,6 @@ async def send_data_middleware(request: Request, botId: str):
         await add_configuration_data_to_body(request=request)
         
         return await chat_completion(request=request)
-    except HTTPException as http_error:
-        raise http_error  # Re-raise HTTP exceptions for proper handling
-    except Exception as error:
-        response_data = {"success": False,"message": None,"data":{'error': str(error)}}
-        request.state.statusCode = 400
-        return response_data
 
 async def chat_bot_auth(request: Request):
     timer_obj = Timer()
@@ -152,6 +146,7 @@ async def reset_chatBot(request: Request, botId: str):
         response_data = {}
         return response_data
     else:
-        response_data = {"success": False,"message": "Error resetting chatbot","data": None}
-        request.state.statusCode = 400
-        return response_data
+        raise HTTPException(
+            status_code=400,
+            detail={"success": False, "message": "Error resetting chatbot", "data": None}
+        )
