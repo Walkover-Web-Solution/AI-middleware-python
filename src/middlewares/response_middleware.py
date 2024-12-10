@@ -1,32 +1,41 @@
 from fastapi.responses import JSONResponse
+from fastapi import Request, HTTPException, status
 from starlette.middleware.base import BaseHTTPMiddleware
 import json
 class ResponseMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request, call_next):
-        # Get the original response
-        response = await call_next(request)
+        try:
+            response = await call_next(request)
+            response_data = b""
+            async for chunk in response.body_iterator:
+                response_data += chunk
+            response_data = json.loads(response_data.decode("utf-8"))
+            if response_data:
+                formatted_response = {
+                    "status": 200,
+                    "success": True,
+                    "message": "Request processed successfully",
+                    "data": response_data or {}
+                }
+                return JSONResponse(content=formatted_response, status_code=200)
 
-        response_data = getattr(request.state, "response", None)
-        status_code = getattr(request.state, "statusCode", None)
-        # Read the response body
-        response_body = b""
-        async for chunk in response.body_iterator:
-            response_body += chunk
-        response_body = json.loads(response_body.decode("utf-8"))
-        print(response_body)
-        # If response_data exists, format it
-        if response_data:
-            success = response_data.get("success", status_code == 200)
-            message = response_data.get("message", "Request processed successfully")
-            data = response_data.get("data", {})
+            return response
 
-            formatted_response = {
-                "status": status_code,
-                "success": success,
-                "message": message,
-                "data": data
-            }
-
-            return JSONResponse(content=formatted_response, status_code=status_code)
-
-        return response
+        except HTTPException as http_exc:
+            print("HTTP Error")
+            return JSONResponse(
+                status_code=http_exc.status_code,
+                content={"message": http_exc.detail, "data": {}},
+            )
+        except ValueError as ve:
+            print("HTTP_422")
+            return JSONResponse(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                content={"message": str(ve), "data": {}},
+            )
+        except Exception:
+            print("Default HTTP_400")
+            return JSONResponse(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                content={"message": "Something went wrong, try again later", "data": {}},
+            )

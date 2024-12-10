@@ -290,17 +290,9 @@ async def get_template_by_id(template_id):
         return None
     
 async def create_bridge(data):
-    try:
         result = configurationModel.insert_one(data)
         return {
-            'success': True,
             'bridge': {**data, '_id': result.inserted_id}
-        }
-    except Exception as error:
-        print("error:", error)
-        return {
-            'success': False,
-            'error': error
         }
 
 async def get_all_bridges_in_org(org_id):

@@ -13,8 +13,7 @@ async def create_version(request):
        if bridge_data is None:
            response_data = {"success": False,"message": "no version found","data": None}
            request.state.statusCode = 400
-           request.state.response = response_data
-           return {}
+           return response_data
        parent_id = bridge_data.get('bridges').get('parent_id')
        create_new_version = await create_bridge_version(bridge_data.get('bridges'), parent_id=parent_id)
        update_fields = {'versions' : [create_new_version]}
@@ -55,10 +54,8 @@ async def publish_version(request, version_id):
         org_id = request.state.profile['org']['id']
         result = await publish(org_id, version_id)
         if result['success']:
-           response_data = {"success": True,"message": "version published successfully","data": {"version_id": version_id}}
-           request.state.statusCode = 200
-           request.state.response = response_data
-           return {}
+           response_data = {"version_id": version_id}
+           return response_data
         return result
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e)
@@ -79,10 +76,8 @@ async def discard_version(request, version_id):
     bridge_data['bridges']['function_ids'] = [ObjectId(fid) for fid in function_ids]
     result = await update_bridge(version_id=version_id, update_fields=bridge_data['bridges'])
     if 'success' in result:
-        response_data = {"success": True,"message": "version changes discarded successfully","data": {"version_id": version_id}}
-        request.state.statusCode = 200
-        request.state.response = response_data
-        return {}
+        response_data = {"version_id": version_id}
+        return response_data
     return result
     
     

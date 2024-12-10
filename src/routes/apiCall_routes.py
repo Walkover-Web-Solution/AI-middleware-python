@@ -14,11 +14,6 @@ async def update_apicalls(request: Request, function_id: str):
 
 @router.get('/test', dependencies=[Depends(jwt_middleware)])
 async def get_all_apicalls(request: Request):
-    response_data = {
-            "success": True,
-            "message": "Sucessfully authenticated",
-            "data": {"org_id": request.state.profile['org']['id'], "organization_name": request.state.profile['org']['name']}    
-        }
-    request.state.statusCode = 200
-    request.state.response = response_data
-    return {}
+    response_data = {"org_id": request.state.profile['org']['id'], 
+                    "organization_name": request.state.profile['org']['name']}
+    return response_data

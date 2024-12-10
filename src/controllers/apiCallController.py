@@ -7,14 +7,8 @@ async def get_all_apicalls_controller(request):
     try:
         org_id = request.state.profile['org']['id']
         functions = await get_all_api_calls_by_org_id(org_id=org_id)
-        response_data = {
-                "success": True,
-                "message": "Get all functions of a org successfully",
-                "data": {"functions": functions,"org_id": org_id}
-        }
-        request.state.statusCode = 200
-        request.state.response = response_data
-        return {}
+        response_data = {"functions": functions,"org_id": org_id}
+        return response_data
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e,)
     
@@ -62,14 +56,8 @@ async def update_apicalls_controller(request, function_id):
         updated_function = await update_api_call_by_function_id(
             org_id=org_id, function_id=function_id, data_to_update=data_to_update
         )
-        response_data = {
-                "success": True,
-                "message": None,
-                "data": updated_function
-        }
-        request.state.statusCode = 200
-        request.state.response = response_data
-        return {}
+        response_data = {updated_function}
+        return response_data
     
     except Exception as e:
         print(f"Error updating function: {e}")

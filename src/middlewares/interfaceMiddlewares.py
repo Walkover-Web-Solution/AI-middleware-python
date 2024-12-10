@@ -23,8 +23,7 @@ async def send_data_middleware(request: Request, botId: str):
         if(message == ""):
            response_data = {"success": False,"message": None,"data": {'error':"Message cannot be null"}}
            request.state.statusCode = 400
-           request.state.response = response_data
-           return {}
+           return response_data
 
         channelId = f"{chatBotId}{threadId.strip() if threadId and threadId.strip() else userId}"
 
@@ -79,8 +78,7 @@ async def send_data_middleware(request: Request, botId: str):
     except Exception as error:
         response_data = {"success": False,"message": None,"data":{'error': str(error)}}
         request.state.statusCode = 400
-        request.state.response = response_data
-        return {}
+        return response_data
 
 async def chat_bot_auth(request: Request):
     timer_obj = Timer()
@@ -151,12 +149,9 @@ async def reset_chatBot(request: Request, botId: str):
     }
     if result['success']:
         await sendResponse(response_format, response, True)
-        response_data = {"success": True,"message": "Chatbot reset successfully","data": None}
-        request.state.statusCode = 200
-        request.state.response = response_data
-        return {}
+        response_data = {}
+        return response_data
     else:
         response_data = {"success": False,"message": "Error resetting chatbot","data": None}
         request.state.statusCode = 400
-        request.state.response = response_data
-        return {}
+        return response_data

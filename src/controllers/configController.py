@@ -12,7 +12,6 @@ from datetime import datetime, timezone
 from src.services.utils.getDefaultValue import get_default_values_controller
 from src.db_services.bridge_version_services import create_bridge_version
 async def create_bridges_controller(request):
-    try:
         bridges = await request.json()
         type = bridges.get('type')
         org_id = request.state.profile['org']['id']
@@ -60,30 +59,11 @@ async def create_bridges_controller(request):
             "org_id" : org_id,
             "status": status
         })
-        if result.get("success"):
-            create_version = await create_bridge_version(result['bridge'])
-            update_fields = {'versions' : [create_version]}
-            updated_bridge_result = (await update_bridge(str(result['bridge']['_id']), update_fields)).get('result',{})
-            response_data = {
-                    "success": True,
-                    "message": "Bridge created successfully",
-                    "data": {
-                        "bridge" : json.loads(json.dumps(updated_bridge_result, default=str))
-                    }     
-            }
-            request.state.response = response_data
-            request.state.statusCode = 200
-        else:
-            response_data = {
-                    "success": False,
-                    "message": json.loads(json.dumps(result.get('error'), default=str)),
-                    "data": {}
-            }
-            request.state.response = response_data
-            request.state.statusCode = 400
-        return {}
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e)    
+        create_version = await create_bridge_version(result['bridge'])
+        update_fields = {'versions' : [create_version]}
+        updated_bridge_result = (await update_bridge(str(result['bridge']['_id']), update_fields)).get('result',{})
+        response_data = {"bridge" : json.loads(json.dumps(updated_bridge_result, default=str))}
+        return response_data   
 
 async def duplicate_create_bridges(bridges):
     try:
@@ -158,17 +138,11 @@ async def get_all_bridges(request):
         bridges = await get_all_bridges_in_org(org_id)
         embed_token = Helper.generate_token({ "org_id": Config.ORG_ID, "project_id": Config.PROJECT_ID, "user_id": org_id },Config.Access_key )
         response_data = {
-                "success": True,
-                "message": "Get all bridges successfully",
-                "data": {
-                    "bridge" : bridges,
-                    "embed_token": embed_token,
-                    "org_id": org_id
-                }     
+                "bridge" : bridges,
+                "embed_token": embed_token,
+                "org_id": org_id 
         }
-        request.state.statusCode = 200
-        request.state.response = response_data
-        return {}
+        return response_data
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 async def get_all_service_models_controller(service):

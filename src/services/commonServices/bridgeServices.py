@@ -31,14 +31,8 @@ async def duplicate_bridge(request : Request):
             "actions": bridge.get('actions',{}),
             "apikey_object_id": bridge.get('apikey_object_id',""),
         })
-        response_data = {
-            "success": True,
-            "message": "Bridge duplicated successfully",
-            "data": json.loads(json.dumps(res, default=str))  
-            }
-        request.state.statusCode = 200
-        request.state.response = response_data
-        return {}
+        response_data = {json.loads(json.dumps(res, default=str))}
+        return response_data
     except Exception as e:
         return {'error': str(e)}
     
@@ -63,14 +57,8 @@ async def optimize_prompt_controller(request : Request, bridge_id: str):
                 
         except Exception as err:
             print("Error calling function=>", err)
-        response_data = {
-            "success": True,
-            "message": "Prompt optimized successfully",
-            "data": result 
-            }
-        request.state.statusCode = 200
-        request.state.response = response_data
-        return {}
+        response_data = {result}
+        return response_data
     
     except Exception as e:
         return {'error': str(e)}

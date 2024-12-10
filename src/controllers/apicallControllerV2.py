@@ -45,28 +45,16 @@ async def creates_api(request: Request):
                 raise HTTPException(status_code=400, detail="Something went wrong!")
 
             if result.get('success'):
-                response_data = {
-                        "success": True,
-                        "message": "API saved successfully",
-                        "data": {"activated": True,"data": result['api_data']}
-                }
-                request.state.statusCode = 200
-                request.state.response = response_data
-                return {}
+                response_data = {"activated": True,"data": result['api_data']}
+                return response_data
             else:
                 raise HTTPException(status_code=400, detail=result)
 
         elif status in ["delete", "paused"]:
             result = await delete_api(function_name, org_id)
             if result:
-                response_data = {
-                        "success": True,
-                        "message": "API deleted successfully",
-                        "data": {"deleted": True,"data": result}
-                }
-                request.state.statusCode = 200
-                request.state.response = response_data
-                return {}
+                response_data = {"deleted": True,"data": result}
+                return response_data
             else:
                 raise HTTPException(status_code=400, detail=result)
 
@@ -112,8 +100,7 @@ async def updates_api(request: Request, bridge_id: str):
                     "data": result
             }
             request.state.statusCode = 400
-            request.state.response = response_data
-            return {}
+            return response_data
 
     except Exception as error:
         print(f"error in viasocket embed get api => {error}")
