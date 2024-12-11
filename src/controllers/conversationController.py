@@ -42,7 +42,7 @@ async def getThreadHistory(thread_id, org_id, bridge_id):
         print(err)
         return { 'success': False, 'message': str(err) }
 
-async def savehistory(thread_id, sub_thread_id, userMessage, botMessage, org_id, bridge_id, model_name, type, messageBy, userRole="user", tools={}, chatbot_message = "",tools_call_data = [],message_id = None, version_id = None):
+async def savehistory(thread_id, sub_thread_id, userMessage, botMessage, org_id, bridge_id, model_name, type, messageBy, userRole="user", tools={}, chatbot_message = "",tools_call_data = [],message_id = None, version_id = None, image_url = None, revised_prompt = None):
     try:
         chatToSave = [{
             'thread_id': thread_id,
@@ -54,7 +54,9 @@ async def savehistory(thread_id, sub_thread_id, userMessage, botMessage, org_id,
             'type': type,
             'bridge_id': bridge_id,
             'message_id' : message_id,
-            'version_id': version_id
+            'version_id': version_id,
+            'revised_prompt' : revised_prompt,
+            "image_url" : image_url
         }]
         
         if tools:
@@ -70,7 +72,9 @@ async def savehistory(thread_id, sub_thread_id, userMessage, botMessage, org_id,
                 'function': tools,
                 'tools_call_data': tools_call_data,
                 'message_id' : message_id,
-                'version_id': version_id
+                'version_id': version_id,
+                'revised_prompt' : revised_prompt,
+                "image_url" : image_url
             })
 
         if botMessage:
@@ -86,7 +90,8 @@ async def savehistory(thread_id, sub_thread_id, userMessage, botMessage, org_id,
                 'function': botMessage if messageBy == "tool_calls" else {},
                 'chatbot_message' : chatbot_message or "",
                 'message_id' : message_id,
-                'version_id': version_id
+                'revised_prompt' : revised_prompt,
+                "image_url" : image_url
             })
 
         # if userRole == "tool":

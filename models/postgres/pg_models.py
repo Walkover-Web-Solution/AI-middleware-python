@@ -27,7 +27,8 @@ class Conversation(Base):
     message_id = Column(UUID(as_uuid=True), nullable=True)
     version_id = Column(String)
     sub_thread_id = Column(String, nullable=True)
-    # raw_data = relationship("RawData", back_populates="conversation")
+    revised_prompt = Column(String, nullable=True)
+    image_url = Column(String, nullable=True)
 
 class RawData(Base):
     __tablename__ = 'raw_data'
