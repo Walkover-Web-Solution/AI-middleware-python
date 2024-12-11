@@ -284,8 +284,8 @@ async def chat(request_body):
             
             tasks = [
                 sendResponse(response_format, result["modelResponse"], success=True),
-                metrics_service.create([usage], result["historyParams"]),
-                validateResponse(final_response=result['modelResponse'],configration=configuration,bridgeId=bridge_id,message_id=message_id, org_id=org_id)
+                metrics_service.create([usage], result["historyParams"], version_id),
+                validateResponse(final_response=result['modelResponse'], configration=configuration, bridgeId=bridge_id, message_id=message_id, org_id=org_id)
             ]
             if bridgeType:
                 tasks.append(chatbot_suggestions(response_format, result['modelResponse'], user))
@@ -323,7 +323,7 @@ async def chat(request_body):
                     "channel": 'chat',
                     "type": "error",
                     "actor": "user"
-                }),
+                }, version_id),
                 # Only send the second response if the type is not 'default'
                 sendResponse(response_format, result.get("modelResponse", str(error))) if response_format['type'] != 'default' else None,
                 send_alert(data={"configuration": configuration, "error": str(error),"message_id":message_id, "bridge_id": bridge_id, "message": "Exception for the code", "org_id":org_id}),

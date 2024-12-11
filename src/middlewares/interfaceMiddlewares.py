@@ -133,8 +133,6 @@ async def reset_chatBot(request: Request, botId: str):
         bridge_id = str(bridges.get('_id', ''))
     if purpose == 'is_reset':
         result = await reset_and_mode_chat_history(org_id, bridge_id, thread_id, 'is_reset', True)
-    elif purpose == 'human':
-        result = await reset_and_mode_chat_history(org_id, bridge_id, thread_id, 'mode', 1)
     response_format = {
         "type": "RTLayer",
         "cred": {
@@ -145,8 +143,7 @@ async def reset_chatBot(request: Request, botId: str):
     }
     response = {
         "data": {
-            "role": "reset",
-            **({"mode": "human"} if purpose == 'human' else {})
+            "role": "reset"
         }
     }
     if result['success']:
