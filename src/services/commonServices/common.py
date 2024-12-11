@@ -68,7 +68,7 @@ async def chat(request_body):
     customConfig = {}
     response_format = configuration.get("response_format")
     response_type = configuration.get("response_type")
-    if(response_type):
+    if(response_type and response_type != 'default'):
         if response_type.get("type") == 'json_schema':
             response_type['type'] = 'json_schema' if response_type['json_schema'] else 'json_object'
     model = configuration.get('model')
