@@ -20,8 +20,7 @@ async def Response_formatter(response, service, tools={}, type='chat'):
                 "model" : response.get("model", None),
                 "role" : response.get("choices", [{}])[0].get("message", {}).get("role", None),
                 "finish_reason" : response.get("choices", [{}])[0].get("finish_reason", None),
-                "tools_data": tools_data or {},
-                "image_url" : response.get('data')[0].get('url')
+                "tools_data": tools_data or {}
             },
             "usage" : {
                 "input_tokens" : response.get("usage", {}).get("prompt_tokens", None),
