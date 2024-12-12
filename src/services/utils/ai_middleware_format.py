@@ -2,7 +2,7 @@ import json
 from config import Config
 from src.services.utils.apiservice import fetch
 
-async def Response_formatter(response, service, tools={}):
+async def Response_formatter(response, service, tools={}, type='chat'):
     tools_data = tools
     if isinstance(tools_data, dict):
                 for key, value in tools_data.items():
@@ -12,7 +12,7 @@ async def Response_formatter(response, service, tools={}):
                         except json.JSONDecodeError:
                             pass
                         
-    if service == 'openai':
+    if service == 'openai' and type =='chat' :
         return {
             "data" : {
                 "id" : response.get("id", None),
@@ -28,6 +28,13 @@ async def Response_formatter(response, service, tools={}):
                 "total_tokens" : response.get("usage", {}).get("total_tokens", None),
                 "cached_tokens" : response.get("usage", {}).get("prompt_tokens_details",{}).get('cached_tokens')
 
+            }
+        }
+    elif service == 'openai' and type =='image' :
+        return {
+            "data" : {
+                "revised_prompt" : response.get('data')[0].get('revised_prompt'),
+                "image_url" : response.get('data')[0].get('url')
             }
         }
     

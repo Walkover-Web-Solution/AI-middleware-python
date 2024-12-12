@@ -209,6 +209,10 @@ async def get_all_service_models_controller(service):
                 "reasoning" : {
                     "o1-preview" : restructure_configuration(model_configuration.o1_preview()),
                     "o1-mini" : restructure_configuration(model_configuration.o1_mini())
+                },
+                "image" : {
+                    "dall-e-2" : restructure_configuration(model_configuration.dall_e_2()),
+                    "dall-e-3" : restructure_configuration(model_configuration.dall_e_3())
                 }
                 # "embedding": {
                 #     "text-embedding-3-large": restructure_configuration(model_configuration.text_embedding_3_large()),
