@@ -34,8 +34,8 @@ async def chat_completion(request: Request, db_config: dict = Depends(add_config
             raise HTTPException(status_code=500, detail="Failed to publish message.")
     else:
         # Assuming chat is an async function that could be blocking
-        loop = asyncio.get_event_loop()
-        result = await loop.run_in_executor(executor, lambda: asyncio.run(chat(data_to_send)))
+
+        result = await chat(data_to_send)
         return result
 
 
@@ -44,6 +44,5 @@ async def playground_chat_completion(request: Request, db_config: dict = Depends
     request.state.is_playground = True
     request.state.version = 2
     data_to_send = await make_request_data(request)
-    loop = asyncio.get_event_loop()
-    result = await loop.run_in_executor(executor, lambda: asyncio.run(chat(data_to_send)))
+    result = await chat(data_to_send)
     return result
