@@ -31,7 +31,9 @@ class UnifiedOpenAICase(BaseService):
                     raise ValueError(functionCallRes.get('error'))
                 self.update_model_response(modelResponse, functionCallRes)
                 tools = functionCallRes.get("tools", {})
-            usage = self.calculate_usage(modelResponse) 
+            usage = self.calculate_usage(modelResponse)
+            if not self.playground:
+                historyParams = self.prepare_history_params(modelResponse, tools) 
         elif self.type == 'image':
             self.customConfig['prompt'] = self.user
             openAIResponse = await self.image(self.customConfig, self.apikey, service_name['openai'])
@@ -41,7 +43,9 @@ class UnifiedOpenAICase(BaseService):
                     await self.handle_failure(openAIResponse)
                 raise ValueError(openAIResponse.get('error'))
             
-        if not self.playground:
-            historyParams = self.prepare_history_params(modelResponse, tools)
+            if not self.playground:
+                historyParams = self.prepare_history_params(modelResponse, tools)
+                historyParams['message'] = "image generated successfully"
+                historyParams['type'] = 'assistant'
         return {'success': True, 'modelResponse': modelResponse, 'historyParams': historyParams, 'usage': usage }
     

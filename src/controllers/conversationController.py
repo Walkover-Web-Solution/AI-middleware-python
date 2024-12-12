@@ -55,8 +55,7 @@ async def savehistory(thread_id, sub_thread_id, userMessage, botMessage, org_id,
             'bridge_id': bridge_id,
             'message_id' : message_id,
             'version_id': version_id,
-            'revised_prompt' : revised_prompt,
-            "image_url" : image_url
+            'revised_prompt' : revised_prompt
         }]
         
         if tools:
@@ -72,9 +71,7 @@ async def savehistory(thread_id, sub_thread_id, userMessage, botMessage, org_id,
                 'function': tools,
                 'tools_call_data': tools_call_data,
                 'message_id' : message_id,
-                'version_id': version_id,
-                'revised_prompt' : revised_prompt,
-                "image_url" : image_url
+                'version_id': version_id
             })
 
         if botMessage:
