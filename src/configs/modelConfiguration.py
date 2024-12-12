@@ -4711,20 +4711,20 @@ class ModelsConfig:
             },
             "size": {
                 "field": "select",
-                "options": [{'type': '1024x1024'}, {'type': '1024x1792'}, {'type': '1729x1024'}],
-                "default": {'type': '1024x1024'},
+                "options": ['1024x1024', '1024x1792', '1729x1024'],
+                "default": '1024x1024',
                 "level": 0
             },
             "quality": {
                 "field": "select",
-                "options": [{'type': 'standard'}, {'type': 'hd'}],
-                "default": {'type': 'standard'},
+                "options": ['standard','hd'],
+                "default": 'standard',
                 "level": 0
             },
             "style": {
                 "field": "select",
-                "options": [{'type': 'vivid'}, {'type': 'natural'}],
-                "default": {'type': 'vivid'},
+                "options": ['vivid', 'natural'],
+                "default": 'vivid',
                 "level": 0
             }
         }
@@ -4768,16 +4768,22 @@ class ModelsConfig:
             },
             "size": {
                 "field": "select",
-                "options": [{'type': '256x256'}, {'type': '512x512'}, {'type': '1024x1024'}],
-                "default": {'type': '1024x1024'},
+                "options": ['256x256', '512x512', '1024x1024'],
+                "default": '1024x1024',
                 "level": 0
             },
             "quality": {
                 "field": "select",
-                "options": [{'type': 'standard'}, {'type': 'hd'}],
-                "default": {'type': 'standard'},
+                "options": ['standard','hd'],
+                "default": 'standard',
                 "level": 0
-            }
+            },
+            # "response_format": {
+            #     "field": "select",
+            #     "options": ['url', 'b64_json'],
+            #     "default": 'url',
+            #     "level": 0
+            # }
         }
         outputConfig = {
             "usage": [{
