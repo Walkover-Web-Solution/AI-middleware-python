@@ -4728,8 +4728,34 @@ class ModelsConfig:
                 "level": 0
             }
         }
+        outputConfig = {
+            "usage": [{
+                "prompt_tokens": "usage.prompt_tokens",
+                "completion_tokens": "usage.completion_tokens",
+                "total_tokens": "usage.total_tokens",
+                "total_cost": {
+                    "input_cost": 0.01,
+                    "output_cost": 0.03
+                }
+            }],
+            "message": "choices[0].message.content",
+            "tools": "choices[0].message.tool_calls",
+            "assistant": "choices[0].message",
+            "id": "id"
+        }
+        inputConfig = {
+            "system": {
+                "role": "system",
+                "content": "",
+                "contentKey": "content",
+                "type": "json"
+            },
+            "content_location": "prompt[0].content"
+        }
         return {
-            "configuration": configuration
+            "configuration": configuration,
+            "outputConfig": outputConfig,
+            "inputConfig": inputConfig
         }
     
     @staticmethod
@@ -4753,6 +4779,32 @@ class ModelsConfig:
                 "level": 0
             }
         }
+        outputConfig = {
+            "usage": [{
+                "prompt_tokens": "usage.prompt_tokens",
+                "completion_tokens": "usage.completion_tokens",
+                "total_tokens": "usage.total_tokens",
+                "total_cost": {
+                    "input_cost": 0.01,
+                    "output_cost": 0.03
+                }
+            }],
+            "message": "choices[0].message.content",
+            "tools": "choices[0].message.tool_calls",
+            "assistant": "choices[0].message",
+            "id": "id"
+        }
+        inputConfig = {
+            "system": {
+                "role": "system",
+                "content": "",
+                "contentKey": "content",
+                "type": "json"
+            },
+            "content_location": "prompt[0].content"
+        }
         return {
-            "configuration": configuration
+            "configuration": configuration,
+            "outputConfig": outputConfig,
+            "inputConfig": inputConfig
         }
