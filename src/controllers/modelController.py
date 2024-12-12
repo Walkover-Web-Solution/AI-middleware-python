@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Depends, Request, HTTPException
 from fastapi.responses import JSONResponse
-import asyncio
 from src.services.commonServices.common import chat
 from src.services.commonServices.baseService.utils import make_request_data
 from src.services.commonServices.queueService.queueService import queue_obj
@@ -29,9 +28,7 @@ async def chat_completion(request: Request, db_config: dict = Depends(add_config
                 print(f"Failed to publish message: {e}")
                 raise HTTPException(status_code=500, detail="Failed to publish message.")
         else:
-            # Assuming chat is an async function that could be blocking
-            loop = asyncio.get_event_loop()
-            result = await loop.run_in_executor(executor, lambda: asyncio.run(chat(request)))
+            result = await chat(request)
             return result
 
     except Exception as e:
@@ -45,8 +42,5 @@ async def playground_chat_completion(request: Request, db_config: dict = Depends
     request.state.is_playground = True
     request.state.version = 1
     
-    # Get the current event loop
-    loop = asyncio.get_event_loop()
-    # Run the async function in a separate thread to avoid blocking
-    result = await loop.run_in_executor(executor, lambda: asyncio.run(chat(request)))
+    result = await chat(request)
     return result
