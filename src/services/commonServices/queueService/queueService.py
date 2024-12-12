@@ -128,8 +128,7 @@ class Queue:
 
     async def process_messages(self, messages):
         """Implement your batch processing logic here."""
-        res =  await chat(messages)
-        return res
+        await chat(messages)
 
     async def consume_messages(self):
         try:
