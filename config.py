@@ -39,3 +39,4 @@ class Config:
     QUEUE_NAME = os.getenv('QUEUE_NAME')
     PREFETCH_COUNT = os.getenv('PREFETCH_COUNT')
     CONSUMER_STATUS = os.getenv('CONSUMER_STATUS')
+    GCP_CREDENTIALS = os.getenv('GCP_CREDENTIALS')

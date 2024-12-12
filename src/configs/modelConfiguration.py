@@ -4727,12 +4727,12 @@ class ModelsConfig:
                 "default": 'vivid',
                 "level": 0
             },
-            "response_format": {
-                "field": "select",
-                "options" : ['url','b64_json'],
-                "default": 'url',
-                "level": 0
-            }
+            # "response_format": {
+            #     "field": "select",
+            #     "options" : ['url','b64_json'],
+            #     "default": 'url',
+            #     "level": 0
+            # }
         }
         outputConfig = {
             "usage": [{
@@ -4784,20 +4784,12 @@ class ModelsConfig:
                 "default": 'standard',
                 "level": 0
             },
-            "n" : {
-                "field": "slider",
-                "min": 1,
-                "max": 10,
-                "step": 1,
-                "default": 1,
-                "level": 2
-            },
-            "response_format": {
-                "field": "select",
-                "options" : ['url','b64_json'],
-                "default": 'url',
-                "level": 0
-            }
+            # "response_format": {
+            #     "field": "select",
+            #     "options" : ['url','b64_json'],
+            #     "default": 'url',
+            #     "level": 0
+            # }
             
             
         }
