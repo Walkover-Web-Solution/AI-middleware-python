@@ -23,7 +23,7 @@ async def add_configuration_data_to_body(request: Request):
         # request.state.body = body
         service = body.get("service")
         model = body.get("configuration").get('model')
-        if not (service in services and (model in services[service]["chat"] or model in services[service]["image"]) ):
+        if not (service in services and model in services[service]["models"]):
             raise HTTPException(status_code=400, detail={"success": False, "error": "model or service does not exist!"})
         return db_config
     except HTTPException as he:

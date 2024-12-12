@@ -15,7 +15,7 @@ async def OpenAIImageModel(configuration, apiKey, execution_time_logs, timer):
         chat_completion = openai_config.images.generate(**configuration)
         execution_time_logs[len(execution_time_logs) + 1] = timer.stop("Openai image stop")
         response = chat_completion.to_dict()
-        
+        timer.start()
         image_url = response['data'][0]['url']
         image_response = requests.get(image_url)
         image_content = BytesIO(image_response.content)
@@ -35,6 +35,7 @@ async def OpenAIImageModel(configuration, apiKey, execution_time_logs, timer):
         # Get the public URL
         gcp_url = f"https://storage.googleapis.com/ai_middleware_testing/{filename}"
         response['data'][0]['url'] = gcp_url
+        execution_time_logs[len(execution_time_logs) + 1] = timer.stop("Openai image stop")
         return {
             'success': True,
             'response': response
