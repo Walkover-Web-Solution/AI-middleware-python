@@ -4711,28 +4711,22 @@ class ModelsConfig:
             },
             "size": {
                 "field": "select",
-                "options" : ['1024*1024','1024*1792', '1729*1024'],
-                "default": '1024x1024',
+                "options": [{'type': '1024x1024'}, {'type': '1024x1792'}, {'type': '1729x1024'}],
+                "default": {'type': '1024x1024'},
                 "level": 0
             },
             "quality": {
                 "field": "select",
-                "options" : ['standard','hd'],
-                "default": 'standard',
+                "options": [{'type': 'standard'}, {'type': 'hd'}],
+                "default": {'type': 'standard'},
                 "level": 0
             },
-            "style" : {
+            "style": {
                 "field": "select",
-                "options" : ['vivid','natural'],
-                "default": 'vivid',
+                "options": [{'type': 'vivid'}, {'type': 'natural'}],
+                "default": {'type': 'vivid'},
                 "level": 0
-            },
-            # "response_format": {
-            #     "field": "select",
-            #     "options" : ['url','b64_json'],
-            #     "default": 'url',
-            #     "level": 0
-            # }
+            }
         }
         outputConfig = {
             "usage": [{
@@ -4774,24 +4768,16 @@ class ModelsConfig:
             },
             "size": {
                 "field": "select",
-                "options" : ['256x256','512x512', '1024x1024'],
-                "default": '1024x1024',
+                "options": [{'type': '256x256'}, {'type': '512x512'}, {'type': '1024x1024'}],
+                "default": {'type': '1024x1024'},
                 "level": 0
             },
             "quality": {
                 "field": "select",
-                "options" : ['standard','hd'],
-                "default": 'standard',
+                "options": [{'type': 'standard'}, {'type': 'hd'}],
+                "default": {'type': 'standard'},
                 "level": 0
-            },
-            # "response_format": {
-            #     "field": "select",
-            #     "options" : ['url','b64_json'],
-            #     "default": 'url',
-            #     "level": 0
-            # }
-            
-            
+            }
         }
         outputConfig = {
             "usage": [{
@@ -4822,4 +4808,3 @@ class ModelsConfig:
             "outputConfig": outputConfig,
             "inputConfig": inputConfig
         }
-    
