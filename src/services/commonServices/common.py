@@ -265,16 +265,11 @@ async def chat(request_body):
                     except Exception as e:
                         print(f"error in chatbot : {e}")
                         raise RuntimeError(f"error in chatbot : {e}")
-            
-            if bridgeType:
-                    suggestions = class_obj.extract_response_from_model(model_response=result['modelResponse'])
-                    message = json.loads(result['historyParams']['message'])
-                    result["historyParams"]["message"] = message.get('response','')
                 
         if version == 2:
             result['modelResponse'] = await Response_formatter(result["modelResponse"],service, result["historyParams"].get('tools',{}), type)
-        if configuration['type'] == 'chat' and bridgeType and suggestions:
-            result['modelResponse']['options'] = suggestions
+        # if configuration['type'] == 'chat' and bridgeType and suggestions:
+        #     result['modelResponse']['options'] = suggestions
         latency = {
             "over_all_time" : timer.stop("Api total time") or "",
             "model_execution_time": sum(execution_time_logs.values()) or "",
