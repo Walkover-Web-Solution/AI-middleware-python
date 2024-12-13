@@ -1,8 +1,6 @@
 import traceback
 from openai import AsyncOpenAI 
-import requests
 from google.cloud import storage
-from io import BytesIO
 import uuid
 import json
 from config import Config
