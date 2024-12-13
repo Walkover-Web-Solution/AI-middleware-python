@@ -194,15 +194,6 @@ class BaseService:
             'revised_prompt' : model_response.get('data',[{}])[0].get('revised_prompt', None)
         }
     
-    def extract_response_from_model(self, model_response):
-        try:
-            if (_.get(model_response, self.modelOutputConfig['message'])):
-                suggestions = json.loads(_.get(model_response, self.modelOutputConfig['message'])).get('questions', [])
-                return suggestions
-        except Exception as e:
-            print(f"An error occurred while extracting response: {e}")
-            return []
-    
     def service_formatter(self, configuration : object, service : str ):
         try:
             new_config = {ServiceKeys[service].get(key, key): value for key, value in configuration.items()}
