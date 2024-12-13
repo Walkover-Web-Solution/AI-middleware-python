@@ -28,6 +28,7 @@ from src.configs.serviceKeys import model_config_change
 from src.services.utils.time import Timer
 from src.services.utils.apiservice import fetch
 from src.services.utils.gpt_memory import handle_gpt_memory
+from concurrent.futures import ThreadPoolExecutor
 
 async def create_service_handler(params, service):
     if service == service_name['openai']:
@@ -41,6 +42,8 @@ async def create_service_handler(params, service):
         
     return class_obj
 
+
+executor = ThreadPoolExecutor(max_workers= int(Config.max_workers) or 10)
 
 @app.post("/chat/{bridge_id}")
 @handle_exceptions
@@ -185,7 +188,8 @@ async def chat(request_body):
             "memory": memory,
         }
         class_obj = await create_service_handler(params,service)
-        result = await class_obj.execute()
+        loop = asyncio.get_event_loop()
+        result = await loop.run_in_executor(executor, lambda: asyncio.run(class_obj.execute()))
         
         if not result["success"]:
             raise ValueError(result)
@@ -220,7 +224,8 @@ async def chat(request_body):
                     params['customConfig']['response_type'] = {"type": "json_object"}
                     params['customConfig']['max_tokens'] = modelConfig['max_tokens']['max']
                     obj = await create_service_handler(params,service)
-                    newresult = await obj.execute()
+                    loop = asyncio.get_event_loop()
+                    newresult = await loop.run_in_executor(executor, lambda: asyncio.run(obj.execute()))
                     tokens = obj.calculate_usage(newresult["modelResponse"])
                     if service == "anthropic":
                         _.set_(result['usage'], "totalTokens", _.get(result['usage'], "totalTokens") + tokens['totalTokens'])
