@@ -1,8 +1,9 @@
 import aiohttp
 import ssl
 import certifi
+from io import BytesIO
 
-async def fetch(url, method="GET", headers=None, params=None, json_body=None):
+async def fetch(url, method="GET", headers=None, params=None, json_body=None, image=None):
     ssl_context = ssl.create_default_context(cafile=certifi.where())
 
     async with aiohttp.ClientSession() as session:
@@ -11,7 +12,9 @@ async def fetch(url, method="GET", headers=None, params=None, json_body=None):
             if response.status >= 300:
                 error_response = await response.text()
                 raise  ValueError(error_response)
-                
-            response_data = await response.json()  # This gets the body as text (could also use .json() for JSON)
+            if image:
+                response_data = BytesIO(await response.read())
+            else:
+                response_data = await response.json()  # This gets the body as text (could also use .json() for JSON)
             response_headers = dict(response.headers)   # This gets the response headers
             return response_data, response_headers

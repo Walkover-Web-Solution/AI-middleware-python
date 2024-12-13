@@ -11,6 +11,7 @@ from ..anthrophic.antrophicModelRun import anthropic_runmodel
 from ....configs.constant import service_name
 from ..groq.groqModelRun import groq_runmodel
 from ....configs.constant import service_name
+from ..openAI.image_model import OpenAIImageModel
 
 class BaseService:
     def __init__(self, params):
@@ -40,6 +41,7 @@ class BaseService:
         self.names = params.get('names', [])
         self.reasoning_model = params.get('reasoning_model')
         self.memory = params.get('memory')
+        self.type = params.get('type')
 
 
     async def run_tool(self, responses, service):
@@ -187,7 +189,9 @@ class BaseService:
             'tools': tools,
             'chatbot_message' : "",
             'tools_call_data' : self.func_tool_call_data,
-            'message_id' : self.message_id
+            'message_id' : self.message_id,
+            'image_url' : model_response.get('data',[{}])[0].get('url', None),
+            'revised_prompt' : model_response.get('data',[{}])[0].get('revised_prompt', None)
         }
     
     def extract_response_from_model(self, model_response):
@@ -260,3 +264,19 @@ class BaseService:
                 value['args'] = args
 
         return codes_mapping
+
+    async def image(self, configuration, apikey, service):
+        try:
+            response = {}
+            if service == service_name['openai']:
+                response = await OpenAIImageModel(configuration, apikey, self.execution_time_logs, self.timer)
+            if not response['success']:
+                raise ValueError(response['error'])
+            return {
+                'success': True,
+                'modelResponse': response['response']
+            }
+        except Exception as e:
+            traceback.print_exc()
+            print("chats error=>", e)
+            raise ValueError(f"error occurs from {self.service} api {e.args[0]}")

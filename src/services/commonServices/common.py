@@ -54,10 +54,10 @@ async def chat(request_body):
     body = request_body.get('body',{})
     state = request_body.get('state',{})
     path_params = request_body.get('path_params',{})
-
     apikey = body.get("apikey")
     bridge_id = path_params.get('bridge_id') or body.get("bridge_id")
     configuration = body.get("configuration")
+    type = configuration.get('type')
     thread_id = body.get("thread_id")
     sub_thread_id = body.get('sub_thread_id',thread_id)
     org_id = state['profile'].get('org',{}).get('id','')
@@ -97,7 +97,7 @@ async def chat(request_body):
     gpt_memory = body.get('gpt_memory')
     memory = None
     version_id = body.get('version_id')
-    gpt_memory_context = body.get('gpt_memory_context') 
+    gpt_memory_context = body.get('gpt_memory_context')
     
     if model == 'o1-preview' or model == 'o1-mini':
         reasoning_model = True
@@ -116,15 +116,16 @@ async def chat(request_body):
                 continue
             if  modelConfig[key]["level"] == 2 or key in configuration:
                 customConfig[key] = configuration.get(key, modelConfig[key]["default"])
-        if fine_tune_model is not None and len(fine_tune_model) and model in {'gpt-4o-mini-2024-07-18', 'gpt-4o-2024-08-06', 'gpt-4-0613'}:
-            customConfig['model'] = fine_tune_model
-            del customConfig['creativity_level'] # [?] to be removed
-        if pre_tools:
-            pre_function_response = await axios_work(pre_tools.get('args', {}), pre_tools.get('name', ''))
-            if pre_function_response.get('status') == 0:
-                variables['pre_function'] = "Error while calling prefunction. Error message: " + pre_function_response.get('response')
-            else:
-                variables['pre_function'] = pre_function_response.get('response')
+        
+        if configuration['type'] == 'chat':
+            if fine_tune_model is not None and len(fine_tune_model) and model in {'gpt-4o-mini-2024-07-18', 'gpt-4o-2024-08-06', 'gpt-4-0613'}:
+                customConfig['model'] = fine_tune_model
+            if pre_tools:
+                pre_function_response = await axios_work(pre_tools.get('args', {}), pre_tools.get('name', ''))
+                if pre_function_response.get('status') == 0:
+                    variables['pre_function'] = "Error while calling prefunction. Error message: " + pre_function_response.get('response')
+                else:
+                    variables['pre_function'] = pre_function_response.get('response')
 
         if thread_id:
             thread_id = thread_id.strip()
@@ -134,30 +135,32 @@ async def chat(request_body):
         else:
             thread_id = str(uuid.uuid1())
             sub_thread_id = thread_id
-        id = thread_id + '_' + (bridge_id if bridge_id is not None else version_id)
-        if gpt_memory: 
-            response, rs_headers = await fetch(f"https://flow.sokt.io/func/scriCJLHynCG","POST", None, None, {"threadID": id})
-            if isinstance(response, str):
-               memory = response
-            
-        configuration['prompt'], missing_vars  = Helper.replace_variables_in_prompt(configuration['prompt'] , variables)
-        if len(missing_vars) > 0:
-            await send_error_to_webhook(bridge_id, org_id, missing_vars, type = 'Variable')
+        
+        if configuration['type'] == 'chat':
+            id = thread_id + '_' + (bridge_id if bridge_id is not None else version_id)
+            if gpt_memory: 
+                response, rs_headers = await fetch(f"https://flow.sokt.io/func/scriCJLHynCG","POST", None, None, {"threadID": id})
+                if isinstance(response, str):
+                   memory = response
+                
+            configuration['prompt'], missing_vars  = Helper.replace_variables_in_prompt(configuration['prompt'] , variables)
+            if len(missing_vars) > 0:
+                await send_error_to_webhook(bridge_id, org_id, missing_vars, type = 'Variable')
 
-        if template:
-            system_prompt = template
-            configuration['prompt'], missing_vars = Helper.replace_variables_in_prompt(system_prompt, {"system_prompt": configuration['prompt'], **variables})
+            if template:
+                system_prompt = template
+                configuration['prompt'], missing_vars = Helper.replace_variables_in_prompt(system_prompt, {"system_prompt": configuration['prompt'], **variables})
 
-        if bridgeType and modelConfig.get('response_type') and suggest:
-            template_content = (await ConfigurationService.get_template_by_id(Config.CHATBOT_OPTIONS_TEMPLATE_ID)).get('template', '')
-            configuration['prompt'], missing_vars = Helper.replace_variables_in_prompt(template_content, {"system_prompt": configuration['prompt']})
-            customConfig['response_type'] = {"type": "json_object"}
-            suggestions_flag = True
+            if bridgeType and modelConfig.get('response_type') and suggest:
+                template_content = (await ConfigurationService.get_template_by_id(Config.CHATBOT_OPTIONS_TEMPLATE_ID)).get('template', '')
+                configuration['prompt'], missing_vars = Helper.replace_variables_in_prompt(template_content, {"system_prompt": configuration['prompt']})
+                customConfig['response_type'] = {"type": "json_object"}
+        
+            if not is_playground and bridgeType is None and modelConfig.get('response_type'):
+                res = body.get('response_type', 'json_object')
+                customConfig['response_type'] = {"type": res}
 
         customConfig = await model_config_change(modelObj['configuration'], customConfig, service)
-        if not is_playground and bridgeType is None and modelConfig.get('response_type'):
-            res = body.get('response_type', 'json_object')
-            customConfig['response_type'] = {"type": res}
 
         params = {
             "customConfig": customConfig,
@@ -186,6 +189,7 @@ async def chat(request_body):
             "names":names,
             "reasoning_model" : reasoning_model,
             "memory": memory,
+            "type" : type
         }
         class_obj = await create_service_handler(params,service)
         loop = asyncio.get_event_loop()
@@ -193,69 +197,70 @@ async def chat(request_body):
         
         if not result["success"]:
             raise ValueError(result)
-        if is_rich_text and bridgeType and reasoning_model == False:
-                try:
+        if configuration['type'] == 'chat':
+            if is_rich_text and bridgeType and reasoning_model == False:
                     try:
-                        # validation for the check response
-                        parsedJson = Helper.parse_json(_.get(result["modelResponse"], modelOutputConfig["message"]))
-                    except Exception as e:
-                        if _.get(result["modelResponse"], modelOutputConfig["tools"]):
-                            raise RuntimeError("Function calling has been done 6 times, limit exceeded.")
-                        raise RuntimeError(e)
-                    
-                    if actions: 
-                        system_prompt =  (await ConfigurationService.get_template_by_id(Config.MUI_TEMPLATE_ID)).get('template', '')
-                    else: 
-                        system_prompt =  (await ConfigurationService.get_template_by_id(Config.MUI_TEMPLATE_ID_WITHOUT_ACTION)).get('template', '')
+                        try:
+                            # validation for the check response
+                            parsedJson = Helper.parse_json(_.get(result["modelResponse"], modelOutputConfig["message"]))
+                        except Exception as e:
+                            if _.get(result["modelResponse"], modelOutputConfig["tools"]):
+                                raise RuntimeError("Function calling has been done 6 times, limit exceeded.")
+                            raise RuntimeError(e)
                         
-                    if user_reference: 
-                        user_reference = f"\"user reference\": \"{user_reference}\""
-                        user_contains = "on the base of user reference"
-                    params["configuration"]["prompt"], missing_vars = Helper.replace_variables_in_prompt(system_prompt, { "actions" : actions, "user_reference": user_reference, "user_contains": user_contains})
-                    params["user"] = f"user: {user}, \n Answer: {_.get(result['modelResponse'], modelOutputConfig['message'])}"
-                    params["template"] = None
-                    tools = result.get('historyParams').get('tools')
-                    if 'customConfig' in params and 'tools' in params['customConfig']:
-                        del params['customConfig']['tools']
-                    if params["configuration"].get('conversation'):
-                        del params["configuration"]['conversation']
-                    model_response_content = result.get('historyParams').get('message')
-                    # custom config for the rich text
-                    params['customConfig']['response_type'] = {"type": "json_object"}
-                    params['customConfig']['max_tokens'] = modelConfig['max_tokens']['max']
-                    obj = await create_service_handler(params,service)
-                    loop = asyncio.get_event_loop()
-                    newresult = await loop.run_in_executor(executor, lambda: asyncio.run(obj.execute()))
-                    tokens = obj.calculate_usage(newresult["modelResponse"])
-                    if service == "anthropic":
-                        _.set_(result['usage'], "totalTokens", _.get(result['usage'], "totalTokens") + tokens['totalTokens'])
-                        _.set_(result['usage'], "inputTokens", _.get(result['usage'], "inputTokens") + tokens['inputTokens'])
-                        _.set_(result['usage'], "outputTokens", _.get(result['usage'], "outputTokens") + tokens['outputTokens'])
-                    elif service == 'openai' or service == 'groq':
-                        _.set_(result['usage'], "totalTokens", _.get(result['usage'], "totalTokens") + tokens['totalTokens'])
-                        _.set_(result['usage'], "inputTokens", _.get(result['usage'], "inputTokens") + tokens['inputTokens'])
-                        _.set_(result['usage'], "outputTokens", _.get(result['usage'], "outputTokens") + tokens['outputTokens'])
-                        _.set_(result['usage'], "expectedCost", _.get(result['usage'], "expectedCost") + tokens['expectedCost'])
-                    _.set_(result['modelResponse'], modelOutputConfig['message'], _.get(newresult['modelResponse'], modelOutputConfig['message']))
-                    newresult['historyParams']['tools_call_data'] = result['historyParams']['tools_call_data']
-                    result['historyParams'] = deepcopy(newresult.get('historyParams',{}))
-                    result['historyParams']['message'] = model_response_content
-                    result['historyParams']['chatbot_message'] = newresult['historyParams']['message']
-                    result['historyParams']['user'] = user
-                    result['historyParams']['tools'] = tools
-                except Exception as e:
-                    print(f"error in chatbot : {e}")
-                    raise RuntimeError(f"error in chatbot : {e}")
-        
-        if bridgeType and suggestions_flag:
-                suggestions = class_obj.extract_response_from_model(model_response=result['modelResponse'])
-                message = json.loads(result['historyParams']['message'])
-                result["historyParams"]["message"] = message.get('response','')
+                        if actions: 
+                            system_prompt =  (await ConfigurationService.get_template_by_id(Config.MUI_TEMPLATE_ID)).get('template', '')
+                        else: 
+                            system_prompt =  (await ConfigurationService.get_template_by_id(Config.MUI_TEMPLATE_ID_WITHOUT_ACTION)).get('template', '')
+                            
+                        if user_reference: 
+                            user_reference = f"\"user reference\": \"{user_reference}\""
+                            user_contains = "on the base of user reference"
+                        params["configuration"]["prompt"], missing_vars = Helper.replace_variables_in_prompt(system_prompt, { "actions" : actions, "user_reference": user_reference, "user_contains": user_contains})
+                        params["user"] = f"user: {user}, \n Answer: {_.get(result['modelResponse'], modelOutputConfig['message'])}"
+                        params["template"] = None
+                        tools = result.get('historyParams').get('tools')
+                        if 'customConfig' in params and 'tools' in params['customConfig']:
+                            del params['customConfig']['tools']
+                        if params["configuration"].get('conversation'):
+                            del params["configuration"]['conversation']
+                        model_response_content = result.get('historyParams').get('message')
+                        # custom config for the rich text
+                        if service != "anthropic":
+                            params['customConfig']['response_type'] = {"type": "json_object"}
+                        params['customConfig']['max_tokens'] = modelConfig['max_tokens']['max']
+                        obj = await create_service_handler(params,service)
+                        newresult = await obj.execute()
+                        tokens = obj.calculate_usage(newresult["modelResponse"])
+                        if service == "anthropic":
+                            _.set_(result['usage'], "totalTokens", _.get(result['usage'], "totalTokens") + tokens['totalTokens'])
+                            _.set_(result['usage'], "inputTokens", _.get(result['usage'], "inputTokens") + tokens['inputTokens'])
+                            _.set_(result['usage'], "outputTokens", _.get(result['usage'], "outputTokens") + tokens['outputTokens'])
+                        elif service == 'openai' or service == 'groq':
+                            _.set_(result['usage'], "totalTokens", _.get(result['usage'], "totalTokens") + tokens['totalTokens'])
+                            _.set_(result['usage'], "inputTokens", _.get(result['usage'], "inputTokens") + tokens['inputTokens'])
+                            _.set_(result['usage'], "outputTokens", _.get(result['usage'], "outputTokens") + tokens['outputTokens'])
+                            _.set_(result['usage'], "expectedCost", _.get(result['usage'], "expectedCost") + tokens['expectedCost'])
+                        _.set_(result['modelResponse'], modelOutputConfig['message'], _.get(newresult['modelResponse'], modelOutputConfig['message']))
+                        newresult['historyParams']['tools_call_data'] = result['historyParams']['tools_call_data']
+                        result['historyParams'] = deepcopy(newresult.get('historyParams',{}))
+                        result['historyParams']['message'] = model_response_content
+                        result['historyParams']['chatbot_message'] = newresult['historyParams']['message']
+                        result['historyParams']['user'] = user
+                        result['historyParams']['tools'] = tools
+                    except Exception as e:
+                        print(f"error in chatbot : {e}")
+                        raise RuntimeError(f"error in chatbot : {e}")
+            
+            if bridgeType:
+                    suggestions = class_obj.extract_response_from_model(model_response=result['modelResponse'])
+                    message = json.loads(result['historyParams']['message'])
+                    result["historyParams"]["message"] = message.get('response','')
                 
         if version == 2:
-            result['modelResponse'] = await Response_formatter(result["modelResponse"],service, result["historyParams"].get('tools',{}))
-        if bridgeType and suggestions:
-                result['modelResponse']['options'] = suggestions
+            result['modelResponse'] = await Response_formatter(result["modelResponse"],service, result["historyParams"].get('tools',{}), type)
+        if configuration['type'] == 'chat' and bridgeType and suggestions:
+            result['modelResponse']['options'] = suggestions
         latency = {
             "over_all_time" : timer.stop("Api total time") or "",
             "model_execution_time": sum(execution_time_logs.values()) or "",
@@ -271,7 +276,7 @@ async def chat(request_body):
                 "latency": json.dumps(latency),
                 "success": True,
                 "variables": variables,
-                "prompt": configuration["prompt"]
+                "prompt": configuration.get("prompt") or ""
             })
             if result.get('modelResponse') and result['modelResponse'].get('data'):
                 result['modelResponse']['data']['message_id'] = message_id
@@ -280,8 +285,10 @@ async def chat(request_body):
                 metrics_service.create([usage], result["historyParams"], version_id),
                 validateResponse(final_response=result['modelResponse'], configration=configuration, bridgeId=bridge_id, message_id=message_id, org_id=org_id)
             ]
+            if bridgeType:
+                tasks.append(chatbot_suggestions(response_format, result['modelResponse'], user))
 
-            if gpt_memory:
+            if gpt_memory  and configuration['type'] == 'chat':
                 tasks.append(handle_gpt_memory(id, user, result['modelResponse'], memory, gpt_memory_context))
             await asyncio.gather(*tasks, return_exceptions=True)
 
