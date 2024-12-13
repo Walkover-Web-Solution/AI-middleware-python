@@ -285,8 +285,6 @@ async def chat(request_body):
                 metrics_service.create([usage], result["historyParams"], version_id),
                 validateResponse(final_response=result['modelResponse'], configration=configuration, bridgeId=bridge_id, message_id=message_id, org_id=org_id)
             ]
-            if bridgeType:
-                tasks.append(chatbot_suggestions(response_format, result['modelResponse'], user))
 
             if gpt_memory  and configuration['type'] == 'chat':
                 tasks.append(handle_gpt_memory(id, user, result['modelResponse'], memory, gpt_memory_context))
