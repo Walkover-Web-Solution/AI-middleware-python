@@ -264,7 +264,7 @@ async def chat(request_body):
                         print(f"error in chatbot : {e}")
                         raise RuntimeError(f"error in chatbot : {e}")
             
-            if bridgeType and suggestions_flag:
+            if bridgeType:
                     suggestions = class_obj.extract_response_from_model(model_response=result['modelResponse'])
                     message = json.loads(result['historyParams']['message'])
                     result["historyParams"]["message"] = message.get('response','')

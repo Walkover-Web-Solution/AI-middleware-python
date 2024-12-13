@@ -1,5 +1,5 @@
 import traceback
-from openai import OpenAI
+from openai import AsyncOpenAI 
 import requests
 from google.cloud import storage
 from io import BytesIO
@@ -10,9 +10,9 @@ from google.oauth2 import service_account
 
 async def OpenAIImageModel(configuration, apiKey, execution_time_logs, timer):
     try:
-        openai_config = OpenAI(api_key=apiKey)
+        openai_config = AsyncOpenAI(api_key=apiKey)
         timer.start()
-        chat_completion = openai_config.images.generate(**configuration)
+        chat_completion = await openai_config.images.generate(**configuration)
         execution_time_logs[len(execution_time_logs) + 1] = timer.stop("Openai image stop")
         response = chat_completion.to_dict()
         timer.start()
