@@ -41,6 +41,9 @@ async def create_bridges_controller(request):
         'stop',
         'response_type',
         'tool_choice',
+        'size',
+        'quality',
+        'style',
         ]
         model_data = {}
         for key in keys_to_update:
