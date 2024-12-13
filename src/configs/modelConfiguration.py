@@ -4753,3 +4753,116 @@ class ModelsConfig:
             "inputConfig": inputConfig
         }
     
+    @staticmethod
+    def dall_e_3():
+        configuration = {
+            "model": {
+                "field": "drop",
+                "default": "dall-e-3",
+                "level": 1
+            },
+            "size": {
+                "field": "select",
+                "options": ['1024x1024', '1024x1792', '1729x1024'],
+                "default": '1024x1024',
+                "level": 0
+            },
+            "quality": {
+                "field": "select",
+                "options": ['standard','hd'],
+                "default": 'standard',
+                "level": 0
+            },
+            "style": {
+                "field": "select",
+                "options": ['vivid', 'natural'],
+                "default": 'vivid',
+                "level": 0
+            }
+        }
+        outputConfig = {
+            "usage": [{
+                "prompt_tokens": "usage.prompt_tokens",
+                "completion_tokens": "usage.completion_tokens",
+                "total_tokens": "usage.total_tokens",
+                "total_cost": {
+                    "input_cost": 0.01,
+                    "output_cost": 0.03
+                }
+            }],
+            "message": "choices[0].message.content",
+            "tools": "choices[0].message.tool_calls",
+            "assistant": "choices[0].message",
+            "id": "id"
+        }
+        inputConfig = {
+            "system": {
+                "role": "system",
+                "content": "",
+                "contentKey": "content",
+                "type": "json"
+            },
+            "content_location": "prompt[0].content"
+        }
+        return {
+            "configuration": configuration,
+            "outputConfig": outputConfig,
+            "inputConfig": inputConfig
+        }
+    
+    @staticmethod
+    def dall_e_2():
+        configuration = {
+            "model": {
+                "field": "drop",
+                "default": "dall-e-2",
+                "level": 1
+            },
+            "size": {
+                "field": "select",
+                "options": ['256x256', '512x512', '1024x1024'],
+                "default": '1024x1024',
+                "level": 0
+            },
+            "quality": {
+                "field": "select",
+                "options": ['standard','hd'],
+                "default": 'standard',
+                "level": 0
+            },
+            # "response_format": {
+            #     "field": "select",
+            #     "options": ['url', 'b64_json'],
+            #     "default": 'url',
+            #     "level": 0
+            # }
+        }
+        outputConfig = {
+            "usage": [{
+                "prompt_tokens": "usage.prompt_tokens",
+                "completion_tokens": "usage.completion_tokens",
+                "total_tokens": "usage.total_tokens",
+                "total_cost": {
+                    "input_cost": 0.01,
+                    "output_cost": 0.03
+                }
+            }],
+            "message": "choices[0].message.content",
+            "tools": "choices[0].message.tool_calls",
+            "assistant": "choices[0].message",
+            "id": "id"
+        }
+        inputConfig = {
+            "system": {
+                "role": "system",
+                "content": "",
+                "contentKey": "content",
+                "type": "json"
+            },
+            "content_location": "prompt[0].content"
+        }
+        return {
+            "configuration": configuration,
+            "outputConfig": outputConfig,
+            "inputConfig": inputConfig
+        }
