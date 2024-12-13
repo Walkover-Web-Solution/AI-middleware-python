@@ -1,4 +1,4 @@
-from .openAIInitializerService import OpenAIInitializer
+from openai import AsyncOpenAI 
 import asyncio
 import traceback
 import json
@@ -8,9 +8,7 @@ from ...utils.ai_middleware_format import send_alert
 async def runModel(configuration, apiKey, execution_time_logs, bridge_id, timer, message_id=None, org_id= None):
     try:
         # async client
-        OpenAIConfig = OpenAIInitializer(apiKey)
-        openAI = OpenAIConfig.getOpenAIService()
-
+        openAI = AsyncOpenAI(api_key=apiKey)
         # Function to execute the API call 
         async def api_call(config):
             try:
