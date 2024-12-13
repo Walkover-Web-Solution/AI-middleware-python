@@ -170,11 +170,12 @@ async def chat(request_body):
                 template_content = (await ConfigurationService.get_template_by_id(Config.CHATBOT_OPTIONS_TEMPLATE_ID)).get('template', '')
                 configuration['prompt'], missing_vars = Helper.replace_variables_in_prompt(template_content, {"system_prompt": configuration['prompt']})
                 customConfig['response_type'] = {"type": "json_object"}
-
-            customConfig = await model_config_change(modelObj['configuration'], customConfig, service)
+        
             if not is_playground and bridgeType is None and modelConfig.get('response_type'):
                 res = body.get('response_type', 'json_object')
                 customConfig['response_type'] = {"type": res}
+
+        customConfig = await model_config_change(modelObj['configuration'], customConfig, service)
 
         params = {
             "customConfig": customConfig,
@@ -288,7 +289,7 @@ async def chat(request_body):
                 "latency": json.dumps(latency),
                 "success": True,
                 "variables": variables,
-                "prompt": configuration["prompt"]
+                "prompt": configuration.get("prompt") or ""
             })
             if result.get('modelResponse') and result['modelResponse'].get('data'):
                 result['modelResponse']['data']['message_id'] = message_id
