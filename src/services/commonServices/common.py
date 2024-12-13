@@ -233,7 +233,8 @@ async def chat(request_body):
                         del params["configuration"]['conversation']
                     model_response_content = result.get('historyParams').get('message')
                     # custom config for the rich text
-                    params['customConfig']['response_type'] = {"type": "json_object"}
+                    if service != "anthropic":
+                        params['customConfig']['response_type'] = {"type": "json_object"}
                     params['customConfig']['max_tokens'] = modelConfig['max_tokens']['max']
                     obj = await create_service_handler(params,service)
                     newresult = await obj.execute()
