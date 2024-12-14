@@ -16,6 +16,10 @@ class UnifiedOpenAICase(BaseService):
                 if not self.playground:
                     await self.handle_failure(openAIResponse)
                 raise ValueError(openAIResponse.get('error'))
+            if not self.playground:
+                historyParams = self.prepare_history_params(modelResponse, tools)
+                historyParams['message'] = "image generated successfully"
+                historyParams['type'] = 'assistant'
         else:
             conversation = ConversationService.createOpenAiConversation(self.configuration.get('conversation'), self.memory).get('messages', [])
             if self.reasoning_model:
@@ -42,7 +46,5 @@ class UnifiedOpenAICase(BaseService):
             usage = self.calculate_usage(modelResponse)
             if not self.playground:
                 historyParams = self.prepare_history_params(modelResponse, tools)
-                historyParams['message'] = "image generated successfully"
-                historyParams['type'] = 'assistant'
         return {'success': True, 'modelResponse': modelResponse, 'historyParams': historyParams, 'usage': usage }
     
