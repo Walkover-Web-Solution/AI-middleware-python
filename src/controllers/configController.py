@@ -236,6 +236,7 @@ async def get_all_service_models_controller(service):
                     "gemini-1.5-pro": restructure_configuration(model_configuration.gemini_1_5_pro()),
                     "gemini-pro": restructure_configuration(model_configuration.gemini_pro()),
                     "gemini-1.5-Flash": restructure_configuration(model_configuration.gemini_1_5_Flash()),
+                    "gemini-1.5-flash-8b": restructure_configuration(model_configuration.gemini_1_5_Flash_8b()),
                     "gemini-1.0-pro": restructure_configuration(model_configuration.gemini_1_0_pro()),
                     "gemini-1.0-pro-vision": restructure_configuration(model_configuration.gemini_1_0_pro_vision())
                 }

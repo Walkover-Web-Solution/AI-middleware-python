@@ -10,6 +10,7 @@ from ..openAI.runModel import runModel
 from ..anthrophic.antrophicModelRun import anthropic_runmodel
 from ....configs.constant import service_name
 from ..groq.groqModelRun import groq_runmodel
+from ..Google.geminiModelRun import gemini_runmodel
 from ....configs.constant import service_name
 from ..openAI.image_model import OpenAIImageModel
 
@@ -170,6 +171,11 @@ class BaseService:
                 usage["outputTokens"] = _.get(model_response, self.modelOutputConfig['usage'][0]['completion_tokens'])
                 usage["totalTokens"] = usage["inputTokens"] + usage["outputTokens"]
                 # usage["expectedCost"] = (usage['inputTokens'] / 1000 * self.modelOutputConfig['usage'][0]['total_cost']['input_cost']) + (usage['outputTokens'] / 1000 * self.modelOutputConfig['usage'][0]['total_cost']['output_cost'])
+            case 'gemini':
+                usage = {}
+                usage["inputTokens"] = _.get(model_response, self.modelOutputConfig['usage'][0]['prompt_tokens'])
+                usage["outputTokens"] = _.get(model_response, self.modelOutputConfig['usage'][0]['output_tokens'])
+                usage["totalTokens"] = _.get(model_response, self.modelOutputConfig['usage'][0]['total_tokens'])
             case  _:
                 pass
         return usage
@@ -189,9 +195,9 @@ class BaseService:
             'tools': tools,
             'chatbot_message' : "",
             'tools_call_data' : self.func_tool_call_data,
-            'message_id' : self.message_id,
-            'image_url' : model_response.get('data',[{}])[0].get('url', None),
-            'revised_prompt' : model_response.get('data',[{}])[0].get('revised_prompt', None)
+            'message_id' : self.message_id
+            # 'image_url': model_response.get('data', [{}])[0].get('url', None),
+            # 'revised_prompt': model_response.get('data', [{}])[0].get('revised_prompt', None)
         }
     
     def service_formatter(self, configuration : object, service : str ):
@@ -202,6 +208,8 @@ class BaseService:
                     new_config['tool_choice'] =  {"type": "auto"}
                 elif service == service_name['openai'] or service_name['groq']:
                     new_config['tool_choice'] = "auto"
+                elif service == service_name['gemini']:
+                    new_config['tool_choice'] = {"type": "auto"}
 
                 
                 new_config['tools'] = tool_call_formatter(configuration, service, self.variables, self.variables_path)
@@ -223,6 +231,9 @@ class BaseService:
                 response = await anthropic_runmodel(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer)
             elif service == service_name['groq']:
                 response = await groq_runmodel(configuration, apikey, self.execution_time_logs, self.bridge_id,  self.timer)
+            elif service == service_name['gemini']:
+                loop = asyncio.get_event_loop()
+                response = await loop.run_in_executor(None, lambda: asyncio.run(gemini_runmodel(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer)))
             if not response['success']:
                 raise ValueError(response['error'])
             return {

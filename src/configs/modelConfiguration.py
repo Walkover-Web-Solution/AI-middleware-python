@@ -2599,15 +2599,7 @@ class ModelsConfig:
                 "default": 1,
                 "level": 2
             },
-            "token_selection_limit": {
-                "field": "slider",
-                "min": 1,
-                "max": 40,
-                "step": 1,
-                "default": 40,
-                "level": 2
-            },
-            "topP": {
+            "probability_cutoff": {
                 "field": "slider",
                 "min": 0,
                 "max": 1,
@@ -2615,7 +2607,7 @@ class ModelsConfig:
                 "default": 1,
                 "level": 2
             },
-            "maxOutputTokens": {
+            "max_tokens": { # Same as outputTokenLimit
                 "field": "slider",
                 "min": 1,
                 "max": 8192,
@@ -2623,23 +2615,52 @@ class ModelsConfig:
                 "default": 2048,
                 "level": 0
             },
+            "inputTokenLimit": { #this is  optional
+                "field": "slider",
+                "min": 1,
+                "max": 2097152,
+                "step": 1,
+                "default": 2048,
+                "level": 0
+            },
+            "tools": {
+                "field": "array",
+                "level": 0,
+                "default": [],
+                "typeOf": "array"
+            },
+            "tool_choice": {
+                "field": "text",
+                "default": "AUTO",
+                "level": 0,
+                "typeOf": "string"
+            },
             "additional_stop_sequences": {
                 "field": "text",
                 "default": "",
                 "level": 0
             },
-            "type" : {
-                "default" : ["completion","chat"]
+            "response_type": {
+                "field": "select",
+                "options" : [{"type" : "text"},{"type" : "json_object"}],
+                "default": {
+                "type" : "text",
+                },
+                "level": 0
             }
         }
         outputConfig = {
             "usage": [{
-                "prompt_tokens": "usage.input_tokens",
-                "output_tokens": "usage.output_tokens",
-                "total_tokens": "usage.total_tokens",
-                "total_cost": 0
+                "prompt_tokens": "usage.prompt_token_count",
+                "output_tokens": "usage.candidates_token_count",
+                "total_tokens": "usage.total_token_count",
+                "total_cost": {
+                    "input_cost": 0,
+                    "output_cost": 0
+                }
             }],
             "message": "candidates[0].content.parts[0].text",
+            "tools": "candidates[0].content.parts[0].functionCall",
             "role": "model"
         }
         inputConfig = {
@@ -2785,7 +2806,7 @@ class ModelsConfig:
         configuration = {
             "model": {
                 "field": "drop",
-                "default": "gemini-1.5-Flash",
+                "default": "gemini-1.5-flash",
                 "level": 1
             },
             "creativity_level": {
@@ -2796,15 +2817,7 @@ class ModelsConfig:
                 "default": 1,
                 "level": 2
             },
-            "token_selection_limit": {
-                "field": "slider",
-                "min": 1,
-                "max": 40,
-                "step": 1,
-                "default": 40,
-                "level": 2
-            },
-            "topP": {
+            "probability_cutoff": {
                 "field": "slider",
                 "min": 0,
                 "max": 1,
@@ -2812,7 +2825,7 @@ class ModelsConfig:
                 "default": 1,
                 "level": 2
             },
-            "maxOutputTokens": {
+            "max_tokens": { # Same as outputTokenLimit
                 "field": "slider",
                 "min": 1,
                 "max": 8192,
@@ -2820,23 +2833,52 @@ class ModelsConfig:
                 "default": 2048,
                 "level": 0
             },
+            "inputTokenLimit": { #this is  optional
+                "field": "slider",
+                "min": 1,
+                "max": 1048576,
+                "step": 1,
+                "default": 2048,
+                "level": 0
+            },
+            "tools": {
+                "field": "array",
+                "level": 0,
+                "default": [],
+                "typeOf": "array"
+            },
+            "tool_choice": {
+                "field": "text",
+                "default": "AUTO",
+                "level": 0,
+                "typeOf": "string"
+            },
             "additional_stop_sequences": {
                 "field": "text",
                 "default": "",
                 "level": 0
             },
-             "type" : {
-                "default" : ["completion","chat"]
+            "response_type": {
+                "field": "select",
+                "options" : [{"type" : "text"},{"type" : "json_object"}],
+                "default": {
+                "type" : "text",
+                },
+                "level": 0
             }
         }
         outputConfig = {
             "usage": [{
-                "prompt_tokens": "usage.input_tokens",
-                "output_tokens": "usage.output_tokens",
-                "total_tokens": "usage.total_tokens",
-                "total_cost": 0
+                "prompt_tokens": "usage.prompt_token_count",
+                "output_tokens": "usage.candidates_token_count",
+                "total_tokens": "usage.total_token_count",
+                "total_cost": {
+                    "input_cost": 0,
+                    "output_cost": 0
+                }
             }],
             "message": "candidates[0].content.parts[0].text",
+            "tools": "candidates[0].content.parts[0].functionCall",
             "role": "model"
         }
         inputConfig = {
@@ -2857,7 +2899,104 @@ class ModelsConfig:
             "outputConfig": outputConfig,
             "inputConfig": inputConfig
         }
-    
+    @staticmethod
+    def gemini_1_5_Flash_8b():
+        configuration = {
+            "model": {
+                "field": "drop",
+                "default": "gemini-1.5-flash-8b",
+                "level": 1
+            },
+            "creativity_level": {
+                "field": "slider",
+                "min": 0,
+                "max": 2,
+                "step": 0.1,
+                "default": 1,
+                "level": 2
+            },
+            "probability_cutoff": {
+                "field": "slider",
+                "min": 0,
+                "max": 1,
+                "step": 0.1,
+                "default": 1,
+                "level": 2
+            },
+            "max_tokens": { # Same as outputTokenLimit
+                "field": "slider",
+                "min": 1,
+                "max": 8192,
+                "step": 1,
+                "default": 2048,
+                "level": 0
+            },
+            "inputTokenLimit": { #this is  optional
+                "field": "slider",
+                "min": 1,
+                "max": 1048576,
+                "step": 1,
+                "default": 2048,
+                "level": 0
+            },
+            "tools": {
+                "field": "array",
+                "level": 0,
+                "default": [],
+                "typeOf": "array"
+            },
+            "tool_choice": {
+                "field": "text",
+                "default": "AUTO",
+                "level": 0,
+                "typeOf": "string"
+            },
+            "additional_stop_sequences": {
+                "field": "text",
+                "default": "",
+                "level": 0
+            },
+            "response_type": {
+                "field": "select",
+                "options" : [{"type" : "text"},{"type" : "json_object"}],
+                "default": {
+                "type" : "text",
+                },
+                "level": 0
+            }
+        }
+        outputConfig = {
+            "usage": [{
+                "prompt_tokens": "usage.prompt_token_count",
+                "output_tokens": "usage.candidates_token_count",
+                "total_tokens": "usage.total_token_count",
+                "total_cost": {
+                    "input_cost": 0,
+                    "output_cost": 0
+                }
+            }],
+            "message": "candidates[0].content.parts[0].text",
+            "tools": "candidates[0].content.parts[0].functionCall",
+            "role": "model"
+        }
+        inputConfig = {
+            "model": {
+                "default": {
+                    "role": "model",
+                    "parts": [{
+                        "text": ""
+                    }]
+                },
+                "contentKey": "parts[0].text",
+                "type": "json"
+            },
+            "content_location": "prompt"
+        }
+        return {
+            "configuration": configuration,
+            "outputConfig": outputConfig,
+            "inputConfig": inputConfig
+        }   
     @staticmethod
     def gemini_1_0_pro():
         configuration = {

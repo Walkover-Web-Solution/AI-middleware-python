@@ -36,7 +36,16 @@ ServiceKeys = {
         "best_response_count": "best_of",
         "response_suffix": "suffix",
         "response_type": "response_format"
-    }
+    },
+    service_name['gemini']: {
+        "creativity_level": "temperature",
+        "probability_cutoff": "topP",
+        "token_selection_limit": "topK",
+        "additional_stop_sequences": "additionalStopSequences",
+        "max_tokens": "outputTokenLimit",
+        "response_type": "response_format",
+        "inputTokenLimit": "inputTokenLimit",
+    },
 }
 
 async def model_config_change(modelConfiguration, custom_config, service):

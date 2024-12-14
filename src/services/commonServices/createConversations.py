@@ -21,10 +21,12 @@ class ConversationService:
             raise ValueError(e.args[0])
 
     @staticmethod
-    def createGeminiConversation(conversation):
+    def createGeminiConversation(conversation,memory):
         try:
             threads = []
             previous_role = "model"
+            if memory is not None:
+                threads.append({'role': 'user', 'parts': memory })
             for message in conversation:
                 chat = {}
                 role = "model" if message['role'] != "model" else message['role']

@@ -6,10 +6,10 @@ services = {
         "embedding": {"text-embedding-3-large", "text-embedding-3-small", "text-embedding-ada-002"},
         "image" : {"dall-e-2","dall-e-3"}
     },
-    "google": {
-        "models": {"gemini-pro", "gemini-1.5-pro", "gemini-1.0-pro-vision", "gemini-1.0-pro", "gemini-1.5-Flash"},
-        "chat": {"gemini-pro", "gemini-1.5-pro", "gemini-1.0-pro-vision", "gemini-1.0-pro", "gemini-1.5-Flash"},
-        "completion": {"gemini-pro", "gemini-1.5-pro", "gemini-1.0-pro-vision", "gemini-1.0-pro", "gemini-1.5-Flash"},
+    "gemini": {
+        "models": {"gemini-pro","gemini-1.5-flash-8b", "gemini-1.5-pro", "gemini-1.0-pro-vision", "gemini-1.0-pro", "gemini-1.5-Flash"},
+        "chat": {"gemini-pro", "gemini-1.5-pro","gemini-1.5-flash-8b", "gemini-1.0-pro-vision", "gemini-1.0-pro", "gemini-1.5-Flash"},
+        "completion": {"gemini-pro", "gemini-1.5-pro","gemini-1.5-flash-8b", "gemini-1.0-pro-vision", "gemini-1.0-pro", "gemini-1.5-Flash"},
         "embedding": {"embedding-001"}
     },
     "anthropic" : {
