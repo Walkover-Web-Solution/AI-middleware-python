@@ -180,6 +180,7 @@ async def chat(request_body):
                 customConfig['response_type'] = {"type": res}
 
         customConfig = await model_config_change(modelObj['configuration'], customConfig, service)
+        token_calculator = {}
         if not is_playground:
             token_calculator = TokenCalculator(service, modelOutputConfig)
 
