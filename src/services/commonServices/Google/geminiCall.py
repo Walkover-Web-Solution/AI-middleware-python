@@ -39,7 +39,6 @@ class GeminiHandler(BaseService):
         # self.update_model_response(modelResponse, functionCallRes)
         # tools = functionCallRes.get("tools", {})
         
-        # Calculate usage
         usage = self.calculate_usage(modelResponse)
         
         if not self.playground:

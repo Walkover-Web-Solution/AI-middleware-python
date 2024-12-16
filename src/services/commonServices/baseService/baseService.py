@@ -195,9 +195,9 @@ class BaseService:
             'tools': tools,
             'chatbot_message' : "",
             'tools_call_data' : self.func_tool_call_data,
-            'message_id' : self.message_id
-            # 'image_url': model_response.get('data', [{}])[0].get('url', None),
-            # 'revised_prompt': model_response.get('data', [{}])[0].get('revised_prompt', None)
+            'message_id' : self.message_id,
+            'image_url': model_response.get('data', [{}])[0].get('url', None),
+            'revised_prompt': model_response.get('data', [{}])[0].get('revised_prompt', None)
         }
     
     def service_formatter(self, configuration : object, service : str ):

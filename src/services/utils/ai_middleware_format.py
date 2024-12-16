@@ -73,6 +73,22 @@ async def Response_formatter(response, service, tools={}, type='chat'):
                 "total_tokens" : response.get("usage", {}).get("total_tokens", None)
             }
         }
+    elif service == 'gemini':
+        return {
+            "data" : {
+                 #candidates.
+                "id" : response.get("id", None),
+                "content" : response.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", None),
+                "model" : response.get("service", None),
+                "role" : response.get("candidates", [{}])[0].get("content", {}).get("role", None),
+                "tools_data": tools_data or {}
+            },
+            "usage" : {
+                "input_tokens" : response.get("usage_metadata", {}).get("prompt_token_count", None),
+                "output_tokens" : response.get("usage_metadata", {}).get("candidates_token_count", None),
+                "total_tokens" : response.get("usage_metadata", {}).get("total_token_count", None)
+            }
+    }
 
 async def validateResponse(final_response,configration,bridgeId, message_id, org_id):
     content = final_response.get("data",{}).get("content","")

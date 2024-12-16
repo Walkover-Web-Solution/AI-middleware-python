@@ -38,6 +38,9 @@ async def get_default_values_controller(service, model, current_configuration):
         elif service == service_name['groq']:
             return get_default_values(configuration())
         
+        elif service == service_name['gemini']:
+            return get_default_values(configuration())
+        
         else:
             raise HTTPException(status_code=404, detail=f"Service '{service}' not found.")
     

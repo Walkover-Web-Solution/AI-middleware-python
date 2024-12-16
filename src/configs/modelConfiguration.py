@@ -2640,6 +2640,12 @@ class ModelsConfig:
                 "default": "",
                 "level": 0
             },
+            "response_count": {
+                "field": "number",
+                "default": 1,
+                "typeOf": "number",
+                "level": 0
+            },
             "response_type": {
                 "field": "select",
                 "options" : [{"type" : "text"},{"type" : "json_object"}],
@@ -2858,6 +2864,12 @@ class ModelsConfig:
                 "default": "",
                 "level": 0
             },
+            "response_count": {
+                "field": "number",
+                "default": 1,
+                "typeOf": "number",
+                "level": 0
+            },
             "response_type": {
                 "field": "select",
                 "options" : [{"type" : "text"},{"type" : "json_object"}],
@@ -2954,6 +2966,12 @@ class ModelsConfig:
             "additional_stop_sequences": {
                 "field": "text",
                 "default": "",
+                "level": 0
+            },
+            "response_count": {
+                "field": "number",
+                "default": 1,
+                "typeOf": "number",
                 "level": 0
             },
             "response_type": {

@@ -41,9 +41,10 @@ ServiceKeys = {
         "creativity_level": "temperature",
         "probability_cutoff": "topP",
         "token_selection_limit": "topK",
-        "additional_stop_sequences": "additionalStopSequences",
-        "max_tokens": "outputTokenLimit",
-        "response_type": "response_format",
+        "additional_stop_sequences": "stop_sequences",
+        "max_tokens": "max_output_tokens",
+        "response_type": "response_mime_type",
+        "response_count": "candidate_count",
         "inputTokenLimit": "inputTokenLimit",
     },
 }
