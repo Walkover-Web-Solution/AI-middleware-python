@@ -31,6 +31,7 @@ from src.services.commonServices.suggestion import chatbot_suggestions
 from src.services.utils.apiservice import fetch
 from src.services.utils.gpt_memory import handle_gpt_memory
 from concurrent.futures import ThreadPoolExecutor
+from src.services.utils.token_calculation import TokenCalculator
 
 configurationModel = db["configurations"]
 ThreadModel = db['threads']
@@ -179,6 +180,10 @@ async def chat(request_body):
                 customConfig['response_type'] = {"type": res}
 
         customConfig = await model_config_change(modelObj['configuration'], customConfig, service)
+        token_calculator = {}
+        if not is_playground:
+            token_calculator = TokenCalculator(service, modelOutputConfig)
+
 
         params = {
             "customConfig": customConfig,
@@ -207,7 +212,9 @@ async def chat(request_body):
             "names":names,
             "reasoning_model" : reasoning_model,
             "memory": memory,
-            "type" : type
+            "type" : type,
+            "token_calculator" : token_calculator
+
         }
         class_obj = await create_service_handler(params,service)
         loop = asyncio.get_event_loop()
