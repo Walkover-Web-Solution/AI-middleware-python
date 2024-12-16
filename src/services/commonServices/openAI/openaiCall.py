@@ -8,7 +8,19 @@ class UnifiedOpenAICase(BaseService):
         historyParams = {}
         usage = {}
         tools = {}
-        if self.type == 'chat' or self.reasoning_model:  
+        if self.type == 'image':
+            self.customConfig['prompt'] = self.user
+            openAIResponse = await self.image(self.customConfig, self.apikey, service_name['openai'])
+            modelResponse = openAIResponse.get("modelResponse", {})
+            if not openAIResponse.get('success'):
+                if not self.playground:
+                    await self.handle_failure(openAIResponse)
+                raise ValueError(openAIResponse.get('error'))
+            if not self.playground:
+                historyParams = self.prepare_history_params(modelResponse, tools)
+                historyParams['message'] = "image generated successfully"
+                historyParams['type'] = 'assistant'
+        else:
             conversation = ConversationService.createOpenAiConversation(self.configuration.get('conversation'), self.memory).get('messages', [])
             if self.reasoning_model:
                 prompt = [{"role": "user", "content": f"system Prompt: {self.configuration.get('prompt')}"}]
@@ -33,19 +45,6 @@ class UnifiedOpenAICase(BaseService):
                 tools = functionCallRes.get("tools", {})
             usage = self.calculate_usage(modelResponse)
             if not self.playground:
-                historyParams = self.prepare_history_params(modelResponse, tools) 
-        elif self.type == 'image':
-            self.customConfig['prompt'] = self.user
-            openAIResponse = await self.image(self.customConfig, self.apikey, service_name['openai'])
-            modelResponse = openAIResponse.get("modelResponse", {})
-            if not openAIResponse.get('success'):
-                if not self.playground:
-                    await self.handle_failure(openAIResponse)
-                raise ValueError(openAIResponse.get('error'))
-            
-            if not self.playground:
                 historyParams = self.prepare_history_params(modelResponse, tools)
-                historyParams['message'] = "image generated successfully"
-                historyParams['type'] = 'assistant'
         return {'success': True, 'modelResponse': modelResponse, 'historyParams': historyParams, 'usage': usage }
     
