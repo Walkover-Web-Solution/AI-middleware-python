@@ -43,8 +43,8 @@ class UnifiedOpenAICase(BaseService):
                     raise ValueError(functionCallRes.get('error'))
                 self.update_model_response(modelResponse, functionCallRes)
                 tools = functionCallRes.get("tools", {})
-            usage = self.calculate_usage(modelResponse)
             if not self.playground:
+                usage = self.token_calculator.calculate_usage(modelResponse)
                 historyParams = self.prepare_history_params(modelResponse, tools)
         return {'success': True, 'modelResponse': modelResponse, 'historyParams': historyParams, 'usage': usage }
     
