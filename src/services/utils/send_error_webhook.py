@@ -3,6 +3,8 @@ from ..commonServices.baseService.baseService import sendResponse
 
 async def send_error_to_webhook(bridge_id, org_id, details, type):
     try:
+        details['bridge_id'] = bridge_id
+        details['org_id'] = org_id
         result = await get_webhook_data(org_id)
         data = result.get('webhook_data')
         data.append({
