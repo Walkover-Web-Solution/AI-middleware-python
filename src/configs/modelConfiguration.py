@@ -3172,7 +3172,7 @@ class ModelsConfig:
         configuration = {
             "model": {
                 "field": "drop",
-                "default": "claude-3-5-sonnet-latest",
+                "default": "claude-3.5-sonnet-latest",
                 "level": 1
             },
             "creativity_level": {
@@ -3568,85 +3568,6 @@ class ModelsConfig:
             "model": {
                 "field": "drop",
                 "default": "claude-3.5-haiku-20241022",
-                "level": 1
-            },
-            "creativity_level": {
-                "field": "slider",
-                "min": 0,
-                "max": 1,
-                "step": 0.1,
-                "default": 0,
-                "level": 2
-            },
-            "max_tokens": {
-                "field": "slider",
-                "min": 1,
-                "max": 4096,
-                "step": 1,
-                "default": 1046,
-                "level": 2
-            },
-            "top_p": {
-                "field": "slider",
-                "min": 0,
-                "max": 1,
-                "step": 0.1,
-                "default": 1,
-                "level": 2
-            },
-            # "stream": {
-            #     "field": "boolean",
-            #     "default": False,
-            #     "level": 0,
-            #     "typeOf": "boolean"
-            # },
-            "tools": {
-                "field": "array",
-                "level": 0,
-                "default": [],
-                "typeOf": "array"
-            },
-            # "tool_choice": {
-            #     "field": "text",
-            #     "default": "auto",
-            #     "level": 0,
-            #     "typeOf": "string"
-            # },
-        }
-        outputConfig = {
-            "usage": [{
-                "prompt_tokens": "usage.input_tokens",
-                "completion_tokens": "usage.output_tokens",
-                "total_cost": {
-                    "input_cost": 0,
-                    "output_cost": 0
-                }
-            }],
-            "message": "content[0].text",
-            "tools": "content[1].type",
-            "assistant": "role",
-            "id": "id"
-        }
-        inputConfig = {
-            "system": {
-                "role": "system",
-                "content": "",
-                "contentKey": "content",
-                "type": "json"
-            },
-            "content_location": "prompt[0].content"
-        }
-        return {
-            "configuration": configuration,
-            "outputConfig": outputConfig,
-            "inputConfig": inputConfig
-        }
-    @staticmethod
-    def claude_3_5_haiku_latest(): 
-        configuration = {
-            "model": {
-                "field": "drop",
-                "default": "claude-3.5-haiku-latest",
                 "level": 1
             },
             "creativity_level": {
