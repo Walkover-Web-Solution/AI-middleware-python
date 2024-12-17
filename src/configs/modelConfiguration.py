@@ -3018,7 +3018,7 @@ class ModelsConfig:
         configuration = {
             "model": {
                 "field": "drop",
-                "default": "claude-3.5-sonnet-20241022",
+                "default": "claude-3-5-sonnet-20241022",
                 "level": 1
             },
             "creativity_level": {
@@ -3172,7 +3172,7 @@ class ModelsConfig:
         configuration = {
             "model": {
                 "field": "drop",
-                "default": "claude-3.5-sonnet-latest",
+                "default": "claude-3-5-sonnet-latest",
                 "level": 1
             },
             "creativity_level": {
@@ -3567,7 +3567,7 @@ class ModelsConfig:
         configuration = {
             "model": {
                 "field": "drop",
-                "default": "claude-3.5-haiku-20241022",
+                "default": "claude-3-5-haiku-20241022",
                 "level": 1
             },
             "creativity_level": {
