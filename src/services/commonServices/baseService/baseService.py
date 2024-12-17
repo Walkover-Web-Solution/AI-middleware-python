@@ -208,9 +208,6 @@ class BaseService:
                     new_config['tool_choice'] =  {"type": "auto"}
                 elif service == service_name['openai'] or service_name['groq']:
                     new_config['tool_choice'] = "auto"
-                elif service == service_name['gemini']:
-                    new_config['tool_choice'] = {"type": "auto"}
-
                 
                 new_config['tools'] = tool_call_formatter(configuration, service, self.variables, self.variables_path)
             elif 'tool_choice' in configuration:
@@ -232,8 +229,7 @@ class BaseService:
             elif service == service_name['groq']:
                 response = await groq_runmodel(configuration, apikey, self.execution_time_logs, self.bridge_id,  self.timer)
             elif service == service_name['gemini']:
-                loop = asyncio.get_event_loop()
-                response = await loop.run_in_executor(None, lambda: asyncio.run(gemini_runmodel(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer)))
+                response = await gemini_runmodel(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer)
             if not response['success']:
                 raise ValueError(response['error'])
             return {

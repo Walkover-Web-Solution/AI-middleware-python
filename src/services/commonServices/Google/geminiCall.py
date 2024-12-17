@@ -6,6 +6,7 @@ from src.configs.constant import service_name
 from ..createConversations import ConversationService
 from ..Google.geminiModelRun import gemini_runmodel
 from ....db_services import metrics_service
+import asyncio
 
 class GeminiHandler(BaseService):
     async def execute(self):
@@ -14,13 +15,16 @@ class GeminiHandler(BaseService):
         tools = {}
         conversation = ConversationService.createGeminiConversation(self.configuration.get('conversation'), self.memory).get('messages', [])
         
-        self.customConfig['system'] = self.configuration.get('prompt')
+        self.customConfig['system_instruction'] = self.configuration.get('prompt')
         self.customConfig['user'] = self.user
+        del self.customConfig['model'] 
+        self.customConfig['model_name'] = self.configuration.get('model', 'gemini-1.5-pro')
         self.customConfig["messages"] = conversation + [{"role": "user", "parts": self.user}] if self.user else conversation
         self.customConfig['tools'] = self.tool_call if self.tool_call else []
         self.customConfig = self.service_formatter(self.customConfig, service_name['gemini'])
-        
-        gemini_response = await self.chats(self.customConfig, self.apikey, service_name['gemini'])
+
+        loop = asyncio.get_event_loop()
+        gemini_response = await loop.run_in_executor(None, lambda: asyncio.run(self.chats(self.customConfig, self.apikey, service_name['gemini']))) 
         modelResponse = gemini_response.get("modelResponse", {})
         
         if not gemini_response.get('success'):

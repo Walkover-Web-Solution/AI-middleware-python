@@ -2607,7 +2607,7 @@ class ModelsConfig:
                 "default": 1,
                 "level": 2
             },
-            "max_tokens": { # Same as outputTokenLimit
+            "max_tokens": {
                 "field": "slider",
                 "min": 1,
                 "max": 8192,
@@ -2615,7 +2615,7 @@ class ModelsConfig:
                 "default": 2048,
                 "level": 0
             },
-            "inputTokenLimit": { #this is  optional
+            "inputTokenLimit": {
                 "field": "slider",
                 "min": 1,
                 "max": 2097152,
@@ -2646,11 +2646,11 @@ class ModelsConfig:
                 "typeOf": "number",
                 "level": 0
             },
-            "response_type": {
+            "response_mime_type": {
                 "field": "select",
-                "options" : [{"type" : "text"},{"type" : "json_object"}],
+                "options" : [{"type" : "text/plain"},{"type" : "application/json"}],
                 "default": {
-                "type" : "text",
+                "type" : "text/plain",
                 },
                 "level": 0
             }
@@ -2831,7 +2831,7 @@ class ModelsConfig:
                 "default": 1,
                 "level": 2
             },
-            "max_tokens": { # Same as outputTokenLimit
+            "max_tokens": {
                 "field": "slider",
                 "min": 1,
                 "max": 8192,
@@ -2839,7 +2839,7 @@ class ModelsConfig:
                 "default": 2048,
                 "level": 0
             },
-            "inputTokenLimit": { #this is  optional
+            "inputTokenLimit": {
                 "field": "slider",
                 "min": 1,
                 "max": 1048576,
@@ -2870,11 +2870,11 @@ class ModelsConfig:
                 "typeOf": "number",
                 "level": 0
             },
-            "response_type": {
+            "response_mime_type": {
                 "field": "select",
-                "options" : [{"type" : "text"},{"type" : "json_object"}],
+                "options" : [{"type" : "text/plain"},{"type" : "application/json"}],
                 "default": {
-                "type" : "text",
+                "type" : "text/plain",
                 },
                 "level": 0
             }
@@ -2935,7 +2935,7 @@ class ModelsConfig:
                 "default": 1,
                 "level": 2
             },
-            "max_tokens": { # Same as outputTokenLimit
+            "max_tokens": {
                 "field": "slider",
                 "min": 1,
                 "max": 8192,
@@ -2943,7 +2943,7 @@ class ModelsConfig:
                 "default": 2048,
                 "level": 0
             },
-            "inputTokenLimit": { #this is  optional
+            "inputTokenLimit": {
                 "field": "slider",
                 "min": 1,
                 "max": 1048576,
@@ -2974,11 +2974,11 @@ class ModelsConfig:
                 "typeOf": "number",
                 "level": 0
             },
-            "response_type": {
+            "response_mime_type": {
                 "field": "select",
-                "options" : [{"type" : "text"},{"type" : "json_object"}],
+                "options" : [{"type" : "text/plain"},{"type" : "application/json"}],
                 "default": {
-                "type" : "text",
+                "type" : "text/plain",
                 },
                 "level": 0
             }
