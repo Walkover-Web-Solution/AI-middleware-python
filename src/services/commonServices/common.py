@@ -143,7 +143,7 @@ async def chat(request_body):
             thread_id = thread_id.strip()
             result = await getThread(thread_id, sub_thread_id, org_id, bridge_id,bridgeType)
             if not is_sub_thread_id: 
-                ThreadModel.insert_one({
+                await ThreadModel.insert_one({
                         "thread_id": thread_id,
                         "sub_thread_id": sub_thread_id,
                         "display_name": thread_id,
