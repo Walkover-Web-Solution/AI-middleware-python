@@ -3014,11 +3014,11 @@ class ModelsConfig:
             "inputConfig": inputConfig
         }
     @staticmethod
-    def claude_3_5_sonnet_20240620():
+    def claude_3_5_sonnet_20241022():
         configuration = {
             "model": {
                 "field": "drop",
-                "default": "claude-3-5-sonnet-20240620",
+                "default": "claude-3-5-sonnet-20241022",
                 "level": 1
             },
             "creativity_level": {
@@ -3045,58 +3045,12 @@ class ModelsConfig:
                 "default": 0.9,
                 "level": 2
             },
-            "top_k": {
-                "field": "slider",
-                "min": 0.,
-                "max": 500,
-                "step": 10,
-                "default": 0,
-                "level": 2
-            },
-            # "stop_sequences":{
-            #     "field": "text",
-            #     "default": "",
-            #     "level": 0
-            # },
-            # "logprobs": {
+            # "stream": {
             #     "field": "boolean",
             #     "default": False,
             #     "level": 0,
             #     "typeOf": "boolean"
             # },
-            # "frequency_penalty": {
-            #     "field": "slider",
-            #     "min": 0,
-            #     "max": 2,
-            #     "step": 0.01,
-            #     "default": 0,
-            #     "level": 2
-            # },
-            # "presence_penalty": {
-            #     "field": "slider",
-            #     "min": 0,
-            #     "max": 2,
-            #     "step": 0.01,
-            #     "default": 0,
-            #     "level": 2
-            # },
-            # "response_count": {
-            #     "field": "number",
-            #     "default": 1,
-            #     "typeOf": "number",
-            #     "level": 0
-            # },
-            # "stop": {
-            #     "field": "text",
-            #     "default": "",
-            #     "level": 0
-            # },
-            "stream": {
-                "field": "boolean",
-                "default": False,
-                "level": 0,
-                "typeOf": "boolean"
-            },
             "tools": {
                 "field": "array",
                 "level": 0,
@@ -3109,12 +3063,82 @@ class ModelsConfig:
             #     "level": 0,
             #     "typeOf": "string"
             # }
-            # "response_format": {
+        }
+        outputConfig = {
+            "usage": [{
+                "prompt_tokens": "usage.input_tokens",
+                "completion_tokens": "usage.output_tokens",
+                "total_cost": { "usage.total_cost" }
+            }],
+            "message": "content[0].text", # find from modelResponse
+            "tools": "content[1].text", # find from functionResponse.modelResposne
+            "assistant": "role",
+            "id": "id"
+        }
+        inputConfig = {
+            "system": {
+                "role": "system",
+                "content": "",
+                "contentKey": "content",
+                "type": "json"
+            },
+            "content_location": "prompt[0].content"
+        }
+        return {
+            "configuration": configuration,
+            "outputConfig": outputConfig,
+            "inputConfig": inputConfig
+        }
+    
+    @staticmethod
+    def claude_3_5_sonnet_latest():
+        configuration = {
+            "model": {
+                "field": "drop",
+                "default": "claude-3-5-sonnet-latest",
+                "level": 1
+            },
+            "creativity_level": {
+                "field": "slider",
+                "min": 0,
+                "max": 1,
+                "step": 0.1,
+                "default": 0,
+                "level": 2
+            },
+            "max_tokens": {
+                "field": "slider",
+                "min": 1,
+                "max": 8192,
+                "step": 1,
+                "default": 1046,
+                "level": 2
+            },
+            "top_p": {
+                "field": "slider",
+                "min": 0,
+                "max": 1,
+                "step": 0.1,
+                "default": 1,
+                "level": 2
+            },
+            # "stream": {
             #     "field": "boolean",
-            #     "default": {
-            #         "type": "text"
-            #     },
-            #     "level": 0
+            #     "default": False,
+            #     "level": 0,
+            #     "typeOf": "boolean"
+            # },
+            "tools": {
+                "field": "array",
+                "level": 0,
+                "default": [],
+                "typeOf": "array"
+            },
+            # "tool_choice": {
+            #     "field": "text",
+            #     "default": "auto",
+            #     "level": 0,
+            #     "typeOf": "string"
             # }
         }
         outputConfig = {
@@ -3175,58 +3199,12 @@ class ModelsConfig:
                 "default": 0.9,
                 "level": 2
             },
-            "top_k": {
-                "field": "slider",
-                "min": 0.,
-                "max": 500,
-                "step": 10,
-                "default": 0,
-                "level": 2
-            },
-            # "stop_sequences":{
-            #     "field": "text",
-            #     "default": "",
-            #     "level": 0
-            # },
-            # "logprobs": {
+            # "stream": {
             #     "field": "boolean",
             #     "default": False,
             #     "level": 0,
             #     "typeOf": "boolean"
             # },
-            # "frequency_penalty": {
-            #     "field": "slider",
-            #     "min": 0,
-            #     "max": 2,
-            #     "step": 0.01,
-            #     "default": 0,
-            #     "level": 2
-            # },
-            # "presence_penalty": {
-            #     "field": "slider",
-            #     "min": 0,
-            #     "max": 2,
-            #     "step": 0.01,
-            #     "default": 0,
-            #     "level": 2
-            # },
-            # "response_count": {
-            #     "field": "number",
-            #     "default": 1,
-            #     "typeOf": "number",
-            #     "level": 0
-            # },
-            # "stop": {
-            #     "field": "text",
-            #     "default": "",
-            #     "level": 0
-            # },
-            "stream": {
-                "field": "boolean",
-                "default": False,
-                "level": 0,
-                "typeOf": "boolean"
-            },
             "tools": {
                 "field": "array",
                 "level": 0,
@@ -3239,13 +3217,85 @@ class ModelsConfig:
             #     "level": 0,
             #     "typeOf": "string"
             # },
-            # "response_format": {
+        }
+        outputConfig = {
+        "usage": [{
+                "prompt_tokens": "usage.input_tokens",
+                "completion_tokens": "usage.output_tokens",
+                "total_cost": {
+                    "input_cost": 0,
+                    "output_cost": 0
+                }
+            }],
+            "message": "content[0].text",
+            "tools": "content[1].type",
+            "assistant": "role",
+            "id": "id"
+        }
+        inputConfig = {
+            "system": {
+                "role": "system",
+                "content": "",
+                "contentKey": "content",
+                "type": "json"
+            },
+            "content_location": "prompt[0].content"
+        }
+        return {
+            "configuration": configuration,
+            "outputConfig": outputConfig,
+            "inputConfig": inputConfig
+        }
+    @staticmethod
+    def claude_3_opus_latest(): 
+        configuration = {
+            "model": {
+                "field": "drop",
+                "default": "claude-3-opus-latest",
+                "level": 1
+            },
+            "creativity_level": {
+                "field": "slider",
+                "min": 0,
+                "max": 1,
+                "step": 0.1,
+                "default": 0,
+                "level": 2
+            },
+            "max_tokens": {
+                "field": "slider",
+                "min": 1,
+                "max": 4096,
+                "step": 1,
+                "default": 1046,
+                "level": 2
+            },
+            "top_p": {
+                "field": "slider",
+                "min": 0,
+                "max": 1,
+                "step": 0.1,
+                "default": 1,
+                "level": 2
+            },
+            # "stream": {
             #     "field": "boolean",
-            #     "default": {
-            #         "type": "text"
-            #     },
-            #     "level": 0
-            # }
+            #     "default": False,
+            #     "level": 0,
+            #     "typeOf": "boolean"
+            # },
+            "tools": {
+                "field": "array",
+                "level": 0,
+                "default": [],
+                "typeOf": "array"
+            },
+            # "tool_choice": {
+            #     "field": "text",
+            #     "default": "auto",
+            #     "level": 0,
+            #     "typeOf": "string"
+            # },
         }
         outputConfig = {
         "usage": [{
@@ -3308,58 +3358,12 @@ class ModelsConfig:
                 "default": 0.9,
                 "level": 2
             },
-            "top_k": {
-                "field": "slider",
-                "min": 0.,
-                "max": 500,
-                "step": 10,
-                "default": 0,
-                "level": 2
-            },
-            "stop_sequences":{
-                "field": "text",
-                "default": "",
-                "level": 0
-            },
-            # "logprobs": {
+            # "stream": {
             #     "field": "boolean",
             #     "default": False,
             #     "level": 0,
             #     "typeOf": "boolean"
             # },
-            # "frequency_penalty": {
-            #     "field": "slider",
-            #     "min": 0,
-            #     "max": 2,
-            #     "step": 0.01,
-            #     "default": 0,
-            #     "level": 2
-            # },
-            # "presence_penalty": {
-            #     "field": "slider",
-            #     "min": 0,
-            #     "max": 2,
-            #     "step": 0.01,
-            #     "default": 0,
-            #     "level": 2
-            # },
-            # "response_count": {
-            #     "field": "number",
-            #     "default": 1,
-            #     "typeOf": "number",
-            #     "level": 0
-            # },
-            # "stop": {
-            #     "field": "text",
-            #     "default": "",
-            #     "level": 0
-            # },
-            "stream": {
-                "field": "boolean",
-                "default": False,
-                "level": 0,
-                "typeOf": "boolean"
-            },
             "tools": {
                 "field": "array",
                 "level": 0,
@@ -3372,13 +3376,6 @@ class ModelsConfig:
             #     "level": 0,
             #     "typeOf": "string"
             # },
-            # # "response_format": {
-            #     "field": "boolean",
-            #     "default": {
-            #         "type": "text"
-            #     },
-            #     "level": 0
-            # }
         }
         outputConfig = {
             "usage": [{
@@ -3441,58 +3438,12 @@ class ModelsConfig:
                 "default": 0.9,
                 "level": 2
             },
-            "top_k": {
-                "field": "slider",
-                "min": 0.,
-                "max": 500,
-                "step": 10,
-                "default": 0,
-                "level": 2
-            },
-            # "stop_sequences":{
-            #     "field": "text",
-            #     "default": "",
-            #     "level": 0
-            # },
-            # "logprobs": {
+            # "stream": {
             #     "field": "boolean",
             #     "default": False,
             #     "level": 0,
             #     "typeOf": "boolean"
             # },
-            # "frequency_penalty": {
-            #     "field": "slider",
-            #     "min": 0,
-            #     "max": 2,
-            #     "step": 0.01,
-            #     "default": 0,
-            #     "level": 2
-            # },
-            # "presence_penalty": {
-            #     "field": "slider",
-            #     "min": 0,
-            #     "max": 2,
-            #     "step": 0.01,
-            #     "default": 0,
-            #     "level": 2
-            # },
-            # "response_count": {
-            #     "field": "number",
-            #     "default": 1,
-            #     "typeOf": "number",
-            #     "level": 0
-            # },
-            # "stop": {
-            #     "field": "text",
-            #     "default": "",
-            #     "level": 0
-            # },
-            "stream": {
-                "field": "boolean",
-                "default": False,
-                "level": 0,
-                "typeOf": "boolean"
-            },
             "tools": {
                 "field": "array",
                 "level": 0,
@@ -3505,13 +3456,164 @@ class ModelsConfig:
             #     "level": 0,
             #     "typeOf": "string"
             # },
-            # "response_format": {
+        }
+        outputConfig = {
+            "usage": [{
+                "prompt_tokens": "usage.input_tokens",
+                "completion_tokens": "usage.output_tokens",
+                "total_cost": {
+                    "input_cost": 0,
+                    "output_cost": 0
+                }
+            }],
+            "message": "content[0].text",
+            "tools": "content[1].type",
+            "assistant": "role",
+            "id": "id"
+        }
+        inputConfig = {
+            "system": {
+                "role": "system",
+                "content": "",
+                "contentKey": "content",
+                "type": "json"
+            },
+            "content_location": "prompt[0].content"
+        }
+        return {
+            "configuration": configuration,
+            "outputConfig": outputConfig,
+            "inputConfig": inputConfig
+        }
+    @staticmethod
+    def claude_3_5_haiku_20241022(): 
+        configuration = {
+            "model": {
+                "field": "drop",
+                "default": "claude-3.5-haiku-20241022",
+                "level": 1
+            },
+            "creativity_level": {
+                "field": "slider",
+                "min": 0,
+                "max": 1,
+                "step": 0.1,
+                "default": 0,
+                "level": 2
+            },
+            "max_tokens": {
+                "field": "slider",
+                "min": 1,
+                "max": 4096,
+                "step": 1,
+                "default": 1046,
+                "level": 2
+            },
+            "top_p": {
+                "field": "slider",
+                "min": 0,
+                "max": 1,
+                "step": 0.1,
+                "default": 1,
+                "level": 2
+            },
+            # "stream": {
             #     "field": "boolean",
-            #     "default": {
-            #         "type": "text"
-            #     },
-            #     "level": 0
-            # }
+            #     "default": False,
+            #     "level": 0,
+            #     "typeOf": "boolean"
+            # },
+            "tools": {
+                "field": "array",
+                "level": 0,
+                "default": [],
+                "typeOf": "array"
+            },
+            # "tool_choice": {
+            #     "field": "text",
+            #     "default": "auto",
+            #     "level": 0,
+            #     "typeOf": "string"
+            # },
+        }
+        outputConfig = {
+            "usage": [{
+                "prompt_tokens": "usage.input_tokens",
+                "completion_tokens": "usage.output_tokens",
+                "total_cost": {
+                    "input_cost": 0,
+                    "output_cost": 0
+                }
+            }],
+            "message": "content[0].text",
+            "tools": "content[1].type",
+            "assistant": "role",
+            "id": "id"
+        }
+        inputConfig = {
+            "system": {
+                "role": "system",
+                "content": "",
+                "contentKey": "content",
+                "type": "json"
+            },
+            "content_location": "prompt[0].content"
+        }
+        return {
+            "configuration": configuration,
+            "outputConfig": outputConfig,
+            "inputConfig": inputConfig
+        }
+    @staticmethod
+    def claude_3_5_haiku_latest(): 
+        configuration = {
+            "model": {
+                "field": "drop",
+                "default": "claude-3.5-haiku-latest",
+                "level": 1
+            },
+            "creativity_level": {
+                "field": "slider",
+                "min": 0,
+                "max": 1,
+                "step": 0.1,
+                "default": 0,
+                "level": 2
+            },
+            "max_tokens": {
+                "field": "slider",
+                "min": 1,
+                "max": 4096,
+                "step": 1,
+                "default": 1046,
+                "level": 2
+            },
+            "top_p": {
+                "field": "slider",
+                "min": 0,
+                "max": 1,
+                "step": 0.1,
+                "default": 1,
+                "level": 2
+            },
+            # "stream": {
+            #     "field": "boolean",
+            #     "default": False,
+            #     "level": 0,
+            #     "typeOf": "boolean"
+            # },
+            "tools": {
+                "field": "array",
+                "level": 0,
+                "default": [],
+                "typeOf": "array"
+            },
+            # "tool_choice": {
+            #     "field": "text",
+            #     "default": "auto",
+            #     "level": 0,
+            #     "typeOf": "string"
+            # },
         }
         outputConfig = {
             "usage": [{
