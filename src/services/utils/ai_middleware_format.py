@@ -12,7 +12,7 @@ async def Response_formatter(response, service, tools={}, type='chat'):
                         except json.JSONDecodeError:
                             pass
                         
-    if service == 'openai' and (type =='chat' or type == 'reasoning') :
+    if service == 'openai' and type !='image':
         return {
             "data" : {
                 "id" : response.get("id", None),
