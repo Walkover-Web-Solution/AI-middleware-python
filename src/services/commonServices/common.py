@@ -148,7 +148,7 @@ async def chat(request_body):
                             "thread_id": thread_id,
                             "sub_thread_id": sub_thread_id,
                             "display_name": thread_id,
-                            "org_id": org_id,
+                            "org_id": str(org_id),
                     })
                 except Exception as e:
                     print(f"Failed to insert thread: {e}")
