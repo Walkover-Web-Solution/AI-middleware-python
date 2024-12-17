@@ -30,9 +30,9 @@ class Groq(BaseService):
             self.update_model_response(model_response, functionCallRes)
             tools = functionCallRes.get("tools", {}) 
             
-        usage = self.calculate_usage(model_response)
         
         if not self.playground:
+            usage = self.token_calculator.calculate_usage(model_response)
             historyParams = self.prepare_history_params(model_response, tools)
         
         return {'success': True, 'modelResponse': model_response, 'historyParams': historyParams, 'usage': usage }
