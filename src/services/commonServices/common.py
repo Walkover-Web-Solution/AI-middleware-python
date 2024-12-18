@@ -243,7 +243,8 @@ async def chat(request_body):
                         if service != "anthropic":
                             params['customConfig']['response_type'] = {"type": "json_object"}
                         params['customConfig']['max_tokens'] = modelConfig['max_tokens']['max']
-                        params['is_rich_text'] = True
+                        if params.get('tools'):
+                            del params['tools']
                         obj = await create_service_handler(params,service)
                         loop = asyncio.get_event_loop()
                         newresult = await loop.run_in_executor(executor, lambda: asyncio.run(obj.execute()))

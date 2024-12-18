@@ -12,8 +12,7 @@ class Antrophic(BaseService):
         conversation = ConversationService.createAnthropicConversation(self.configuration.get('conversation'), self.memory).get('messages', [])        
         self.customConfig['system'] = self.configuration.get('prompt')
         self.customConfig["messages"] =conversation + [{"role": "user", "content":[{ "type": "text","text": self.user }]  }]
-        if not self.is_rich_text:
-            self.customConfig['tools'] = self.tool_call if self.tool_call and len(self.tool_call) != 0 else []
+        self.customConfig['tools'] = self.tool_call if self.tool_call and len(self.tool_call) != 0 else []
         self.customConfig =self.service_formatter(self.customConfig, service_name['anthropic'])
         antrophic_response = await self.chats(self.customConfig, self.apikey, service_name['anthropic'])
         modelResponse = antrophic_response.get("modelResponse", {})
