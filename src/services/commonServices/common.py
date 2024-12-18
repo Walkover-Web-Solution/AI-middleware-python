@@ -104,6 +104,7 @@ async def chat(request_body):
     memory = None
     version_id = body.get('version_id')
     gpt_memory_context = body.get('gpt_memory_context')
+    image = body.get('image')
     
     if model == 'o1-preview' or model == 'o1-mini':
         reasoning_model = True
@@ -202,7 +203,8 @@ async def chat(request_body):
             "reasoning_model" : reasoning_model,
             "memory": memory,
             "type" : type,
-            "token_calculator" : token_calculator
+            "token_calculator" : token_calculator,
+            "image" : image
 
         }
         class_obj = await create_service_handler(params,service)

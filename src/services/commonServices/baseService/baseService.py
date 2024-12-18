@@ -43,6 +43,7 @@ class BaseService:
         self.memory = params.get('memory')
         self.type = params.get('type')
         self.token_calculator = params.get('token_calculator')
+        self.image_data = params.get('image')
 
 
     async def run_tool(self, responses, service):
@@ -193,7 +194,8 @@ class BaseService:
             'tools_call_data' : self.func_tool_call_data,
             'message_id' : self.message_id,
             'image_url' : model_response.get('data',[{}])[0].get('url', None),
-            'revised_prompt' : model_response.get('data',[{}])[0].get('revised_prompt', None)
+            'revised_prompt' : model_response.get('data',[{}])[0].get('revised_prompt', None),
+            'url' : self.image_data
         }
     
     def service_formatter(self, configuration : object, service : str ):

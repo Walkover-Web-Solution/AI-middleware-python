@@ -45,7 +45,8 @@ async def find(org_id, thread_id, sub_thread_id, bridge_id):
                 Conversation.id,
                 Conversation.function,
                 Conversation.is_reset,
-                RawData.error
+                RawData.error,
+                func.coalesce(Conversation.url, '').label('url')  # Added the 'url' column
             )
             .outerjoin(RawData, Conversation.id == RawData.chat_id)
             .filter(

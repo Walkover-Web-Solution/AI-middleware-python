@@ -9,10 +9,28 @@ class ConversationService:
                 threads.append({'role': 'user', 'content': memory })
             for message in conversation or []:
                 if message['role'] != "tools_call" and message['role'] != "tool":
-                    threads.append({'role': message['role'], 'content': message['content']})
+                    if 'url' in message and message['url'] != '':
+                        threads.append({
+                            'role': message['role'],
+                            'content': [
+                                {
+                                    "type": "text",
+                                    "text": message['content']
+                                },
+                                {
+                                    "type": "image_url",
+                                    "image_url": {
+                                        "url": message['url']
+                                    }
+                                }
+                            ]
+                        })
+                    else:
+                        # Default behavior for messages without a URL
+                        threads.append({'role': message['role'], 'content': message['content']})
             
             return {
-                'success': True,
+                'success': True, 
                 'messages': threads
             }
         except Exception as e:

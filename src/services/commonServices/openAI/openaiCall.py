@@ -26,7 +26,10 @@ class UnifiedOpenAICase(BaseService):
                 prompt = [{"role": "user", "content": f"system Prompt: {self.configuration.get('prompt')}"}]
                 self.customConfig["messages"] = prompt + conversation + ([{"role": "user", "content": self.user}] if self.user else []) 
             else:
-                self.customConfig["messages"] = [ {"role": "system", "content": self.configuration['prompt']}] + conversation + ([{"role": "user", "content": self.user}] if self.user else []) 
+                if not self.image_data:
+                    self.customConfig["messages"] = [ {"role": "system", "content": self.configuration['prompt']}] + conversation + ([{"role": "user", "content": self.user}] if self.user else []) 
+                else:
+                    self.customConfig["messages"] = [ {"role": "system", "content": self.configuration['prompt']}] + conversation + ([{'role': 'user', 'content': [{"type": "text", "text": self.user}, {"type": "image_url", "image_url": {"url": self.image_data}}]}] if self.user else [])
                 self.customConfig =self.service_formatter(self.customConfig, service_name['openai'])
                 if 'tools' not in self.customConfig and 'parallel_tool_calls' in self.customConfig:
                     del self.customConfig['parallel_tool_calls']
