@@ -1,5 +1,5 @@
 import json
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 import traceback
 import uuid
@@ -27,7 +27,6 @@ from src.handler.executionHandler import handle_exceptions
 from src.configs.serviceKeys import model_config_change
 from src.services.utils.time import Timer
 from models.mongo_connection import db
-from src.services.commonServices.suggestion import chatbot_suggestions
 from src.services.utils.apiservice import fetch
 from src.services.utils.gpt_memory import handle_gpt_memory
 from concurrent.futures import ThreadPoolExecutor
@@ -67,11 +66,8 @@ async def chat(request_body):
     type = configuration.get('type')
     thread_id = body.get("thread_id")
     sub_thread_id = body.get('sub_thread_id')
-    is_sub_thread_id = True 
     if not sub_thread_id:
-
         sub_thread_id = thread_id
-        is_sub_thread_id = False
     org_id = state['profile'].get('org',{}).get('id','')
     user = body.get("user")
     tools =  configuration.get('tools')
@@ -142,16 +138,6 @@ async def chat(request_body):
         if thread_id:
             thread_id = thread_id.strip()
             result = await getThread(thread_id, sub_thread_id, org_id, bridge_id,bridgeType)
-            if not is_sub_thread_id: 
-                try:
-                    await ThreadModel.insert_one({
-                            "thread_id": thread_id,
-                            "sub_thread_id": sub_thread_id,
-                            "display_name": thread_id,
-                            "org_id": str(org_id),
-                    })
-                except Exception as e:
-                    print(f"Failed to insert thread: {e}")
             if result["success"]:
                 configuration["conversation"] = result.get("data", [])
         else:
