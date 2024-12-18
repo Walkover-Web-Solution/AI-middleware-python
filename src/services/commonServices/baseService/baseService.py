@@ -43,6 +43,7 @@ class BaseService:
         self.memory = params.get('memory')
         self.type = params.get('type')
         self.token_calculator = params.get('token_calculator')
+        self.is_rich_text = params.get('is_rich_text')
 
 
     async def run_tool(self, responses, service):
