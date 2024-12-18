@@ -100,8 +100,8 @@ async def chat(request_body):
     version_id = body.get('version_id')
     gpt_memory_context = body.get('gpt_memory_context')
     
-    if model == 'o1-preview' or model == 'o1-mini':
-        reasoning_model = True
+    # if model == 'o1-preview' or model == 'o1-mini':
+    #     reasoning_model = True
 
     if isinstance(variables, list):
         variables = {}

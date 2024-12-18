@@ -22,9 +22,13 @@ class UnifiedOpenAICase(BaseService):
                 historyParams['type'] = 'assistant'
         else:
             conversation = ConversationService.createOpenAiConversation(self.configuration.get('conversation'), self.memory).get('messages', [])
-            if self.reasoning_model:
-                prompt = [{"role": "user", "content": f"system Prompt: {self.configuration.get('prompt')}"}]
-                self.customConfig["messages"] = prompt + conversation + ([{"role": "user", "content": self.user}] if self.user else []) 
+            if self.type == 'reasoning':
+                # prompt = [{"role": "user", "content": f"system Prompt: {self.configuration.get('prompt')}"}]
+                self.customConfig["messages"] = conversation + ([{"role": "user", "content": self.user}] if self.user else [])
+                self.customConfig =self.service_formatter(self.customConfig, service_name['openai'])
+                del self.customConfig['tool_choice']
+                if 'tools' not in self.customConfig and 'parallel_tool_calls' in self.customConfig:
+                    del self.customConfig['parallel_tool_calls'] 
             else:
                 self.customConfig["messages"] = [ {"role": "system", "content": self.configuration['prompt']}] + conversation + ([{"role": "user", "content": self.user}] if self.user else []) 
                 self.customConfig =self.service_formatter(self.customConfig, service_name['openai'])

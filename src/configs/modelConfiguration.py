@@ -2247,6 +2247,34 @@ class ModelsConfig:
                 "field": "drop",
                 "default": "o1-preview",
                 "level": 1
+            },
+            "max_tokens": {
+                "field": "slider",
+                "min": 1,
+                "max": 16384,
+                "step": 1,
+                "default": 256,
+                "level": 2
+            },
+            "tools": {
+                "field": "array",
+                "level": 0,
+                "default": [],
+                "typeOf": "array"
+            },
+            "tool_choice": {
+                "field": "text",
+                "default": "auto",
+                "level": 0,
+                "typeOf": "string"
+            },
+            "response_type": {
+                "field": "select",
+                "options" : [{"type" : "text"},{"type" : "json_object"},{"type" : "json_schema"}],
+                "default": {
+                "type" : "text",
+                },
+                "level": 0
             }
         }
         outputConfig = {
@@ -2286,6 +2314,34 @@ class ModelsConfig:
                 "field": "drop",
                 "default": "o1-mini",
                 "level": 1
+            },
+            "max_tokens": {
+                "field": "slider",
+                "min": 1,
+                "max": 65536,
+                "step": 1,
+                "default": 256,
+                "level": 2
+            },
+            "tools": {
+                "field": "array",
+                "level": 0,
+                "default": [],
+                "typeOf": "array"
+            },
+            "tool_choice": {
+                "field": "text",
+                "default": "auto",
+                "level": 0,
+                "typeOf": "string"
+            },
+            "response_type": {
+                "field": "select",
+                "options" : [{"type" : "text"},{"type" : "json_object"},{"type" : "json_schema"}],
+                "default": {
+                "type" : "text",
+                },
+                "level": 0
             }
         }
         outputConfig = {
