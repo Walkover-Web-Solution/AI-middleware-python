@@ -9,25 +9,19 @@ class ConversationService:
                 threads.append({'role': 'user', 'content': memory })
             for message in conversation or []:
                 if message['role'] != "tools_call" and message['role'] != "tool":
-                    if 'url' in message and message['url'] != '':
-                        threads.append({
-                            'role': message['role'],
-                            'content': [
-                                {
-                                    "type": "text",
-                                    "text": message['content']
-                                },
-                                {
-                                    "type": "image_url",
-                                    "image_url": {
-                                        "url": message['url']
-                                    }
+                    content = [{"type": "text", "text": message['content']}]
+                    if 'urls' in message and isinstance(message['urls'], list):
+                        for url in message['urls']:
+                            content.append({
+                                "type": "image_url",
+                                "image_url": {
+                                    "url": url
                                 }
-                            ]
-                        })
+                            })
                     else:
-                        # Default behavior for messages without a URL
-                        threads.append({'role': message['role'], 'content': message['content']})
+                        # Default behavior for messages without URLs
+                        content = message['content']
+                    threads.append({'role': message['role'], 'content': content})
             
             return {
                 'success': True, 
