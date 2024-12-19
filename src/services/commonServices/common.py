@@ -1,9 +1,8 @@
 import json
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 import traceback
 import uuid
-from config import Config
 from src.configs.modelConfiguration import ModelsConfig
 from ...controllers.conversationController import getThread 
 from ...db_services import metrics_service as metrics_service
@@ -26,10 +25,13 @@ import json
 from src.handler.executionHandler import handle_exceptions
 from src.configs.serviceKeys import model_config_change
 from src.services.utils.time import Timer
+from models.mongo_connection import db
 from src.services.utils.apiservice import fetch
 from src.services.utils.gpt_memory import handle_gpt_memory
-from concurrent.futures import ThreadPoolExecutor
 from src.services.utils.token_calculation import TokenCalculator
+
+configurationModel = db["configurations"]
+
 
 async def create_service_handler(params, service):
     if service == service_name['openai']:
@@ -43,8 +45,6 @@ async def create_service_handler(params, service):
         
     return class_obj
 
-
-executor = ThreadPoolExecutor(max_workers= int(Config.max_workers) or 10)
 
 @app.post("/chat/{bridge_id}")
 @handle_exceptions
@@ -60,7 +60,9 @@ async def chat(request_body):
     configuration = body.get("configuration")
     type = configuration.get('type')
     thread_id = body.get("thread_id")
-    sub_thread_id = body.get('sub_thread_id',thread_id)
+    sub_thread_id = body.get('sub_thread_id')
+    if not sub_thread_id:
+        sub_thread_id = thread_id
     org_id = state['profile'].get('org',{}).get('id','')
     user = body.get("user")
     tools =  configuration.get('tools')
@@ -92,8 +94,6 @@ async def chat(request_body):
     suggest = body.get('suggest',False)
     message_id = str(uuid.uuid1())
     result = {}
-    suggestions = []
-    suggestions_flag =False
     reasoning_model = False
     gpt_memory = body.get('gpt_memory')
     memory = None
@@ -102,6 +102,8 @@ async def chat(request_body):
     
     if model == 'o1-preview' or model == 'o1-mini':
         reasoning_model = True
+        configuration['prompt'] = ''
+        variables = {}
 
     if isinstance(variables, list):
         variables = {}
@@ -199,8 +201,7 @@ async def chat(request_body):
 
         }
         class_obj = await create_service_handler(params,service)
-        loop = asyncio.get_event_loop()
-        result = await loop.run_in_executor(executor, lambda: asyncio.run(class_obj.execute()))
+        result = await class_obj.execute()
         
         if not result["success"]:
             raise ValueError(result)
@@ -236,6 +237,8 @@ async def chat(request_body):
                         if service != "anthropic":
                             params['customConfig']['response_type'] = {"type": "json_object"}
                         params['customConfig']['max_tokens'] = modelConfig['max_tokens']['max']
+                        if params.get('tools'):
+                            del params['tools']
                         obj = await create_service_handler(params,service)
                         newresult = await obj.execute()
                         tokens = obj.calculate_usage(newresult["modelResponse"])
@@ -261,8 +264,6 @@ async def chat(request_body):
             
         if version == 2:
             result['modelResponse'] = await Response_formatter(result["modelResponse"],service, result["historyParams"].get('tools',{}), type)
-        if configuration['type'] == 'chat' and bridgeType and suggestions:
-            result['modelResponse']['options'] = suggestions
         latency = {
             "over_all_time" : timer.stop("Api total time") or "",
             "model_execution_time": sum(execution_time_logs.values()) or "",
@@ -282,6 +283,8 @@ async def chat(request_body):
             })
             if result.get('modelResponse') and result['modelResponse'].get('data'):
                 result['modelResponse']['data']['message_id'] = message_id
+            # Optimize task creation and gathering
+            
             tasks = [
                 sendResponse(response_format, result["modelResponse"], success=True),
                 metrics_service.create([usage], result["historyParams"], version_id),
@@ -291,7 +294,6 @@ async def chat(request_body):
             if gpt_memory  and configuration['type'] == 'chat':
                 tasks.append(handle_gpt_memory(id, user, result['modelResponse'], memory, gpt_memory_context))
             await asyncio.gather(*tasks, return_exceptions=True)
-
         return JSONResponse(status_code=200, content={"success": True, "response": result["modelResponse"]})
     except Exception as error:
         traceback.print_exc()

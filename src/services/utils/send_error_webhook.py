@@ -3,16 +3,35 @@ from ..commonServices.baseService.baseService import sendResponse
 
 async def send_error_to_webhook(bridge_id, org_id, details, type):
     try:
+        details['bridge_id'] = bridge_id
+        details['org_id'] = org_id
         result = await get_webhook_data(org_id)
-        data = result.get('webhook_data', [])
+        data = result.get('webhook_data')
+        data.append({
+                    "org_id": org_id,
+                    "name": "default alert",
+                    "webhookConfiguration": {
+                        "url": "https://flow.sokt.io/func/scriSmH2QaBH",
+                        "headers": {}
+                    },
+                    "alertType": [
+                        "Error",
+                        "Variable"
+                    ],
+                    "bridges": [
+                        "all"
+                    ],
+                })
         if type == 'Variable':
                 details = create_missing_vars(details)
         for entry in data:
             webhook_config = entry.get('webhookConfiguration')
             bridges = entry.get('bridges', [])
-            
-            if not webhook_config:
-                continue
+            details = {
+                 "details":details,
+                 "bridge_id":bridge_id,
+                 "org_id":org_id
+            }
             if type in entry['alertType'] and (bridge_id in bridges or 'all' in bridges):
                     webhook_url = webhook_config.get('url')
                     if webhook_url:

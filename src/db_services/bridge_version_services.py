@@ -1,6 +1,9 @@
 from models.mongo_connection import db
 from bson import ObjectId
 import traceback
+import json
+import asyncio
+from src.services.utils.apiservice import fetch
 
 configurationModel = db["configurations"]
 version_model = db['configuration_versions']
@@ -174,8 +177,7 @@ async def publish(org_id, version_id):
         get_version_data.pop('_id', None)
         updated_configuration = {**parent_configuration, **get_version_data}
         updated_configuration['published_version_id'] = published_version_id
-        
-        # Update the document in the configurationModel
+        asyncio.create_task(makeQuestion(parent_id, updated_configuration.get("configuration",{}).get("prompt","")))
         await configurationModel.update_one(
             {'_id': ObjectId(parent_id)},
             {'$set': updated_configuration}
@@ -193,3 +195,11 @@ async def publish(org_id, version_id):
             "success": False,
             "error": str(e)
         }
+async def makeQuestion(parent_id, prompt):
+    response, headers = await fetch(url='https://proxy.viasocket.com/proxy/api/1258584/29gjrmh24/api/v2/model/chat/completion',method='POST',json_body= {"user": prompt,"bridge_id": "67459164ea7147ad4b75f92a"},headers = {'pauthkey': '1b13a7a038ce616635899a239771044c','Content-Type': 'application/json'})
+    # Update the document in the configurationModel
+    updated_configuration= {"starterQuestion": json.loads(response.get("response",{}).get("data",{}).get("content","{}")).get("questions",[])}
+    configurationModel.update_one(
+        {'_id': ObjectId(parent_id)},
+        {'$set': updated_configuration}
+    )

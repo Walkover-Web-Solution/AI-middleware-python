@@ -2,6 +2,7 @@ import asyncio
 import pydash as _
 import json
 import traceback
+from config import Config
 from ....db_services import metrics_service, ConfigurationServices as ConfigurationService
 from .utils import validate_tool_call, tool_call_formatter, sendResponse, make_code_mapping_by_service, process_data_and_run_tools
 from src.configs.serviceKeys import ServiceKeys
@@ -12,6 +13,10 @@ from ....configs.constant import service_name
 from ..groq.groqModelRun import groq_runmodel
 from ....configs.constant import service_name
 from ..openAI.image_model import OpenAIImageModel
+from concurrent.futures import ThreadPoolExecutor
+
+
+executor = ThreadPoolExecutor(max_workers= int(Config.max_workers) or 10)
 
 class BaseService:
     def __init__(self, params):
@@ -219,10 +224,11 @@ class BaseService:
     async def chats(self, configuration, apikey, service):
         try:
             response = {}
+            loop = asyncio.get_event_loop()
             if service == service_name['openai']:
                 response = await runModel(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer, self.message_id, self.org_id)
             elif service == service_name['anthropic']:
-                response = await anthropic_runmodel(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer)
+                response = await loop.run_in_executor(executor, lambda: asyncio.run(anthropic_runmodel(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer)))
             elif service == service_name['groq']:
                 response = await groq_runmodel(configuration, apikey, self.execution_time_logs, self.bridge_id,  self.timer)
             if not response['success']:

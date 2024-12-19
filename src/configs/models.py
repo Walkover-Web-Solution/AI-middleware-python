@@ -13,11 +13,11 @@ services = {
         "embedding": {"embedding-001"}
     },
     "anthropic" : {
-        "models": {"claude-3-5-sonnet-20240620", "claude-3-opus-20240229", "claude-3-sonnet-20240229", "claude-3-haiku-20240307"},
-        "chat": {"claude-3-5-sonnet-20240620", "claude-3-opus-20240229", "claude-3-sonnet-20240229", "claude-3-haiku-20240307"},
+        "models": {"claude-3-5-sonnet-latest","claude-3-opus-latest","claude-3-opus-20240229","claude-3-5-sonnet-20241022","claude-3-sonnet-20240229", "claude-3-haiku-20240307","claude-3-5-haiku-20241022","claude-3-5-haiku-latest"},
+        "chat": {"claude-3-5-sonnet-latest","claude-3-opus-latest","claude-3-opus-20240229","claude-3-5-sonnet-20241022","claude-3-sonnet-20240229", "claude-3-haiku-20240307","claude-3-5-haiku-20241022","claude-3-5-haiku-latest"}
     },
     "groq" : {
-        "models": {"llama-3.1-405b-reasoning", "llama-3.1-70b-versatile", "llama-3.1-8b-instant", "llama3-groq-70b-8192-tool-use-preview","llama3-groq-8b-8192-tool-use-preview","llama3-70b-8192","llama3-8b-8192","mixtral-8x7b-32768","gemma-7b-it","gemma2-9b-it","whisper-large-v3"},
+        "models": {"llama-3.1-405b-reasoning", "llama-3.3-70b-versatile", "llama-3.1-8b-instant", "llama3-groq-70b-8192-tool-use-preview","llama3-groq-8b-8192-tool-use-preview","llama3-70b-8192","llama3-8b-8192","mixtral-8x7b-32768","gemma-7b-it","gemma2-9b-it","whisper-large-v3", "llama-guard-3-8b"},
         "chat": {"llama-3.1-405b-reasoning", "llama-3.1-70b-versatile", "llama-3.1-8b-instant", "llama3-groq-70b-8192-tool-use-preview","llama3-groq-8b-8192-tool-use-preview","llama3-70b-8192","llama3-8b-8192","mixtral-8x7b-32768","gemma-7b-it","gemma2-9b-it","whisper-large-v3"}
     }
 }

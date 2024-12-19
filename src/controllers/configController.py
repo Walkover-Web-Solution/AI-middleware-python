@@ -244,10 +244,13 @@ async def get_all_service_models_controller(service):
         elif service == service_name['anthropic']:
             return {
                 "chat" : {
-                    "claude-3-5-sonnet-20240620" : restructure_configuration(model_configuration.claude_3_5_sonnet_20240620()), 
+                    "claude-3-5-sonnet-20241022" : restructure_configuration(model_configuration.claude_3_5_sonnet_20241022()), 
+                    "claude-3-5-sonnet-latest" : restructure_configuration(model_configuration.claude_3_5_sonnet_latest()), 
                     "claude-3-opus-20240229" : restructure_configuration(model_configuration.claude_3_opus_20240229()), 
+                    "claude-3-opus-latest" : restructure_configuration(model_configuration.claude_3_opus_latest()),  
                     "claude-3-sonnet-20240229" : restructure_configuration(model_configuration.claude_3_sonnet_20240229()), 
-                    "claude-3-haiku-20240307" : restructure_configuration(model_configuration.claude_3_haiku_20240307()) 
+                    "claude-3-haiku-20240307" : restructure_configuration(model_configuration.claude_3_haiku_20240307()), 
+                    "claude-3-5-haiku-20241022" : restructure_configuration(model_configuration.claude_3_5_haiku_20241022()) 
                 }
             }
         
@@ -255,7 +258,7 @@ async def get_all_service_models_controller(service):
             return {
                 "chat" : {
                     "llama-3.1-405b-reasoning" : restructure_configuration(model_configuration.llama_3_1_405b_reasoning()),
-                    "llama-3.1-70b-versatile" : restructure_configuration(model_configuration.llama_3_1_70b_versatile()),
+                    "llama-3.3-70b-versatile" : restructure_configuration(model_configuration.llama_3_3_70b_versatile()),
                     "llama-3.1-8b-instant" : restructure_configuration(model_configuration.llama_3_1_8b_instant()),
                     "llama3-groq-70b-8192-tool-use-preview" : restructure_configuration(model_configuration.llama3_groq_70b_8192_tool_use_preview()),
                     "llama3-groq-8b-8192-tool-use-preview" : restructure_configuration(model_configuration.llama3_groq_8b_8192_tool_use_preview()),
@@ -263,7 +266,8 @@ async def get_all_service_models_controller(service):
                     "llama3-8b-8192" : restructure_configuration(model_configuration.llama3_8b_8192()),
                     "mixtral-8x7b-32768" : restructure_configuration(model_configuration.mixtral_8x7b_32768()),
                     "gemma-7b-it" : restructure_configuration(model_configuration.gemma_7b_it()),
-                    "gemma2-9b-it" : restructure_configuration(model_configuration.gemma2_9b_it())
+                    "gemma2-9b-it" : restructure_configuration(model_configuration.gemma2_9b_it()),
+                    "llama-guard-3-8b" : restructure_configuration(model_configuration.llama_guard_3_8b())
                 }
             }
 

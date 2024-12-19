@@ -19,12 +19,13 @@ async def send_data_middleware(request: Request, botId: str):
         profile = request.state.profile
         message = body.get("message")
         userId = profile['user']['id']
+        subThreadId = body.get("subThreadId")
         chatBotId = botId
         flag = body.get("flag") or False
         if(message == ""):
             return JSONResponse(status_code=400, content={'error':"Message cannot be null"})
 
-        channelId = f"{chatBotId}{threadId.strip() if threadId and threadId.strip() else userId}"
+        channelId = f"{chatBotId}{threadId.strip() if threadId and threadId.strip() else userId}{subThreadId.strip() if subThreadId and subThreadId.strip() else userId}"
 
         bridge_response = await ConfigurationServices.get_bridge_by_slugname(org_id, slugName)
         bridges = bridge_response['bridges'] if bridge_response['success'] else {}
@@ -49,6 +50,7 @@ async def send_data_middleware(request: Request, botId: str):
             "bridge_id": str(bridges.get('_id', '')),
             "user": message,
             "thread_id": threadId,
+            "sub_thread_id":subThreadId,
             "variables": {**body.get('interfaceContextData', {}), **body.get('variables',{}), **json.loads(profile.get('variables', "{}"))},
             "configuration": {
                  "response_format": {
@@ -114,11 +116,14 @@ async def chat_bot_auth(request: Request):
 async def reset_chatBot(request: Request, botId: str):
     body = await request.json()
     thread_id = body.get('thread_id')
+    sub_thread_id = body.get('sub_thread_id')
     profile = request.state.profile
     userId = profile['user']['id']
     org_id = request.state.profile['org']['id']
     slugName = body.get("slugName")
     purpose = body.get("purpose")
+    
+    channelId = f"{botId}{thread_id.strip() if thread_id and thread_id.strip() else userId}{sub_thread_id.strip() if sub_thread_id and sub_thread_id.strip() else userId}"
     
     bridge_response = await ConfigurationServices.get_bridge_by_slugname(org_id, slugName)
     bridges = bridge_response['bridges'] if bridge_response['success'] else {}
@@ -131,7 +136,7 @@ async def reset_chatBot(request: Request, botId: str):
     response_format = {
         "type": "RTLayer",
         "cred": {
-            "channel": f"{botId}{thread_id.strip() if thread_id and thread_id.strip() else userId}",
+            "channel": channelId,
             "ttl": 1,
             'apikey': Config.RTLAYER_AUTH
         }
