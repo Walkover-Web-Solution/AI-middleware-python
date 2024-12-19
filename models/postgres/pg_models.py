@@ -50,6 +50,7 @@ class RawData(Base):
     chat_id = Column(Integer, ForeignKey('conversations.id'))
     variables = Column(JSON)
     is_present = Column(Boolean, default=False)
+    message_id = Column(UUID(as_uuid=True), nullable=True)
     # conversation = relationship("Conversation", back_populates="raw_data")
 
 class system_prompt_versionings(Base):
