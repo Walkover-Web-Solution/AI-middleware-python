@@ -3,7 +3,6 @@ from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 import traceback
 import uuid
-from config import Config
 from src.configs.modelConfiguration import ModelsConfig
 from ...controllers.conversationController import getThread 
 from ...db_services import metrics_service as metrics_service
@@ -29,11 +28,9 @@ from src.services.utils.time import Timer
 from models.mongo_connection import db
 from src.services.utils.apiservice import fetch
 from src.services.utils.gpt_memory import handle_gpt_memory
-from concurrent.futures import ThreadPoolExecutor
 from src.services.utils.token_calculation import TokenCalculator
 
 configurationModel = db["configurations"]
-ThreadModel = db['threads']
 
 
 async def create_service_handler(params, service):
@@ -48,8 +45,6 @@ async def create_service_handler(params, service):
         
     return class_obj
 
-
-executor = ThreadPoolExecutor(max_workers= int(Config.max_workers) or 10)
 
 @app.post("/chat/{bridge_id}")
 @handle_exceptions
@@ -206,8 +201,7 @@ async def chat(request_body):
 
         }
         class_obj = await create_service_handler(params,service)
-        loop = asyncio.get_event_loop()
-        result = await loop.run_in_executor(executor, lambda: asyncio.run(class_obj.execute()))
+        result = await class_obj.execute()
         
         if not result["success"]:
             raise ValueError(result)
@@ -246,8 +240,7 @@ async def chat(request_body):
                         if params.get('tools'):
                             del params['tools']
                         obj = await create_service_handler(params,service)
-                        loop = asyncio.get_event_loop()
-                        newresult = await loop.run_in_executor(executor, lambda: asyncio.run(obj.execute()))
+                        newresult = await obj.execute()
                         tokens = obj.calculate_usage(newresult["modelResponse"])
                         if service == "anthropic":
                             _.set_(result['usage'], "totalTokens", _.get(result['usage'], "totalTokens") + tokens['totalTokens'])

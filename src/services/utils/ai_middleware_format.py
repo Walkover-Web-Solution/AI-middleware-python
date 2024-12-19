@@ -30,7 +30,7 @@ async def Response_formatter(response, service, tools={}, type='chat'):
 
             }
         }
-    elif service == 'openai' and type =='image' :
+    elif service == 'openai':
         return {
             "data" : {
                 "revised_prompt" : response.get('data')[0].get('revised_prompt'),
