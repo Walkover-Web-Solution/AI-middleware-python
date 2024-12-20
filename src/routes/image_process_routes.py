@@ -4,6 +4,6 @@ from ..controllers.image_process_controller import image_processing
 router = APIRouter()
 
 
-@router.post('/', dependencies=[Depends(jwt_middleware)])
+@router.post('/')
 async def image(request: Request):
     return await image_processing(request)

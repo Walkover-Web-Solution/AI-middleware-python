@@ -1735,8 +1735,10 @@ class ModelsConfig:
                 },
                 "level": 0
             },
-            "vision" : {
-                "support" : True
+            "vision": {
+                "support": True,
+                 "level": 0,
+                 "default" : False
             }
         }
         outputConfig = {
@@ -1860,8 +1862,10 @@ class ModelsConfig:
                 },
                 "level": 0
             },
-            "vision" : {
-                "support" : True
+            "vision": {
+                "support": True,
+                 "level": 0,
+                 "default" : False
             }
         }
         outputConfig = {
@@ -1972,8 +1976,10 @@ class ModelsConfig:
                 },
                 "level": 0
             },
-            "vision" : {
-                "support" : True
+            "vision": {
+                "support": True,
+                 "level": 0,
+                 "default" : False
             }
         }
         outputConfig = {
@@ -2094,8 +2100,10 @@ class ModelsConfig:
                 },
                 "level": 0
             },
-            "vision" : {
-                "support" : True
+            "vision": {
+                "support": True,
+                 "level": 0,
+                 "default" : False
             }
         }
         outputConfig = {
@@ -2219,8 +2227,10 @@ class ModelsConfig:
                 },
                 "level": 0
             },
-            "vision" : {
-                "support" : True
+            "vision": {
+                "support": True,
+                 "level": 0,
+                 "default" : False
             }
         }
         outputConfig = {
