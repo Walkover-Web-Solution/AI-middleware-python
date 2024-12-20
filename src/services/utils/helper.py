@@ -60,10 +60,12 @@ class Helper:
         return prev_configuration
 
     @staticmethod
-    def replace_variables_in_prompt(prompt, variables):
+    def replace_variables_in_prompt(prompt, Aviliable_variables):
         missing_variables = {}
         placeholders = re.findall(r'\{\{(.*?)\}\}', prompt)
-        
+        flattened_json = Helper.custom_flatten(Aviliable_variables)
+        variables = {**Aviliable_variables, **flattened_json}
+
         if variables:
             for key, value in variables.items():
                 if key in placeholders:
@@ -78,6 +80,28 @@ class Helper:
             missing_variables[placeholder] = f"{{{{{placeholder}}}}}"
 
         return prompt, missing_variables
+
+
+    @staticmethod
+    def custom_flatten(d, parent_key='', sep='.'):
+        """
+        Flattens a dictionary and preserves nested structures.
+        :param d: Dictionary to flatten
+        :param parent_key: The base key string
+        :param sep: Separator between keys
+        :return: A flattened dictionary with nested structures preserved
+        """
+        items = {}
+        for k, v in d.items():
+            new_key = f"{parent_key}{sep}{k}" if parent_key else k
+            if isinstance(v, dict):
+                # Add the current nested structure as a whole
+                items[new_key] = v
+                # Flatten recursively
+                items.update(Helper.custom_flatten(v, new_key, sep=sep))
+            else:
+                items[new_key] = v
+        return items
 
     @staticmethod
     def parse_json(json_string):
