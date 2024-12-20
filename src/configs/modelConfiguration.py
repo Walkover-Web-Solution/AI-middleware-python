@@ -1734,6 +1734,9 @@ class ModelsConfig:
                 "type" : "text",
                 },
                 "level": 0
+            },
+            "vision" : {
+                "support" : True
             }
         }
         outputConfig = {
@@ -1856,6 +1859,9 @@ class ModelsConfig:
                 "type" : "text",
                 },
                 "level": 0
+            },
+            "vision" : {
+                "support" : True
             }
         }
         outputConfig = {
@@ -1965,6 +1971,9 @@ class ModelsConfig:
                 "type" : "text",
                 },
                 "level": 0
+            },
+            "vision" : {
+                "support" : True
             }
         }
         outputConfig = {
@@ -2084,6 +2093,9 @@ class ModelsConfig:
                 "type" : "text",
                 },
                 "level": 0
+            },
+            "vision" : {
+                "support" : True
             }
         }
         outputConfig = {
@@ -2206,6 +2218,9 @@ class ModelsConfig:
                 "type" : "text",
                 },
                 "level": 0
+            },
+            "vision" : {
+                "support" : True
             }
         }
         outputConfig = {
