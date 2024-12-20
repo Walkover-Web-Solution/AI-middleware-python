@@ -29,6 +29,7 @@ from models.mongo_connection import db
 from src.services.utils.apiservice import fetch
 from src.services.utils.gpt_memory import handle_gpt_memory
 from src.services.utils.token_calculation import TokenCalculator
+from config import Config
 
 configurationModel = db["configurations"]
 
