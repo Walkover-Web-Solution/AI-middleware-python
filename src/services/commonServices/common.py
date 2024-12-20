@@ -56,6 +56,7 @@ async def chat(request_body):
     state = request_body.get('state',{})
     path_params = request_body.get('path_params',{})
     apikey = body.get("apikey")
+    apikey_object_id = body.get('apikey_object_id')
     bridge_id = path_params.get('bridge_id') or body.get("bridge_id")
     configuration = body.get("configuration")
     type = configuration.get('type')
@@ -173,6 +174,7 @@ async def chat(request_body):
             "customConfig": customConfig,
             "configuration": configuration,
             "apikey": apikey,
+            "apikey_object_id": apikey_object_id,
             "variables": variables,
             "user": user,
             "tools": tools,
@@ -279,7 +281,8 @@ async def chat(request_body):
                 "latency": json.dumps(latency),
                 "success": True,
                 "variables": variables,
-                "prompt": configuration.get("prompt") or ""
+                "prompt": configuration.get("prompt") or "",
+                "apikey_object_id": apikey_object_id
             })
             if result.get('modelResponse') and result['modelResponse'].get('data'):
                 result['modelResponse']['data']['message_id'] = message_id
@@ -310,7 +313,8 @@ async def chat(request_body):
                 "orgId": org_id,
                 "latency": json.dumps(latency),
                 "success": False,
-                "error": str(error)
+                "error": str(error),
+                "apikey_object_id": apikey_object_id
             })
             # Combine the tasks into a single asyncio.gather call
             tasks = [
@@ -324,8 +328,8 @@ async def chat(request_body):
                     "model": model or configuration.get("model", None),
                     "channel": 'chat',
                     "type": "error",
-                    "actor": "user"
-                }, version_id),
+                    "actor": "user"                
+                    }, version_id),
                 # Only send the second response if the type is not 'default'
                 sendResponse(response_format, result.get("modelResponse", str(error))) if response_format['type'] != 'default' else None,
                 send_alert(data={"configuration": configuration, "error": str(error),"message_id":message_id, "bridge_id": bridge_id, "message": "Exception for the code", "org_id":org_id}),

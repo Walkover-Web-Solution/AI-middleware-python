@@ -48,7 +48,7 @@ class BaseService:
         self.memory = params.get('memory')
         self.type = params.get('type')
         self.token_calculator = params.get('token_calculator')
-
+        self.apikey_object_id = params.get('apikey_object_id')
 
     async def run_tool(self, responses, service):
         codes_mapping = make_code_mapping_by_service(responses, service)
@@ -117,7 +117,8 @@ class BaseService:
             'orgId': self.org_id,
             'latency': json.dumps(latency),
             'success': False,
-            'error': response.get('error')
+            'error': response.get('error'),
+            'apikey_object_id': self.apikey_object_id
         }
         await asyncio.gather(
             metrics_service.create([usage], {
