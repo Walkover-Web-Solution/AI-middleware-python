@@ -53,6 +53,7 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
     service = service or (result.get('bridges', {}).get('service', '').lower())
     gpt_memory = result.get('bridges', {}).get('gpt_memory')
     db_api_key = result.get('bridges', {}).get('apikey')
+    apikey_object_id = result.get('bridges', {}).get('apikey_object_id')
     if not (apikey or db_api_key): 
         raise Exception('Could not find api key')
     apikey = apikey if apikey else Helper.decrypt(db_api_key)
@@ -81,6 +82,7 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
         'pre_tools': {'name': name, 'args': args} if len(pre_tools)>0 else None,
         'service': service,
         'apikey': apikey,
+        'apikey_object_id': apikey_object_id,
         'RTLayer': RTLayer,
         'template': template_content.get('template') if template_content else None,
         "user_reference": result.get("bridges", {}).get("user_reference", ""),
