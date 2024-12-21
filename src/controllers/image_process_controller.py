@@ -1,0 +1,37 @@
+import json
+import uuid
+from google.cloud import storage
+from google.oauth2 import service_account
+from config import Config
+
+async def image_processing(request):
+    body = await request.form()
+    file = body.get('image')
+    
+    file_content = await file.read()
+    
+    try:
+        # Set up Google Cloud Storage client
+        credentials_dict = json.loads(Config.GCP_CREDENTIALS)
+        credentials = service_account.Credentials.from_service_account_info(credentials_dict)
+        storage_client = storage.Client(credentials=credentials)
+        
+        # Define the bucket and file path
+        bucket = storage_client.bucket('ai_middleware_testing')
+        filename = f"uploads/{uuid.uuid4()}_{file.filename}"
+        blob = bucket.blob(filename)
+        
+        # Upload the file to GCP
+        blob.upload_from_string(file_content, content_type=file.content_type)
+        image_url = f"https://storage.googleapis.com/ai_middleware_testing/{filename}"
+        
+        return {
+            'success': True,
+            'image_url': image_url
+        }
+    except Exception as e:
+        # Handle exceptions and return an error response
+        return {
+            'success': False,
+            'error': str(e)
+        }
