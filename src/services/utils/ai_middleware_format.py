@@ -2,7 +2,7 @@ import json
 from config import Config
 from src.services.utils.apiservice import fetch
 
-async def Response_formatter(response, service, tools={}, type='chat'):
+async def Response_formatter(response, service, tools={}, type='chat', images = None):
     tools_data = tools
     if isinstance(tools_data, dict):
                 for key, value in tools_data.items():
@@ -20,7 +20,8 @@ async def Response_formatter(response, service, tools={}, type='chat'):
                 "model" : response.get("model", None),
                 "role" : response.get("choices", [{}])[0].get("message", {}).get("role", None),
                 "finish_reason" : response.get("choices", [{}])[0].get("finish_reason", None),
-                "tools_data": tools_data or {}
+                "tools_data": tools_data or {},
+                "images" : images
             },
             "usage" : {
                 "input_tokens" : response.get("usage", {}).get("prompt_tokens", None),
