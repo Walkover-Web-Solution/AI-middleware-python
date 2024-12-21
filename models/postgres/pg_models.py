@@ -29,6 +29,7 @@ class Conversation(Base):
     sub_thread_id = Column(String, nullable=True)
     revised_prompt = Column(Text, nullable=True)
     image_url = Column(Text, nullable=True)
+    urls = Column(ARRAY(String), nullable=True)
 
 class RawData(Base):
     __tablename__ = 'raw_data'
