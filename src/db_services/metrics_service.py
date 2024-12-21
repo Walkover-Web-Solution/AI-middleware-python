@@ -53,7 +53,7 @@ async def create(dataset, history_params, version_id):
         insert_ai_data_in_pg = [
             {
                 'org_id': data_object['orgId'],
-                'authkey_name': data_object.get('authkeyName', 'not_found'),
+                'authkey_name': data_object.get('apikey_object_id'),
                 'latency': data_object.get('latency', 0),
                 'service': data_object['service'],
                 'status': data_object.get('success', False),
