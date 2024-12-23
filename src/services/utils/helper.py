@@ -9,6 +9,10 @@ import operator
 import re
 from src.configs.modelConfiguration import ModelsConfig as model_configuration
 import jwt
+from ..commonServices.openAI.openaiCall import UnifiedOpenAICase
+from ..commonServices.groq.groqCall import Groq
+from ..commonServices.anthrophic.antrophicCall import Antrophic
+from ...configs.constant import service_name
 class Helper:
     @staticmethod
     def encrypt(text):
@@ -159,3 +163,16 @@ class Helper:
     def find_variables_in_string(prompt):
         variables = re.findall(r'{{(.*?)}}', prompt)
         return variables
+    
+    async def create_service_handler(params, service):
+        if service == service_name['openai']:
+            class_obj = UnifiedOpenAICase(params)
+        # elif service == service_name['gemini']:
+        #     class_obj = GeminiHandler(params)
+        elif service == service_name['anthropic']:
+            class_obj = Antrophic(params)
+        elif service == service_name['groq']:
+            class_obj = Groq(params)
+            
+        return class_obj
+
