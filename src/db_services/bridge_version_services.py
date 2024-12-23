@@ -18,7 +18,7 @@ async def get_version(org_id, version_id):
         traceback.print_exc()
         return None
 
-async def create_bridge_version(bridge_data, parent_id=None):
+async def create_bridge_version(bridge_data, parent_id=None, version_description=""):
     try:
         bridge_version_data = bridge_data.copy()
         if 'name' in bridge_version_data:
@@ -30,6 +30,7 @@ async def create_bridge_version(bridge_data, parent_id=None):
         bridge_version_data['is_drafted'] = True
         bridge_version_data['parent_id'] = parent_id or str(bridge_data['_id'])
         bridge_version_data['_id'] = ObjectId()
+        bridge_version_data['version_description'] = version_description
         await version_model.insert_one(bridge_version_data)
         return str(bridge_version_data['_id'])
     except Exception as e:
