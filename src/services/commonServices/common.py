@@ -137,7 +137,8 @@ async def chat(request_body):
                     "model": parsed_data['model'] or parsed_data['configuration'].get("model", None),
                     "channel": 'chat',
                     "type": "error",
-                    "actor": "user"                
+                    "actor": "user",
+                    "message_id": parsed_data['message_id']
                     }, parsed_data['version_id']),
                 # Only send the second response if the type is not 'default'
                 sendResponse(parsed_data['response_format'], result.get("modelResponse", str(error))) if parsed_data['response_format']['type'] != 'default' else None,
