@@ -105,7 +105,6 @@ async def chat(request_body):
     
     if model == 'o1-preview' or model == 'o1-mini':
         reasoning_model = True
-        configuration['prompt'] = ''
         variables = {}
 
     if isinstance(variables, list):
