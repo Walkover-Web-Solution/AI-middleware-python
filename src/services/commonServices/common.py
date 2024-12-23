@@ -301,7 +301,7 @@ async def chat(request_body):
                 tasks.append(handle_gpt_memory(id, user, result['modelResponse'], memory, gpt_memory_context))
             await asyncio.gather(*tasks, return_exceptions=True)
         return JSONResponse(status_code=200, content={"success": True, "response": result["modelResponse"]})
-    except Exception as error:
+    except (Exception, ValueError) as error:
         traceback.print_exc()
         if not is_playground:
             latency = {
@@ -320,6 +320,7 @@ async def chat(request_body):
                 "apikey_object_id": apikey_object_id
             })
             # Combine the tasks into a single asyncio.gather call
+            func_tool_call_data = error.args[1] if len(error.args) > 1 else None
             tasks = [
                 metrics_service.create([usage], {
                     "thread_id": thread_id,
@@ -331,7 +332,8 @@ async def chat(request_body):
                     "model": model or configuration.get("model", None),
                     "channel": 'chat',
                     "type": "error",
-                    "actor": "user"                
+                    "actor": "user",
+                    'tools_call_data' : func_tool_call_data,                
                     }, version_id),
                 # Only send the second response if the type is not 'default'
                 sendResponse(response_format, result.get("modelResponse", str(error))) if response_format['type'] != 'default' else None,
@@ -341,6 +343,3 @@ async def chat(request_body):
             await asyncio.gather(*[task for task in tasks if task is not None], return_exceptions=True)
             print("chat common error=>", error)
         raise ValueError(error)
-        
-
-
