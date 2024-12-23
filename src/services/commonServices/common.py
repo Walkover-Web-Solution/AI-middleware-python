@@ -101,6 +101,7 @@ async def chat(request_body):
     memory = None
     version_id = body.get('version_id')
     gpt_memory_context = body.get('gpt_memory_context')
+    images = body.get('images')
     
     if model == 'o1-preview' or model == 'o1-mini':
         reasoning_model = True
@@ -199,7 +200,8 @@ async def chat(request_body):
             "reasoning_model" : reasoning_model,
             "memory": memory,
             "type" : type,
-            "token_calculator" : token_calculator
+            "token_calculator" : token_calculator,
+            "images" : images
 
         }
         class_obj = await create_service_handler(params,service)
@@ -265,7 +267,7 @@ async def chat(request_body):
                         raise RuntimeError(f"error in chatbot : {e}")
             
         if version == 2:
-            result['modelResponse'] = await Response_formatter(result["modelResponse"],service, result["historyParams"].get('tools',{}), type)
+            result['modelResponse'] = await Response_formatter(result["modelResponse"],service, result["historyParams"].get('tools',{}), type, images)
         latency = {
             "over_all_time" : timer.stop("Api total time") or "",
             "model_execution_time": sum(execution_time_logs.values()) or "",
