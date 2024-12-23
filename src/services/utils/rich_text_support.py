@@ -12,7 +12,7 @@ async def process_chatbot_response(result, params, data, model_config, modelOutp
         user_reference = ""
         user_contains = ""
         # validation for the check response
-        parsedJson = Helper.parse_json(_.get(result.get("modelResponse", {}), modelOutputConfig.get("message")))
+        Helper.parse_json(_.get(result.get("modelResponse", {}), modelOutputConfig.get("message")))
     except Exception as e:
         if _.get(result.get("modelResponse", {}), modelOutputConfig.get("tools")):
             raise RuntimeError("Function calling has been done 6 times, limit exceeded.")

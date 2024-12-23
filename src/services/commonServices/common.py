@@ -41,8 +41,8 @@ async def chat(request_body):
         # Step 5: Manage Threads
         thread_info = await manage_threads(parsed_data)
 
-        # Step 6: Prepare Prompt and Variables
-        prepared_prompt, missing_vars = await prepare_prompt(parsed_data, thread_info, model_config, custom_config)
+        # Step 6: Prepare Prompt, Variables and Memory
+        memory, missing_vars = await prepare_prompt(parsed_data, thread_info, model_config, custom_config)
         
         # Handle missing variables
         if missing_vars:
@@ -56,7 +56,7 @@ async def chat(request_body):
         )
         # Step 8: Execute Service Handler
         params = build_service_params(
-            parsed_data, custom_config, model_output_config, thread_info, timer
+            parsed_data, custom_config, model_output_config, thread_info, timer, memory
         )
 
         class_obj = await Helper.create_service_handler(params, parsed_data['service'])

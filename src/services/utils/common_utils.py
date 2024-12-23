@@ -166,14 +166,14 @@ async def prepare_prompt(parsed_data, thread_info, model_config, custom_config):
             res = parsed_data['body'].get('response_type', 'json_object')
             custom_config['response_type'] = {"type": res}
         
-        return configuration['prompt'], missing_vars
+        return memory, missing_vars
     
-    return configuration['prompt'], []
+    return memory, []
 
 async def configure_custom_settings(model_configuration, custom_config, service):
     return await model_config_change(model_configuration, custom_config, service)
 
-def build_service_params(parsed_data, custom_config, model_output_config, thread_info, timer):
+def build_service_params(parsed_data, custom_config, model_output_config, thread_info, timer, memory):
     token_calculator = {}
     if not parsed_data['is_playground']:
         token_calculator = TokenCalculator(parsed_data['service'], model_output_config)
@@ -203,7 +203,7 @@ def build_service_params(parsed_data, custom_config, model_output_config, thread
         "bridgeType": parsed_data['bridgeType'],
         "names": parsed_data['names'],
         "reasoning_model": parsed_data['reasoning_model'],
-        "memory": parsed_data.get('memory'),
+        "memory": memory,
         "type": parsed_data['configuration'].get('type'),
         "token_calculator": token_calculator,
         "apikey_object_id" : parsed_data['apikey_object_id'],
