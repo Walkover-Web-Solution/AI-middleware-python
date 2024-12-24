@@ -49,6 +49,7 @@ async def create(dataset, history_params, version_id):
         
         chat_id = result['result'][0]
         dataset[0]['chat_id'] = chat_id
+        dataset[0]['message_id'] = history_params.get('message_id')
 
         insert_ai_data_in_pg = [
             {
@@ -64,6 +65,7 @@ async def create(dataset, history_params, version_id):
                 'expected_cost': data_object.get('expectedCost', 0),
                 'created_at': datetime.now(),
                 'chat_id': data_object.get('chat_id'),
+                'message_id': data_object.get('message_id'),
                 'variables': data_object.get('variables', {}),
                 'is_present': 'prompt' in data_object,
                 'id' : str(uuid.uuid4())
