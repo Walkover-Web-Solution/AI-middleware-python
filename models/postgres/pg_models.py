@@ -49,6 +49,7 @@ class RawData(Base):
     expected_cost = Column(Float)
     created_at = Column(DateTime, default=func.now())
     chat_id = Column(Integer, ForeignKey('conversations.id'))
+    message_id = Column(UUID(as_uuid=True), nullable=True)
     variables = Column(JSON)
     is_present = Column(Boolean, default=False)
     # conversation = relationship("Conversation", back_populates="raw_data")
