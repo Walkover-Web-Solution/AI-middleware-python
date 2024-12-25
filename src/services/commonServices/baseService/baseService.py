@@ -167,21 +167,51 @@ class BaseService:
                 pass
 
     def calculate_usage(self, model_response):
+        usage = {}
+        token_cost = {}
+
         match self.service:
-            case 'openai' | 'groq' :
-                usage = {}
-                usage["totalTokens"] = _.get(model_response, self.modelOutputConfig['usage'][0]['total_tokens'])
+            case 'openai' | 'groq':
+                model_specific_config = self.modelOutputConfig['usage'][0]['total_cost'].get(self.model, {})
                 usage["inputTokens"] = _.get(model_response, self.modelOutputConfig['usage'][0]['prompt_tokens'])
                 usage["outputTokens"] = _.get(model_response, self.modelOutputConfig['usage'][0]['completion_tokens'])
-                usage["expectedCost"] = (usage['inputTokens'] / 1000 * self.modelOutputConfig['usage'][0]['total_cost']['input_cost']) + (usage['outputTokens'] / 1000 * self.modelOutputConfig['usage'][0]['total_cost']['output_cost'])
+                usage["cachedTokens"] = _.get(model_response, self.modelOutputConfig['usage'][0]['cachedTokens'])
+
+                token_cost['input_cost'] = model_specific_config.get('input_cost', 0)
+                token_cost['output_cost'] = model_specific_config.get('output_cost', 0)
+                token_cost['chache_cost'] = model_specific_config.get('chache_cost', 0)
+
+
+                usage["expectedCost"] = 0
+                if usage["inputTokens"]:
+                    usage["expectedCost"] += usage['inputTokens'] * (token_cost['input_cost'] / 1000000)
+                if usage["outputTokens"]:
+                    usage["expectedCost"] += usage['outputTokens'] * (token_cost['output_cost'] / 1000000)
+                if usage["cachedTokens"]:
+                    usage["expectedCost"] += usage['cachedTokens'] * (token_cost['chache_cost'] / 1000000)
+
             case 'anthropic':
-                usage = {}
+                model_specific_config = self.modelOutputConfig['usage'][0]['total_cost'].get(self.model, {})
                 usage["inputTokens"] = _.get(model_response, self.modelOutputConfig['usage'][0]['prompt_tokens'])
                 usage["outputTokens"] = _.get(model_response, self.modelOutputConfig['usage'][0]['completion_tokens'])
                 usage["totalTokens"] = usage["inputTokens"] + usage["outputTokens"]
-                # usage["expectedCost"] = (usage['inputTokens'] / 1000 * self.modelOutputConfig['usage'][0]['total_cost']['input_cost']) + (usage['outputTokens'] / 1000 * self.modelOutputConfig['usage'][0]['total_cost']['output_cost'])
-            case  _:
+
+                token_cost['input_cost'] = model_specific_config.get('input_cost', 0)
+                token_cost['output_cost'] = model_specific_config.get('output_cost', 0)
+                token_cost['caching_read_cost'] = model_specific_config.get('caching_read_cost', 0)
+                token_cost['caching_write_cost'] = model_specific_config.get('caching_write_cost', 0)
+
+                usage["expectedCost"] = 0
+                if usage["inputTokens"]:
+                    usage["expectedCost"] += usage['inputTokens'] * (token_cost['input_cost'] / 1000000)
+                    usage["expectedCost"] += usage['inputTokens'] * (token_cost['caching_read_cost'] / 1000000)
+                if usage["outputTokens"]:
+                    usage["expectedCost"] += usage['outputTokens'] * (token_cost['output_cost'] / 1000000)
+                    usage["expectedCost"] += usage['outputTokens'] * (token_cost['caching_write_cost'] / 1000000)
+
+            case _:
                 pass
+
         return usage
 
     def prepare_history_params(self, model_response, tools):
