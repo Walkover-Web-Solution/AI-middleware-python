@@ -1,10 +1,9 @@
 from ...db_services.webhook_alert_Dbservice import get_webhook_data
 from ..commonServices.baseService.baseService import sendResponse
 
-async def send_error_to_webhook(bridge_id, org_id, details, type):
+async def send_error_to_webhook(bridge_id, org_id, error_log, type):
     try:
-        details['bridge_id'] = bridge_id
-        details['org_id'] = org_id
+        details = {}
         result = await get_webhook_data(org_id)
         data = result.get('webhook_data')
         data.append({
@@ -23,12 +22,14 @@ async def send_error_to_webhook(bridge_id, org_id, details, type):
                     ],
                 })
         if type == 'Variable':
-                details = create_missing_vars(details)
+            details = create_missing_vars(error_log)
+        else:
+            details = create_error_payload(error_log)
         for entry in data:
             webhook_config = entry.get('webhookConfiguration')
             bridges = entry.get('bridges', [])
             details = {
-                 "details":details,
+                 "details":{**details},
                  "bridge_id":bridge_id,
                  "org_id":org_id
             }
@@ -45,6 +46,12 @@ def create_missing_vars(details):
     return {
         "alert" : "variables missing",
         "Variables" : details
+    }
+
+def create_error_payload(details):
+    return {
+        "alert" : "Unexpected Error",
+        "error_message" : details['error_message']
     }
 
 def create_response_format(url, headers):
