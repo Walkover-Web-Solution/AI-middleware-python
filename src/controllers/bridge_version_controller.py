@@ -65,7 +65,7 @@ async def discard_version(request, version_id):
     bridge_id = body.get('bridge_id')
 
     bridge_data = await get_bridges_with_tools(bridge_id, org_id)
-    bridge_data['bridges'] = {key: value for key, value in bridge_data['bridges'].items() if key not in ['name', 'slugName', 'bridgeType', '_id', 'versions']}
+    bridge_data['bridges'] = {key: value for key, value in bridge_data['bridges'].items() if key not in ['name', 'slugName', 'bridgeType', '_id', 'versions','status']}
     bridge_data['bridges']['is_drafted'] = False
     function_ids = bridge_data['bridges'].get('function_ids', [])
     if function_ids is not None:
