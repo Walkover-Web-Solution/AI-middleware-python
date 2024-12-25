@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, Request
-from src.middlewares.interfaceMiddlewares import send_data_middleware, chat_bot_auth, reset_chatBot
+from src.middlewares.interfaceMiddlewares import send_data_middleware, chat_bot_auth, reset_chatBot, send_chatbot_data_middleware, chat_bot_authentication
 from src.middlewares.ratelimitMiddleware import rate_limit
 
 router = APIRouter()
@@ -11,6 +11,15 @@ async def auth_and_rate_limit(request: Request):
 @router.post("/{botId}/sendMessage", dependencies=[Depends(auth_and_rate_limit)])
 async def send_message(request: Request, botId: str):
    result = await send_data_middleware(request, botId)
+   return result
+
+async def chatbot_auth_and_rate_limit(request: Request):
+    await chat_bot_authentication(request)
+    await rate_limit(request, key_path='profile.user.id')
+
+@router.post("/{botId}/sendMessage-chatbot", dependencies=[Depends(chatbot_auth_and_rate_limit)])
+async def send_chatbot_message(request: Request, botId: str):
+   result = await send_chatbot_data_middleware(request, botId)
    return result
 
 @router.post("/{botId}/resetchat", dependencies=[Depends(auth_and_rate_limit)])

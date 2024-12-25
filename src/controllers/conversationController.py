@@ -1,5 +1,10 @@
 from ..db_services import conversationDbService as chatbotDbService
 import traceback
+from models.mongo_connection import db
+from bson import ObjectId
+import traceback
+
+chatbotModel = db['chatbots']
 
 async def getAllThreads(bridge_id, org_id, page, pageSize):
     try:
@@ -104,6 +109,15 @@ async def savehistory(thread_id, sub_thread_id, userMessage, botMessage, org_id,
         print("saveconversation error=>", error)
         traceback.print_exc()
         return { 'success': False, 'message': str(error) }
+    
+async def getChatbotDetails(orgId):
+    try:
+        data = await chatbotModel.find_one({"orgId": orgId})
+        return { 'success': True, 'data': data.rt_layer_api_key }
+    except Exception as error:
+        print("getChatbotDetails error=>", error)
+        traceback.print_exc()
+        return { 'success': False, 'message': str(error) }
 
 # Exporting the functions
-__all__ = ['getAllThreads', 'savehistory', 'getThread', 'getThreadHistory', 'getChatData']
+__all__ = ['getAllThreads', 'savehistory', 'getThread', 'getThreadHistory', 'getChatData', 'getChatbotDetails']
