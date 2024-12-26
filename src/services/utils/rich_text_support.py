@@ -48,6 +48,8 @@ async def process_chatbot_response(result, params, data, model_config, modelOutp
         _.set_(result['usage'], "totalTokens", _.get(result['usage'], "totalTokens") + tokens['totalTokens'])
         _.set_(result['usage'], "inputTokens", _.get(result['usage'], "inputTokens") + tokens['inputTokens'])
         _.set_(result['usage'], "outputTokens", _.get(result['usage'], "outputTokens") + tokens['outputTokens'])
+        _.set_(result['usage'], "cachingReadTokens", _.get(result['usage'], "cachingReadTokens", 0) + tokens['cachingReadTokens'])
+        _.set_(result['usage'], "cachingWriteTokens", _.get(result['usage'], "cachingWriteTokens", 0) + tokens['cachingWriteTokens'])
     elif data.get('service') == 'openai' or data.get('service') == 'groq':
         _.set_(result['usage'], "totalTokens", _.get(result['usage'], "totalTokens") + tokens['totalTokens'])
         _.set_(result['usage'], "inputTokens", _.get(result['usage'], "inputTokens") + tokens['inputTokens'])

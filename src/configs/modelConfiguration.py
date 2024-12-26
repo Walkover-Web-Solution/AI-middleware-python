@@ -80,8 +80,8 @@ class ModelsConfig:
                 "completion_tokens": "usage.completion_tokens",
                 "total_tokens": "usage.total_tokens",
                 "total_cost": {
-                    "input_cost": 0.0005,
-                    "output_cost": 0.0015
+                    "input_cost": 3.00,
+                    "output_cost": 6.00
                 }
             }],
             "message": "choices[0].message.content",
@@ -183,8 +183,8 @@ class ModelsConfig:
                 "completion_tokens": "usage.completion_tokens",
                 "total_tokens": "usage.total_tokens",
                 "total_cost": {
-                    "input_cost": 0.0005,
-                    "output_cost": 0.0015
+                    "input_cost": 1.50,
+                    "output_cost": 2.00
                 }
             }],
             "message": "choices[0].message.content",
@@ -305,8 +305,8 @@ class ModelsConfig:
                 "completion_tokens": "usage.completion_tokens",
                 "total_tokens": "usage.total_tokens",
                 "total_cost": {
-                    "input_cost": 0.0005,
-                    "output_cost": 0.0015
+                    "input_cost": 0.50,
+                    "output_cost": 1.50
                 }
             }],
             "message": "choices[0].message.content",
@@ -425,7 +425,11 @@ class ModelsConfig:
             "usage": [{
                 "prompt_tokens": "usage.prompt_tokens",
                 "completion_tokens": "usage.completion_tokens",
-                "total_tokens": "usage.total_tokens"
+                "total_tokens": "usage.total_tokens",
+                "total_cost": {
+                    "input_cost": 1.50,
+                    "output_cost": 2.00
+                }
             }],
             "message": "choices[0].message.content",
             "tools": "choices[0].message.tool_calls",
@@ -545,8 +549,8 @@ class ModelsConfig:
                 "completion_tokens": "usage.completion_tokens",
                 "total_tokens": "usage.total_tokens",
                 "total_cost": {
-                    "input_cost": 0.0005,
-                    "output_cost": 0.0015
+                    "input_cost": 1.00,
+                    "output_cost": 2.00
                 }
             }],
             "message": "choices[0].message.content",
@@ -665,7 +669,11 @@ class ModelsConfig:
             "usage": [{
                 "prompt_tokens": "usage.prompt_tokens",
                 "completion_tokens": "usage.completion_tokens",
-                "total_tokens": "usage.total_tokens"
+                "total_tokens": "usage.total_tokens",
+                "total_cost": {
+                    "input_cost": 3.00,
+                    "output_cost": 4.00
+                }
             }],
             "message": "choices[0].message.content",
             "tools": "choices[0].message.tool_calls",
@@ -784,7 +792,11 @@ class ModelsConfig:
             "usage": [{
                 "prompt_tokens": "usage.prompt_tokens",
                 "completion_tokens": "usage.completion_tokens",
-                "total_tokens": "usage.total_tokens"
+                "total_tokens": "usage.total_tokens",
+                "total_cost": {
+                    "input_cost": 3.00,
+                    "output_cost": 4.00
+                }
             }],
             "message": "choices[0].message.content",
             "tools": "choices[0].message.tool_calls",
@@ -891,8 +903,8 @@ class ModelsConfig:
                 "completion_tokens": "usage.completion_tokens",
                 "total_tokens": "usage.total_tokens",
                 "total_cost": {
-                    "input_cost": 0.03,
-                    "output_cost": 0.06
+                    "input_cost": 30.00,
+                    "output_cost": 60.00
                 }
             }],
             "message": "choices[0].message.content",
@@ -1005,8 +1017,8 @@ class ModelsConfig:
                 "completion_tokens": "usage.completion_tokens",
                 "total_tokens": "usage.total_tokens",
                 "total_cost": {
-                    "input_cost": 0.03,
-                    "output_cost": 0.06
+                    "input_cost": 30.00,
+                    "output_cost": 60.00
                 }
             }],
             "message": "choices[0].message.content",
@@ -1126,8 +1138,8 @@ class ModelsConfig:
                 "completion_tokens": "usage.completion_tokens",
                 "total_tokens": "usage.total_tokens",
                 "total_cost": {
-                    "input_cost": 0.01,
-                    "output_cost": 0.03
+                    "input_cost": 10.00,
+                    "output_cost": 30.00
                 }
             }],
             "message": "choices[0].message.content",
@@ -1247,8 +1259,8 @@ class ModelsConfig:
                 "completion_tokens": "usage.completion_tokens",
                 "total_tokens": "usage.total_tokens",
                 "total_cost": {
-                    "input_cost": 0.01,
-                    "output_cost": 0.03
+                    "input_cost": 10.00,
+                    "output_cost": 30.00
                 }
             }],
             "message": "choices[0].message.content",
@@ -1368,8 +1380,8 @@ class ModelsConfig:
                 "completion_tokens": "usage.completion_tokens",
                 "total_tokens": "usage.total_tokens",
                 "total_cost": {
-                    "input_cost": 0.01,
-                    "output_cost": 0.03
+                    "input_cost": 10.00,
+                    "output_cost": 30.00
                 }
             }],
             "message": "choices[0].message.content",
@@ -1494,8 +1506,8 @@ class ModelsConfig:
                 "completion_tokens": "usage.completion_tokens",
                 "total_tokens": "usage.total_tokens",
                 "total_cost": {
-                    "input_cost": 0.01,
-                    "output_cost": 0.03
+                    "input_cost": 10.00,
+                    "output_cost": 30.00
                 }
             }],
             "message": "choices[0].message.content",
@@ -1621,8 +1633,8 @@ class ModelsConfig:
                 "completion_tokens": "usage.completion_tokens",
                 "total_tokens": "usage.total_tokens",
                 "total_cost": {
-                    "input_cost": 0.01,
-                    "output_cost": 0.03
+                    "input_cost": 10.00,
+                    "output_cost": 30.00
                 }
             }],
             "message": "choices[0].message.content",
@@ -1747,8 +1759,9 @@ class ModelsConfig:
                 "completion_tokens": "usage.completion_tokens",
                 "total_tokens": "usage.total_tokens",
                 "total_cost": {
-                    "input_cost": 0.01,
-                    "output_cost": 0.03
+                    "input_cost": 2.50,
+                    "output_cost": 10.00,
+                    "cached_cost": 1.25
                 }
             }],
             "message": "choices[0].message.content",
@@ -1874,8 +1887,9 @@ class ModelsConfig:
                 "completion_tokens": "usage.completion_tokens",
                 "total_tokens": "usage.total_tokens",
                 "total_cost": {
-                    "input_cost": 0.01,
-                    "output_cost": 0.03
+                    "input_cost": 2.50,
+                    "output_cost": 10.00,
+                    "cached_cost": 1.25
                 }
             }],
             "message": "choices[0].message.content",
@@ -1988,8 +2002,8 @@ class ModelsConfig:
                 "completion_tokens": "usage.completion_tokens",
                 "total_tokens": "usage.total_tokens",
                 "total_cost": {
-                    "input_cost": 0.01,
-                    "output_cost": 0.03
+                    "input_cost": 5.00,
+                    "output_cost": 15.00
                 }
             }],
             "message": "choices[0].message.content",
@@ -2112,8 +2126,9 @@ class ModelsConfig:
                 "completion_tokens": "usage.completion_tokens",
                 "total_tokens": "usage.total_tokens",
                 "total_cost": {
-                    "input_cost": 0.03,
-                    "output_cost": 0.06
+                    "input_cost": 0.150,
+                    "output_cost": 0.600,
+                    "cached_cost": 0.075
                 }
             }],
             "message": "choices[0].message.content",
@@ -2239,8 +2254,9 @@ class ModelsConfig:
                 "completion_tokens": "usage.completion_tokens",
                 "total_tokens": "usage.total_tokens",
                 "total_cost": {
-                    "input_cost": 0.03,
-                    "output_cost": 0.06
+                    "input_cost": 0.150,
+                    "output_cost": 0.600,
+                    "cached_cost" : 0.075
                 }
             }],
             "message": "choices[0].message.content",
@@ -2280,8 +2296,9 @@ class ModelsConfig:
                 "completion_tokens": "usage.completion_tokens",
                 "total_tokens": "usage.total_tokens",
                 "total_cost": {
-                    "input_cost": 0.01,
-                    "output_cost": 0.03
+                    "input_cost": 15.00,
+                    "output_cost": 60.00,
+                    "cached_cost": 7.50
                 }
             }],
             "message": "choices[0].message.content",
@@ -2319,8 +2336,9 @@ class ModelsConfig:
                 "completion_tokens": "usage.completion_tokens",
                 "total_tokens": "usage.total_tokens",
                 "total_cost": {
-                    "input_cost": 0.01,
-                    "output_cost": 0.03
+                    "input_cost": 3.00,
+                    "output_cost": 12.00,
+                    "cached_cost" : 1.50
                 }
             }],
             "message": "choices[0].message.content",
@@ -2367,7 +2385,7 @@ class ModelsConfig:
             "usage": [{
                 "prompt_tokens": "usage.prompt_tokens",
                 "total_tokens": "usage.total_tokens",
-                "total_cost": 0.00013
+                "total_cost": 0.130
             }],
             "message": "data[0].embedding"
         }
@@ -2411,7 +2429,7 @@ class ModelsConfig:
             "usage": [{
                 "prompt_tokens": "usage.prompt_tokens",
                 "total_tokens": "usage.total_tokens",
-                "total_cost": 0.00002
+                "total_cost": 0.130
             }],
             "message": "data[0].embedding"
         }
@@ -2450,7 +2468,8 @@ class ModelsConfig:
         outputConfig = {
             "usage": [{
                 "prompt_tokens": "usage.prompt_tokens",
-                "total_tokens": "usage.total_tokens"
+                "total_tokens": "usage.total_tokens",
+                "total_cost": 0.100
             }],
             "message": "data[0].embedding"
         }
@@ -2578,8 +2597,8 @@ class ModelsConfig:
                 "completion_tokens": "usage.completion_tokens",
                 "total_tokens": "usage.total_tokens",
                 "total_cost": {
-                    "input_cost": 0.0015,
-                    "output_cost": 0.0020
+                    "input_cost": 1.50,
+                    "output_cost": 2.00
                 }
             }],
             "message": "choices[0].text",
@@ -3093,7 +3112,12 @@ class ModelsConfig:
             "usage": [{
                 "prompt_tokens": "usage.input_tokens",
                 "completion_tokens": "usage.output_tokens",
-                "total_cost": { "usage.total_cost" }
+                "total_cost": {
+                    "input_cost": 3.00,
+                    "output_cost": 15.00,
+                    "caching_read_cost":0.30,
+                    "caching_write_cost":3.75
+                }
             }],
             "message": "content[0].text", # find from modelResponse
             "tools": "content[1].text", # find from functionResponse.modelResposne
@@ -3170,7 +3194,12 @@ class ModelsConfig:
             "usage": [{
                 "prompt_tokens": "usage.input_tokens",
                 "completion_tokens": "usage.output_tokens",
-                "total_cost": { "usage.total_cost" }
+                "total_cost": {
+                    "input_cost": 3.00,
+                    "output_cost": 15.00,
+                    "caching_read_cost":0.30,
+                    "caching_write_cost":3.75
+                }
             }],
             "message": "content[0].text", # find from modelResponse
             "tools": "content[1].text", # find from functionResponse.modelResposne
@@ -3247,7 +3276,14 @@ class ModelsConfig:
             "usage": [{
                 "prompt_tokens": "usage.input_tokens",
                 "completion_tokens": "usage.output_tokens",
-                "total_cost": { "usage.total_cost" }
+                "caching_read_tokens": "usage.cache_read_input_tokens",
+                "caching_write_tokens": "usage.cache_creation_input_tokens",
+                "total_cost": {
+                    "input_cost": 3.00,
+                    "output_cost": 15.00,
+                    "caching_read_cost":0.30,
+                    "caching_write_cost":3.75
+                }
             }],
             "message": "content[0].text", # find from modelResponse
             "tools": "content[1].text", # find from functionResponse.modelResposne
@@ -3325,8 +3361,10 @@ class ModelsConfig:
                 "prompt_tokens": "usage.input_tokens",
                 "completion_tokens": "usage.output_tokens",
                 "total_cost": {
-                    "input_cost": 0,
-                    "output_cost": 0
+                    "input_cost": 15.00,
+                    "output_cost": 75.00,
+                    "caching_read_cost":1.50,
+                    "caching_write_cost":18.75
                 }
             }],
             "message": "content[0].text",
@@ -3404,8 +3442,10 @@ class ModelsConfig:
                 "prompt_tokens": "usage.input_tokens",
                 "completion_tokens": "usage.output_tokens",
                 "total_cost": {
-                    "input_cost": 0,
-                    "output_cost": 0
+                    "input_cost": 15.00,
+                    "output_cost": 75.00,
+                    "caching_read_cost":1.50,
+                    "caching_write_cost":18.75
                 }
             }],
             "message": "content[0].text",
@@ -3484,8 +3524,8 @@ class ModelsConfig:
                 "prompt_tokens": "usage.input_tokens",
                 "completion_tokens": "usage.output_tokens",
                 "total_cost": {
-                    "input_cost": 0,
-                    "output_cost": 0
+                    "input_cost": 3.00,
+                    "output_cost": 15.00
                 }
             }],
             "message": "content[0].text",
@@ -3564,8 +3604,10 @@ class ModelsConfig:
                 "prompt_tokens": "usage.input_tokens",
                 "completion_tokens": "usage.output_tokens",
                 "total_cost": {
-                    "input_cost": 0,
-                    "output_cost": 0
+                    "input_cost": 0.25,
+                    "output_cost": 1.25,
+                    "caching_read_cost":0.03,
+                    "caching_write_cost":0.30
                 }
             }],
             "message": "content[0].text",
@@ -3643,8 +3685,10 @@ class ModelsConfig:
                 "prompt_tokens": "usage.input_tokens",
                 "completion_tokens": "usage.output_tokens",
                 "total_cost": {
-                    "input_cost": 0,
-                    "output_cost": 0
+                    "input_cost": 0.80,
+                    "output_cost": 4.00,
+                    "caching_read_cost":0.08,
+                    "caching_write_cost":1.00
                 }
             }],
             "message": "content[0].text",
@@ -3764,8 +3808,8 @@ class ModelsConfig:
                 "completion_tokens": "usage.completion_tokens",
                 "total_tokens": "usage.total_tokens",
                 "total_cost": {
-                    "input_cost": 0.01,
-                    "output_cost": 0.03
+                    "input_cost": 0.05,
+                    "output_cost": 0.08
                 }
             }],
             "message": "choices[0].message.content",
@@ -3886,8 +3930,8 @@ class ModelsConfig:
                 "completion_tokens": "usage.completion_tokens",
                 "total_tokens": "usage.total_tokens",
                 "total_cost": {
-                    "input_cost": 0.01,
-                    "output_cost": 0.03
+                    "input_cost": 0.59,
+                    "output_cost": 0.79
                 }
             }],
             "message": "choices[0].message.content",
@@ -4008,8 +4052,8 @@ class ModelsConfig:
                 "completion_tokens": "usage.completion_tokens",
                 "total_tokens": "usage.total_tokens",
                 "total_cost": {
-                    "input_cost": 0.01,
-                    "output_cost": 0.03
+                    "input_cost": 0.05,
+                    "output_cost": 0.08
                 }
             }],
             "message": "choices[0].message.content",
@@ -4130,8 +4174,8 @@ class ModelsConfig:
                 "completion_tokens": "usage.completion_tokens",
                 "total_tokens": "usage.total_tokens",
                 "total_cost": {
-                    "input_cost": 0.01,
-                    "output_cost": 0.03
+                    "input_cost": 0.89,
+                    "output_cost": 0.89
                 }
             }],
             "message": "choices[0].message.content",
@@ -4252,8 +4296,8 @@ class ModelsConfig:
                 "completion_tokens": "usage.completion_tokens",
                 "total_tokens": "usage.total_tokens",
                 "total_cost": {
-                    "input_cost": 0.01,
-                    "output_cost": 0.03
+                    "input_cost": 0.19,
+                    "output_cost": 0.19
                 }
             }],
             "message": "choices[0].message.content",
@@ -4374,8 +4418,8 @@ class ModelsConfig:
                 "completion_tokens": "usage.completion_tokens",
                 "total_tokens": "usage.total_tokens",
                 "total_cost": {
-                    "input_cost": 0.01,
-                    "output_cost": 0.03
+                    "input_cost": 0.59,
+                    "output_cost": 0.79
                 }
             }],
             "message": "choices[0].message.content",
@@ -4488,8 +4532,8 @@ class ModelsConfig:
                 "completion_tokens": "usage.completion_tokens",
                 "total_tokens": "usage.total_tokens",
                 "total_cost": {
-                    "input_cost": 0.01,
-                    "output_cost": 0.03
+                    "input_cost": 0.05,
+                    "output_cost": 0.08
                 }
             }],
             "message": "choices[0].message.content",
@@ -4610,8 +4654,8 @@ class ModelsConfig:
                 "completion_tokens": "usage.completion_tokens",
                 "total_tokens": "usage.total_tokens",
                 "total_cost": {
-                    "input_cost": 0.01,
-                    "output_cost": 0.03
+                    "input_cost": 0.24,
+                    "output_cost": 0.24
                 }
             }],
             "message": "choices[0].message.content",
@@ -4732,8 +4776,8 @@ class ModelsConfig:
                 "completion_tokens": "usage.completion_tokens",
                 "total_tokens": "usage.total_tokens",
                 "total_cost": {
-                    "input_cost": 0.01,
-                    "output_cost": 0.03
+                    "input_cost": 0.07,
+                    "output_cost": 0.07
                 }
             }],
             "message": "choices[0].message.content",
@@ -4854,8 +4898,8 @@ class ModelsConfig:
                 "completion_tokens": "usage.completion_tokens",
                 "total_tokens": "usage.total_tokens",
                 "total_cost": {
-                    "input_cost": 0.01,
-                    "output_cost": 0.03
+                    "input_cost": 0.20,
+                    "output_cost": 0.20
                 }
             }],
             "message": "choices[0].message.content",
@@ -4976,8 +5020,8 @@ class ModelsConfig:
                 "completion_tokens": "usage.completion_tokens",
                 "total_tokens": "usage.total_tokens",
                 "total_cost": {
-                    "input_cost": 0.01,
-                    "output_cost": 0.03
+                    "input_cost": 0.20,
+                    "output_cost": 0.20
                 }
             }],
             "message": "choices[0].message.content",

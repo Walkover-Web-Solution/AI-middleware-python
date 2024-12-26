@@ -16,6 +16,7 @@ from src.services.utils.gpt_memory import handle_gpt_memory
 from src.services.utils.common_utils import parse_request_body, initialize_timer, load_model_configuration, handle_pre_tools, handle_fine_tune_model,manage_threads, prepare_prompt, configure_custom_settings, build_service_params
 from src.services.utils.rich_text_support import process_chatbot_response
 app = FastAPI()
+from src.services.utils.helper import Helper
 configurationModel = db["configurations"]
 
 @app.post("/chat/{bridge_id}")
@@ -75,6 +76,7 @@ async def chat(request_body):
             
         if parsed_data['version'] == 2:
             result['modelResponse'] = await Response_formatter(result["modelResponse"], parsed_data['service'], result["historyParams"].get('tools', {}), parsed_data['type'], parsed_data['images'])
+            tokens = Helper.calculate_usage(parsed_data['model'],result["modelResponse"],parsed_data['service'], parsed_data['is_rich_text'])
         latency = {
             "over_all_time": timer.stop("Api total time") or "",
             "model_execution_time": sum(params['execution_time_logs'].values()) or "",
@@ -91,7 +93,8 @@ async def chat(request_body):
                 "success": True,
                 "variables": parsed_data['variables'],
                 "prompt": parsed_data['configuration'].get("prompt") or "",
-                "apikey_object_id": params['apikey_object_id']
+                "apikey_object_id": params['apikey_object_id'],
+                "expectedCost" : tokens['expectedCost']
             })
             if result.get('modelResponse') and result['modelResponse'].get('data'):
                 result['modelResponse']['data']['message_id'] = parsed_data['message_id']

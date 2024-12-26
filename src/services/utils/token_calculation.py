@@ -18,10 +18,12 @@ class TokenCalculator:
                 usage["totalTokens"] = _.get(model_response, self.model_output_config['usage'][0]['total_tokens'])
                 usage["inputTokens"] = _.get(model_response, self.model_output_config['usage'][0]['prompt_tokens'])
                 usage["outputTokens"] = _.get(model_response, self.model_output_config['usage'][0]['completion_tokens'])
-                usage["expectedCost"] = (usage['inputTokens'] / 1000 * self.model_output_config['usage'][0]['total_cost']['input_cost']) + (usage['outputTokens'] / 1000 * self.model_output_config['usage'][0]['total_cost']['output_cost'])
+                # usage["expectedCost"] = (usage['inputTokens'] / 1000 * self.model_output_config['usage'][0]['total_cost']['input_cost']) + (usage['outputTokens'] / 1000 * self.model_output_config['usage'][0]['total_cost']['output_cost'])
             case 'anthropic':
                 usage["inputTokens"] = _.get(model_response, self.model_output_config['usage'][0]['prompt_tokens'])
                 usage["outputTokens"] = _.get(model_response, self.model_output_config['usage'][0]['completion_tokens'])
+                usage['cachingReadTokens'] = _.get(model_response,self.model_output_config['usage'][0]['caching_read_tokens'])
+                usage['cachingWriteTokens'] = _.get(model_response,self.model_output_config['usage'][0]['caching_write_tokens'])
                 usage["totalTokens"] = usage["inputTokens"] + usage["outputTokens"]
                 
             case _:
