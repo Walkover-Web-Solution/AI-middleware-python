@@ -3,16 +3,18 @@ import json
 from fastapi import Request, Response, HTTPException
 from starlette.middleware.base import BaseHTTPMiddleware
 
-async def get_nested_value(request, path):
+async def get_nested_value(request: Request, path):
     """Extract nested value from the request object based on the key path."""
     keys = path.split('.')
     
     if keys[0] == 'body':
-        request_body = await request.json()
-        obj = request_body.get('body', {})
-        keys = keys[1:]
+        try:
+            obj = await request.json()
+            keys = keys[1:]
+        except Exception:
+            return None
     elif keys[0] == 'profile':
-        obj = request.state
+        obj = request.state.profile
         keys = keys[1:]
     elif keys[0] == 'headers':
         obj = request.headers
@@ -21,16 +23,15 @@ async def get_nested_value(request, path):
         return None
 
     for key in keys:
-        if isinstance(obj, dict) and key in obj:
-            obj = obj[key]
-        elif hasattr(obj, key):
+        if hasattr(obj, key):
             obj = getattr(obj, key)
+        elif isinstance(obj, dict) and key in obj:
+            obj = obj[key]
         else:
             return None
     return obj
 
 async def rate_limit(request: Request, key_path: str, points: int = 40, ttl: int = 60):
-
     key = await get_nested_value(request, key_path)
     if not key:
         return
@@ -75,10 +76,3 @@ class RateLimiterMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
         except HTTPException as error:
             return Response(status_code=error.status_code, content=json.dumps({'error': error.detail}), headers=error.headers)
-
-# Usage example:
-# from fastapi import FastAPI
-# from .middlewares.ratelimitMiddleware import RateLimiterMiddleware
-#
-# app = FastAPI()
-# app.add_middleware(RateLimiterMiddleware, key_path='client.host')
