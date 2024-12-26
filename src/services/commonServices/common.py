@@ -162,8 +162,8 @@ async def chat(request_body):
                 customConfig['response_type'] = {"type": "json_object"}
         
             if not is_playground and bridgeType is None and modelConfig.get('response_type'):
-                res = body.get('response_type', 'json_object')
-                customConfig['response_type'] = {"type": res}
+                res = body.get('response_type') or body.get('configuration',{}).get('response_type',{"type": 'json_object'})
+                customConfig['response_type'] = {"type": res} if isinstance(res, str) else res
 
         customConfig = await model_config_change(modelObj['configuration'], customConfig, service)
         token_calculator = {}
