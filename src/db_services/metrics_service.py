@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from models.index import combined_models
 from sqlalchemy import and_
 from ..controllers.conversationController import savehistory
@@ -82,9 +82,11 @@ async def create(dataset, history_params, version_id):
                 'output_tokens': data_object.get('outputTokens', 0),
                 'total_tokens': data_object.get('totalTokens', 0),
                 'apikey_id': data_object.get('apikey_object_id'),
-                'created_at': datetime.now(),
+                'created_at': datetime.now(timezone.utc),
                 'latency': json.loads(data_object.get('latency', {})).get('over_all_time', 0),
-                'success' : data_object.get('success', False)
+                'success' : data_object.get('success', False),
+                'cost' : 5,
+                'time_zone' : 'Asia/Kolkata'
             }
             for data_object in dataset
         ]

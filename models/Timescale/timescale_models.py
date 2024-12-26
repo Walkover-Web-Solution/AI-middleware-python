@@ -22,3 +22,4 @@ class Metrics_model(Base):
     latency = Column(Float)
     success = Column(Boolean)
     cost = Column(Float)
+    time_zone = Column(String)
