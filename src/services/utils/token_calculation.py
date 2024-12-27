@@ -9,7 +9,8 @@ class TokenCalculator:
             "inputTokens": 0,
             "outputTokens": 0,
             "cachedTokens":0,
-            "expectedCost": 0.0
+            "cachingReadTokens":0,
+            "cachingCreationInputTokens":0
         }
 
     def calculate_usage(self, model_response):
@@ -37,7 +38,9 @@ class TokenCalculator:
         self.total_usage["totalTokens"] += usage.get("totalTokens", 0)
         self.total_usage["inputTokens"] += usage.get("inputTokens", 0)
         self.total_usage["outputTokens"] += usage.get("outputTokens", 0)
-        self.total_usage["expectedCost"] += usage.get("expectedCost", 0.0)
+        self.total_usage["cachedTokens"] += usage.get("cachedTokens", 0)
+        self.total_usage["cachingReadTokens"] += usage.get("cachingReadTokens", 0)
+        self.total_usage["cachingCreationInputTokens"] += usage.get("cachingCreationInputTokens", 0)
 
     def get_total_usage(self):
         return self.total_usage
