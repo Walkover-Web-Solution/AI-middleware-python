@@ -149,21 +149,27 @@ class BaseService:
                 self.total_tokens = _.get(model_response, self.modelOutputConfig['usage'][0]['total_tokens']) + _.get(funcModelResponse, self.modelOutputConfig['usage'][0]['total_tokens'],0)
                 self.prompt_tokens = _.get(model_response, self.modelOutputConfig['usage'][0]['prompt_tokens']) + _.get(funcModelResponse, self.modelOutputConfig['usage'][0]['prompt_tokens'],0)
                 self.completion_tokens = _.get(model_response, self.modelOutputConfig['usage'][0]['prompt_tokens']) + _.get(funcModelResponse, self.modelOutputConfig['usage'][0]['completion_tokens'],0)
+                self.cached_tokens = _.get(model_response, self.modelOutputConfig['usage'][0].get('cached_tokens',0)) + _.get(funcModelResponse, self.modelOutputConfig['usage'][0].get('cached_tokens',0),0)
                 if funcModelResponse:
                     _.set_(model_response, self.modelOutputConfig['message'], _.get(funcModelResponse, self.modelOutputConfig['message']))
                     _.set_(model_response, self.modelOutputConfig['tools'], _.get(funcModelResponse, self.modelOutputConfig['tools']))
                 _.set_(model_response, self.modelOutputConfig['usage'][0]['total_tokens'], self.total_tokens)
                 _.set_(model_response, self.modelOutputConfig['usage'][0]['prompt_tokens'], self.prompt_tokens)
                 _.set_(model_response, self.modelOutputConfig['usage'][0]['completion_tokens'], self.completion_tokens)
+                _.set_(model_response, self.modelOutputConfig['usage'][0].get('cached_tokens',0), self.cached_tokens)
             case 'anthropic':
                 self.prompt_tokens = _.get(model_response, self.modelOutputConfig['usage'][0]['prompt_tokens']) + _.get(funcModelResponse, self.modelOutputConfig['usage'][0]['prompt_tokens'],0)
                 self.completion_tokens = _.get(model_response, self.modelOutputConfig['usage'][0]['prompt_tokens']) + _.get(funcModelResponse, self.modelOutputConfig['usage'][0]['completion_tokens'],0)
+                self.cache_creation_input_tokens = _.get(model_response, self.modelOutputConfig['usage'][0]['cache_creation_input_tokens']) + _.get(funcModelResponse, self.modelOutputConfig['usage'][0]['cache_creation_input_tokens'],0)
+                self.cache_read_input_tokens = _.get(model_response, self.modelOutputConfig['usage'][0]['cache_read_input_tokens']) + _.get(funcModelResponse, self.modelOutputConfig['usage'][0]['cache_read_input_tokens'],0)
                 self.total_tokens = self.prompt_tokens + self.completion_tokens
                 if funcModelResponse:
                     _.set_(model_response, self.modelOutputConfig['message'], _.get(funcModelResponse, self.modelOutputConfig['message']))
                 # _.set_(model_response, 'content[1].text', _.get(funcModelResponse, 'content[0].text'))
                 _.set_(model_response, self.modelOutputConfig['usage'][0]['prompt_tokens'], self.prompt_tokens)
                 _.set_(model_response, self.modelOutputConfig['usage'][0]['completion_tokens'], self.completion_tokens)
+                _.set_(model_response, self.modelOutputConfig['usage'][0]['cache_creation_input_tokens'], self.cache_read_input_tokens)
+                _.set_(model_response, self.modelOutputConfig['usage'][0]['cache_read_input_tokens'], self.cache_read_input_tokens)
                 # _.set_(model_response, self.modelOutputConfig['usage'][0]['total_tokens'], self.total_tokens)
             case  _:
                 pass
