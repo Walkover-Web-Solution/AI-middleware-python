@@ -86,7 +86,8 @@ async def create(dataset, history_params, version_id):
                 'latency': json.loads(data_object.get('latency', {})).get('over_all_time', 0),
                 'success' : data_object.get('success', False),
                 'cost' : 5,
-                'time_zone' : 'Asia/Kolkata'
+                'time_zone' : 'Asia/Kolkata',
+                'service' : data_object['service']
             }
             for data_object in dataset
         ]
@@ -94,7 +95,6 @@ async def create(dataset, history_params, version_id):
 
         await insertRawData(insert_ai_data_in_pg)
         await timescale_metrics(metrics_data)
-        # await timescale.raw_data.bulk_create(insert_ai_data)
     except Exception as error:
         traceback.print_exc()
         print('Error during bulk insert of Ai middleware', error)
