@@ -163,8 +163,6 @@ async def chat(request_body):
         
             if not is_playground and bridgeType is None and modelConfig.get('response_type'):
                 res = body.get('response_type') or body.get('configuration',{}).get('response_type',{"type": 'json_object'})
-                # res = {"type":'json_object'} if body.get('configuration',{}).get('response_type',{}) == 'default' else res
-                # responseType = {"type": res} if isinstance(res, str) else {"type":'json_object'} if body.get('configuration',{}).get('response_type',{}) == 'default' else res
                 match res:
                     case "default":
                         customConfig['response_type'] = {"type": 'json_object'}
@@ -172,7 +170,6 @@ async def chat(request_body):
                         customConfig['response_type'] = {"type": 'text'}
                     case _:
                         customConfig['response_type'] = res
-                # customConfig['response_type'] = repsonseType
 
 
         customConfig = await model_config_change(modelObj['configuration'], customConfig, service)
