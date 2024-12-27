@@ -50,6 +50,8 @@ class BaseService:
         self.token_calculator = params.get('token_calculator')
         self.apikey_object_id = params.get('apikey_object_id')
         self.image_data = params.get('images')
+        self.tool_call_count = params.get('tool_call_count')
+
 
 
     async def run_tool(self, responses, service):
@@ -89,7 +91,7 @@ class BaseService:
         modelOutputConfig = modelObj['outputConfig']
         model_response = response.get('modelResponse', {})
 
-        if validate_tool_call(modelOutputConfig, service, model_response) and l <= 3:
+        if validate_tool_call(modelOutputConfig, service, model_response) and l <= self.tool_call_count:
             l += 1
             # Continue with the rest of the logic here
         else:

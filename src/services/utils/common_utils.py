@@ -56,7 +56,8 @@ def parse_request_body(request_body):
         "usage" : {},
         "type" : body.get('configuration',{}).get('type'),
         "apikey_object_id" : body.get('apikey_object_id'),
-        "images" : body.get('images')
+        "images" : body.get('images'),
+        "tool_call_count": body.get('tool_call_count')
     }
 
 def initialize_timer(state: Dict[str, Any]) -> Timer:
@@ -208,5 +209,6 @@ def build_service_params(parsed_data, custom_config, model_output_config, thread
         "type": parsed_data['configuration'].get('type'),
         "token_calculator": token_calculator,
         "apikey_object_id" : parsed_data['apikey_object_id'],
-        "images" : parsed_data['images']
+        "images" : parsed_data['images'],
+        "tool_call_count": parsed_data['tool_call_count']
     }
