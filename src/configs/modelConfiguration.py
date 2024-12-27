@@ -1739,6 +1739,12 @@ class ModelsConfig:
                 "support": True,
                  "level": 0,
                  "default" : False
+            },
+            "parallel_tool_calls": {
+                "field": "boolean",
+                "default": True,
+                "level": 0,
+                "typeOf": "boolean"  
             }
         }
         outputConfig = {
@@ -1866,6 +1872,12 @@ class ModelsConfig:
                 "support": True,
                  "level": 0,
                  "default" : False
+            },
+            "parallel_tool_calls": {
+                "field": "boolean",
+                "default": True,
+                "level": 0,
+                "typeOf": "boolean"  
             }
         }
         outputConfig = {
@@ -1980,6 +1992,12 @@ class ModelsConfig:
                 "support": True,
                  "level": 0,
                  "default" : False
+            },
+            "parallel_tool_calls": {
+                "field": "boolean",
+                "default": True,
+                "level": 0,
+                "typeOf": "boolean"  
             }
         }
         outputConfig = {
@@ -2104,6 +2122,12 @@ class ModelsConfig:
                 "support": True,
                  "level": 0,
                  "default" : False
+            },
+            "parallel_tool_calls": {
+                "field": "boolean",
+                "default": True,
+                "level": 0,
+                "typeOf": "boolean"  
             }
         }
         outputConfig = {
@@ -2231,6 +2255,12 @@ class ModelsConfig:
                 "support": True,
                  "level": 0,
                  "default" : False
+            },
+            "parallel_tool_calls": {
+                "field": "boolean",
+                "default": True,
+                "level": 0,
+                "typeOf": "boolean"  
             }
         }
         outputConfig = {
