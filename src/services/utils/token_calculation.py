@@ -35,12 +35,12 @@ class TokenCalculator:
         return usage
 
     def _update_total_usage(self, usage):
-        self.total_usage["totalTokens"] += usage.get("totalTokens", 0)
-        self.total_usage["inputTokens"] += usage.get("inputTokens", 0)
-        self.total_usage["outputTokens"] += usage.get("outputTokens", 0)
-        self.total_usage["cachedTokens"] += usage.get("cachedTokens", 0)
-        self.total_usage["cachingReadTokens"] += usage.get("cachingReadTokens", 0)
-        self.total_usage["cachingCreationInputTokens"] += usage.get("cachingCreationInputTokens", 0)
+        self.total_usage["totalTokens"] += usage.get("totalTokens") or 0
+        self.total_usage["inputTokens"] += usage.get("inputTokens") or  0
+        self.total_usage["outputTokens"] += usage.get("outputTokens") or 0
+        self.total_usage["cachedTokens"] += usage.get("cachedTokens") or  0
+        self.total_usage["cachingReadTokens"] += usage.get("cachingReadTokens") or 0
+        self.total_usage["cachingCreationInputTokens"] += usage.get("cachingCreationInputTokens") or 0
 
     def get_total_usage(self):
         return self.total_usage
