@@ -55,24 +55,3 @@ async def rate_limit(request: Request, key_path: str, points: int = 40, ttl: int
 
     await store_in_cache(redis_key, data, ttl)
 
-class RateLimiterMiddleware(BaseHTTPMiddleware):
-    def __init__(self, app, bridge_points: int = 100, thread_points: int = 20, ttl: int = 60):
-        super().__init__(app)
-        self.bridge_points = bridge_points
-        self.thread_points = thread_points
-        self.ttl = ttl
-
-    async def dispatch(self, request: Request, call_next):
-        try:
-            body = await request.json()
-            bridge_id = body.get("bridge_id")
-            thread_id = body.get("thread_id")
-
-            if bridge_id:
-                await rate_limit(request, bridge_id, self.bridge_points, self.ttl)
-            if thread_id:
-                await rate_limit(request, thread_id, self.thread_points, self.ttl)
-
-            return await call_next(request)
-        except HTTPException as error:
-            return Response(status_code=error.status_code, content=json.dumps({'error': error.detail}), headers=error.headers)
