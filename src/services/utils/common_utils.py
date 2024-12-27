@@ -56,7 +56,8 @@ def parse_request_body(request_body):
         "usage" : {},
         "type" : body.get('configuration',{}).get('type'),
         "apikey_object_id" : body.get('apikey_object_id'),
-        "images" : body.get('images')
+        "images" : body.get('images'),
+        "tool_call_count": body.get('tool_call_count')
     }
 
 def initialize_timer(state: Dict[str, Any]) -> Timer:
@@ -140,8 +141,10 @@ async def prepare_prompt(parsed_data, thread_info, model_config, custom_config):
     suggest = parsed_data['suggest']
     gpt_memory = parsed_data['gpt_memory']
     memory = None
+    
     if configuration['type'] == 'chat':
         id = f"{thread_info['thread_id']}_{parsed_data.get('bridge_id') or parsed_data.get('version_id')}"
+        
         if gpt_memory:
             response, _ = await fetch("https://flow.sokt.io/func/scriCJLHynCG", "POST", None, None, {"threadID": id})
             if isinstance(response, str):
@@ -184,7 +187,7 @@ def build_service_params(parsed_data, custom_config, model_output_config, thread
         "variables": parsed_data['variables'],
         "user": parsed_data['user'],
         "tools": parsed_data['tools'],
-        "org_id": parsed_data['org_id'] if parsed_data['is_playground'] else None,
+        "org_id": parsed_data['org_id'],
         "bridge_id": parsed_data['bridge_id'],
         "bridge": parsed_data['bridge'],
         "thread_id": thread_info['thread_id'],
@@ -206,5 +209,6 @@ def build_service_params(parsed_data, custom_config, model_output_config, thread
         "type": parsed_data['configuration'].get('type'),
         "token_calculator": token_calculator,
         "apikey_object_id" : parsed_data['apikey_object_id'],
-        "images" : parsed_data['images']
+        "images" : parsed_data['images'],
+        "tool_call_count": parsed_data['tool_call_count']
     }
