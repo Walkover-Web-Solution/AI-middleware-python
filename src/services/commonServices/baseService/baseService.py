@@ -89,7 +89,7 @@ class BaseService:
         modelOutputConfig = modelObj['outputConfig']
         model_response = response.get('modelResponse', {})
 
-        if validate_tool_call(modelOutputConfig, service, model_response) and l <= 3:
+        if validate_tool_call(modelOutputConfig, service, model_response) and l <= 10:
             l += 1
             # Continue with the rest of the logic here
         else:
