@@ -1,9 +1,10 @@
 import json
 from typing import Union, List
+from config import Config
 from redis.asyncio import Redis
 
 # Initialize the Redis client
-client = Redis(host='localhost', port=6379, db=0)  # Adjust these parameters as needed
+client = Redis.from_url(Config.REDIS_URI)  # Adjust these parameters as needed
 
 REDIS_PREFIX = 'AIMIDDLEWARE_'
 DEFAULT_REDIS_TTL = 172800  # 2 days

@@ -41,3 +41,4 @@ class Config:
     CONSUMER_STATUS = os.getenv('CONSUMER_STATUS')
     OPTIONS_APIKEY = os.getenv('OPTIONS_APIKEY')
     GCP_CREDENTIALS = os.getenv('GCP_CREDENTIALS')
+    REDIS_URI = os.getenv('REDIS_URI')
