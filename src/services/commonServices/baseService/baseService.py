@@ -173,6 +173,7 @@ class BaseService:
                 usage["totalTokens"] = _.get(model_response, self.modelOutputConfig['usage'][0]['total_tokens'])
                 usage["inputTokens"] = _.get(model_response, self.modelOutputConfig['usage'][0]['prompt_tokens'])
                 usage["outputTokens"] = _.get(model_response, self.modelOutputConfig['usage'][0]['completion_tokens'])
+                usage["cachedTokens"] = _.get(model_response, self.modelOutputConfig['usage'][0].get('cached_tokens', 0))
             case 'anthropic':
                 usage = {}
                 usage["inputTokens"] = _.get(model_response, self.modelOutputConfig['usage'][0]['prompt_tokens'])

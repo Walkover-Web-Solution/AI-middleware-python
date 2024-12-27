@@ -8,6 +8,7 @@ class TokenCalculator:
             "totalTokens": 0,
             "inputTokens": 0,
             "outputTokens": 0,
+            "cachedTokens":0,
             "expectedCost": 0.0
         }
 
@@ -18,6 +19,7 @@ class TokenCalculator:
                 usage["totalTokens"] = _.get(model_response, self.model_output_config['usage'][0]['total_tokens'])
                 usage["inputTokens"] = _.get(model_response, self.model_output_config['usage'][0]['prompt_tokens'])
                 usage["outputTokens"] = _.get(model_response, self.model_output_config['usage'][0]['completion_tokens'])
+                usage["cachedTokens"] = _.get(model_response, self.model_output_config['usage'][0].get('cached_tokens', 0))
             case 'anthropic':
                 usage["inputTokens"] = _.get(model_response, self.model_output_config['usage'][0]['prompt_tokens'])
                 usage["outputTokens"] = _.get(model_response, self.model_output_config['usage'][0]['completion_tokens'])

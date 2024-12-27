@@ -1758,6 +1758,7 @@ class ModelsConfig:
                 "prompt_tokens": "usage.prompt_tokens",
                 "completion_tokens": "usage.completion_tokens",
                 "total_tokens": "usage.total_tokens",
+                "cached_tokens": "usage.prompt_tokens_details.cached_tokens",
                 "total_cost": {
                     "input_cost": 2.50,
                     "output_cost": 10.00,
@@ -1886,6 +1887,7 @@ class ModelsConfig:
                 "prompt_tokens": "usage.prompt_tokens",
                 "completion_tokens": "usage.completion_tokens",
                 "total_tokens": "usage.total_tokens",
+                "cached_tokens": "usage.prompt_tokens_details.cached_tokens",
                 "total_cost": {
                     "input_cost": 2.50,
                     "output_cost": 10.00,
@@ -2125,6 +2127,7 @@ class ModelsConfig:
                 "prompt_tokens": "usage.prompt_tokens",
                 "completion_tokens": "usage.completion_tokens",
                 "total_tokens": "usage.total_tokens",
+                "cached_tokens": "usage.prompt_tokens_details.cached_tokens",
                 "total_cost": {
                     "input_cost": 0.150,
                     "output_cost": 0.600,
@@ -2253,6 +2256,7 @@ class ModelsConfig:
                 "prompt_tokens": "usage.prompt_tokens",
                 "completion_tokens": "usage.completion_tokens",
                 "total_tokens": "usage.total_tokens",
+                "cached_tokens": "usage.prompt_tokens_details.cached_tokens",
                 "total_cost": {
                     "input_cost": 0.150,
                     "output_cost": 0.600,
@@ -2295,6 +2299,8 @@ class ModelsConfig:
                 "prompt_tokens": "usage.prompt_tokens",
                 "completion_tokens": "usage.completion_tokens",
                 "total_tokens": "usage.total_tokens",
+                "cached_tokens": "usage.prompt_tokens_details.cached_tokens",
+                "reasoning_tokens": "usage.completion_tokens_details.cached_tokens",
                 "total_cost": {
                     "input_cost": 15.00,
                     "output_cost": 60.00,
@@ -2335,10 +2341,12 @@ class ModelsConfig:
                 "prompt_tokens": "usage.prompt_tokens",
                 "completion_tokens": "usage.completion_tokens",
                 "total_tokens": "usage.total_tokens",
+                "cached_tokens": "usage.prompt_tokens_details.cached_tokens",
+                "reasoning_tokens": "usage.completion_tokens_details.cached_tokens",
                 "total_cost": {
                     "input_cost": 3.00,
                     "output_cost": 12.00,
-                    "cached_cost" : 1.50
+                    "cached_cost" : 1.50,
                 }
             }],
             "message": "choices[0].message.content",

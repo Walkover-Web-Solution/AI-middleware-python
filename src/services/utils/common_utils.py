@@ -139,10 +139,9 @@ async def prepare_prompt(parsed_data, thread_info, model_config, custom_config):
     bridge_type = parsed_data['bridgeType']
     suggest = parsed_data['suggest']
     gpt_memory = parsed_data['gpt_memory']
-    
+    memory = None
     if configuration['type'] == 'chat':
         id = f"{thread_info['thread_id']}_{parsed_data.get('bridge_id') or parsed_data.get('version_id')}"
-        memory = None
         if gpt_memory:
             response, _ = await fetch("https://flow.sokt.io/func/scriCJLHynCG", "POST", None, None, {"threadID": id})
             if isinstance(response, str):
