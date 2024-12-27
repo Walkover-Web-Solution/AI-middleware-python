@@ -9,9 +9,7 @@ DB_USER = Config.DB_USER
 DB_PASS = Config.DB_PASS
 DB_HOST = Config.DB_HOST
 
-# Database URL
-url = "postgresql://tsdbadmin:wiu3nrnmhljj26z5@cnd9mf6ofq.x5aoank8hh.tsdb.cloud.timescale.com:35241/tsdb?sslmode=require"
-DATABASE_URL = url
+DATABASE_URL = Config.TIMESCALE_SERVICE_URL
 
 # Engine and session setup
 engine = sa.create_engine(DATABASE_URL, pool_pre_ping=True)
