@@ -23,8 +23,8 @@ class TokenCalculator:
             case 'anthropic':
                 usage["inputTokens"] = _.get(model_response, self.model_output_config['usage'][0]['prompt_tokens'])
                 usage["outputTokens"] = _.get(model_response, self.model_output_config['usage'][0]['completion_tokens'])
-                usage['cachingReadTokens'] = _.get(model_response,self.model_output_config['usage'][0]['caching_read_tokens'])
-                usage['cachingWriteTokens'] = _.get(model_response,self.model_output_config['usage'][0]['caching_write_tokens'])
+                usage['cachingReadTokens'] = _.get(model_response, self.model_output_config['usage'][0].get('cache_read_input_tokens',0))
+                usage['cachingCreationInputTokens'] = _.get(model_response, self.model_output_config['usage'][0].get('cache_creation_input_tokens', 0))
                 usage["totalTokens"] = usage["inputTokens"] + usage["outputTokens"]
                 
             case _:

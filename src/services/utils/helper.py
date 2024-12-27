@@ -178,7 +178,7 @@ class Helper:
         return class_obj
 
     
-    def calculate_usage(model, model_response, service, is_rich_text):
+    def calculate_usage(model, model_response, service):
         usage = {}
         token_cost = {}
         permillion = 1000000

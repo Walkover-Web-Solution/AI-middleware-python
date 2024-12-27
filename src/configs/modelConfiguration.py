@@ -3120,6 +3120,8 @@ class ModelsConfig:
             "usage": [{
                 "prompt_tokens": "usage.input_tokens",
                 "completion_tokens": "usage.output_tokens",
+                "cache_read_input_tokens": "usage.cache_read_input_tokens",
+                "cache_creation_input_tokens": "usage.cache_creation_input_tokens",
                 "total_cost": {
                     "input_cost": 3.00,
                     "output_cost": 15.00,
@@ -3202,6 +3204,8 @@ class ModelsConfig:
             "usage": [{
                 "prompt_tokens": "usage.input_tokens",
                 "completion_tokens": "usage.output_tokens",
+                "cache_read_input_tokens": "usage.cache_read_input_tokens",
+                "cache_creation_input_tokens": "usage.cache_creation_input_tokens",
                 "total_cost": {
                     "input_cost": 3.00,
                     "output_cost": 15.00,
@@ -3284,8 +3288,8 @@ class ModelsConfig:
             "usage": [{
                 "prompt_tokens": "usage.input_tokens",
                 "completion_tokens": "usage.output_tokens",
-                "caching_read_tokens": "usage.cache_read_input_tokens",
-                "caching_write_tokens": "usage.cache_creation_input_tokens",
+                "cache_read_input_tokens": "usage.cache_read_input_tokens",
+                "cache_creation_input_tokens": "usage.cache_creation_input_tokens",
                 "total_cost": {
                     "input_cost": 3.00,
                     "output_cost": 15.00,
@@ -3368,6 +3372,8 @@ class ModelsConfig:
         "usage": [{
                 "prompt_tokens": "usage.input_tokens",
                 "completion_tokens": "usage.output_tokens",
+                "cache_read_input_tokens": "usage.cache_read_input_tokens",
+                "cache_creation_input_tokens": "usage.cache_creation_input_tokens",
                 "total_cost": {
                     "input_cost": 15.00,
                     "output_cost": 75.00,
@@ -3449,6 +3455,8 @@ class ModelsConfig:
         "usage": [{
                 "prompt_tokens": "usage.input_tokens",
                 "completion_tokens": "usage.output_tokens",
+                "cache_read_input_tokens": "usage.cache_read_input_tokens",
+                "cache_creation_input_tokens": "usage.cache_creation_input_tokens",
                 "total_cost": {
                     "input_cost": 15.00,
                     "output_cost": 75.00,
@@ -3611,6 +3619,8 @@ class ModelsConfig:
             "usage": [{
                 "prompt_tokens": "usage.input_tokens",
                 "completion_tokens": "usage.output_tokens",
+                "cache_read_input_tokens": "usage.cache_read_input_tokens",
+                "cache_creation_input_tokens": "usage.cache_creation_input_tokens",
                 "total_cost": {
                     "input_cost": 0.25,
                     "output_cost": 1.25,
@@ -3692,6 +3702,8 @@ class ModelsConfig:
             "usage": [{
                 "prompt_tokens": "usage.input_tokens",
                 "completion_tokens": "usage.output_tokens",
+                "cache_read_input_tokens": "usage.cache_read_input_tokens",
+                "cache_creation_input_tokens": "usage.cache_creation_input_tokens",
                 "total_cost": {
                     "input_cost": 0.80,
                     "output_cost": 4.00,
