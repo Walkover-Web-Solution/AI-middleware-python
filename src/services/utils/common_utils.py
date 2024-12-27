@@ -186,7 +186,7 @@ def build_service_params(parsed_data, custom_config, model_output_config, thread
         "variables": parsed_data['variables'],
         "user": parsed_data['user'],
         "tools": parsed_data['tools'],
-        "org_id": parsed_data['org_id'] if parsed_data['is_playground'] else None,
+        "org_id": parsed_data['org_id'],
         "bridge_id": parsed_data['bridge_id'],
         "bridge": parsed_data['bridge'],
         "thread_id": thread_info['thread_id'],
