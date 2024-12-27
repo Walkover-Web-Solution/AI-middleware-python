@@ -76,7 +76,7 @@ async def chat(request_body):
             
         if parsed_data['version'] == 2:
             result['modelResponse'] = await Response_formatter(result["modelResponse"], parsed_data['service'], result["historyParams"].get('tools', {}), parsed_data['type'], parsed_data['images'])
-            tokens = Helper.calculate_usage(parsed_data['model'],result["modelResponse"],parsed_data['service'])
+            parsed_data['tokens'] = Helper.calculate_usage(parsed_data['model'],result["modelResponse"],parsed_data['service'])
         latency = {
             "over_all_time": timer.stop("Api total time") or "",
             "model_execution_time": sum(params['execution_time_logs'].values()) or "",
@@ -94,7 +94,7 @@ async def chat(request_body):
                 "variables": parsed_data['variables'],
                 "prompt": parsed_data['configuration'].get("prompt") or "",
                 "apikey_object_id": params['apikey_object_id'],
-                "expectedCost" : tokens['expectedCost']
+                "expectedCost" : parsed_data['tokens'].get('expectedCost',0)
             })
             if result.get('modelResponse') and result['modelResponse'].get('data'):
                 result['modelResponse']['data']['message_id'] = parsed_data['message_id']
@@ -127,7 +127,7 @@ async def chat(request_body):
                 "success": False,
                 "error": str(error),
                 "apikey_object_id": params['apikey_object_id'],
-                "expectedCost" : tokens['expectedCost']
+                "expectedCost" : parsed_data['tokens'].get('expectedCost',0)
             })
             # Combine the tasks into a single asyncio.gather call
             tasks = [

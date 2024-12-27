@@ -57,7 +57,9 @@ def parse_request_body(request_body):
         "type" : body.get('configuration',{}).get('type'),
         "apikey_object_id" : body.get('apikey_object_id'),
         "images" : body.get('images'),
-        "tool_call_count": body.get('tool_call_count')
+        "tool_call_count": body.get('tool_call_count'),
+        "tokens" : {}
+
     }
 
 def initialize_timer(state: Dict[str, Any]) -> Timer:
