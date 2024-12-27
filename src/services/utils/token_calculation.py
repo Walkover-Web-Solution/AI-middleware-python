@@ -8,7 +8,9 @@ class TokenCalculator:
             "totalTokens": 0,
             "inputTokens": 0,
             "outputTokens": 0,
-            "expectedCost": 0.0
+            "cachedTokens":0,
+            "cachingReadTokens":0,
+            "cachingCreationInputTokens":0
         }
 
     def calculate_usage(self, model_response):
@@ -18,10 +20,12 @@ class TokenCalculator:
                 usage["totalTokens"] = _.get(model_response, self.model_output_config['usage'][0]['total_tokens'])
                 usage["inputTokens"] = _.get(model_response, self.model_output_config['usage'][0]['prompt_tokens'])
                 usage["outputTokens"] = _.get(model_response, self.model_output_config['usage'][0]['completion_tokens'])
-                usage["expectedCost"] = (usage['inputTokens'] / 1000 * self.model_output_config['usage'][0]['total_cost']['input_cost']) + (usage['outputTokens'] / 1000 * self.model_output_config['usage'][0]['total_cost']['output_cost'])
+                usage["cachedTokens"] = _.get(model_response, self.model_output_config['usage'][0].get('cached_tokens', 0))
             case 'anthropic':
                 usage["inputTokens"] = _.get(model_response, self.model_output_config['usage'][0]['prompt_tokens'])
                 usage["outputTokens"] = _.get(model_response, self.model_output_config['usage'][0]['completion_tokens'])
+                usage['cachingReadTokens'] = _.get(model_response, self.model_output_config['usage'][0].get('cache_read_input_tokens',0))
+                usage['cachingCreationInputTokens'] = _.get(model_response, self.model_output_config['usage'][0].get('cache_creation_input_tokens', 0))
                 usage["totalTokens"] = usage["inputTokens"] + usage["outputTokens"]
                 
             case _:
@@ -34,7 +38,9 @@ class TokenCalculator:
         self.total_usage["totalTokens"] += usage.get("totalTokens", 0)
         self.total_usage["inputTokens"] += usage.get("inputTokens", 0)
         self.total_usage["outputTokens"] += usage.get("outputTokens", 0)
-        self.total_usage["expectedCost"] += usage.get("expectedCost", 0.0)
+        self.total_usage["cachedTokens"] += usage.get("cachedTokens", 0)
+        self.total_usage["cachingReadTokens"] += usage.get("cachingReadTokens", 0)
+        self.total_usage["cachingCreationInputTokens"] += usage.get("cachingCreationInputTokens", 0)
 
     def get_total_usage(self):
         return self.total_usage

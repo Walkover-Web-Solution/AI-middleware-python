@@ -52,6 +52,9 @@ async def Response_formatter(response, service, tools={}, type='chat', images = 
             "usage" : {
                 "input_tokens" : response.get("usage", {}).get("input_tokens", None),
                 "output_tokens" : response.get("usage", {}).get("output_tokens", None),
+                "cache_read_input_tokens" : response.get("usage",{}).get("cache_read_input_tokens",None),
+                "cache_creation_input_tokens" : response.get("usage",{}).get("cache_creation_input_tokens",None),
+
                 "total_tokens" : (
                     response.get("usage", {}).get("input_tokens", 0) + 
                     response.get("usage", {}).get("output_tokens", 0)

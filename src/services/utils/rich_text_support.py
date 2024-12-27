@@ -29,6 +29,7 @@ async def process_chatbot_response(result, params, data, model_config, modelOutp
     params["configuration"]["prompt"], missing_vars = Helper.replace_variables_in_prompt(system_prompt, { "actions" : params.get('actions'), "user_reference": user_reference, "user_contains": user_contains})
     params["user"] = f"user: {data.get('user')}, \n Answer: {_.get(result.get('modelResponse', {}), modelOutputConfig.get('message'))}"
     params["template"] = None
+    params['token_calculator']
     tools = result.get('historyParams', {}).get('tools')
     if 'customConfig' in params and 'tools' in params['customConfig']:
         del params['customConfig']['tools']
@@ -43,16 +44,7 @@ async def process_chatbot_response(result, params, data, model_config, modelOutp
         del params['tools']
     obj = await Helper.create_service_handler(params, data.get('service'))
     newresult = await obj.execute()
-    tokens = obj.calculate_usage(newresult.get("modelResponse", {}))
-    if data.get('service') == "anthropic":
-        _.set_(result['usage'], "totalTokens", _.get(result['usage'], "totalTokens") + tokens['totalTokens'])
-        _.set_(result['usage'], "inputTokens", _.get(result['usage'], "inputTokens") + tokens['inputTokens'])
-        _.set_(result['usage'], "outputTokens", _.get(result['usage'], "outputTokens") + tokens['outputTokens'])
-    elif data.get('service') == 'openai' or data.get('service') == 'groq':
-        _.set_(result['usage'], "totalTokens", _.get(result['usage'], "totalTokens") + tokens['totalTokens'])
-        _.set_(result['usage'], "inputTokens", _.get(result['usage'], "inputTokens") + tokens['inputTokens'])
-        _.set_(result['usage'], "outputTokens", _.get(result['usage'], "outputTokens") + tokens['outputTokens'])
-        _.set_(result['usage'], "expectedCost", _.get(result['usage'], "expectedCost") + tokens['expectedCost'])
+    newresult['usage'] = params['token_calculator'].calculate_usage(newresult['modelResponse'])
     _.set_(result['modelResponse'], modelOutputConfig.get('message'), _.get(newresult.get('modelResponse', {}), modelOutputConfig.get('message')))
     newresult['historyParams']['tools_call_data'] = result.get('historyParams', {}).get('tools_call_data')
     result['historyParams'] = deepcopy(newresult.get('historyParams', {}))

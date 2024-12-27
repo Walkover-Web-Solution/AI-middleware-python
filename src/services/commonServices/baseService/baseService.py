@@ -149,21 +149,27 @@ class BaseService:
                 self.total_tokens = _.get(model_response, self.modelOutputConfig['usage'][0]['total_tokens']) + _.get(funcModelResponse, self.modelOutputConfig['usage'][0]['total_tokens'],0)
                 self.prompt_tokens = _.get(model_response, self.modelOutputConfig['usage'][0]['prompt_tokens']) + _.get(funcModelResponse, self.modelOutputConfig['usage'][0]['prompt_tokens'],0)
                 self.completion_tokens = _.get(model_response, self.modelOutputConfig['usage'][0]['prompt_tokens']) + _.get(funcModelResponse, self.modelOutputConfig['usage'][0]['completion_tokens'],0)
+                self.cached_tokens = _.get(model_response, self.modelOutputConfig['usage'][0].get('cached_tokens',0)) + _.get(funcModelResponse, self.modelOutputConfig['usage'][0].get('cached_tokens',0),0)
                 if funcModelResponse:
                     _.set_(model_response, self.modelOutputConfig['message'], _.get(funcModelResponse, self.modelOutputConfig['message']))
                     _.set_(model_response, self.modelOutputConfig['tools'], _.get(funcModelResponse, self.modelOutputConfig['tools']))
                 _.set_(model_response, self.modelOutputConfig['usage'][0]['total_tokens'], self.total_tokens)
                 _.set_(model_response, self.modelOutputConfig['usage'][0]['prompt_tokens'], self.prompt_tokens)
                 _.set_(model_response, self.modelOutputConfig['usage'][0]['completion_tokens'], self.completion_tokens)
+                _.set_(model_response, self.modelOutputConfig['usage'][0].get('cached_tokens',0), self.cached_tokens)
             case 'anthropic':
                 self.prompt_tokens = _.get(model_response, self.modelOutputConfig['usage'][0]['prompt_tokens']) + _.get(funcModelResponse, self.modelOutputConfig['usage'][0]['prompt_tokens'],0)
                 self.completion_tokens = _.get(model_response, self.modelOutputConfig['usage'][0]['prompt_tokens']) + _.get(funcModelResponse, self.modelOutputConfig['usage'][0]['completion_tokens'],0)
+                self.cache_creation_input_tokens = _.get(model_response, self.modelOutputConfig['usage'][0]['cache_creation_input_tokens']) + _.get(funcModelResponse, self.modelOutputConfig['usage'][0]['cache_creation_input_tokens'],0)
+                self.cache_read_input_tokens = _.get(model_response, self.modelOutputConfig['usage'][0]['cache_read_input_tokens']) + _.get(funcModelResponse, self.modelOutputConfig['usage'][0]['cache_read_input_tokens'],0)
                 self.total_tokens = self.prompt_tokens + self.completion_tokens
                 if funcModelResponse:
                     _.set_(model_response, self.modelOutputConfig['message'], _.get(funcModelResponse, self.modelOutputConfig['message']))
                 # _.set_(model_response, 'content[1].text', _.get(funcModelResponse, 'content[0].text'))
                 _.set_(model_response, self.modelOutputConfig['usage'][0]['prompt_tokens'], self.prompt_tokens)
                 _.set_(model_response, self.modelOutputConfig['usage'][0]['completion_tokens'], self.completion_tokens)
+                _.set_(model_response, self.modelOutputConfig['usage'][0]['cache_creation_input_tokens'], self.cache_read_input_tokens)
+                _.set_(model_response, self.modelOutputConfig['usage'][0]['cache_read_input_tokens'], self.cache_read_input_tokens)
                 # _.set_(model_response, self.modelOutputConfig['usage'][0]['total_tokens'], self.total_tokens)
             case  _:
                 pass
@@ -175,17 +181,17 @@ class BaseService:
                 usage["totalTokens"] = _.get(model_response, self.modelOutputConfig['usage'][0]['total_tokens'])
                 usage["inputTokens"] = _.get(model_response, self.modelOutputConfig['usage'][0]['prompt_tokens'])
                 usage["outputTokens"] = _.get(model_response, self.modelOutputConfig['usage'][0]['completion_tokens'])
-                usage["expectedCost"] = (usage['inputTokens'] / 1000 * self.modelOutputConfig['usage'][0]['total_cost']['input_cost']) + (usage['outputTokens'] / 1000 * self.modelOutputConfig['usage'][0]['total_cost']['output_cost'])
+                usage["cachedTokens"] = _.get(model_response, self.modelOutputConfig['usage'][0].get('cached_tokens', 0))
             case 'anthropic':
                 usage = {}
                 usage["inputTokens"] = _.get(model_response, self.modelOutputConfig['usage'][0]['prompt_tokens'])
                 usage["outputTokens"] = _.get(model_response, self.modelOutputConfig['usage'][0]['completion_tokens'])
+                usage['cachingReadTokens'] = _.get(model_response,self.modelOutputConfig['usage'][0].get('cache_read_input_tokens',0))
+                usage['cachedCreationInputTokens'] = _.get(model_response,self.modelOutputConfig['usage'][0].get('cache_creation_input_tokens',0))
                 usage["totalTokens"] = usage["inputTokens"] + usage["outputTokens"]
-                # usage["expectedCost"] = (usage['inputTokens'] / 1000 * self.modelOutputConfig['usage'][0]['total_cost']['input_cost']) + (usage['outputTokens'] / 1000 * self.modelOutputConfig['usage'][0]['total_cost']['output_cost'])
             case  _:
                 pass
         return usage
-
     def prepare_history_params(self, model_response, tools):
         return {
             'thread_id': self.thread_id,
