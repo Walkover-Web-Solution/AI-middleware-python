@@ -167,8 +167,14 @@ async def prepare_prompt(parsed_data, thread_info, model_config, custom_config):
             custom_config['response_type'] = {"type": "json_object"}
         
         if not parsed_data['is_playground'] and bridge_type is None and model_config.get('response_type'):
-            res = parsed_data['body'].get('response_type', 'json_object')
-            custom_config['response_type'] = {"type": res}
+            res = parsed_data['body'].get('response_type') or parsed_data['body'].get('configuration',{}).get('response_type',{"type": 'json_object'})
+            match res:
+                case "default":
+                    custom_config['response_type'] = {"type": 'json_object'}
+                case "text":
+                    custom_config['response_type'] = {"type": 'text'}
+                case _:
+                    custom_config['response_type'] = res
         
         return memory, missing_vars
     
