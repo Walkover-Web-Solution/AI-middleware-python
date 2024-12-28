@@ -58,7 +58,8 @@ def parse_request_body(request_body):
         "apikey_object_id" : body.get('apikey_object_id'),
         "images" : body.get('images'),
         "tool_call_count": body.get('tool_call_count'),
-        "tokens" : {}
+        "tokens" : {},
+        "memory" : ""
 
     }
 
@@ -146,11 +147,12 @@ async def prepare_prompt(parsed_data, thread_info, model_config, custom_config):
     
     if configuration['type'] == 'chat':
         id = f"{thread_info['thread_id']}_{parsed_data.get('bridge_id') or parsed_data.get('version_id')}"
-        
+        parsed_data['id'] = id
         if gpt_memory:
             response, _ = await fetch("https://flow.sokt.io/func/scriCJLHynCG", "POST", None, None, {"threadID": id})
             if isinstance(response, str):
                 memory = response
+                parsed_data['memory'] = memory
         configuration['prompt'], missing_vars = Helper.replace_variables_in_prompt(configuration['prompt'], variables)
         
         if template:
