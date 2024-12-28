@@ -20,12 +20,12 @@ class TokenCalculator:
                 usage["totalTokens"] = _.get(model_response, self.model_output_config['usage'][0]['total_tokens'])
                 usage["inputTokens"] = _.get(model_response, self.model_output_config['usage'][0]['prompt_tokens'])
                 usage["outputTokens"] = _.get(model_response, self.model_output_config['usage'][0]['completion_tokens'])
-                usage["cachedTokens"] = _.get(model_response, self.model_output_config['usage'][0].get('cached_tokens', 0))
+                usage["cachedTokens"] = _.get(model_response, self.model_output_config['usage'][0].get('cached_tokens')) or 0
             case 'anthropic':
                 usage["inputTokens"] = _.get(model_response, self.model_output_config['usage'][0]['prompt_tokens'])
                 usage["outputTokens"] = _.get(model_response, self.model_output_config['usage'][0]['completion_tokens'])
-                usage['cachingReadTokens'] = _.get(model_response, self.model_output_config['usage'][0].get('cache_read_input_tokens',0))
-                usage['cachingCreationInputTokens'] = _.get(model_response, self.model_output_config['usage'][0].get('cache_creation_input_tokens', 0))
+                usage['cachingReadTokens'] = _.get(model_response, self.model_output_config['usage'][0].get('cache_read_input_tokens')) or 0
+                usage['cachingCreationInputTokens'] = _.get(model_response, self.model_output_config['usage'][0].get('cache_creation_input_tokens')) or 0
                 usage["totalTokens"] = usage["inputTokens"] + usage["outputTokens"]
                 
             case _:

@@ -76,6 +76,7 @@ async def chat(request_body):
             
         if parsed_data['version'] == 2:
             result['modelResponse'] = await Response_formatter(result["modelResponse"], parsed_data['service'], result["historyParams"].get('tools', {}), parsed_data['type'], parsed_data['images'])
+            result['modelResponse']['usage'] = params['token_calculator'].get_total_usage();
             if parsed_data.get('type') != 'image':
                 parsed_data['tokens'] = Helper.calculate_usage(parsed_data['model'],result["modelResponse"],parsed_data['service'])
         latency = {
