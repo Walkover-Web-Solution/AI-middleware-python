@@ -1,5 +1,6 @@
 import hashlib
 from Crypto.Cipher import AES
+import pydash as _
 import json
 from config import Config
 from Crypto.Util.Padding import unpad
@@ -9,6 +10,10 @@ import operator
 import re
 from src.configs.modelConfiguration import ModelsConfig as model_configuration
 import jwt
+from ..commonServices.openAI.openaiCall import UnifiedOpenAICase
+from ..commonServices.groq.groqCall import Groq
+from ..commonServices.anthrophic.antrophicCall import Antrophic
+from ...configs.constant import service_name
 class Helper:
     @staticmethod
     def encrypt(text):
@@ -159,3 +164,68 @@ class Helper:
     def find_variables_in_string(prompt):
         variables = re.findall(r'{{(.*?)}}', prompt)
         return variables
+    
+    async def create_service_handler(params, service):
+        if service == service_name['openai']:
+            class_obj = UnifiedOpenAICase(params)
+        # elif service == service_name['gemini']:
+        #     class_obj = GeminiHandler(params)
+        elif service == service_name['anthropic']:
+            class_obj = Antrophic(params)
+        elif service == service_name['groq']:
+            class_obj = Groq(params)
+            
+        return class_obj
+
+    
+    def calculate_usage(model, model_response, service):
+        usage = {}
+        token_cost = {}
+        permillion = 1000000
+        modelname = model.replace("-", "_").replace(".", "_")
+        modelfunc = getattr(model_configuration, modelname, None)
+        if modelfunc is None:
+            raise AttributeError(f"Model function '{modelname}' not found in model_configuration.")
+        modelObj = modelfunc()
+
+        if service in ['openai', 'groq']:
+            token_cost['input_cost'] = modelObj['outputConfig']['usage'][0]['total_cost'].get('input_cost') or 0
+            token_cost['output_cost'] = modelObj['outputConfig']['usage'][0]['total_cost'].get('output_cost') or 0
+            token_cost['cache_cost'] = modelObj['outputConfig']['usage'][0]['total_cost'].get('cached_cost') or 0
+            
+            usage["inputTokens"] = _.get(model_response['usage'], 'input_tokens', 0)
+            usage["outputTokens"] = _.get(model_response['usage'], 'output_tokens', 0)
+            usage["cachedTokens"] = _.get(model_response['usage'], 'cached_token') or 0
+
+            usage["expectedCost"] = 0
+            if usage["inputTokens"]:
+                usage["expectedCost"] += usage['inputTokens'] * (token_cost['input_cost'] / permillion)
+            if usage["outputTokens"]:
+                usage["expectedCost"] += usage['outputTokens'] * (token_cost['output_cost'] / permillion)
+            if usage["cachedTokens"]:
+                usage["expectedCost"] += usage['cachedTokens'] * (token_cost['cache_cost'] / permillion)
+
+        elif service == 'anthropic':
+            # model_specific_config = model_response['usage'][0].get('total_cost', {}).get(model, {})
+            usage["inputTokens"] = _.get(model_response['usage'], 'input_tokens', 0)
+            usage["outputTokens"] = _.get(model_response['usage'], 'output_tokens', 0)
+            usage["cachedCreationInputTokens"] = _.get(model_response['usage'], 'cache_creation_input_tokens') or 0
+            usage["cachedReadInputTokens"] = _.get(model_response['usage'], 'cache_read_input_tokens') or 0
+
+            token_cost['input_cost'] = modelObj['outputConfig']['usage'][0]['total_cost']['input_cost']
+            token_cost['output_cost'] = modelObj['outputConfig']['usage'][0]['total_cost']['output_cost']
+            token_cost['cached_cost'] = modelObj['outputConfig']['usage'][0]['total_cost'].get('cached_cost') or 0
+            token_cost['caching_write_cost'] = modelObj['outputConfig']['usage'][0]['total_cost'].get('caching_write_cost') or 0
+            token_cost['caching_read_cost'] = modelObj['outputConfig']['usage'][0]['total_cost'].get('caching_read_cost') or 0
+
+            usage["expectedCost"] = 0
+            if usage["inputTokens"]:
+                usage["expectedCost"] += usage['inputTokens'] * (token_cost['input_cost'] / permillion)
+                usage["expectedCost"] += usage['inputTokens'] * (token_cost['caching_read_cost'] / permillion)
+                usage["expectedCost"] += usage['cachedCreationInputTokens'] * (token_cost['caching_read_cost'] / permillion) 
+
+            if usage["outputTokens"]:
+                usage["expectedCost"] += usage['outputTokens'] * (token_cost['output_cost'] / permillion)
+                usage["expectedCost"] += usage['cachedReadInputTokens'] * (token_cost['caching_write_cost'] / permillion)
+
+        return usage

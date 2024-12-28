@@ -3,9 +3,26 @@ import json
 from fastapi import Request, Response, HTTPException
 from starlette.middleware.base import BaseHTTPMiddleware
 
-def get_nested_value(obj, path):
-    """Extract nested value from the request object."""
-    for key in path.split('.'):
+async def get_nested_value(request: Request, path):
+    """Extract nested value from the request object based on the key path."""
+    keys = path.split('.')
+    
+    if keys[0] == 'body':
+        try:
+            obj = await request.json()
+            keys = keys[1:]
+        except Exception:
+            return None
+    elif keys[0] == 'profile':
+        obj = request.state.profile
+        keys = keys[1:]
+    elif keys[0] == 'headers':
+        obj = request.headers
+        keys = keys[1:]
+    else:
+        return None
+
+    for key in keys:
         if hasattr(obj, key):
             obj = getattr(obj, key)
         elif isinstance(obj, dict) and key in obj:
@@ -15,9 +32,9 @@ def get_nested_value(obj, path):
     return obj
 
 async def rate_limit(request: Request, key_path: str, points: int = 40, ttl: int = 60):
-    key = get_nested_value(request.state, key_path)
+    key = await get_nested_value(request, key_path)
     if not key:
-        raise HTTPException(status_code=400, detail="Invalid key path or key not found in request")
+        return
 
     redis_key = f"rate-limit:{key}"
     record = await find_in_cache(redis_key)
@@ -29,7 +46,7 @@ async def rate_limit(request: Request, key_path: str, points: int = 40, ttl: int
         if count >= points:
             raise HTTPException(
                 status_code=429,
-                detail="Too many requests",
+                detail=f"Too many requests for {key}",
                 headers={"Retry-After": str(ttl)}
             )
         data['count'] += 1
@@ -38,23 +55,3 @@ async def rate_limit(request: Request, key_path: str, points: int = 40, ttl: int
 
     await store_in_cache(redis_key, data, ttl)
 
-class RateLimiterMiddleware(BaseHTTPMiddleware):
-    def __init__(self, app, key_path: str, points: int = 40, ttl: int = 60):
-        super().__init__(app)
-        self.key_path = key_path
-        self.points = points
-        self.ttl = ttl
-
-    async def dispatch(self, request: Request, call_next):
-        try:
-            await rate_limit(request, self.key_path, self.points, self.ttl)
-            return await call_next(request)
-        except HTTPException as error:
-            return Response(status_code=error.status_code, content=json.dumps({'error': error.detail}), headers=error.headers)
-
-# Usage example:
-# from fastapi import FastAPI
-# from .middlewares.ratelimitMiddleware import RateLimiterMiddleware
-#
-# app = FastAPI()
-# app.add_middleware(RateLimiterMiddleware, key_path='client.host')

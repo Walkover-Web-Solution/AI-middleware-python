@@ -148,7 +148,10 @@ def traverse_body(body, path=None, paths=None, fields=None, required_params=None
                         parameter += '.' + 'parameter.' + path[i]
                 path_str = f"{parameter}"
                 existing_data = _.get(fields, path_str, {"required_params": []})
-                existing_data["required_params"].append(key)
+                if "required_params" in existing_data:
+                    existing_data["required_params"].append(key)
+                else:
+                    existing_data["required_params"] = [key]
                 _.set_(fields, path_str, existing_data)   
     return {
         "paths": paths,
