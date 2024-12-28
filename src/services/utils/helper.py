@@ -189,13 +189,13 @@ class Helper:
         modelObj = modelfunc()
 
         if service in ['openai', 'groq']:
-            token_cost['input_cost'] = modelObj['outputConfig']['usage'][0]['total_cost'].get('input_cost', 0)
-            token_cost['output_cost'] = modelObj['outputConfig']['usage'][0]['total_cost'].get('output_cost', 0)
-            token_cost['cache_cost'] = modelObj['outputConfig']['usage'][0]['total_cost'].get('cached_cost', 0)
+            token_cost['input_cost'] = modelObj['outputConfig']['usage'][0]['total_cost'].get('input_cost') or 0
+            token_cost['output_cost'] = modelObj['outputConfig']['usage'][0]['total_cost'].get('output_cost') or 0
+            token_cost['cache_cost'] = modelObj['outputConfig']['usage'][0]['total_cost'].get('cached_cost') or 0
             
             usage["inputTokens"] = _.get(model_response['usage'], 'input_tokens', 0)
             usage["outputTokens"] = _.get(model_response['usage'], 'output_tokens', 0)
-            usage["cachedTokens"] = _.get(model_response['usage'], 'cached_token', 0)
+            usage["cachedTokens"] = _.get(model_response['usage'], 'cached_token') or 0
 
             usage["expectedCost"] = 0
             if usage["inputTokens"]:
@@ -209,14 +209,14 @@ class Helper:
             # model_specific_config = model_response['usage'][0].get('total_cost', {}).get(model, {})
             usage["inputTokens"] = _.get(model_response['usage'], 'input_tokens', 0)
             usage["outputTokens"] = _.get(model_response['usage'], 'output_tokens', 0)
-            usage["cachedCreationInputTokens"] = _.get(model_response['usage'], 'cache_creation_input_tokens', 0)
-            usage["cachedReadInputTokens"] = _.get(model_response['usage'], 'cache_read_input_tokens', 0)
+            usage["cachedCreationInputTokens"] = _.get(model_response['usage'], 'cache_creation_input_tokens') or 0
+            usage["cachedReadInputTokens"] = _.get(model_response['usage'], 'cache_read_input_tokens') or 0
 
             token_cost['input_cost'] = modelObj['outputConfig']['usage'][0]['total_cost']['input_cost']
             token_cost['output_cost'] = modelObj['outputConfig']['usage'][0]['total_cost']['output_cost']
-            token_cost['cached_cost'] = modelObj['outputConfig']['usage'][0]['total_cost'].get('cached_cost', 0)
-            token_cost['caching_write_cost'] = modelObj['outputConfig']['usage'][0]['total_cost'].get('caching_write_cost', 0)
-            token_cost['caching_read_cost'] = modelObj['outputConfig']['usage'][0]['total_cost'].get('caching_read_cost', 0)
+            token_cost['cached_cost'] = modelObj['outputConfig']['usage'][0]['total_cost'].get('cached_cost') or 0
+            token_cost['caching_write_cost'] = modelObj['outputConfig']['usage'][0]['total_cost'].get('caching_write_cost') or 0
+            token_cost['caching_read_cost'] = modelObj['outputConfig']['usage'][0]['total_cost'].get('caching_read_cost') or 0
 
             usage["expectedCost"] = 0
             if usage["inputTokens"]:
