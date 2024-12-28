@@ -22,6 +22,7 @@ configurationModel = db["configurations"]
 @app.post("/chat/{bridge_id}")
 @handle_exceptions
 async def chat(request_body): 
+    result ={}
     try:
         # Step 1: Parse and validate request body
         parsed_data = parse_request_body(request_body)
