@@ -149,7 +149,7 @@ class BaseService:
                 self.total_tokens = _.get(model_response, self.modelOutputConfig['usage'][0]['total_tokens']) or 0 + _.get(funcModelResponse, self.modelOutputConfig['usage'][0]['total_tokens']) or 0
                 self.prompt_tokens = _.get(model_response, self.modelOutputConfig['usage'][0]['prompt_tokens'])or 0 + _.get(funcModelResponse, self.modelOutputConfig['usage'][0]['prompt_tokens']) or 0
                 self.completion_tokens = _.get(model_response, self.modelOutputConfig['usage'][0]['prompt_tokens']) or 0  + _.get(funcModelResponse, self.modelOutputConfig['usage'][0]['completion_tokens']) or 0
-                self.cached_tokens = _.get(model_response, self.modelOutputConfig['usage'][0].get('cached_tokens')) or 0 + _.get(funcModelResponse, self.modelOutputConfig['usage'][0].get('cached_tokens')) or 0 
+                self.cached_tokens = _.get(model_response, self.modelOutputConfig['usage'][0].get('cached_tokens') or 0) or 0 + _.get(funcModelResponse, self.modelOutputConfig['usage'][0].get('cached_tokens') or 0) or 0 
                 if funcModelResponse:
                     _.set_(model_response, self.modelOutputConfig['message'], _.get(funcModelResponse, self.modelOutputConfig['message']))
                     _.set_(model_response, self.modelOutputConfig['tools'], _.get(funcModelResponse, self.modelOutputConfig['tools']))
@@ -160,8 +160,8 @@ class BaseService:
             case 'anthropic':
                 self.prompt_tokens = _.get(model_response, self.modelOutputConfig['usage'][0]['prompt_tokens']) or 0 + _.get(funcModelResponse, self.modelOutputConfig['usage'][0]['prompt_tokens']) or 0
                 self.completion_tokens = _.get(model_response, self.modelOutputConfig['usage'][0]['prompt_tokens']) or 0 + _.get(funcModelResponse, self.modelOutputConfig['usage'][0]['completion_tokens']) or 0
-                self.cache_creation_input_tokens = _.get(model_response, self.modelOutputConfig['usage'][0]['cache_creation_input_tokens']) or 0 + _.get(funcModelResponse, self.modelOutputConfig['usage'][0]['cache_creation_input_tokens']) or 0
-                self.cache_read_input_tokens = _.get(model_response, self.modelOutputConfig['usage'][0]['cache_read_input_tokens']) or 0 + _.get(funcModelResponse, self.modelOutputConfig['usage'][0]['cache_read_input_tokens']) or 0
+                self.cache_creation_input_tokens = _.get(model_response, self.modelOutputConfig['usage'][0]['cache_creation_input_tokens'] or 0 ) or 0 + _.get(funcModelResponse, self.modelOutputConfig['usage'][0]['cache_creation_input_tokens'] or 0 ) or 0
+                self.cache_read_input_tokens = _.get(model_response, self.modelOutputConfig['usage'][0]['cache_read_input_tokens'] or 0) or 0 + _.get(funcModelResponse, self.modelOutputConfig['usage'][0]['cache_read_input_tokens'] or 0) or 0
                 self.total_tokens = self.prompt_tokens + self.completion_tokens
                 if funcModelResponse:
                     _.set_(model_response, self.modelOutputConfig['message'], _.get(funcModelResponse, self.modelOutputConfig['message']))
