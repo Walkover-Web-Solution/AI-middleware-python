@@ -87,7 +87,7 @@ async def create(dataset, history_params, version_id):
                 'created_at': datetime.now(timezone.utc),
                 'latency': json.loads(data_object.get('latency', {})).get('over_all_time', 0),
                 'success' : data_object.get('success', False),
-                'cost' : 5,
+                'cost' : data_object.get('expectedCost', 0),
                 'time_zone' : 'Asia/Kolkata',
                 'service' : data_object['service']
             }
