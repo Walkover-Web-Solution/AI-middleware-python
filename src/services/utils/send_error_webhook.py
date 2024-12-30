@@ -1,46 +1,67 @@
 from ...db_services.webhook_alert_Dbservice import get_webhook_data
 from ..commonServices.baseService.baseService import sendResponse
+async def send_error_to_webhook(bridge_id, org_id, error_log, error_type):
+    """
+    Sends error logs to a webhook if the specified conditions are met.
 
-async def send_error_to_webhook(bridge_id, org_id, error_log, type):
+    Args:
+        bridge_id (str): Identifier for the bridge.
+        org_id (str): Identifier for the organization.
+        error_log (dict): Error log details.
+        error_type (str): Type of the error (e.g., 'Variable', 'Error').
+
+    Returns:
+        None
+    """
     try:
-        details = {}
+        # Fetch webhook data for the organization
         result = await get_webhook_data(org_id)
-        data = result.get('webhook_data')
-        data.append({
-                    "org_id": org_id,
-                    "name": "default alert",
-                    "webhookConfiguration": {
-                        "url": "https://flow.sokt.io/func/scriSmH2QaBH",
-                        "headers": {}
-                    },
-                    "alertType": [
-                        "Error",
-                        "Variable"
-                    ],
-                    "bridges": [
-                        "all"
-                    ],
-                })
-        if type == 'Variable':
-            details = create_missing_vars(error_log)
-        else:
-            details = create_error_payload(error_log)
-        for entry in data:
+        if not result or 'webhook_data' not in result:
+            raise ValueError("Webhook data is missing in the response.")
+
+        webhook_data = result['webhook_data']
+
+        # Add default alert configuration if necessary
+        webhook_data.append({
+            "org_id": org_id,
+            "name": "default alert",
+            "webhookConfiguration": {
+                "url": "https://flow.sokt.io/func/scriSmH2QaBH",
+                "headers": {}
+            },
+            "alertType": ["Error", "Variable"],
+            "bridges": ["all"]
+        })
+
+        # Generate the appropriate payload based on the error type
+        details_payload = (
+            create_missing_vars(error_log)
+            if error_type == 'Variable'
+            else create_error_payload(error_log)
+        )
+
+        # Iterate through webhook configurations and send responses
+        for entry in webhook_data:
             webhook_config = entry.get('webhookConfiguration')
             bridges = entry.get('bridges', [])
-            details = {
-                 "details":{**details},
-                 "bridge_id":bridge_id,
-                 "org_id":org_id
-            }
-            if type in entry['alertType'] and (bridge_id in bridges or 'all' in bridges):
-                    webhook_url = webhook_config.get('url')
-                    if webhook_url:
-                        response_format = create_response_format(webhook_url, webhook_config.get('headers', {}))
-                        await sendResponse(response_format, data=details)
+
+            if error_type in entry.get('alertType', []) and (bridge_id in bridges or 'all' in bridges):
+                webhook_url = webhook_config['url']
+                headers = webhook_config.get('headers', {})
+
+                # Prepare details for the webhook
+                payload = {
+                    "details": details_payload,  # Use details_payload directly to avoid nesting
+                    "bridge_id": bridge_id,
+                    "org_id": org_id,
+                }
+
+                # Send the response
+                response_format = create_response_format(webhook_url, headers)
+                await sendResponse(response_format, data=payload)
 
     except Exception as error:
-        print(f"send_error_to_webhook => {error}")
+        print(f"Error in send_error_to_webhook: {error}")
 
 def create_missing_vars(details):
     return {

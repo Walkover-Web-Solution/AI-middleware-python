@@ -49,7 +49,7 @@ async def chat(request_body):
         # Handle missing variables
         if missing_vars:
             await send_error_to_webhook(
-                parsed_data['bridge_id'], parsed_data['org_id'], missing_vars, type='Variable'
+                parsed_data['bridge_id'], parsed_data['org_id'], missing_vars, error_type='Variable'
             )
         
         # Step 7: Configure Custom Settings
