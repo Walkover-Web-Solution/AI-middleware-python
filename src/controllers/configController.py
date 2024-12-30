@@ -389,7 +389,7 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
                         'version_id' : version_id
                     }
                 )
-        if version_id is not None:
+        if version_id is not None and version_description is None:
             update_fields['is_drafted'] = True
         if version_description is not None:
            update_fields['version_description'] = version_description
