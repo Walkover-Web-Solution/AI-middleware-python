@@ -1,5 +1,6 @@
 import json
 from fastapi import FastAPI
+from fastapi.background import BackgroundTasks
 from fastapi.responses import JSONResponse
 import traceback
 from ...db_services import metrics_service as metrics_service
@@ -13,7 +14,7 @@ import json
 from src.handler.executionHandler import handle_exceptions
 from models.mongo_connection import db
 from src.services.utils.gpt_memory import handle_gpt_memory
-from src.services.utils.common_utils import parse_request_body, initialize_timer, load_model_configuration, handle_pre_tools, handle_fine_tune_model,manage_threads, prepare_prompt, configure_custom_settings, build_service_params
+from src.services.utils.common_utils import parse_request_body, initialize_timer, load_model_configuration, handle_pre_tools, handle_fine_tune_model,manage_threads, prepare_prompt, configure_custom_settings, build_service_params, process_background_tasks
 from src.services.utils.rich_text_support import process_chatbot_response
 app = FastAPI()
 from src.services.utils.helper import Helper
@@ -102,17 +103,7 @@ async def chat(request_body):
             })
             if result.get('modelResponse') and result['modelResponse'].get('data'):
                 result['modelResponse']['data']['message_id'] = parsed_data['message_id']
-            # Optimize task creation and gathering
-            
-            tasks = [
-                sendResponse(parsed_data['response_format'], result["modelResponse"], success=True),
-                metrics_service.create([parsed_data['usage']], result["historyParams"], parsed_data['version_id']),
-                validateResponse(final_response=result['modelResponse'], configration=parsed_data['configuration'], bridgeId=parsed_data['bridge_id'], message_id=parsed_data['message_id'], org_id=parsed_data['org_id'])
-            ]
-
-            if parsed_data['gpt_memory'] and parsed_data['configuration']['type'] == 'chat':
-                tasks.append(handle_gpt_memory(parsed_data['id'], parsed_data['user'], result['modelResponse'], parsed_data['memory'], parsed_data['gpt_memory_context']))
-            await asyncio.gather(*tasks, return_exceptions=True)
+        asyncio.create_task(process_background_tasks(parsed_data, result))
         return JSONResponse(status_code=200, content={"success": True, "response": result["modelResponse"]})
     except Exception as error:
         traceback.print_exc()
@@ -156,4 +147,4 @@ async def chat(request_body):
             await asyncio.gather(*[task for task in tasks if task is not None], return_exceptions=True)
             print("chat common error=>", error)
         raise ValueError(error)
-
+    
