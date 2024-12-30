@@ -1,10 +1,11 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from models.index import combined_models
 from sqlalchemy import and_
 from ..controllers.conversationController import savehistory
 import traceback
-from .conversationDbService import insertRawData
+from .conversationDbService import insertRawData, timescale_metrics
 import uuid
+import json
 
 postgres = combined_models['pg']
 timescale = combined_models['timescale']
@@ -72,9 +73,30 @@ async def create(dataset, history_params, version_id):
             }
             for data_object in dataset
         ]
+        metrics_data = [
+            {
+                'org_id': data_object['orgId'],
+                'bridge_id': history_params['bridge_id'],
+                'version_id' : version_id,
+                'thread_id': history_params['thread_id'],
+                'model': data_object['model'],
+                'input_tokens': data_object.get('inputTokens', 0),
+                'output_tokens': data_object.get('outputTokens', 0),
+                'total_tokens': data_object.get('totalTokens', 0),
+                'apikey_id': data_object.get('apikey_object_id'),
+                'created_at': datetime.now(timezone.utc),
+                'latency': json.loads(data_object.get('latency', {})).get('over_all_time', 0),
+                'success' : data_object.get('success', False),
+                'cost' : 5,
+                'time_zone' : 'Asia/Kolkata',
+                'service' : data_object['service']
+            }
+            for data_object in dataset
+        ]
+
 
         await insertRawData(insert_ai_data_in_pg)
-        # await timescale.raw_data.bulk_create(insert_ai_data)
+        await timescale_metrics(metrics_data)
     except Exception as error:
         traceback.print_exc()
         print('Error during bulk insert of Ai middleware', error)

@@ -1,8 +1,9 @@
 from .postgres.pg_connection import db
+from .Timescale.connections import db as timescale_db
 
 combined_models = {
     'pg': db,
-    'timescale': None
+    'timescale': timescale_db
 }
 
 # Exporting the combined models dictionary
