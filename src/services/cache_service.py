@@ -33,7 +33,7 @@ async def delete_in_cache(identifiers: Union[str, List[str]]) -> bool:
     keys_to_delete = [f"{REDIS_PREFIX}{id}" for id in identifiers]
 
     try:
-        delete_count = client.delete(*keys_to_delete)
+        delete_count = await client.delete(*keys_to_delete)
         print(f"Deleted {delete_count} items from cache")
         return True
     except Exception as error:

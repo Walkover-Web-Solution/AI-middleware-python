@@ -1,6 +1,8 @@
 from models.mongo_connection import db
 from bson import ObjectId
 import traceback
+from ..services.cache_service import find_in_cache, store_in_cache
+import json
 
 configurationModel = db["configurations"]
 apiCallModel = db['apicalls']
@@ -137,6 +139,14 @@ async def get_bridges_with_tools(bridge_id, org_id, version_id=None):
 
 async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None):
     try:
+        cache_key = f"{version_id or bridge_id}"
+        
+        # Attempt to retrieve data from Redis cache
+        cached_data = await find_in_cache(cache_key)
+        if cached_data:
+            # Deserialize the cached JSON data
+            cached_result = json.loads(cached_data)
+            return cached_result  # Return the cached response directly
         model = version_model if version_id else configurationModel
         id_to_use = ObjectId(version_id) if version_id else ObjectId(bridge_id)
         pipeline = [
@@ -283,10 +293,12 @@ async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None)
             }
         
         # Optionally, you can structure the output to include 'apikeys' at the top level
-        return {
+        response =  {
             'success': True,
             'bridges': result[0]
         }
+        await store_in_cache(cache_key, response)
+        return response
     except Exception as error:
         print(error)
         return {
