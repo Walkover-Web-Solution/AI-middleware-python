@@ -51,15 +51,16 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
     configuration.pop('tools', None)
     configuration['tools'] = tools
     service = service or (result.get('bridges', {}).get('service', '').lower())
+    service = service.lower() if service else ""
     gpt_memory = result.get('bridges', {}).get('gpt_memory')
-    db_api_key = result.get('bridges', {}).get('apikey')
+    db_apikeys = result.get('bridges', {}).get('apikeys')
+    db_api_key = db_apikeys.get(service)
     apikey_object_id = result.get('bridges', {}).get('apikey_object_id')
     if not (apikey or db_api_key): 
         raise Exception('Could not find api key')
     apikey = apikey if apikey else Helper.decrypt(db_api_key)
     RTLayer = True if configuration and 'RTLayer' in configuration else False 
     bridge = result.get('bridges')
-    service = service.lower() if service else ""
     template_content = await ConfigurationService.get_template_by_id(template_id) if template_id else None
     pre_tools = bridge.get('pre_tools', [])
     variables_path_bridge = bridge.get('variables_path', None)
