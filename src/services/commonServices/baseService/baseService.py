@@ -223,7 +223,8 @@ class BaseService:
             'message_id' : self.message_id,
             'image_url' : model_response.get('data',[{}])[0].get('url', None),
             'revised_prompt' : model_response.get('data',[{}])[0].get('revised_prompt', None),
-            'urls' : self.image_data
+            'urls' : self.image_data,
+            'AiConfig' : self.customConfig
         }
     
     def service_formatter(self, configuration : object, service : str ):
