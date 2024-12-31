@@ -10,7 +10,7 @@ apiCallModel = db['apicalls']
 async def getConfiguration(configuration, service, bridge_id, apikey, template_id=None, variables = {}, org_id="", variables_path = None, version_id=None):
     RTLayer = False
     bridge = None
-    result = await ConfigurationService.get_bridges_with_tools(bridge_id = bridge_id, org_id = org_id, version_id=version_id)
+    result = await ConfigurationService.get_bridges_with_tools_and_apikeys(bridge_id = bridge_id, org_id = org_id, version_id=version_id)
     if not result['success']:
         return {
             'success': False,

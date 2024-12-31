@@ -59,8 +59,83 @@ async def get_bridges_without_tools(bridge_id = None, org_id = None, version_id 
             'success': False,
             'error': "something went wrong!!"
         }
-        
+    
 async def get_bridges_with_tools(bridge_id, org_id, version_id=None):
+    try:
+        model = version_model if version_id else configurationModel
+        id_to_use = ObjectId(version_id) if version_id else ObjectId(bridge_id)
+        pipeline = [
+            {
+                '$match': {'_id': ObjectId(id_to_use), "org_id": org_id}
+            },
+            {
+                '$lookup': {
+                    'from': 'apicalls',
+                    'localField': 'function_ids', 
+                    'foreignField': '_id',
+                    'as': 'apiCalls'
+                }
+            },
+            {
+                '$addFields': {
+                    '_id': {'$toString': '$_id'},
+                    'function_ids': {
+                        '$map': {
+                            'input': '$function_ids',
+                            'as': 'fid',
+                            'in': {'$toString': '$$fid'}
+                        }
+                    },
+                    'apiCalls': {
+                        '$arrayToObject': {
+                            '$map': {
+                                'input': '$apiCalls',
+                                'as': 'api_call',
+                                'in': {
+                                    'k': {'$toString': '$$api_call._id'},
+                                    'v': {
+                                        '$mergeObjects': [
+                                            '$$api_call',
+                                            {
+                                                '_id': {'$toString': '$$api_call._id'},
+                                                'bridge_ids': {
+                                                    '$map': {
+                                                        'input': '$$api_call.bridge_ids',
+                                                        'as': 'bid',
+                                                        'in': {'$toString': '$$bid'}
+                                                    }
+                                                }
+                                            }
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        ]
+        
+        result = await model.aggregate(pipeline).to_list(length=None)
+        
+        if not result:
+            return {
+                'success': False,
+                'error': 'No matching records found'
+            }
+        
+        return {
+            'success': True,
+            'bridges': result[0]
+        }
+    except Exception as error:
+        print(error)
+        return {
+            'success': False,
+            'error': "something went wrong!!"
+        }     
+
+async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None):
     try:
         model = version_model if version_id else configurationModel
         id_to_use = ObjectId(version_id) if version_id else ObjectId(bridge_id)
