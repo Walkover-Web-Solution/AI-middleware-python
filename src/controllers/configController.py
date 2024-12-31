@@ -290,7 +290,6 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
         apikey_object_id = body.get('apikey_object_id')
         variables_path = body.get('variables_path')
         cache_key = f"{version_id}"
-        await delete_in_cache(cache_key)
         gpt_memory = body.get('gpt_memory')
         gpt_memory_context = body.get('gpt_memory_context')
         user_id = request.state.profile['user']['id']
@@ -401,6 +400,7 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
         await add_bulk_user_entries(user_history)
         
         if result.get("success"):
+            await delete_in_cache(cache_key)
             return Helper.response_middleware_for_bridge({
                 "success": True,
                 "message": "Bridge Updated successfully",
