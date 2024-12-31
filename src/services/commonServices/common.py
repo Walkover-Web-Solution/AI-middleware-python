@@ -103,7 +103,7 @@ async def chat(request_body):
             })
             if result.get('modelResponse') and result['modelResponse'].get('data'):
                 result['modelResponse']['data']['message_id'] = parsed_data['message_id']
-        asyncio.create_task(process_background_tasks(parsed_data, result))
+            asyncio.create_task(process_background_tasks(parsed_data, result))
         return JSONResponse(status_code=200, content={"success": True, "response": result["modelResponse"]})
     except Exception as error:
         traceback.print_exc()

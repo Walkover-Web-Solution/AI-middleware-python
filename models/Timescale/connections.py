@@ -26,10 +26,9 @@ retry_strategy = {
 # Function to test database connection
 def init_dbservice():
     try:
-        print('Connecting to the database...')
         with engine.connect() as connection:
             connection.execute(sa.text("SELECT 1"))
-        print('Connected to the database.')
+        print('Connected to the Timescale database.')
     except Exception as error:
         print('Unable to connect to the database:', error)
 
