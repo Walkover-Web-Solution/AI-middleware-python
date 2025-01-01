@@ -1,6 +1,5 @@
 import json
 from fastapi import FastAPI
-from fastapi.background import BackgroundTasks
 from fastapi.responses import JSONResponse
 import traceback
 from ...db_services import metrics_service as metrics_service
@@ -8,12 +7,11 @@ import pydash as _
 from ..utils.helper import Helper
 import asyncio
 from .baseService.utils import sendResponse
-from ..utils.ai_middleware_format import Response_formatter, validateResponse, send_alert
+from ..utils.ai_middleware_format import Response_formatter, send_alert
 from ..utils.send_error_webhook import send_error_to_webhook
 import json
 from src.handler.executionHandler import handle_exceptions
 from models.mongo_connection import db
-from src.services.utils.gpt_memory import handle_gpt_memory
 from src.services.utils.common_utils import parse_request_body, initialize_timer, load_model_configuration, handle_pre_tools, handle_fine_tune_model,manage_threads, prepare_prompt, configure_custom_settings, build_service_params, process_background_tasks
 from src.services.utils.rich_text_support import process_chatbot_response
 app = FastAPI()
