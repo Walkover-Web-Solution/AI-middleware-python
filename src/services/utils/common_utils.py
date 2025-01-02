@@ -102,16 +102,6 @@ async def handle_pre_tools(parsed_data):
             parsed_data['variables']['pre_function'] = f"Error while calling prefunction. Error message: {pre_function_response.get('response')}"
         else:
             parsed_data['variables']['pre_function'] = pre_function_response.get('response')
-    
-    if parsed_data['pre_tools']:
-        pre_function_response = await axios_work(
-            parsed_data['pre_tools'].get('args', {}),
-            parsed_data['pre_tools'].get('name', '')
-        )
-        if pre_function_response.get('status') == 0:
-            parsed_data['variables']['pre_function'] = f"Error while calling prefunction. Error message: {pre_function_response.get('response')}"
-        else:
-            parsed_data['variables']['pre_function'] = pre_function_response.get('response')
 
 async def manage_threads(parsed_data):
     thread_id = parsed_data['thread_id']
