@@ -14,11 +14,11 @@ async def handle_gpt_memory(id, user, assistant, purpose, gpt_memory_context):
             None,
             {
                 "configuration" : {"conversation": [{"role": "user", "content": user}, {"role": "assistant", "content": content}]},
-                "user": "use the function to store the memory if the user message and history is related to the context or is important to store else don't call the function and ignore it.",
+                "user": "use the function to store the memory if the user message and history is related to the context or is important to store else don't call the function and ignore it. is purpose is not there than think its the begining of the conversation",
                 "bridge_id": "6752d9fc232e8659b2b65f0d",
                 "response_type": "text",
                 "variables": variables,
-                "thread_id" : id
+                # "thread_id" : id
             }
         )
         if not response.get('success', True):
