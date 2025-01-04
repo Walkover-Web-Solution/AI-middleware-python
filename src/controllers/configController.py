@@ -291,6 +291,7 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
         gpt_memory = body.get('gpt_memory')
         gpt_memory_context = body.get('gpt_memory_context')
         user_id = request.state.profile['user']['id']
+        version_description = body.get('version_description')
         update_fields = {}
         user_history = []
         if apikey_object_id is not None:
@@ -388,8 +389,10 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
                         'version_id' : version_id
                     }
                 )
-        if version_id is not None:
+        if version_id is not None and version_description is None:
             update_fields['is_drafted'] = True
+        if version_description is not None:
+           update_fields['version_description'] = version_description
         await update_bridge(bridge_id=bridge_id, update_fields=update_fields, version_id=version_id) # todo :: add transaction
         result = await get_bridges_with_tools(bridge_id, org_id, version_id)
         await add_bulk_user_entries(user_history)
