@@ -79,7 +79,6 @@ async def updates_api(request: Request, bridge_id: str):
     try:
         body = await request.json()
         version_id = body.get('version_id')
-        cache_key = f"{version_id}"
         org_id = request.state.org_id if hasattr(request.state, 'org_id') else None
         pre_tools = body.get('pre_tools')
 
@@ -93,12 +92,11 @@ async def updates_api(request: Request, bridge_id: str):
     
         data_to_update = {}
         data_to_update['pre_tools'] = pre_tools
-        result = await update_bridge(bridge_id, data_to_update, version_id, cache_key)
+        result = await update_bridge(bridge_id, data_to_update, version_id)
 
         result = await get_bridges_with_tools(bridge_id, org_id, version_id)
 
         if result.get("success"):
-            await delete_in_cache(cache_key)
             return Helper.response_middleware_for_bridge({
                 "success": True,
                 "message": "Bridge Updated successfully",
