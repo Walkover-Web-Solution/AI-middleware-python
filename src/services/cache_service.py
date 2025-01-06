@@ -2,6 +2,7 @@ import json
 from typing import Union, List
 from config import Config
 from redis.asyncio import Redis
+from fastapi.responses import JSONResponse
 
 # Initialize the Redis client
 client = Redis.from_url(Config.REDIS_URI)  # Adjust these parameters as needed
@@ -33,7 +34,7 @@ async def delete_in_cache(identifiers: Union[str, List[str]]) -> bool:
     keys_to_delete = [f"{REDIS_PREFIX}{id}" for id in identifiers]
 
     try:
-        delete_count = client.delete(*keys_to_delete)
+        delete_count = await client.delete(*keys_to_delete)
         print(f"Deleted {delete_count} items from cache")
         return True
     except Exception as error:
@@ -54,4 +55,17 @@ async def verify_ttl(identifier: str) -> int:
         print(f"Error retrieving TTL from cache: {error}")
         return -1  # Indicating error
 
-__all__ = ['delete_in_cache', 'store_in_cache', 'find_in_cache', 'verify_ttl']
+async def clear_cache() -> JSONResponse:
+    try:
+        if client.ping():
+            await client.flushdb()
+            print("Cleared all items from cache")
+            return JSONResponse(status_code=200, content={"message": "Redis cleared successfully"})
+        else:
+            print("Redis client is not ready")
+            return JSONResponse(status_code=500, content={"message": "Redis client is not ready"})
+    except Exception as error:
+        print(f"Error clearing cache: {error}")
+        return JSONResponse(status_code=500, content={"message": f"Error clearing cache: {error}"})
+
+__all__ = ['delete_in_cache', 'store_in_cache', 'find_in_cache', 'verify_ttl', 'clear_cache']

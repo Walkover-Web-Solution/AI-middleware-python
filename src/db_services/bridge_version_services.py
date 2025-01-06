@@ -4,6 +4,7 @@ import traceback
 import json
 import asyncio
 from src.services.utils.apiservice import fetch
+from src.services.cache_service import delete_in_cache
 
 configurationModel = db["configurations"]
 version_model = db['configuration_versions']
@@ -159,6 +160,9 @@ async def publish(org_id, version_id):
                 "error": "Version data not found"
             }
         parent_id = str(get_version_data.get('parent_id'))
+        cache_key = f"{parent_id}"
+        await delete_in_cache(cache_key)
+
         if not parent_id:
             return {
                 "success": False,
