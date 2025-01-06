@@ -398,12 +398,11 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
             update_fields['is_drafted'] = True
         if version_description is not None:
            update_fields['version_description'] = version_description
-        await update_bridge(bridge_id=bridge_id, update_fields=update_fields, version_id=version_id) # todo :: add transaction
+        await update_bridge(bridge_id=bridge_id, update_fields=update_fields, version_id=version_id, cache_key=cache_key) # todo :: add transaction
         result = await get_bridges_with_tools(bridge_id, org_id, version_id)
         await add_bulk_user_entries(user_history)
         
         if result.get("success"):
-            await delete_in_cache(cache_key)
             return Helper.response_middleware_for_bridge({
                 "success": True,
                 "message": "Bridge Updated successfully",

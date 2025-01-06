@@ -1,8 +1,8 @@
 from models.mongo_connection import db
 from bson import ObjectId
-import traceback
 from ..services.cache_service import find_in_cache, store_in_cache
 import json
+from ..services.cache_service import delete_in_cache
 
 configurationModel = db["configurations"]
 apiCallModel = db['apicalls']
@@ -543,7 +543,7 @@ async def get_bridge_by_slugname(org_id, slug_name):
             'error': "something went wrong!!"
         }
 
-async def update_bridge(bridge_id = None, update_fields = None, version_id = None):
+async def update_bridge(bridge_id = None, update_fields = None, version_id = None, cache_key = None):
     try:
         model = version_model if version_id else configurationModel
         id_to_use = ObjectId(version_id) if version_id else ObjectId(bridge_id)
@@ -563,6 +563,7 @@ async def update_bridge(bridge_id = None, update_fields = None, version_id = Non
             updated_bridge['_id'] = str(updated_bridge['_id'])  # Convert ObjectId to string
             if 'function_ids' in updated_bridge and updated_bridge['function_ids'] is not None:
                 updated_bridge['function_ids'] = [str(fid) for fid in updated_bridge['function_ids']]  # Convert function_ids to string
+        await delete_in_cache(cache_key)
         return {
             'success': True,
             'result': updated_bridge
