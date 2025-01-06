@@ -1,8 +1,7 @@
 from models.mongo_connection import db
 from bson import ObjectId
-from ..services.cache_service import find_in_cache, store_in_cache
+from ..services.cache_service import find_in_cache, store_in_cache, delete_in_cache
 import json
-from ..services.cache_service import delete_in_cache
 
 configurationModel = db["configurations"]
 apiCallModel = db['apicalls']

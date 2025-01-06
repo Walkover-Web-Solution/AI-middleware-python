@@ -12,7 +12,6 @@ from bson import ObjectId
 from datetime import datetime, timezone
 from src.services.utils.getDefaultValue import get_default_values_controller
 from src.db_services.bridge_version_services import create_bridge_version
-from src.services.cache_service import delete_in_cache
 async def create_bridges_controller(request):
     try:
         bridges = await request.json()
