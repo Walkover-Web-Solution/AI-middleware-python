@@ -93,7 +93,7 @@ async def updates_api(request: Request, bridge_id: str):
     
         data_to_update = {}
         data_to_update['pre_tools'] = pre_tools
-        result = await update_bridge(bridge_id, data_to_update, version_id)
+        result = await update_bridge(bridge_id, data_to_update, version_id, cache_key)
 
         result = await get_bridges_with_tools(bridge_id, org_id, version_id)
 
