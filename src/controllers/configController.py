@@ -402,7 +402,6 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
         await add_bulk_user_entries(user_history)
         
         if result.get("success"):
-            await delete_in_cache(cache_key)
             return Helper.response_middleware_for_bridge({
                 "success": True,
                 "message": "Bridge Updated successfully",
