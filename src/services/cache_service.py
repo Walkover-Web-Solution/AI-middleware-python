@@ -55,9 +55,14 @@ async def verify_ttl(identifier: str) -> int:
         print(f"Error retrieving TTL from cache: {error}")
         return -1  # Indicating error
 
-async def clear_cache() -> JSONResponse:
+async def clear_cache(request) -> JSONResponse:
     try:
-        if client.ping():
+        body = await request.json()
+        id = body.get('id')
+        if id:
+            await delete_in_cache(id)
+            return JSONResponse(status_code=200, content={"message": "Redis Key cleared successfully"})
+        elif client.ping():
             # Scan for keys with the specific prefix
             cursor = b'0'
             while cursor:
