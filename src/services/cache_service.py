@@ -58,8 +58,13 @@ async def verify_ttl(identifier: str) -> int:
 async def clear_cache() -> JSONResponse:
     try:
         if client.ping():
-            await client.flushdb()
-            print("Cleared all items from cache")
+            # Scan for keys with the specific prefix
+            cursor = b'0'
+            while cursor:
+                cursor, keys = await client.scan(cursor=cursor, match=f"{REDIS_PREFIX}*")
+                if keys:
+                    await client.delete(*keys)
+            print("Cleared all items with prefix from cache")
             return JSONResponse(status_code=200, content={"message": "Redis cleared successfully"})
         else:
             print("Redis client is not ready")
