@@ -4,5 +4,5 @@ router = APIRouter()
 
 
 @router.delete('/redis')
-async def clear_redis_cache():
-    return await clear_cache()
+async def clear_redis_cache(request: Request):
+    return await clear_cache(request)
