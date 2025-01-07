@@ -288,6 +288,7 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
         apikey = body.get('apikey')
         apikey_object_id = body.get('apikey_object_id')
         variables_path = body.get('variables_path')
+        
         gpt_memory = body.get('gpt_memory')
         gpt_memory_context = body.get('gpt_memory_context')
         user_id = request.state.profile['user']['id']

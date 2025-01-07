@@ -82,7 +82,6 @@ async def updates_api(request: Request, bridge_id: str):
         body = await request.json()
         org_id = request.state.org_id if hasattr(request.state, 'org_id') else None
         pre_tools = body.get('pre_tools')
-
         if not all([pre_tools is not None, bridge_id, org_id]):
             raise HTTPException(status_code=400, detail="Required details must not be empty!!")
     
