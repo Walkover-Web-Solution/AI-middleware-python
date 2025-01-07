@@ -3,7 +3,6 @@ from bson import ObjectId
 from ..services.cache_service import find_in_cache, store_in_cache, delete_in_cache
 import json
 
-
 configurationModel = db["configurations"]
 apiCallModel = db['apicalls']
 templateModel = db['templates']
@@ -543,10 +542,11 @@ async def get_bridge_by_slugname(org_id, slug_name):
             'error': "something went wrong!!"
         }
 
-async def update_bridge(bridge_id = None, update_fields = None, version_id = None, cache_key = None):
+async def update_bridge(bridge_id = None, update_fields = None, version_id = None):
     try:
         model = version_model if version_id else configurationModel
         id_to_use = ObjectId(version_id) if version_id else ObjectId(bridge_id)
+        cache_key = f"{version_id if version_id else bridge_id}"
         updated_bridge = await model.find_one_and_update(
             {'_id': ObjectId(id_to_use)},
             {'$set': update_fields},
