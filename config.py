@@ -42,3 +42,4 @@ class Config:
     OPTIONS_APIKEY = os.getenv('OPTIONS_APIKEY')
     GCP_CREDENTIALS = os.getenv('GCP_CREDENTIALS')
     REDIS_URI = os.getenv('REDIS_URI')
+    TIMESCALE_SERVICE_URL = os.getenv('TIMESCALE_SERVICE_URL')

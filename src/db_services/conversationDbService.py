@@ -6,8 +6,10 @@ import asyncio
 import traceback
 from datetime import datetime
 from models.postgres.pg_models import Conversation, RawData, system_prompt_versionings, user_bridge_config_history
+from models.Timescale.timescale_models import Metrics_model
 
 pg = models['pg']
+timescale = models['timescale']
 
     
 def createBulk(conversations_data):
@@ -152,3 +154,14 @@ async def add_bulk_user_entries(entries):
         print(f"Error: {e}")
     finally:
         session.close()
+
+
+async def timescale_metrics(metrics_data) : 
+    session = timescale['session']()
+    try:
+        raws = [Metrics_model(**data) for data in metrics_data]
+        session.add_all(raws)
+        session.commit()
+    except Exception as e: 
+        session.rollback()
+        raise e
