@@ -607,3 +607,16 @@ async def get_apikey_creds(id):
             'success': False,
             'error': "something went wrong!!"
         }
+    
+async def update_apikey_creds(version_id):
+    try:
+        return await apikeyCredentialsModel.update_one(
+            {'_id': ObjectId(version_id)},
+            {'$set': {'version_ids': [version_id]}}
+        )
+    except Exception as error:
+        print(f"error: {error}")
+        return {
+            'success': False,
+            'error': "something went wrong!!"
+        }
