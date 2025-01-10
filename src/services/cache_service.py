@@ -25,7 +25,7 @@ async def find_in_cache(identifier: str) -> Union[str, None]:
         return None
 
 async def delete_in_cache(identifiers: Union[str, List[str]]) -> bool:
-    if not client.ping():
+    if not await client.ping():
         return False
     
     if isinstance(identifiers, str):
@@ -43,7 +43,7 @@ async def delete_in_cache(identifiers: Union[str, List[str]]) -> bool:
 
 async def verify_ttl(identifier: str) -> int:
     try:
-        if client.ping():
+        if await client.ping():
             key = f"{REDIS_PREFIX}{identifier}"
             ttl = await client.ttl(key)
             print(f"TTL for key {key} is {ttl} seconds")
@@ -62,7 +62,7 @@ async def clear_cache(request) -> JSONResponse:
         if id:
             await delete_in_cache(id)
             return JSONResponse(status_code=200, content={"message": "Redis Key cleared successfully"})
-        elif client.ping():
+        elif await client.ping():
             # Scan for keys with the specific prefix
             cursor = b'0'
             while cursor:
