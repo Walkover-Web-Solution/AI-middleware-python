@@ -19,7 +19,7 @@ async def get_default_values_controller(service, model, current_configuration):
                 elif current_configuration.get(key) == 'default':
                     default_values[key] = 'default'
                 else:
-                    default_values[key] = value.get('default', None) if key is 'model' else 'default'
+                    default_values[key] = value.get('default', None) if key == 'model' else 'default'
             
             return default_values
 

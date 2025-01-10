@@ -15,8 +15,8 @@ executor = ThreadPoolExecutor(max_workers= int(Config.max_workers) or 10)
 
 async def auth_and_rate_limit(request: Request):
     await jwt_middleware(request)
-    await rate_limit(request,key_path='body.bridge_id' , points=100)
-    await rate_limit(request,key_path='body.thread_id', points=20)
+    # await rate_limit(request,key_path='body.bridge_id' , points=100)
+    # await rate_limit(request,key_path='body.thread_id', points=20)
 
 @router.post('/chat/completion', dependencies=[Depends(auth_and_rate_limit)])
 async def chat_completion(request: Request, db_config: dict = Depends(add_configuration_data_to_body)):
