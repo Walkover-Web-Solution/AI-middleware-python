@@ -79,7 +79,7 @@ async def bloking():
                 "api_result": result
             })
     except Exception as e:
-        return JSONResponse(status_code=500, content={
+        return JSONResponse(status_code=400, content={
             "status": "Error",
             "error": str(e)
         })

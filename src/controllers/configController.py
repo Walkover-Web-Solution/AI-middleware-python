@@ -163,7 +163,7 @@ async def get_all_bridges(request):
 
             })
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e))
 async def get_all_service_models_controller(service):
     try:
         service = service.lower()
