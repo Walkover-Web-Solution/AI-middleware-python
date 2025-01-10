@@ -19,6 +19,8 @@ from src.services.utils.logger import logger
 from src.routes.bridge_version_routes import router as bridge_version
 from src.routes.image_process_routes import router as image_process_routes
 from src.routes.utils_routes import router as utils_routes
+from src.services.utils.utils import healthcheck
+
 
 async def consume_messages_in_executor():
     await queue_obj.consume_messages()
@@ -61,10 +63,8 @@ app.add_middleware(
 
 # Healthcheck route
 @app.get("/healthcheck")
-async def healthcheck():
-    return JSONResponse(status_code=200, content={
-            "status": "OK running good... v1.2",
-    })
+async def healthcheckConnection():
+    return await healthcheck()
             
 
 @app.get("/5-sec")
