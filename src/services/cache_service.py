@@ -10,9 +10,17 @@ client = Redis.from_url(Config.REDIS_URI)  # Adjust these parameters as needed
 REDIS_PREFIX = 'AIMIDDLEWARE_'
 DEFAULT_REDIS_TTL = 172800  # 2 days
 
+from datetime import datetime
+
+def default_serializer(obj):
+    if isinstance(obj, datetime):
+        return obj.isoformat()
+    raise TypeError(f"Type {type(obj)} not serializable")
+
 async def store_in_cache(identifier: str, data: dict, ttl: int = DEFAULT_REDIS_TTL) -> bool:
     try:
-        return await client.set(f"{REDIS_PREFIX}{identifier}", json.dumps(data), ex=int(ttl))
+        serialized_data = json.dumps(data, default=default_serializer)
+        return await client.set(f"{REDIS_PREFIX}{identifier}", serialized_data, ex=int(ttl))
     except Exception as e:
         print(f"Error storing in cache: {e}")
         return False

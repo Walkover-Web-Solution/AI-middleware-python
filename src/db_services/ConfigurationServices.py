@@ -141,7 +141,7 @@ async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None)
         cache_key = f"{version_id or bridge_id}"
         
         # Attempt to retrieve data from Redis cache
-        cached_data = await find_in_cache(cache_key)
+        cached_data = None #await find_in_cache(cache_key)
         if cached_data:
             # Deserialize the cached JSON data
             cached_result = json.loads(cached_data)
