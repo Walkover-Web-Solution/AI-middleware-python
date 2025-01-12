@@ -7,7 +7,7 @@ apiCallModel = db['apicalls']
 # from src.services.commonServices.generateToken import generateToken
 # from src.configs.modelConfiguration import ModelsConfig
 
-async def getConfiguration(configuration, service, bridge_id, apikey, template_id=None, variables = {}, org_id="", variables_path = None, version_id=None):
+async def getConfiguration(configuration, service, bridge_id, apikey, template_id=None, variables = {}, org_id="", variables_path = None, version_id=None, extra_tools=[]):
     RTLayer = False
     bridge = None
     result = await ConfigurationService.get_bridges_with_tools_and_apikeys(bridge_id = bridge_id, org_id = org_id, version_id=version_id)
@@ -48,6 +48,10 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
         names.append(api_data.get("function_name", api_data.get("endpoint")))
         tools.append(format)
 
+    for tool in extra_tools:
+        if isinstance(tool, dict):
+            tools.append(tool)
+            names.append(tool.get('name'))
     configuration.pop('tools', None)
     configuration['tools'] = tools
     service = service or (result.get('bridges', {}).get('service', '').lower())
