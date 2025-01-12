@@ -48,7 +48,10 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
         names.append(api_data.get("function_name", api_data.get("endpoint")))
         tools.append(format)
 
-    tools.extend([tool for tool in extra_tools if isinstance(tool, dict)])
+    for tool in extra_tools:
+        if isinstance(tool, dict):
+            tools.append(tool)
+            names.append(tool.get('name'))
     configuration.pop('tools', None)
     configuration['tools'] = tools
     service = service or (result.get('bridges', {}).get('service', '').lower())
