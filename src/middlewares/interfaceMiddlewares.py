@@ -124,7 +124,7 @@ async def reset_chatBot(request: Request, botId: str):
     purpose = body.get("purpose")
     
     channelId = f"{botId}{thread_id.strip() if thread_id and thread_id.strip() else userId}{sub_thread_id.strip() if sub_thread_id and sub_thread_id.strip() else userId}"
-    
+    channelId = channelId.replace(" ", "_")
     bridge_response = await ConfigurationServices.get_bridge_by_slugname(org_id, slugName)
     bridges = bridge_response['bridges'] if bridge_response['success'] else {}
     if not bridges: 
