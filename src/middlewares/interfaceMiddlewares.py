@@ -26,7 +26,7 @@ async def send_data_middleware(request: Request, botId: str):
             return JSONResponse(status_code=400, content={'error':"Message cannot be null"})
 
         channelId = f"{chatBotId}{threadId.strip() if threadId and threadId.strip() else userId}{subThreadId.strip() if subThreadId and subThreadId.strip() else userId}"
-
+        channelId = channelId.replace(" ", "_")
         bridge_response = await ConfigurationServices.get_bridge_by_slugname(org_id, slugName)
         bridges = bridge_response['bridges'] if bridge_response['success'] else {}
 
@@ -124,7 +124,7 @@ async def reset_chatBot(request: Request, botId: str):
     purpose = body.get("purpose")
     
     channelId = f"{botId}{thread_id.strip() if thread_id and thread_id.strip() else userId}{sub_thread_id.strip() if sub_thread_id and sub_thread_id.strip() else userId}"
-    
+    channelId = channelId.replace(" ", "_")
     bridge_response = await ConfigurationServices.get_bridge_by_slugname(org_id, slugName)
     bridges = bridge_response['bridges'] if bridge_response['success'] else {}
     if not bridges: 
