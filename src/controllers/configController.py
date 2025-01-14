@@ -257,15 +257,15 @@ async def get_all_service_models_controller(service):
         elif service == service_name['groq']:
             return {
                 "chat" : {
-                    "llama-3.1-405b-reasoning" : restructure_configuration(model_configuration.llama_3_1_405b_reasoning()),
+                    # "llama-3.1-405b-reasoning" : restructure_configuration(model_configuration.llama_3_1_405b_reasoning()),
                     "llama-3.3-70b-versatile" : restructure_configuration(model_configuration.llama_3_3_70b_versatile()),
                     "llama-3.1-8b-instant" : restructure_configuration(model_configuration.llama_3_1_8b_instant()),
-                    "llama3-groq-70b-8192-tool-use-preview" : restructure_configuration(model_configuration.llama3_groq_70b_8192_tool_use_preview()),
-                    "llama3-groq-8b-8192-tool-use-preview" : restructure_configuration(model_configuration.llama3_groq_8b_8192_tool_use_preview()),
+                    # "llama3-groq-70b-8192-tool-use-preview" : restructure_configuration(model_configuration.llama3_groq_70b_8192_tool_use_preview()),
+                    # "llama3-groq-8b-8192-tool-use-preview" : restructure_configuration(model_configuration.llama3_groq_8b_8192_tool_use_preview()),
                     "llama3-70b-8192" : restructure_configuration(model_configuration.llama3_70b_8192()),
                     "llama3-8b-8192" : restructure_configuration(model_configuration.llama3_8b_8192()),
                     "mixtral-8x7b-32768" : restructure_configuration(model_configuration.mixtral_8x7b_32768()),
-                    "gemma-7b-it" : restructure_configuration(model_configuration.gemma_7b_it()),
+                    # "gemma-7b-it" : restructure_configuration(model_configuration.gemma_7b_it()),
                     "gemma2-9b-it" : restructure_configuration(model_configuration.gemma2_9b_it()),
                     "llama-guard-3-8b" : restructure_configuration(model_configuration.llama_guard_3_8b())
                 }
