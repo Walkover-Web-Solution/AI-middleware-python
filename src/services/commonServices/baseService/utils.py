@@ -74,7 +74,9 @@ def transform_required_params_to_required(properties, variables={}, variables_pa
             items = value.get('items', {})
             item_type = items.get('type')
             if item_type == 'object':
-                transformed_properties[key]['items'] = transform_required_params_to_required( items.get('properties', {}), variables, variables_path, function_name, key, value)
+                nextedObject = {'properties': transform_required_params_to_required( items.get('properties', {}), variables, variables_path, function_name, key, value)}
+                nextedObject = {**nextedObject, "required": items.get('required', [])}
+                transformed_properties[key]['items'] = nextedObject
             elif item_type == 'array':
                 transformed_properties[key]['items'] = transform_required_params_to_required( items.get('items', {}), variables, variables_path, function_name, key, value)
     return transformed_properties
