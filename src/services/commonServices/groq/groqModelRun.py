@@ -22,10 +22,10 @@ async def groq_runmodel(configuration, apiKey, execution_time_logs, bridge_id, t
         # Define how to get the alternative configuration
         def get_alternative_config(config):
             current_model = config.get('model', '')
-            if current_model == 'default-groq-model':
-                config['model'] = 'alternative-groq-model'
+            if current_model == 'llama3-8b-8192':
+                config['model'] = 'llama3-70b-8192'
             else:
-                config['model'] = 'default-groq-model'
+                config['model'] = 'llama3-8b-8192'
             return config
 
         # Execute with retry
