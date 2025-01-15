@@ -1,93 +1,54 @@
-from openai import AsyncOpenAI 
-import asyncio
+from openai import AsyncOpenAI
 import traceback
-import json
 import copy
 from ...utils.ai_middleware_format import send_alert
+from ...utils.helper import Helper
 
-async def runModel(configuration, apiKey, execution_time_logs, bridge_id, timer, message_id=None, org_id= None):
+async def runModel(configuration, apiKey, execution_time_logs, bridge_id, timer, message_id=None, org_id=None):
     try:
-        # async client
         openAI = AsyncOpenAI(api_key=apiKey)
-        # Function to execute the API call 
+
+        # Function to execute the API call
         async def api_call(config):
             try:
                 chat_completion = await openAI.chat.completions.create(**config)
                 return {'success': True, 'response': chat_completion.to_dict()}
             except Exception as error:
-                return {'success': False, 'error': str(error)}
+                return {'success': False, 'error': str(error), 'status_code': error.status_code if hasattr(error, 'status_code') else None}
 
-    #   Start timer  
+        # Start timer
         timer.start()
 
         # Start the first API call
         first_config = copy.deepcopy(configuration)
-        first_task = asyncio.create_task(api_call(first_config))
+        first_result = await api_call(first_config)
 
-        # Wait for the first task to complete or 40 seconds, whichever comes first
-        done, pending = await asyncio.wait(
-            [first_task],
-            timeout = 120 if configuration['model'] in ['o1-preview', 'o1-mini'] else 60,
-            return_when=asyncio.FIRST_COMPLETED
-        )
-
-        if first_task in done:
-            # First task completed within 60 seconds
-            result = first_task.result()
-            execution_time_logs[len(execution_time_logs) + 1] = timer.stop("OpenAI chat completion")
-            print("First API call completed within 60 seconds.")
-            if result['success']:
-                # print(11, json.dumps(first_config), 22, bridge_id)
-                pass
-            else:
-                print("runmodel error=>", result['error'])
-                traceback.print_exc()
-            for task in pending:
-                task.cancel()
-            return result
+        if first_result['success']:
+            if not Helper.check_space_issue(first_result):
+                execution_time_logs[len(execution_time_logs) + 1] = timer.stop("OpenAI chat completion")
+                print("First API call completed successfully.")
+                return first_result
         else:
-            await send_alert(data={"configuration": configuration,"message_id":message_id, "bridge_id": bridge_id, "org_id":org_id, "message": "retry mechanism started 2nd time"}),
-            # First task did not complete within 60 seconds
-            print("First API call did not complete within 60 seconds. Starting second API call.")
-            # Start the second API call with 'gpt-4' model
+            print("First API call failed with error:", first_result['error'])
+            traceback.print_exc()
+            if Helper.check_error_status_code(first_result['status_code']):
+                return first_result
+
+            # Retry with a different model
+            await send_alert(data={"configuration": configuration, "message_id": message_id, "bridge_id": bridge_id, "org_id": org_id, "message": "retry mechanism started due to error"})
             second_config = copy.deepcopy(configuration)
             second_config['model'] = 'o1-preview' if configuration['model'] == 'o1-preview' else ('gpt-4o-2024-08-06' if configuration['model'] == 'gpt-4o' else 'gpt-4o')
-            second_task = asyncio.create_task(api_call(second_config))
+            second_result = await api_call(second_config)
 
-            # Wait for either the first or second task to complete
-            tasks = [first_task, second_task]
-            done, pending = await asyncio.wait(
-                tasks,
-                timeout=240,
-                return_when=asyncio.FIRST_COMPLETED
-            )
-
-            # Get the result from the task that completed first
-            for task in done:
-                result = task.result()
-                execution_time_logs[len(execution_time_logs) + 1] = timer.stop("OpenAI chat completion")
-                if task == first_task:
-                    print("First API call completed first.")
-                    config_used = first_config
-                else:
-                    print("Second API call completed first.")
-                    config_used = second_config
-
-                if result['success']:
-                    print(11, json.dumps(config_used), 22, bridge_id)
-                else:
-                    print("runmodel error=>", result['error'])
-                    traceback.print_exc()
-                for task in pending:
-                    task.cancel()
-                return result
-
-            # If no tasks completed successfully
             execution_time_logs[len(execution_time_logs) + 1] = timer.stop("OpenAI chat completion")
-            return {
-                'success': False,
-                'error': 'No API call completed successfully.'
-            }
+            if second_result['success']:
+                print("Second API call completed successfully.")
+                return second_result
+            else:
+                print("Second API call failed with error:", second_result['error'])
+                traceback.print_exc()
+                return second_result
+
     except Exception as error:
         execution_time_logs[len(execution_time_logs) + 1] = timer.stop("OpenAI chat completion")
         print("runmodel error=>", error)
