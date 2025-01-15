@@ -220,7 +220,7 @@ def build_service_params(parsed_data, custom_config, model_output_config, thread
 
 async def process_background_tasks(parsed_data, result):
     tasks = [
-            sendResponse(parsed_data['response_format'], result["modelResponse"], success=True),
+            sendResponse(parsed_data['response_format'], result["modelResponse"], success=True, variables=parsed_data.get('variables',{})),
             metrics_service.create([parsed_data['usage']], result["historyParams"], parsed_data['version_id']),
             validateResponse(final_response=result['modelResponse'], configration=parsed_data['configuration'], bridgeId=parsed_data['bridge_id'], message_id=parsed_data['message_id'], org_id=parsed_data['org_id'])
         ]
