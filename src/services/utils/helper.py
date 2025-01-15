@@ -229,16 +229,4 @@ class Helper:
                 usage["expectedCost"] += usage['cachedReadInputTokens'] * (token_cost['caching_write_cost'] / permillion)
 
         return usage
-    
-    async def check_error_status_code(error_code):
-        if error_code in ['401']:
-            return True
-        return False
-    
-    async def check_space_issue(response):
-        content = response.get("choices", [{}])[0].get("message", {}).get("content", None),
-        parsed_data = content.replace(" ", "").replace("\n", "")
-        if(parsed_data == '' and content):
-            return True
-        return False
 
