@@ -62,7 +62,8 @@ async def create_bridges_controller(request):
             "service": service,
             "bridgeType": bridgeType,
             "org_id" : org_id,
-            "status": status
+            "status": status,
+            "gpt_memory" : True
         })
         if result.get("success"):
             create_version = await create_bridge_version(result['bridge'])
