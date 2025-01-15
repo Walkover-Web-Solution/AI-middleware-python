@@ -229,3 +229,4 @@ class Helper:
                 usage["expectedCost"] += usage['cachedReadInputTokens'] * (token_cost['caching_write_cost'] / permillion)
 
         return usage
+
