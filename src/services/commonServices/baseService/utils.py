@@ -152,7 +152,6 @@ async def send_message(cred, data ):
 
 
 async def sendResponse(response_format, data, success = False, variables={}):
-    data = {**data,'variables':variables}
     data_to_send = {
         'response' if success else 'error': data,
         'success': success
@@ -162,6 +161,7 @@ async def sendResponse(response_format, data, success = False, variables={}):
             case 'RTLayer' : 
                 return await send_message(cred = response_format['cred'], data=data_to_send)
             case 'webhook':
+                data_to_send['variables'] = variables
                 return await send_request(**response_format['cred'], method='POST', data=data_to_send)
     except Exception as e:
         print("error sending request", e)

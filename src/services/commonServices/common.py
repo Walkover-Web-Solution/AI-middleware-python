@@ -138,7 +138,7 @@ async def chat(request_body):
                     "message_id": parsed_data['message_id']
                     }, parsed_data['version_id']),
                 # Only send the second response if the type is not 'default'
-                sendResponse(parsed_data['response_format'], result.get("modelResponse", {"error":str(error)}), variables=parsed_data['variables']) if parsed_data['response_format']['type'] != 'default' else None,
+                sendResponse(parsed_data['response_format'], result.get("modelResponse", str(error)), variables=parsed_data['variables']) if parsed_data['response_format']['type'] != 'default' else None,
                 send_alert(data={"configuration": parsed_data['configuration'], "error": str(error), "message_id": parsed_data['message_id'], "bridge_id": parsed_data['bridge_id'], "message": "Exception for the code", "org_id": parsed_data['org_id']}),
             ]
             # Filter out None values
