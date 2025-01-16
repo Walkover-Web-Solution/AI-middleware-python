@@ -10,7 +10,7 @@ async def groq_runmodel(configuration, apiKey, execution_time_logs, bridge_id, t
         # Define the API call function
         async def api_call(config):
             try:
-                response = await groq_client.messages.create(**config)
+                response = await groq_client.chat.completions.create(**configuration)
                 return {'success': True, 'response': response.to_dict()}
             except Exception as error:
                 return {

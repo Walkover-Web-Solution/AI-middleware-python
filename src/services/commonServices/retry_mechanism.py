@@ -65,7 +65,7 @@ async def execute_with_retry(
             'error': str(e)
         }
     
-async def check_error_status_code(error_code):
+def check_error_status_code(error_code):
     if error_code in ['401']:
         return True
     return False
