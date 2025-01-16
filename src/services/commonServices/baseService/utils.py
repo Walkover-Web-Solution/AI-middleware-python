@@ -152,7 +152,7 @@ async def send_message(cred, data ):
 
 
 async def sendResponse(response_format, data, success = False, variables={}):
-    data = {**data,variables:variables}
+    data = {**data,'variables':variables}
     data_to_send = {
         'response' if success else 'error': data,
         'success': success
