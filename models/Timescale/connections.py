@@ -28,7 +28,7 @@ def init_dbservice():
     try:
         with engine.connect() as connection:
             connection.execute(sa.text("SELECT 1"))
-        print('Connected to the Timescale database.')
+        print('Connected to the Timescale database Yoooooooo.')
     except Exception as error:
         print('Unable to connect to the database:', error)
 

@@ -43,13 +43,14 @@ async def chat(request_body):
         thread_info = await manage_threads(parsed_data)
 
         # Step 6: Prepare Prompt, Variables and Memory
-        memory, missing_vars = await prepare_prompt(parsed_data, thread_info, model_config, custom_config)
+        # memory, missing_vars = await prepare_prompt(parsed_data, thread_info, model_config, custom_config)
+        memory, missing_vars = None, None
         
         # Handle missing variables
-        if missing_vars:
-            await send_error_to_webhook(
-                parsed_data['bridge_id'], parsed_data['org_id'], missing_vars, error_type='Variable'
-            )
+        # if missing_vars:
+        #     await send_error_to_webhook(
+        #         parsed_data['bridge_id'], parsed_data['org_id'], missing_vars, error_type='Variable'
+        #     )
         
         # Step 7: Configure Custom Settings
         custom_config = await configure_custom_settings(
