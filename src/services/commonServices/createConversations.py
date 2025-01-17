@@ -98,6 +98,41 @@ class ConversationService:
         except Exception as e:
             print("create conversation error=>", e)
             raise HTTPException(status_code=500, detail="Internal Server Error")
+
+    def createGroqConversation(conversation, memory):
+        try:
+            threads = []
+            
+            # If memory is provided, add it as the first message
+            if memory is not None:
+                threads.append({'role': 'user', 'content': memory})
+            
+            # Loop through the conversation to build the message threads
+            for message in conversation or []:
+                if message['role'] not in ["tools_call", "tool"]:  # Skip tool-related roles
+                    # Ensure content is a string (no image URLs, handle properly)
+                    content = message['content']
+                    
+                    # If the role is 'assistant', ensure the content is a plain string
+                    if message['role'] == 'assistant':
+                        threads.append({'role': message['role'], 'content': content})
+                    else:
+                        # For other roles, wrap the content as 'text'
+                        threads.append({'role': message['role'], 'content': [{"type": "text", "text": content}]})
+            
+            # Return the constructed messages in the required format for Groq
+            return {
+                'success': True,
+                'messages': threads
+            }
+        
+        except Exception as e:
+            traceback.print_exc()
+            print("create conversation error=>", e)
+            raise ValueError(f"Error while creating conversation: {e}")
+
+
+
 # Example usage:
 # result = ConversationService.create_openai_conversation(conversation)
 # result = ConversationService.create_gemini_conversation(conversation)

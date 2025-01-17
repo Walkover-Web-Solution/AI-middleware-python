@@ -30,7 +30,7 @@ async def axios_work(data, function_name):
         }
         
     except Exception as err:
-        print("Error calling function=>",function_name, err)
+        print("Error calling function=>",function_name,  err)
         return {
             'response': str(err),
             'metadata':{
@@ -151,7 +151,7 @@ async def send_message(cred, data ):
         print('Unexpected error=>', e)
 
 
-async def sendResponse(response_format, data, success = False):
+async def sendResponse(response_format, data, success = False, variables={}):
     data_to_send = {
         'response' if success else 'error': data,
         'success': success
@@ -161,6 +161,7 @@ async def sendResponse(response_format, data, success = False):
             case 'RTLayer' : 
                 return await send_message(cred = response_format['cred'], data=data_to_send)
             case 'webhook':
+                data_to_send['variables'] = variables
                 return await send_request(**response_format['cred'], method='POST', data=data_to_send)
     except Exception as e:
         print("error sending request", e)
