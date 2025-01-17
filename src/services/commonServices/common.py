@@ -120,7 +120,8 @@ async def chat(request_body):
                 "success": False,
                 "error": str(error),
                 "apikey_object_id": params['apikey_object_id'],
-                "expectedCost" : parsed_data['tokens'].get('expectedCost',0)
+                "expectedCost" : parsed_data['tokens'].get('expectedCost',0),
+                "variables" : parsed_data.get('variables') or {}
             })
             # Combine the tasks into a single asyncio.gather call
             tasks = [

@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from models.index import combined_models
 from sqlalchemy import and_
 from ..controllers.conversationController import savehistory
@@ -67,7 +67,7 @@ async def create(dataset, history_params, version_id):
                 'created_at': datetime.now(),
                 'chat_id': data_object.get('chat_id'),
                 'message_id': data_object.get('message_id'),
-                'variables': data_object.get('variables', {}),
+                'variables': data_object.get('variables') or {},
                 'is_present': 'prompt' in data_object,
                 'id' : str(uuid.uuid4())
             }
