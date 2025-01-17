@@ -7,7 +7,7 @@ router = APIRouter()
 async def auth_and_rate_limit(request: Request):
     await chat_bot_auth(request)
     await rate_limit(request,key_path='body.slugName' , points=100)
-    await rate_limit(request,key_path='body.thread_id', points=20)
+    await rate_limit(request,key_path='body.threadId', points=20)
 
 @router.post("/{botId}/sendMessage", dependencies=[Depends(auth_and_rate_limit)])
 async def send_message(request: Request, botId: str):
