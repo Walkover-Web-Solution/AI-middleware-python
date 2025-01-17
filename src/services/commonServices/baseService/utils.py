@@ -30,7 +30,7 @@ async def axios_work(data, function_name):
         }
         
     except Exception as err:
-        print("Error calling function=>", err)
+        print("Error calling function=>",function_name,  err)
         return {
             'response': str(err),
             'metadata':{
