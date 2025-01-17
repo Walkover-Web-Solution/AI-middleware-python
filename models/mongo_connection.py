@@ -9,6 +9,6 @@ try:
         tlsCAFile=certifi.where()  # Use 'tlsCAFile' instead of 'ssl_ca_certs'
     )
     db = client[Config.MONGODB_DATABASE_NAME]
-    print('connected to Mongo...')
+    print('connected to Mongo... Yooooo.....')
 except errors.ConnectionFailure as e:  # Use 'ConnectionFailure' instead of 'ConnectionError'
     print(f"Could not connect to MongoDB: {e}")
