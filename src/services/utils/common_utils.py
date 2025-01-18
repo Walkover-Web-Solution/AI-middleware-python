@@ -17,6 +17,7 @@ from ..commonServices.baseService.utils import sendResponse
 from ...db_services import metrics_service as metrics_service
 from ..utils.ai_middleware_format import validateResponse
 from ..utils.gpt_memory import handle_gpt_memory
+from datetime import datetime
 
 def parse_request_body(request_body):
     body = request_body.get('body', {})
@@ -67,6 +68,15 @@ def parse_request_body(request_body):
         "memory" : ""
 
     }
+
+def add_default_variables(variables = {}):
+    current_time = datetime.now()
+    variables['current_time_and_date'] = current_time.strftime("%H:%M:%S") + '_' + current_time.strftime("%Y-%m-%d")
+    return variables
+
+def add_default_template(prompt):
+    prompt += ' \ncurrent_time_and_date : {{current_time_and_date}}'
+    return prompt
 
 def initialize_timer(state: Dict[str, Any]) -> Timer:
     timer_obj = Timer()
