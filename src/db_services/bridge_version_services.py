@@ -5,6 +5,7 @@ import json
 import asyncio
 from src.services.utils.apiservice import fetch
 from src.services.cache_service import delete_in_cache
+from src.db_services.ConfigurationServices import get_bridges_with_tools
 
 configurationModel = db["configurations"]
 version_model = db['configuration_versions']
@@ -152,13 +153,14 @@ async def get_version_with_tools(bridge_id, org_id):
     
 async def publish(org_id, version_id):
     try:
-        get_version_data = await version_model.find_one({'_id': ObjectId(version_id), 'org_id': org_id})
-        
-        if not get_version_data:
+        version_response = await get_bridges_with_tools(version_id = version_id, org_id = org_id)
+
+        if not version_response.get('success'):
             return {
                 "success": False,
                 "error": "Version data not found"
             }
+        get_version_data = version_response.get('bridges')
         parent_id = str(get_version_data.get('parent_id'))
         cache_key = f"{parent_id}"
         await delete_in_cache(cache_key)
@@ -175,11 +177,19 @@ async def publish(org_id, version_id):
                 "success": False,
                 "error": "Parent configuration not found"
             }
+        tool_description = {
+            "prompt": get_version_data.get("configuration", {}).get("prompt", ""),
+            "toolcall": {
+                api_call.get("endpoint_name", ""): api_call.get("description", "")
+                for api_call in get_version_data.get("apiCalls", {}).values()
+            }
+        }
         published_version_id = str(get_version_data['_id'])
         get_version_data.pop('_id', None)
         updated_configuration = {**parent_configuration, **get_version_data}
+        del updated_configuration['apiCalls']
         updated_configuration['published_version_id'] = published_version_id
-        asyncio.create_task(makeQuestion(parent_id, updated_configuration.get("configuration",{}).get("prompt","")))
+        asyncio.create_task(makeQuestion(parent_id, tool_description))
         await configurationModel.update_one(
             {'_id': ObjectId(parent_id)},
             {'$set': updated_configuration}

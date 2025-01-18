@@ -61,7 +61,7 @@ async def get_bridges_without_tools(bridge_id = None, org_id = None, version_id 
             'error': "something went wrong!!"
         }
     
-async def get_bridges_with_tools(bridge_id, org_id, version_id=None):
+async def get_bridges_with_tools(bridge_id = None, org_id = None, version_id=None):
     try:
         model = version_model if version_id else configurationModel
         id_to_use = ObjectId(version_id) if version_id else ObjectId(bridge_id)
