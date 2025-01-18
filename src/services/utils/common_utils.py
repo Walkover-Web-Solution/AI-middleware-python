@@ -71,11 +71,12 @@ def parse_request_body(request_body):
 
 def add_default_variables(variables = {}):
     current_time = datetime.now()
-    variables['time'] = current_time.strftime("%H:%M:%S")
-    variables['date'] = current_time.strftime("%Y-%m-%d")
+    variables['current_time_and_date'] = current_time.strftime("%H:%M:%S") + '_' + current_time.strftime("%Y-%m-%d")
     return variables
-    
 
+def add_default_template(prompt):
+    prompt += ' \ncurrent_time_and_date : {{current_time_and_date}}'
+    return prompt
 
 def initialize_timer(state: Dict[str, Any]) -> Timer:
     timer_obj = Timer()
