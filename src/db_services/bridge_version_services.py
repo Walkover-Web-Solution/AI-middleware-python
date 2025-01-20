@@ -152,8 +152,7 @@ async def get_version_with_tools(bridge_id, org_id):
     
 async def publish(org_id, version_id):
     try:
-        get_version_data = await version_model.find_one({'_id': ObjectId(version_id), 'org_id': org_id})
-        
+        get_version_data = await get_version_and_api_calls(org_id, version_id)
         if not get_version_data:
             return {
                 "success": False,
@@ -179,7 +178,7 @@ async def publish(org_id, version_id):
         get_version_data.pop('_id', None)
         updated_configuration = {**parent_configuration, **get_version_data}
         updated_configuration['published_version_id'] = published_version_id
-        asyncio.create_task(makeQuestion(parent_id, updated_configuration.get("configuration",{}).get("prompt","")))
+        asyncio.create_task(makeQuestion(parent_id, updated_configuration.get("configuration",{}).get("prompt",""), updated_configuration.get('functions')))
         await configurationModel.update_one(
             {'_id': ObjectId(parent_id)},
             {'$set': updated_configuration}
@@ -197,7 +196,9 @@ async def publish(org_id, version_id):
             "success": False,
             "error": str(e)
         }
-async def makeQuestion(parent_id, prompt):
+async def makeQuestion(parent_id, prompt, functions):
+    if functions: 
+        prompt += "\Functionalities available\n" + json.dumps(functions)
     response, headers = await fetch(url='https://proxy.viasocket.com/proxy/api/1258584/29gjrmh24/api/v2/model/chat/completion',method='POST',json_body= {"user": prompt,"bridge_id": "67459164ea7147ad4b75f92a"},headers = {'pauthkey': '1b13a7a038ce616635899a239771044c','Content-Type': 'application/json'})
     # Update the document in the configurationModel
     updated_configuration= {"starterQuestion": json.loads(response.get("response",{}).get("data",{}).get("content","{}")).get("questions",[])}
@@ -205,3 +206,38 @@ async def makeQuestion(parent_id, prompt):
         {'_id': ObjectId(parent_id)},
         {'$set': updated_configuration}
     )
+
+async def get_version_and_api_calls(org_id, version_id):
+    pipeline = [
+        {
+            '$match': {
+                '_id': ObjectId(version_id),
+                'org_id': org_id
+            }
+        },
+        {
+            '$lookup': {
+                'from': 'apicalls',
+                'localField': 'function_ids',
+                'foreignField': '_id',
+                'as': 'functions'
+            }
+        },
+        {
+            '$addFields': {
+                'functions': {
+                    '$map': {
+                        'input': '$functions',
+                        'as': 'function',
+                        'in': {
+                            'function_name': '$$function.function_name',
+                            'description': '$$function.description'
+                        }
+                    }
+                }
+            }
+        }
+    ]
+
+    result = await version_model.aggregate(pipeline).to_list(length=1)
+    return result[0] if result else None
