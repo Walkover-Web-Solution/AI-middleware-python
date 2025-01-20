@@ -212,38 +212,3 @@ async def makeQuestion(parent_id, prompt, functions):
         {'_id': ObjectId(parent_id)},
         {'$set': updated_configuration}
     )
-
-async def get_version_and_api_calls(org_id, version_id):
-    pipeline = [
-        {
-            '$match': {
-                '_id': ObjectId(version_id),
-                'org_id': org_id
-            }
-        },
-        {
-            '$lookup': {
-                'from': 'apicalls',
-                'localField': 'function_ids',
-                'foreignField': '_id',
-                'as': 'functions'
-            }
-        },
-        {
-            '$addFields': {
-                'functions': {
-                    '$map': {
-                        'input': '$functions',
-                        'as': 'function',
-                        'in': {
-                            'function_name': '$$function.function_name',
-                            'description': '$$function.description'
-                        }
-                    }
-                }
-            }
-        }
-    ]
-
-    result = await version_model.aggregate(pipeline).to_list(length=1)
-    return result[0] if result else None
