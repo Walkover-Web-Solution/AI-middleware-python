@@ -5,6 +5,7 @@ import json
 import asyncio
 from src.services.utils.apiservice import fetch
 from src.services.cache_service import delete_in_cache
+from .ConfigurationServices import get_bridges_with_tools
 
 configurationModel = db["configurations"]
 version_model = db['configuration_versions']
@@ -152,7 +153,7 @@ async def get_version_with_tools(bridge_id, org_id):
     
 async def publish(org_id, version_id):
     try:
-        get_version_data = await get_version_and_api_calls(org_id, version_id)
+        get_version_data = (await get_bridges_with_tools(None, org_id, version_id)).get("bridges")
         if not get_version_data:
             return {
                 "success": False,
@@ -178,7 +179,7 @@ async def publish(org_id, version_id):
         get_version_data.pop('_id', None)
         updated_configuration = {**parent_configuration, **get_version_data}
         updated_configuration['published_version_id'] = published_version_id
-        asyncio.create_task(makeQuestion(parent_id, updated_configuration.get("configuration",{}).get("prompt",""), updated_configuration.get('functions')))
+        asyncio.create_task(makeQuestion(parent_id, updated_configuration.get("configuration",{}).get("prompt",""), updated_configuration.get('apiCalls')))
         await configurationModel.update_one(
             {'_id': ObjectId(parent_id)},
             {'$set': updated_configuration}
@@ -198,7 +199,12 @@ async def publish(org_id, version_id):
         }
 async def makeQuestion(parent_id, prompt, functions):
     if functions: 
-        prompt += "\Functionalities available\n" + json.dumps(functions)
+        filtered_functions = [
+            {k: v for k, v in inner_dict.items() if k in {"function_name", "description"}}
+            for inner_dict in functions.values()
+        ]
+
+        prompt += "\nFunctionalities available\n" + json.dumps(filtered_functions)
     response, headers = await fetch(url='https://proxy.viasocket.com/proxy/api/1258584/29gjrmh24/api/v2/model/chat/completion',method='POST',json_body= {"user": prompt,"bridge_id": "67459164ea7147ad4b75f92a"},headers = {'pauthkey': '1b13a7a038ce616635899a239771044c','Content-Type': 'application/json'})
     # Update the document in the configurationModel
     updated_configuration= {"starterQuestion": json.loads(response.get("response",{}).get("data",{}).get("content","{}")).get("questions",[])}
