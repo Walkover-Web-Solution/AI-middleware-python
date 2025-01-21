@@ -74,10 +74,6 @@ def add_default_variables(variables = {}):
     variables['current_time_and_date'] = current_time.strftime("%H:%M:%S") + '_' + current_time.strftime("%Y-%m-%d")
     return variables
 
-def add_default_template(prompt):
-    prompt += ' \ncurrent_time_and_date : {{current_time_and_date}}'
-    return prompt
-
 def initialize_timer(state: Dict[str, Any]) -> Timer:
     timer_obj = Timer()
     timer_obj.defaultStart(state.get('timer', []))

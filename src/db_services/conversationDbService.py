@@ -148,7 +148,6 @@ async def add_bulk_user_entries(entries):
         user_history = [user_bridge_config_history(**data) for data in entries]
         session.add_all(user_history)
         session.commit()
-        print("Bulk entries added successfully!")
     except Exception as e:
         session.rollback()
         print(f"Error: {e}")

@@ -132,7 +132,7 @@ async def send_request(url, data, method, headers):
     try:
         return await fetch(url,method,headers,None, data)
     except Exception as e:
-        print('Unexpected error:', e)
+        print('Unexpected error:',url, e)
         return {'error': 'Unexpected error', 'details': str(e)}
     
 async def send_message(cred, data ):
