@@ -199,10 +199,9 @@ async def publish(org_id, version_id):
         }
 async def makeQuestion(parent_id, prompt, functions):
     if functions: 
-        filtered_functions = [
-            {k: v for k, v in inner_dict.items() if k in {"function_name", "description"}}
-            for inner_dict in functions.values()
-        ]
+        filtered_functions = {
+            function['endpoint_name']: function['description'] for function in functions.values()
+        }
 
         prompt += "\nFunctionalities available\n" + json.dumps(filtered_functions)
     response, headers = await fetch(url='https://proxy.viasocket.com/proxy/api/1258584/29gjrmh24/api/v2/model/chat/completion',method='POST',json_body= {"user": prompt,"bridge_id": "67459164ea7147ad4b75f92a"},headers = {'pauthkey': '1b13a7a038ce616635899a239771044c','Content-Type': 'application/json'})
