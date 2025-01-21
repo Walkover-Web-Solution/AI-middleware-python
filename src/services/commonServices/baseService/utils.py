@@ -30,7 +30,7 @@ async def axios_work(data, function_name):
         }
         
     except Exception as err:
-        print("Error calling function=>", err)
+        print("Error calling function=>",function_name,  err)
         return {
             'response': str(err),
             'metadata':{
@@ -75,7 +75,7 @@ def transform_required_params_to_required(properties, variables={}, variables_pa
             item_type = items.get('type')
             if item_type == 'object':
                 nextedObject = {'properties': transform_required_params_to_required( items.get('properties', {}), variables, variables_path, function_name, key, value)}
-                nextedObject = {**nextedObject, "required": items.get('required', [])}
+                nextedObject = {**nextedObject, "required": items.get('required', []), "type": item_type}
                 transformed_properties[key]['items'] = nextedObject
             elif item_type == 'array':
                 transformed_properties[key]['items'] = transform_required_params_to_required( items.get('items', {}), variables, variables_path, function_name, key, value)

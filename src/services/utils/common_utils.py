@@ -133,6 +133,7 @@ async def manage_threads(parsed_data):
     else:
         thread_id = str(uuid.uuid1())
         sub_thread_id = thread_id
+        parsed_data['gpt_memory'] = False
         result = {"success": True}
     
     return {
