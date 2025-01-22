@@ -2392,14 +2392,6 @@ class ModelsConfig:
                 "default": "o1-preview",
                 "level": 1
             },
-            "max_tokens": {
-                "field": "slider",
-                "min": 1,
-                "max": 100_000,
-                "step": 1,
-                "default": 256,
-                "level": 2
-            },
         }
         outputConfig = {
             "usage": [{
@@ -2441,14 +2433,6 @@ class ModelsConfig:
                 "field": "drop",
                 "default": "o1-mini",
                 "level": 1
-            },
-            "max_tokens": {
-                "field": "slider",
-                "min": 1,
-                "max": 100_000,
-                "step": 1,
-                "default": 256,
-                "level": 2
             },
         }
         outputConfig = {
