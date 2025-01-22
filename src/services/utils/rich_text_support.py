@@ -46,6 +46,7 @@ async def process_chatbot_response(result, params, data, model_config, modelOutp
     newresult = await obj.execute()
     newresult['usage'] = params['token_calculator'].calculate_usage(newresult['modelResponse'])
     _.set_(result['modelResponse'], modelOutputConfig.get('message'), _.get(newresult.get('modelResponse', {}), modelOutputConfig.get('message')))
+    newresult['historyParams']['AiConfig'] =result['historyParams']['AiConfig']
     newresult['historyParams']['tools_call_data'] = result.get('historyParams', {}).get('tools_call_data')
     result['historyParams'] = deepcopy(newresult.get('historyParams', {}))
     result['historyParams']['message'] = model_response_content

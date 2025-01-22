@@ -2316,6 +2316,46 @@ class ModelsConfig:
         }
     
     @staticmethod
+    def o1():
+        configuration = {
+            "model": {
+                "field": "drop",
+                "default": "o1",
+                "level": 1
+            }
+        }
+        outputConfig = {
+            "usage": [{
+                "prompt_tokens": "usage.prompt_tokens",
+                "completion_tokens": "usage.completion_tokens",
+                "total_tokens": "usage.total_tokens",
+                "cached_tokens": "usage.prompt_tokens_details.cached_tokens",
+                "reasoning_tokens": "usage.completion_tokens_details.cached_tokens",
+                "total_cost": {
+                    "input_cost": 15.00,
+                    "output_cost": 60.00,
+                    "cached_cost": 7.50
+                }
+            }],
+            "message": "choices[0].message.content",
+            "assistant": "choices[0].message",
+            "id": "id"
+        }
+        inputConfig = {
+            "system": {
+                "role": "system",
+                "content": "",
+                "contentKey": "content",
+                "type": "json"
+            },
+            "content_location": "prompt[0].content"
+        }
+        return {
+            "configuration": configuration,
+            "outputConfig": outputConfig,
+            "inputConfig": inputConfig
+        }
+    @staticmethod
     def o1_preview():
         configuration = {
             "model": {
