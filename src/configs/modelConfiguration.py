@@ -2321,8 +2321,35 @@ class ModelsConfig:
             "model": {
                 "field": "drop",
                 "default": "o1",
-                "level": 1
+                "level": 1,
+            },
+            "tools": {
+                "field": "array",
+                "level": 0,
+                "default": [],
+                "typeOf": "array"
+            },
+            "tool_choice": {
+                "field": "text",
+                "default": "auto",
+                "level": 0,
+                "typeOf": "string"
+            },
+            "response_type": {
+                "field": "select",
+                "options" : [{"type" : "text"},{"type" : "json_object"},{"type" : "json_schema"}],
+                "default": {
+                "type" : "text",
+                },
+                "level": 0
+            },
+            "parallel_tool_calls": {
+                "field": "boolean",
+                "default": True,
+                "level": 0,
+                "typeOf": "boolean"  
             }
+        
         }
         outputConfig = {
             "usage": [{
