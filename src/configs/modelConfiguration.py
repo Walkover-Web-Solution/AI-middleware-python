@@ -2342,14 +2342,7 @@ class ModelsConfig:
                 "type" : "text",
                 },
                 "level": 0
-            },
-            "parallel_tool_calls": {
-                "field": "boolean",
-                "default": True,
-                "level": 0,
-                "typeOf": "boolean"  
             }
-        
         }
         outputConfig = {
             "usage": [{
@@ -2366,6 +2359,7 @@ class ModelsConfig:
             }],
             "message": "choices[0].message.content",
             "assistant": "choices[0].message",
+            "tools": "choices[0].message.tool_calls",
             "id": "id"
         }
         inputConfig = {
