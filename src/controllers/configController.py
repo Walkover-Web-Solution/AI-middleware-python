@@ -212,7 +212,8 @@ async def get_all_service_models_controller(service):
                 },
                 "reasoning" : {
                     "o1-preview" : restructure_configuration(model_configuration.o1_preview()),
-                    "o1-mini" : restructure_configuration(model_configuration.o1_mini())
+                    "o1-mini" : restructure_configuration(model_configuration.o1_mini()),
+                    "o1" : restructure_configuration(model_configuration.o1())
                 },
                 "image" : {
                     "dall-e-2" : restructure_configuration(model_configuration.dall_e_2()),
@@ -361,7 +362,7 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
                     if function_id not in function_ids:
                         function_ids.append(function_id)
                         update_fields['function_ids'] = [ObjectId(fid) for fid in function_ids]
-                        await update_bridge_ids_in_api_calls(function_id, bridge_id if bridge_id is not None else version_id, 1)
+                        await update_bridge_ids_in_api_calls(function_id, bridge_id if bridge_id is not None else version_id, 1)# delete from history
                 elif function_operation is None:        # to remove function id 
                     if function_name is not None:   
                          if function_name in  current_variables_path:
@@ -370,7 +371,7 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
                     if function_id in function_ids:
                         function_ids.remove(function_id)
                         update_fields['function_ids'] = [ObjectId(fid) for fid in function_ids]
-                        await update_bridge_ids_in_api_calls(function_id, bridge_id if bridge_id is not None else version_id, 0)
+                        await update_bridge_ids_in_api_calls(function_id, bridge_id if bridge_id is not None else version_id, 0)# delete from history
         
         for key, value in body.items():
             if key == 'configuration':

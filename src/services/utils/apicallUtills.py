@@ -50,7 +50,7 @@ async def save_api(desc, org_id, api_data=None, code="", required_params=None, f
             api_data['version']= version
 
             # saving updated fields in the db with same id
-            saved_api = await apiCallModel.replace_one({"_id": api_data["_id"]}, api_data)
+            saved_api = await apiCallModel.replace_one({"_id": api_data["_id"]}, api_data) # delete from history
             if saved_api.modified_count == 1:
                 return {
                     "success": True,
