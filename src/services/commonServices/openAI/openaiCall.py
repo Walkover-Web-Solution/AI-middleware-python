@@ -27,9 +27,9 @@ class UnifiedOpenAICase(BaseService):
                 self.customConfig["messages"] = prompt + conversation + ([{"role": "user", "content": self.user}] if self.user else []) 
             else:
                 if not self.image_data:
-                    self.customConfig["messages"] = [ {"role": "system", "content": self.configuration['prompt']}] + conversation + ([{"role": "user", "content": self.user}] if self.user else []) 
+                    self.customConfig["messages"] = [ {"role": "developer", "content": self.configuration['prompt']}] + conversation + ([{"role": "user", "content": self.user}] if self.user else []) 
                 else:
-                    self.customConfig["messages"] = [{"role": "system", "content": self.configuration['prompt']}] + conversation
+                    self.customConfig["messages"] = [{"role": "developer", "content": self.configuration['prompt']}] + conversation
                     if self.user:
                         user_content = [{"type": "text", "text": self.user}]
                         if isinstance(self.image_data, list):
