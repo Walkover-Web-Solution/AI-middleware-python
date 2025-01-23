@@ -339,38 +339,28 @@ async def update_api_call(id, update_fields):
     
 
 async def update_bridge_ids_in_api_calls(function_id, bridge_id, add=1):
-    try: 
-        to_update = {'$set': {'status': 1}}
-        if add == 1:
-            to_update['$addToSet'] = {'bridge_ids': ObjectId(bridge_id)}
-        else:
-            to_update['$pull'] = {'bridge_ids': ObjectId(bridge_id)}
-                                  
-        data = await apiCallModel.find_one_and_update(
-                {'_id': ObjectId(function_id)},
-                to_update,
-                return_document=True,
-                upsert=True
-            )
-        if not data:
-            return {
-                'success': False,
-                'error': 'No records updated or bridge not found'
-            }
-        if data:
-            data['_id'] = str(data['_id'])  # Convert ObjectId to string
-            if 'bridge_ids' in data:
-                data['bridge_ids'] = [str(bid) for bid in data['bridge_ids']]  # Convert bridge_ids to string
-        return {
-            'success': True,
-            'result': data
-        }
-    except Exception as error:
-        print(error)
+    to_update = {'$set': {'status': 1}}
+    if add == 1:
+        to_update['$addToSet'] = {'bridge_ids': ObjectId(bridge_id)}
+    else:
+        to_update['$pull'] = {'bridge_ids': ObjectId(bridge_id)}
+                                
+    data = await apiCallModel.find_one_and_update(
+            {'_id': ObjectId(function_id)},
+            to_update,
+            return_document=True,
+            upsert=True
+        )
+    if not data:
         return {
             'success': False,
-            'error': 'Something went wrong!'
+            'error': 'No records updated or bridge not found'
         }
+    if data:
+        data['_id'] = str(data['_id'])  # Convert ObjectId to string
+        if 'bridge_ids' in data:
+            data['bridge_ids'] = [str(bid) for bid in data['bridge_ids']]  # Convert bridge_ids to string
+    return data
 
 async def get_api_call_by_names(names, org_id):
     try:

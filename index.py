@@ -67,12 +67,13 @@ async def healthcheck():
     })
             
 
-@app.get("/5-sec")
+@app.get("/90-sec")
 async def bloking():
     try:
         async def blocking_io_function():
-            response = await fetch("https://flow.sokt.io/func/scriDLT6j3lB")
-            return response
+            await asyncio.sleep(90)  # Sleep for 2 minutes
+            # response = await fetch("https://flow.sokt.io/func/scriDLT6j3lB")
+            # return response
         result = await blocking_io_function()
         return JSONResponse(status_code=200, content={
                 "status": "OK running good... v1.1",

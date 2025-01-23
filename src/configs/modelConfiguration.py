@@ -2351,6 +2351,11 @@ class ModelsConfig:
                 "default": 256,
                 "level": 2
             },
+            "vision": {
+                "support": True,
+                 "level": 0,
+                 "default" : False
+            }
         }
         outputConfig = {
             "usage": [{
