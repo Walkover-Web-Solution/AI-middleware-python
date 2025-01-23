@@ -19,6 +19,7 @@ from src.services.utils.logger import logger
 from src.routes.bridge_version_routes import router as bridge_version
 from src.routes.image_process_routes import router as image_process_routes
 from src.routes.utils_routes import router as utils_routes
+from src.routes.utility_routes import router as utility_routes
 
 async def consume_messages_in_executor():
     await queue_obj.consume_messages()
@@ -114,6 +115,7 @@ app.include_router(apiCall_router, prefix="/functions")
 app.include_router(bridge_version, prefix="/bridge/versions" )
 app.include_router(image_process_routes, prefix="/image/processing" )
 app.include_router(utils_routes, prefix="/utils" )
+app.include_router(utility_routes,prefix="/utility")
 
 
 if __name__ == "__main__":
