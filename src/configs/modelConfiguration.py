@@ -2342,6 +2342,14 @@ class ModelsConfig:
                 "type" : "text",
                 },
                 "level": 0
+            }, 
+            "max_tokens": {
+                "field": "slider",
+                "min": 1,
+                "max": 100_000,
+                "step": 1,
+                "default": 256,
+                "level": 2
             },
             "vision": {
                 "support": True,
@@ -2388,7 +2396,7 @@ class ModelsConfig:
                 "field": "drop",
                 "default": "o1-preview",
                 "level": 1
-            }
+            },
         }
         outputConfig = {
             "usage": [{
@@ -2430,7 +2438,7 @@ class ModelsConfig:
                 "field": "drop",
                 "default": "o1-mini",
                 "level": 1
-            }
+            },
         }
         outputConfig = {
             "usage": [{
