@@ -52,7 +52,8 @@ class BaseService:
         self.image_data = params.get('images')
         self.tool_call_count = params.get('tool_call_count')
 
-
+    def aiconfig(self):
+        return self.customConfig
 
     async def run_tool(self, responses, service):
         codes_mapping = make_code_mapping_by_service(responses, service)

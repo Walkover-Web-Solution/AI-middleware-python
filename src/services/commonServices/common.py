@@ -22,6 +22,7 @@ configurationModel = db["configurations"]
 @handle_exceptions
 async def chat(request_body): 
     result ={}
+    class_obj= {}
     try:
         # Step 1: Parse and validate request body
         parsed_data = parse_request_body(request_body)
@@ -137,7 +138,8 @@ async def chat(request_body):
                     "channel": 'chat',
                     "type": "error",
                     "actor": "user",
-                    "message_id": parsed_data['message_id']
+                    "message_id": parsed_data['message_id'],
+                    "AiConfig": class_obj.aiconfig()
                     }, parsed_data['version_id']),
                 # Only send the second response if the type is not 'default'
                 sendResponse(parsed_data['response_format'], result.get("modelResponse", str(error)), variables=parsed_data['variables']) if parsed_data['response_format']['type'] != 'default' else None,
