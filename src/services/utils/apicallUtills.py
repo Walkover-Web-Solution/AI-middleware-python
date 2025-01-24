@@ -141,8 +141,8 @@ async def delete_api(function_name, org_id, status = 0):
 
 
 async def delete_all_version_and_bridge_ids_from_cache(Id_to_delete):
-    for ids in Id_to_delete['bridge_ids']:
+    for ids in Id_to_delete.get('bridge_ids', []):
         await delete_in_cache(str(ids))
-    for ids in Id_to_delete['version_ids']:
+    for ids in Id_to_delete.get('version_ids', []):
         await delete_in_cache(str(ids))
     
