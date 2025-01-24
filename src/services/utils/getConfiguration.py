@@ -30,8 +30,8 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
             continue
         format = {
             "type": "function",
-            "name": api_data.get("function_name", api_data.get("endpoint")),
-            "description": api_data.get('description', api_data.get('short_description')) if not api_data.get('endpoint_name') else f"Name: {api_data.get('endpoint_name')}, Description: {api_data.get('description', api_data.get('short_description'))}",
+            "name": api_data.get("function_name"),
+            "description": api_data.get('description') if not api_data.get('endpoint_name') else f"Name: {api_data.get('endpoint_name')}, Description: {api_data.get('description')}",
             "properties": (
                 api_data.get("fields", {}) if api_data.get("version") == 'v2' 
                 else {item["variable_name"]: {
@@ -42,10 +42,10 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
                 } for item in api_data.get('fields',{})}
             ),
             "required": (
-               api_data.get("required_params", api_data.get("required_fields"))
+               api_data.get("required_params")
             )
         }
-        names.append(api_data.get("function_name", api_data.get("endpoint")))
+        names.append(api_data.get("function_name"))
         tools.append(format)
 
     for tool in extra_tools:

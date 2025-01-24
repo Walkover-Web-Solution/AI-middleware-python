@@ -23,8 +23,6 @@ async def creates_api(request: Request):
 
         if not all([desc, function_name, status, org_id]):
             raise HTTPException(status_code=400, detail="Required details must not be empty!!")
-        
-        axios_code = ""
 
         if status in ["published", "updated"]:
             body_content = payload.get('body') if payload else None
@@ -34,7 +32,7 @@ async def creates_api(request: Request):
             required_params = traversed_body.get('required_params', [])
             fields = [{"variable_name": param, "description": '', "enum": ''} for param in required_params]
             api_data = await get_api_data(org_id, function_name)
-            result  = await save_api(desc, org_id, api_data, axios_code, required_params, function_name, fields, True, endpoint_name, 1, 'v1')
+            result  = await save_api(desc, org_id, api_data, required_params, function_name, fields, endpoint_name, 'v1')
             result['api_data']['_id'] = str(result['api_data']['_id'])
             if 'created_at' in result['api_data'] and isinstance(result['api_data']['created_at'], datetime.datetime):
                         result['api_data']['created_at'] = result['api_data']['created_at'].strftime('%Y-%m-%d %H:%M:%S')  # Convert datetime to string
