@@ -150,3 +150,41 @@ async def chat(request_body):
             print("chat common error=>", error)
         raise ValueError(error)
     
+
+async def embedding(request_body):
+    result = {}
+    try:
+        body = request_body.get('body')
+        configuration = body.get('configuration')
+        text = body.get('text')
+        model = configuration.get('model')
+        service = body.get('service')
+        model_config, custom_config, model_output_config = await load_model_configuration(model, configuration)
+        
+        params = {
+            "model": model,
+            "configuration": configuration,
+            "model_config": model_config,
+            "customConfig": custom_config,
+            "model_output_config": model_output_config,
+            "text": text,
+            "response_format": configuration.get("response_format") or {},
+            "service": service,
+            "version_id": body.get('version_id'),
+            "bridge_id": body.get('bridge_id'),
+            "org_id": body.get('org_id'),
+            "apikey" : body.get('apikey')
+        }
+
+        class_obj = await Helper.embedding_service_handler(params, service)
+        result = await class_obj.execute_embedding()
+
+        if not result["success"]:
+            raise ValueError(result)
+        
+        result['modelResponse'] = await Response_formatter(response = result["response"], service = service, type =configuration.get('type'))
+
+        return JSONResponse(status_code=200, content={"success": True, "response": result["modelResponse"]})
+
+    except Exception as error:
+        raise ValueError(error)

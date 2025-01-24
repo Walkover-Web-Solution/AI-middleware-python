@@ -219,12 +219,12 @@ async def get_all_service_models_controller(service):
                 "image" : {
                     "dall-e-2" : restructure_configuration(model_configuration.dall_e_2()),
                     "dall-e-3" : restructure_configuration(model_configuration.dall_e_3())
+                },
+                "embedding": {
+                    "text-embedding-3-large": restructure_configuration(model_configuration.text_embedding_3_large()),
+                    "text-embedding-3-small": restructure_configuration(model_configuration.text_embedding_3_small()),
+                    "text-embedding-ada-002": restructure_configuration(model_configuration.text_embedding_ada_002()),
                 }
-                # "embedding": {
-                #     "text-embedding-3-large": restructure_configuration(model_configuration.text_embedding_3_large()),
-                #     "text-embedding-3-small": restructure_configuration(model_configuration.text_embedding_3_small()),
-                #     "text-embedding-ada-002": restructure_configuration(model_configuration.text_embedding_ada_002()),
-                # }
             }
         elif service == service_name['gemini']:
             return {

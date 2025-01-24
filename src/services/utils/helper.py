@@ -11,6 +11,7 @@ import re
 from src.configs.modelConfiguration import ModelsConfig as model_configuration
 import jwt
 from ..commonServices.openAI.openaiCall import UnifiedOpenAICase
+from ..commonServices.openAI.openai_embedding_call import OpenaiEmbedding
 from ..commonServices.groq.groqCall import Groq
 from ..commonServices.anthrophic.antrophicCall import Antrophic
 from ...configs.constant import service_name
@@ -229,4 +230,8 @@ class Helper:
                 usage["expectedCost"] += usage['cachedReadInputTokens'] * (token_cost['caching_write_cost'] / permillion)
 
         return usage
-
+    
+    async def embedding_service_handler(params, service):
+        if service == service_name['openai']:
+            class_obj = OpenaiEmbedding(params)
+        return class_obj
