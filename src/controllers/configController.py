@@ -12,6 +12,7 @@ from bson import ObjectId
 from datetime import datetime, timezone
 from src.services.utils.getDefaultValue import get_default_values_controller
 from src.db_services.bridge_version_services import create_bridge_version
+from src.services.utils.apicallUtills import delete_all_version_and_bridge_ids_from_cache
 async def create_bridges_controller(request):
     try:
         bridges = await request.json()
@@ -358,20 +359,25 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
                     updated_variables_path[key] = {}
             update_fields['variables_path'] = updated_variables_path
         if function_id is not None: 
-                if function_operation is not None:      # to add function id 
-                    if function_id not in function_ids:
-                        function_ids.append(function_id)
-                        update_fields['function_ids'] = [ObjectId(fid) for fid in function_ids]
-                        await update_bridge_ids_in_api_calls(function_id, bridge_id if bridge_id is not None else version_id, 1)# delete from history
-                elif function_operation is None:        # to remove function id 
-                    if function_name is not None:   
-                         if function_name in  current_variables_path:
-                             del current_variables_path[function_name]
-                             update_fields['variables_path'] = current_variables_path
-                    if function_id in function_ids:
-                        function_ids.remove(function_id)
-                        update_fields['function_ids'] = [ObjectId(fid) for fid in function_ids]
-                        await update_bridge_ids_in_api_calls(function_id, bridge_id if bridge_id is not None else version_id, 0)# delete from history
+            Id_to_delete = {
+                "bridge_ids": [],
+                "version_ids": []
+            }
+            if function_operation is not None:      # to add function id 
+                if function_id not in function_ids:
+                    function_ids.append(function_id)
+                    update_fields['function_ids'] = [ObjectId(fid) for fid in function_ids]
+                    Id_to_delete = await update_bridge_ids_in_api_calls(function_id, bridge_id if bridge_id is not None else version_id, 1)# delete from history
+            elif function_operation is None:        # to remove function id 
+                if function_name is not None:   
+                        if function_name in  current_variables_path:
+                            del current_variables_path[function_name]
+                            update_fields['variables_path'] = current_variables_path
+                if function_id in function_ids:
+                    function_ids.remove(function_id)
+                    update_fields['function_ids'] = [ObjectId(fid) for fid in function_ids]
+                    Id_to_delete = await update_bridge_ids_in_api_calls(function_id, bridge_id if bridge_id is not None else version_id, 0)# delete from history
+            await delete_all_version_and_bridge_ids_from_cache(Id_to_delete)
         
         for key, value in body.items():
             if key == 'configuration':

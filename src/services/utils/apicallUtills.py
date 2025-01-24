@@ -1,5 +1,6 @@
 import datetime 
 from models.mongo_connection import db
+from src.services.cache_service import delete_in_cache
 apiCallModel = db['apicalls']
 
 async def get_api_data(org_id, function_name):
@@ -51,6 +52,7 @@ async def save_api(desc, org_id, api_data=None, code="", required_params=None, f
 
             # saving updated fields in the db with same id
             saved_api = await apiCallModel.replace_one({"_id": api_data["_id"]}, api_data) # delete from history
+            await delete_all_version_and_bridge_ids_from_cache(api_data)
             if saved_api.modified_count == 1:
                 return {
                     "success": True,
@@ -135,3 +137,12 @@ async def delete_api(function_name, org_id, status = 0):
     except Exception as error:
         print(f"Delete API error=> {error}")
         return {"success": False, "error": str(error)}
+    
+
+
+async def delete_all_version_and_bridge_ids_from_cache(Id_to_delete):
+    for ids in Id_to_delete['bridge_ids']:
+        await delete_in_cache(str(ids))
+    for ids in Id_to_delete['version_ids']:
+        await delete_in_cache(str(ids))
+    
