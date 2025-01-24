@@ -219,7 +219,7 @@ class BaseService:
     
     def service_formatter(self, configuration : object, service : str ):
         try:
-            new_config = {ServiceKeys[service][self.type].get(key, ServiceKeys[service]['chat'].get(key, key)): value for key, value in configuration.items()}
+            new_config = {ServiceKeys[service].get(self.type, ServiceKeys[service]['default']).get(key, key): value for key, value in configuration.items()}
             if configuration.get('tools', '') :
                 if service == service_name['anthropic']:
                     new_config['tool_choice'] =  {"type": "auto"}

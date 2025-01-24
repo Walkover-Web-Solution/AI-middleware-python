@@ -4,7 +4,7 @@ ServiceKeys = {
         "reasoning": {
             "max_tokens" : "max_completion_tokens"
         },
-        "chat" : {
+        "default" : {
             "creativity_level": "temperature",
             "probability_cutoff": "top_p",
             "repetition_penalty": "frequency_penalty",
@@ -23,7 +23,7 @@ ServiceKeys = {
 
     },
     service_name['anthropic']: {
-        "chat" : {
+        "default" : {
             "creativity_level": "temperature",
             "probability_cutoff": "top_p",
             "token_selection_limit": "top_k",
@@ -32,7 +32,7 @@ ServiceKeys = {
         }
     },
     service_name['groq']: {
-        "chat" : {
+        "default" : {
             "creativity_level": "temperature",
             "probability_cutoff": "top_p",
             "repetition_penalty": "frequency_penalty",
