@@ -160,7 +160,9 @@ async def embedding(request_body):
         model = configuration.get('model')
         service = body.get('service')
         model_config, custom_config, model_output_config = await load_model_configuration(model, configuration)
-        
+        chatbot = body.get('chatbot')
+        if chatbot:
+            raise ValueError("Error: Embedding not supported for chatbot")
         params = {
             "model": model,
             "configuration": configuration,
