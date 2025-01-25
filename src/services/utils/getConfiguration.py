@@ -17,6 +17,7 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
             'error': "bridge_id does not exist"
         }
     db_configuration = result.get('bridges', {}).get('configuration', {})
+    db_configuration['prompt'] = result['prompt'].get('htmlString',"")
     if configuration:
         db_configuration.update(configuration)
     configuration = db_configuration

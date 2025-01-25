@@ -2,6 +2,7 @@ from models.mongo_connection import db
 from bson import ObjectId
 from ..services.cache_service import find_in_cache, store_in_cache, delete_in_cache
 import json
+import aiohttp
 
 configurationModel = db["configurations"]
 apiCallModel = db['apicalls']
@@ -282,9 +283,17 @@ async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None)
             }
         ]
         
-        # Execute the aggregation pipeline
-        result = await model.aggregate(pipeline).to_list(length=None)
-        
+        async def fetch_data():
+            pipeline_result = await model.aggregate(pipeline).to_list(length=None)
+
+            async with aiohttp.ClientSession() as session:
+                async with session.get(f"http://localhost:1234/content/{version_id}") as response:
+                    content_result = await response.json()
+
+            return pipeline_result, content_result
+
+        result, content_json = await fetch_data()
+       
         if not result:
             return {
                 'success': False,
@@ -294,7 +303,8 @@ async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None)
         # Optionally, you can structure the output to include 'apikeys' at the top level
         response =  {
             'success': True,
-            'bridges': result[0]
+            'bridges': result[0],
+            'prompt': content_json
         }
         await store_in_cache(cache_key, response)
         return response
