@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, Request, HTTPException
 import asyncio
-from src.services.commonServices.common import chat
+from src.services.commonServices.common import chat, batch
 from src.services.commonServices.baseService.utils import make_request_data
 from ...middlewares.middleware import jwt_middleware
 from ...middlewares.getDataUsingBridgeId import add_configuration_data_to_body
@@ -46,4 +46,12 @@ async def playground_chat_completion(request: Request, db_config: dict = Depends
     request.state.version = 2
     data_to_send = await make_request_data(request)
     result = await chat(data_to_send)
+    return result
+
+@router.post('/batch/chat/completion', dependencies=[Depends(auth_and_rate_limit)])
+async def batch_chat_completion(request: Request, db_config: dict = Depends(add_configuration_data_to_body)):
+    request.state.is_playground = True
+    request.state.version = 2
+    data_to_send = await make_request_data(request)
+    result = await batch(data_to_send)
     return result

@@ -51,6 +51,7 @@ class BaseService:
         self.apikey_object_id = params.get('apikey_object_id')
         self.image_data = params.get('images')
         self.tool_call_count = params.get('tool_call_count')
+        self.batch = params.get('batch')
 
     def aiconfig(self):
         return self.customConfig
