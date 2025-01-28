@@ -2,9 +2,18 @@ from ..cache_service import find_in_cache_for_batch, delete_in_cache_for_batch
 from openai import AsyncOpenAI
 from ..utils.send_error_webhook import create_response_format
 from ..commonServices.baseService.baseService import sendResponse
+import asyncio
+
+async def repeat_function():
+    while True:
+        await check_batch_status()
+        await asyncio.sleep(900)
+
+asyncio.ensure_future(repeat_function())
+
 
 async def check_batch_status():
-    batch_ids = find_in_cache_for_batch()
+    batch_ids = await find_in_cache_for_batch()
     for id in batch_ids:
         apikey = id.get('apikey')
         webhook = id.get('webhook')

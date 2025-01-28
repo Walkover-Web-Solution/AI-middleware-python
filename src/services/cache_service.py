@@ -85,9 +85,12 @@ async def store_in_cache_for_batch(identifier: str, data: dict, ttl: int = DEFAU
         print(f"Error storing in cache: {e}")
         return False
 
-async def find_in_cache_for_batch(identifier: str) -> Union[str, None]:
+async def find_in_cache_for_batch() -> Union[str, None]:
     try:
-        return await client.get(f"{identifier}")
+        keys = await client.keys("batch_*")
+        values = [json.loads(await client.get(key)) for key in keys]  # Fetch values
+        return values
+    
     except Exception as e:
         print(f"Error finding in cache: {e}")
         return None
