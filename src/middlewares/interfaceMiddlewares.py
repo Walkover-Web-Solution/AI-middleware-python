@@ -105,7 +105,7 @@ async def chat_bot_auth(request: Request):
                     },
                 }
                 if check_token.get('variables') is not None:
-                    request.state.profile["variables"]: check_token['variables']
+                    request.state.profile["variables"] = json.dumps(check_token['variables']) if not isinstance(check_token['variables'], str) else check_token['variables']
                 return True
         raise HTTPException(status_code=401, detail="unauthorized user")
     except jwt.ExpiredSignatureError:
