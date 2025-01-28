@@ -13,22 +13,28 @@ asyncio.ensure_future(repeat_function())
 
 
 async def check_batch_status():
-    batch_ids = await find_in_cache_for_batch()
-    for id in batch_ids:
-        apikey = id.get('apikey')
-        webhook = id.get('webhook')
-        response_format = create_response_format(webhook.get('url'), webhook.get('headers'))
-        batch_id = id.get('batch_id')
-        openAI = AsyncOpenAI(api_key= apikey)
-        batch = openAI.batches.retrieve(batch_id)
-        if batch.status=="completed":
-            file = batch.output_file_id or batch.error_file_id
-            file_response = None
-            if file is not None:
-                file_response = openAI.files.content(file)
-                await sendResponse(response_format, data=file_response)
-            await delete_in_cache_for_batch(batch_id)
-        
+    try:
+        batch_ids = await find_in_cache_for_batch()
+        for id in batch_ids:
+            apikey = id.get('apikey')
+            webhook = id.get('webhook')
+            batch_id = id.get('batch_id')
+            if webhook.get('url') is not None:
+                response_format = create_response_format(webhook.get('url'), webhook.get('headers'))
+            else:
+                await delete_in_cache_for_batch(batch_id)
+                continue
+            openAI = AsyncOpenAI(api_key=apikey)
+            batch = openAI.batches.retrieve(batch_id)
+            if batch.status == "completed":
+                file = batch.output_file_id or batch.error_file_id
+                file_response = None
+                if file is not None:
+                    file_response = openAI.files.content(file)
+                    await sendResponse(response_format, data=file_response)
+                await delete_in_cache_for_batch(batch_id)
+    except Exception as error:
+        print(f"An error occurred while checking the batch status: {error}")
         
 
 
