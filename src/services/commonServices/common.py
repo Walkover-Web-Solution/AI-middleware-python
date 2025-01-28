@@ -180,6 +180,6 @@ async def batch(request_body):
         if not result["success"]:
             raise ValueError(result)
         
-        return JSONResponse(status_code=200, content={"success": True, "response": result["modelResponse"]})
+        return JSONResponse(status_code=200, content={"success": True, "response": result["message"]})
     except Exception as error:
         raise ValueError(error)
