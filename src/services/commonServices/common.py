@@ -172,6 +172,8 @@ async def batch(request_body):
         custom_config = await configure_custom_settings(
             model_config['configuration'], custom_config, parsed_data['service']
         )
+        if 'tools' in custom_config:
+            del custom_config['tools']
         # Step 8: Execute Service Handler
         params = build_service_params_for_batch( parsed_data, custom_config, model_output_config )
         class_obj = await Helper.create_service_handler_for_batch(params, parsed_data['service'])

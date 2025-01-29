@@ -61,5 +61,5 @@ class OpenaiBatch(BaseService):
         await store_in_cache_for_batch(batch_id, batch_json)
         return {
             "success": True,
-            "message": "Data will be send on webhook successfully"
+            "message": "Response will be successfully sent to the webhook wihtin 24 hrs."
         }

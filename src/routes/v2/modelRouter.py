@@ -50,8 +50,6 @@ async def playground_chat_completion(request: Request, db_config: dict = Depends
 
 @router.post('/batch/chat/completion', dependencies=[Depends(auth_and_rate_limit)])
 async def batch_chat_completion(request: Request, db_config: dict = Depends(add_configuration_data_to_body)):
-    request.state.is_playground = True
-    request.state.version = 2
     data_to_send = await make_request_data(request)
     result = await batch(data_to_send)
     return result
