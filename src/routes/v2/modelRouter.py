@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, Request, HTTPException
 import asyncio
-from src.services.commonServices.common import chat
+from src.services.commonServices.common import chat, embedding
 from src.services.commonServices.baseService.utils import make_request_data
 from ...middlewares.middleware import jwt_middleware
 from ...middlewares.getDataUsingBridgeId import add_configuration_data_to_body
@@ -35,7 +35,10 @@ async def chat_completion(request: Request, db_config: dict = Depends(add_config
             raise HTTPException(status_code=500, detail="Failed to publish message.")
     else:
         # Assuming chat is an async function that could be blocking
-
+        type = data_to_send.get("body",{}).get('configuration',{}).get('type')
+        if type == 'embedding':
+            result =  await embedding(data_to_send)
+            return result
         result = await chat(data_to_send)
         return result
 
@@ -45,5 +48,9 @@ async def playground_chat_completion(request: Request, db_config: dict = Depends
     request.state.is_playground = True
     request.state.version = 2
     data_to_send = await make_request_data(request)
+    type = data_to_send.get("body",{}).get('configuration',{}).get('type')
+    if type == 'embedding':
+            result =  await embedding(data_to_send)
+            return result
     result = await chat(data_to_send)
     return result
