@@ -21,10 +21,7 @@ async def check_batch_status():
             batch_id = id.get('batch_id')
             if webhook.get('url') is not None:
                 response_format = create_response_format(webhook.get('url'), webhook.get('headers'))
-            else:
-                await delete_in_cache_for_batch(batch_id)
-                continue
-            openAI = AsyncOpenAI(api_key=apikey)
+            openAI = await AsyncOpenAI(api_key=apikey)
             batch = openAI.batches.retrieve(batch_id)
             if batch.status == "completed":
                 file = batch.output_file_id or batch.error_file_id
