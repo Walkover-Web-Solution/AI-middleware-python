@@ -3,7 +3,7 @@ from ..baseService.baseService import BaseService
 from ..createConversations import ConversationService
 from src.configs.constant import service_name
 import json
-from ...cache_service import store_in_cache_for_batch
+from ...cache_service import store_in_cache
 from src.services.commonServices.openAI.openai_run_batch import create_batch_file, process_batch_file
 
 class OpenaiBatch(BaseService):
@@ -56,9 +56,10 @@ class OpenaiBatch(BaseService):
                 "failed": batch_file.request_counts.failed,
                 "total": batch_file.request_counts.total
             },
-            "apikey": self.apikey
+            "apikey": self.apikey,
+            "webhook" : self.webhook
         }
-        await store_in_cache_for_batch(batch_id, batch_json)
+        await store_in_cache(batch_id, batch_json)
         return {
             "success": True,
             "message": "Response will be successfully sent to the webhook wihtin 24 hrs."

@@ -25,10 +25,7 @@ async def process_batch_file(batch_input_file, apiKey):
         result = await openAI.batches.create(
             input_file_id=batch_input_file_id,
             endpoint="/v1/chat/completions",
-            completion_window="24h",
-            metadata={
-                "description": "nightly eval job"
-            }
+            completion_window="24h"
         )
         print(result)
         return result

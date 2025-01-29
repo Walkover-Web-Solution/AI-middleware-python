@@ -52,6 +52,7 @@ class BaseService:
         self.image_data = params.get('images')
         self.tool_call_count = params.get('tool_call_count')
         self.batch = params.get('batch')
+        self.webhook = params.get('webhook')
 
     def aiconfig(self):
         return self.customConfig

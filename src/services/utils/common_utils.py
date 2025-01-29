@@ -66,8 +66,8 @@ def parse_request_body(request_body):
         "tool_call_count": body.get('tool_call_count'),
         "tokens" : {},
         "memory" : "",
-        "batch" : body.get('batch') or []
-
+        "batch" : body.get('batch') or [],
+        "batch_webhook" : body.get('webhook')
     }
 
 def add_default_variables(variables = {}):
@@ -237,9 +237,6 @@ async def process_background_tasks(parsed_data, result):
     await asyncio.gather(*tasks, return_exceptions=True)
 
 def build_service_params_for_batch(parsed_data, custom_config, model_output_config):
-    token_calculator = {}
-    if not parsed_data['is_playground']:
-        token_calculator = TokenCalculator(parsed_data['service'], model_output_config)
     
     return {
         "customConfig": custom_config,
@@ -264,7 +261,7 @@ def build_service_params_for_batch(parsed_data, custom_config, model_output_conf
         "names": parsed_data['names'],
         "reasoning_model": parsed_data['reasoning_model'],
         "type": parsed_data['configuration'].get('type'),
-        "token_calculator": token_calculator,
         "apikey_object_id" : parsed_data['apikey_object_id'],
-        "batch" : parsed_data['batch']
+        "batch" : parsed_data['batch'],
+        "webhook" : parsed_data['batch_webhook']
     }

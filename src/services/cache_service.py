@@ -85,9 +85,10 @@ async def store_in_cache_for_batch(identifier: str, data: dict, ttl: int = DEFAU
         print(f"Error storing in cache: {e}")
         return False
 
-async def find_in_cache_for_batch() -> Union[str, None]:
+async def find_in_cache_with_prefix(prefix: str) -> Union[List[str], None]:
     try:
-        keys = await client.keys("batch_*")
+        pattern = f"{REDIS_PREFIX}{prefix}*"
+        keys = await client.keys(pattern)
         values = [json.loads(await client.get(key)) for key in keys]  # Fetch values
         return values
     
