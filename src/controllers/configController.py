@@ -332,7 +332,7 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
         if service is not None:
             update_fields['service'] = service
             model = new_configuration['model']
-            configuration = await get_default_values_controller(service,model,current_configuration)
+            configuration = await get_default_values_controller(service,model,current_configuration, type)
             type = new_configuration.get('type', 'chat')
             configuration['type'] = type
             new_configuration = configuration
@@ -342,7 +342,7 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
             if(new_configuration.get('model') and service is None):
                 service = bridge.get('service')
                 model = new_configuration.get('model')
-                configuration = await get_default_values_controller(service,model,current_configuration)
+                configuration = await get_default_values_controller(service,model,current_configuration, type)
                 type = new_configuration.get('type', 'chat')
                 configuration['type'] = type
                 new_configuration = {**new_configuration,**configuration}

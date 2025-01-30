@@ -2,7 +2,7 @@ from src.configs.modelConfiguration import ModelsConfig as model_configuration
 from ...configs.constant import service_name
 from fastapi import HTTPException
 
-async def get_default_values_controller(service, model, current_configuration):
+async def get_default_values_controller(service, model, current_configuration, type):
     try:
         service = service.lower()
         
@@ -17,7 +17,10 @@ async def get_default_values_controller(service, model, current_configuration):
                 elif current_configuration.get(key) == "max":
                     default_values[key] = 'max'
                 elif current_configuration.get(key) == 'default':
-                    default_values[key] = 'default'
+                    if type == 'embedding':
+                        default_values[key] = current_configuration['default']
+                    else:
+                        default_values[key] = 'default'
                 else:
                     default_values[key] = value.get('default', None) if key == 'model' else 'default'
             
