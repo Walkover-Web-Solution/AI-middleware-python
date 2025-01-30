@@ -4677,7 +4677,7 @@ class ModelsConfig:
         configuration = {
             "model": {
                 "field": "dropdown",
-                "default": "text-embedding-3-large",
+                "default": "text-embedding-3-small",
                 "level": 1
             },
             "encoding_format": {
@@ -4721,7 +4721,7 @@ class ModelsConfig:
         configuration = {
             "model": {
                 "field": "dropdown",
-                "default": "text-embedding-3-large",
+                "default": "text-embedding-ada-002",
                 "level": 1
             },
             "encoding_format": {
