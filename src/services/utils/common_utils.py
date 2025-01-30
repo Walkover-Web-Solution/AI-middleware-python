@@ -65,8 +65,9 @@ def parse_request_body(request_body):
         "images" : body.get('images'),
         "tool_call_count": body.get('tool_call_count'),
         "tokens" : {},
-        "memory" : ""
-
+        "memory" : "",
+        "batch" : body.get('batch') or [],
+        "batch_webhook" : body.get('webhook')
     }
 
 def add_default_variables(variables = {}):
@@ -235,3 +236,33 @@ async def process_background_tasks(parsed_data, result):
     if parsed_data['gpt_memory'] and parsed_data['configuration']['type'] == 'chat':
             tasks.append(handle_gpt_memory(parsed_data['id'], parsed_data['user'], result['modelResponse'], parsed_data['memory'], parsed_data['gpt_memory_context']))
     await asyncio.gather(*tasks, return_exceptions=True)
+
+def build_service_params_for_batch(parsed_data, custom_config, model_output_config):
+    
+    return {
+        "customConfig": custom_config,
+        "configuration": parsed_data['configuration'],
+        "apikey": parsed_data['apikey'],
+        "variables": parsed_data['variables'],
+        "user": parsed_data['user'],
+        "tools": parsed_data['tools'],
+        "org_id": parsed_data['org_id'],
+        "bridge_id": parsed_data['bridge_id'],
+        "bridge": parsed_data['bridge'],
+        "model": parsed_data['model'],
+        "service": parsed_data['service'],
+        "modelOutputConfig": model_output_config,
+        "playground": parsed_data['is_playground'],
+        "template": parsed_data['template'],
+        "response_format": parsed_data['response_format'],
+        "execution_time_logs": {},
+        "variables_path": parsed_data['variables_path'],
+        "message_id": parsed_data['message_id'],
+        "bridgeType": parsed_data['bridgeType'],
+        "names": parsed_data['names'],
+        "reasoning_model": parsed_data['reasoning_model'],
+        "type": parsed_data['configuration'].get('type'),
+        "apikey_object_id" : parsed_data['apikey_object_id'],
+        "batch" : parsed_data['batch'],
+        "webhook" : parsed_data['batch_webhook']
+    }

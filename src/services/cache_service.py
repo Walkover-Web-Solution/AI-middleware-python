@@ -78,4 +78,39 @@ async def clear_cache(request) -> JSONResponse:
         print(f"Error clearing cache: {error}")
         return JSONResponse(status_code=500, content={"message": f"Error clearing cache: {error}"})
 
-__all__ = ['delete_in_cache', 'store_in_cache', 'find_in_cache', 'verify_ttl', 'clear_cache']
+async def store_in_cache_for_batch(identifier: str, data: dict, ttl: int = DEFAULT_REDIS_TTL) -> bool:
+    try:
+        return await client.set(f"{identifier}", json.dumps(data), ex=int(ttl))
+    except Exception as e:
+        print(f"Error storing in cache: {e}")
+        return False
+
+async def find_in_cache_with_prefix(prefix: str) -> Union[List[str], None]:
+    try:
+        pattern = f"{REDIS_PREFIX}{prefix}*"
+        keys = await client.keys(pattern)
+        values = [json.loads(await client.get(key)) for key in keys]  # Fetch values
+        return values
+    
+    except Exception as e:
+        print(f"Error finding in cache: {e}")
+        return None
+
+async def delete_in_cache_for_batch(identifiers: Union[str, List[str]]) -> bool:
+    if not await client.ping():
+        return False
+    
+    if isinstance(identifiers, str):
+        identifiers = [identifiers]
+    
+    keys_to_delete = [f"{id}" for id in identifiers]
+
+    try:
+        delete_count = await client.delete(*keys_to_delete)
+        print(f"Deleted {delete_count} items from cache")
+        return True
+    except Exception as error:
+        print(f"Error during deletion: {error}")
+        return False
+
+__all__ = ['delete_in_cache', 'store_in_cache', 'find_in_cache', 'verify_ttl', 'clear_cache','store_in_cache_for_batch', 'find_in_cache_for_batch', 'delete_in_cache_for_batch']

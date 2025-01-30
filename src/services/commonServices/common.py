@@ -12,7 +12,7 @@ from ..utils.send_error_webhook import send_error_to_webhook
 import json
 from src.handler.executionHandler import handle_exceptions
 from models.mongo_connection import db
-from src.services.utils.common_utils import parse_request_body, initialize_timer, load_model_configuration, handle_pre_tools, handle_fine_tune_model,manage_threads, prepare_prompt, configure_custom_settings, build_service_params, process_background_tasks, add_default_variables
+from src.services.utils.common_utils import parse_request_body, initialize_timer, load_model_configuration, handle_pre_tools, handle_fine_tune_model,manage_threads, prepare_prompt, configure_custom_settings, build_service_params, process_background_tasks, add_default_variables, build_service_params_for_batch
 from src.services.utils.rich_text_support import process_chatbot_response
 app = FastAPI()
 from src.services.utils.helper import Helper
@@ -187,6 +187,42 @@ async def embedding(request_body):
         result['modelResponse'] = await Response_formatter(response = result["response"], service = service, type =configuration.get('type'))
 
         return JSONResponse(status_code=200, content={"success": True, "response": result["modelResponse"]})
+    except Exception as error:
+        raise ValueError(error)
 
+async def batch(request_body):
+    result ={}
+    class_obj= {}
+    try:
+        # Step 1: Parse and validate request body
+        parsed_data = parse_request_body(request_body)
+        if parsed_data['batch_webhook'] is None:
+            raise ValueError("webhook is required")
+        #  add defualt varaibles in prompt eg : time and date
+        parsed_data['variables'] = add_default_variables(parsed_data['variables'])
+        
+        # Step 3: Load Model Configuration
+        model_config, custom_config, model_output_config = await load_model_configuration(
+            parsed_data['model'], parsed_data['configuration']
+        )
+
+        # Step 4: Handle Pre-Tools Execution
+        await handle_pre_tools(parsed_data)
+        
+        # Step 7: Configure Custom Settings
+        custom_config = await configure_custom_settings(
+            model_config['configuration'], custom_config, parsed_data['service']
+        )
+        if 'tools' in custom_config:
+            del custom_config['tools']
+        # Step 8: Execute Service Handler
+        params = build_service_params_for_batch( parsed_data, custom_config, model_output_config )
+        class_obj = await Helper.create_service_handler_for_batch(params, parsed_data['service'])
+        result = await class_obj.batch_execute()
+            
+        if not result["success"]:
+            raise ValueError(result)
+        
+        return JSONResponse(status_code=200, content={"success": True, "response": result["message"]})
     except Exception as error:
         raise ValueError(error)
