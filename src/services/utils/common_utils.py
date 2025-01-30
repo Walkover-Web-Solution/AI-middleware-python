@@ -18,6 +18,7 @@ from ...db_services import metrics_service as metrics_service
 from ..utils.ai_middleware_format import validateResponse
 from ..utils.gpt_memory import handle_gpt_memory
 from datetime import datetime
+from src.services.commonServices.suggestion import chatbot_suggestions
 
 def parse_request_body(request_body):
     body = request_body.get('body', {})
@@ -226,11 +227,13 @@ def build_service_params(parsed_data, custom_config, model_output_config, thread
         "tool_call_count": parsed_data['tool_call_count']
     }
 
-async def process_background_tasks(parsed_data, result):
+async def process_background_tasks(parsed_data, result, params):
     tasks = [
             sendResponse(parsed_data['response_format'], result["modelResponse"], success=True, variables=parsed_data.get('variables',{})),
             metrics_service.create([parsed_data['usage']], result["historyParams"], parsed_data['version_id']),
-            validateResponse(final_response=result['modelResponse'], configration=parsed_data['configuration'], bridgeId=parsed_data['bridge_id'], message_id=parsed_data['message_id'], org_id=parsed_data['org_id'])
+            validateResponse(final_response=result['modelResponse'], configration=parsed_data['configuration'], bridgeId=parsed_data['bridge_id'], message_id=parsed_data['message_id'], org_id=parsed_data['org_id']),
+            chatbot_suggestions(parsed_data['response_format'], result["modelResponse"], parsed_data['user'], params['configuration']['prompt'])
+            
         ]
     if parsed_data['gpt_memory'] and parsed_data['configuration']['type'] == 'chat':
             tasks.append(handle_gpt_memory(parsed_data['id'], parsed_data['user'], result['modelResponse'], parsed_data['memory'], parsed_data['gpt_memory_context']))
