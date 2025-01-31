@@ -294,7 +294,7 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
         apikey = body.get('apikey')
         apikey_object_id = body.get('apikey_object_id')
         variables_path = body.get('variables_path')
-        
+        bridge_summary = body.get('bridge_summary')
         gpt_memory = body.get('gpt_memory')
         gpt_memory_context = body.get('gpt_memory_context')
         user_id = request.state.profile['user']['id']
@@ -322,6 +322,8 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
         if prompt:
             result = await storeSystemPrompt(prompt, org_id, parent_id if parent_id is not None else version_id)
             new_configuration['system_prompt_version_id'] = result.get('id')
+        if bridge_summary is not None:
+            update_fields['bridge_summary'] = bridge_summary
         if slugName is not None:
             update_fields['slugName'] = slugName
         if tool_call_count is not None:
