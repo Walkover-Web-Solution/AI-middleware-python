@@ -24,14 +24,18 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
     # make tools data
     tools = []
     names =[]
+    tool_id_and_name_mapping = {}
     for key, api_data in result.get('bridges', {}).get('apiCalls', {}).items():
         # if status is paused then only don't include it in tools
+        name_of_function = api_data.get('endpoint_name') or  api_data.get("function_name")
+        name_of_function = name_of_function.replace(" ", "")
+        tool_id_and_name_mapping[name_of_function] =  api_data.get("function_name")
         if api_data.get('status') == 0:
             continue
         format = {
             "type": "function",
-            "name": api_data.get("function_name"),
-            "description": api_data.get('description') if not api_data.get('endpoint_name') else f"Name: {api_data.get('endpoint_name')}, Description: {api_data.get('description')}",
+            "name": name_of_function,
+            "description": api_data.get('description'),
             "properties": (
                 api_data.get("fields", {}) if api_data.get("version") == 'v2' 
                 else {item["variable_name"]: {
@@ -52,6 +56,7 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
         if isinstance(tool, dict):
             tools.append(tool)
             names.append(tool.get('name'))
+            tool_id_and_name_mapping[tool.get('name')] =  tool.get('name')
     configuration.pop('tools', None)
     configuration['tools'] = tools
     service = service or (result.get('bridges', {}).get('service', '').lower())
@@ -93,6 +98,7 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
         "user_reference": result.get("bridges", {}).get("user_reference", ""),
         "variables_path": variables_path or variables_path_bridge,
         "names":names,
+        "tool_id_and_name_mapping":tool_id_and_name_mapping,
         "gpt_memory" : gpt_memory,
         "version_id" : version_id or result.get('bridges', {}).get('published_version_id'),
         "gpt_memory_context" :  gpt_memory_context,

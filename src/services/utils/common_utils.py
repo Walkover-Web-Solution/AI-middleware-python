@@ -18,6 +18,7 @@ from ...db_services import metrics_service as metrics_service
 from ..utils.ai_middleware_format import validateResponse
 from ..utils.gpt_memory import handle_gpt_memory
 from datetime import datetime
+from src.services.commonServices.suggestion import chatbot_suggestions
 
 def parse_request_body(request_body):
     body = request_body.get('body', {})
@@ -53,6 +54,7 @@ def parse_request_body(request_body):
         "user_reference": body.get("user_reference", ""),
         "variables_path": body.get('variables_path') or {},
         "names": body.get('names'),
+        "tool_id_and_name_mapping": body.get("tool_id_and_name_mapping"),
         "suggest": body.get('suggest', False),
         "message_id": str(uuid.uuid1()),
         "reasoning_model": body.get("configuration", {}).get('model') in {'o1-preview', 'o1-mini'},
@@ -150,7 +152,7 @@ async def prepare_prompt(parsed_data, thread_info, model_config, custom_config):
     memory = None
     
     if configuration['type'] == 'chat':
-        id = f"{thread_info['thread_id']}_{parsed_data.get('bridge_id') or parsed_data.get('version_id')}"
+        id = f"{thread_info['thread_id']}_{parsed_data.get('version_id') or parsed_data.get('bridge_id')}"
         parsed_data['id'] = id
         if gpt_memory:
             response, _ = await fetch("https://flow.sokt.io/func/scriCJLHynCG", "POST", None, None, {"threadID": id})
@@ -218,6 +220,7 @@ def build_service_params(parsed_data, custom_config, model_output_config, thread
         "message_id": parsed_data['message_id'],
         "bridgeType": parsed_data['bridgeType'],
         "names": parsed_data['names'],
+        "tool_id_and_name_mapping": parsed_data["tool_id_and_name_mapping"],
         "reasoning_model": parsed_data['reasoning_model'],
         "memory": memory,
         "type": parsed_data['configuration'].get('type'),
@@ -227,12 +230,20 @@ def build_service_params(parsed_data, custom_config, model_output_config, thread
         "tool_call_count": parsed_data['tool_call_count']
     }
 
-async def process_background_tasks(parsed_data, result):
+async def process_background_tasks(parsed_data, result, params):
     tasks = [
             sendResponse(parsed_data['response_format'], result["modelResponse"], success=True, variables=parsed_data.get('variables',{})),
             metrics_service.create([parsed_data['usage']], result["historyParams"], parsed_data['version_id']),
             validateResponse(final_response=result['modelResponse'], configration=parsed_data['configuration'], bridgeId=parsed_data['bridge_id'], message_id=parsed_data['message_id'], org_id=parsed_data['org_id'])
         ]
+    if parsed_data['bridgeType']:
+        tasks.append(chatbot_suggestions(
+            parsed_data['response_format'], 
+            result["modelResponse"], 
+            parsed_data['user'], 
+            params['configuration'].get('prompt', None), 
+            params['configuration'].get('tools', None)
+        ))
     if parsed_data['gpt_memory'] and parsed_data['configuration']['type'] == 'chat':
             tasks.append(handle_gpt_memory(parsed_data['id'], parsed_data['user'], result['modelResponse'], parsed_data['memory'], parsed_data['gpt_memory_context']))
     await asyncio.gather(*tasks, return_exceptions=True)

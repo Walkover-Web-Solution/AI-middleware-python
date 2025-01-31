@@ -1,23 +1,32 @@
 import json
-from groq import Groq
-import traceback
 from .baseService.utils import sendResponse
-from ..commonServices.createConversations import ConversationService
-from ..utils.ai_middleware_format import Response_formatter
-from config import Config
 from src.services.utils.apiservice import fetch
 
-async def chatbot_suggestions(response_format, assistant, user_msg):
+async def chatbot_suggestions(response_format, assistant, user, prompt, tools):
     try:
-        conversations = [{"role": "user", "content": user_msg}, {"role": "assistant", "content": assistant.get('data', '').get('content')}]
+        if tools is not None:
+            tool_descriptions = {tool['name']: tool['description'] for tool in tools}
+            prompt += f'tool calls Available :-  {tool_descriptions}'
         
-        response, rs_headers = await fetch(f"https://flow.sokt.io/func/scriGER0MdPR","POST", None,None, { "conversations": conversations})
-        if response.get('success') == False:
-            raise Exception(response.get('message'))
-        else:
-            response['response']['data']['suggestions'] = json.loads(response.get('response',{}).get('data',{}).get('content',""))
-            await sendResponse(response_format, response.get('response'), success=True)
-            return 
+        conversations = [{"role": "user", "content": user}, {"role": "assistant", "content": assistant.get('data', '').get('content')}]
+        variables = {'prompt' : prompt}
+        response, rs_headers = await fetch(
+            f"https://proxy.viasocket.com/proxy/api/1258584/29gjrmh24/api/v2/model/chat/completion",
+            "POST",
+            {
+                "pauthkey": "1b13a7a038ce616635899a239771044c",
+                "Content-Type": "application/json"
+            },
+            None,
+            {
+                "configuration" : conversations,
+                "user": "generate suggestions",
+                "bridge_id": "674710c9141fcdaeb820aeb8",
+                "variables": variables,
+            }
+        )
+        response['response']['data'] = json.loads(response.get('response',{}).get('data',{}).get('content',""))
+        await sendResponse(response_format, response.get('response'), success=True)
             
     except Exception as err:
         print("Error calling function=>", err)

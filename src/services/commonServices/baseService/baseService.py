@@ -54,6 +54,8 @@ class BaseService:
         self.text = params.get('text')
         self.batch = params.get('batch')
         self.webhook = params.get('webhook')
+        self.tool_id_and_name_mapping = params.get('tool_id_and_name_mapping')
+
 
     def aiconfig(self):
         return self.customConfig
@@ -61,7 +63,7 @@ class BaseService:
     async def run_tool(self, responses, service):
         codes_mapping = make_code_mapping_by_service(responses, service)
         codes_mapping = await self.replace_variables_in_args(codes_mapping)
-        return await process_data_and_run_tools(codes_mapping, self.names)
+        return await process_data_and_run_tools(codes_mapping, self.names, self.tool_id_and_name_mapping)
 
 
     def update_configration(self, response, function_responses, configuration, mapping_response_data, service, tools):    

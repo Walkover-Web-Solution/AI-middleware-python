@@ -4638,7 +4638,7 @@ class ModelsConfig:
                 "level": 1
             },
             # "encoding_format": {
-            #     "field": "dropdown",
+            #     "field": "select",
             #     "typeOf": "string",
             #     "level": 2
             # },
@@ -4681,8 +4681,8 @@ class ModelsConfig:
                 "level": 1
             },
             "encoding_format": {
-                "field": "dropdown",
-                "values": ["float", "base64"],
+                "field": "select",
+                "options": ["float", "base64"],
                 "default": "float",
                 "level": 2
             },
@@ -4725,8 +4725,8 @@ class ModelsConfig:
                 "level": 1
             },
             "encoding_format": {
-                "field": "dropdown",
-                "values": ["float", "base64"],
+                "field": "select",
+                "options": ["float", "base64"],
                 "default": "float",
                 "level": 2
             },

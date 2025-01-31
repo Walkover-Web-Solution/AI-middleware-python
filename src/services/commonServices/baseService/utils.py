@@ -166,7 +166,7 @@ async def sendResponse(response_format, data, success = False, variables={}):
     except Exception as e:
         print("error sending request", e)
 
-async def process_data_and_run_tools(codes_mapping, names):
+async def process_data_and_run_tools(codes_mapping, names, tool_id_and_name_mapping):
     try:
         responses = []
         tool_call_logs = {**codes_mapping} 
@@ -178,12 +178,12 @@ async def process_data_and_run_tools(codes_mapping, names):
             name = tool['name']
 
             # Get corresponding function code mapping
-            tool_mapping = {} if name in names else {"error": True, "response": "Wrong Function name"}
+            tool_mapping = {} if tool_id_and_name_mapping[name] in names else {"error": True, "response": "Wrong Function name"}
             tool_data = {**tool, **tool_mapping}
 
             if not tool_data.get("response"):
                 # if function is present in db/NO response, create task for async processing
-                task = axios_work(tool_data.get("args"), name)
+                task = axios_work(tool_data.get("args"), tool_id_and_name_mapping[name])
                 tasks.append((tool_call_key, tool_data, task))
             else:
                 # If function is not present in db/response exists, append to responses
