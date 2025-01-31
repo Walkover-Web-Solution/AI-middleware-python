@@ -2,8 +2,12 @@ import json
 from .baseService.utils import sendResponse
 from src.services.utils.apiservice import fetch
 
-async def chatbot_suggestions(response_format, assistant, user, prompt):
+async def chatbot_suggestions(response_format, assistant, user, prompt, tools):
     try:
+        if tools is not None:
+            tool_descriptions = [tool['description'] for tool in tools]
+            prompt += f'tool calls Available :-  {tool_descriptions}'
+        
         conversations = [{"role": "user", "content": user}, {"role": "assistant", "content": assistant.get('data', '').get('content')}]
         variables = {'prompt' : prompt}
         response, rs_headers = await fetch(

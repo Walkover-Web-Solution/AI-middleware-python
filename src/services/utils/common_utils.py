@@ -234,7 +234,13 @@ async def process_background_tasks(parsed_data, result, params):
             validateResponse(final_response=result['modelResponse'], configration=parsed_data['configuration'], bridgeId=parsed_data['bridge_id'], message_id=parsed_data['message_id'], org_id=parsed_data['org_id'])
         ]
     if parsed_data['bridgeType']:
-        tasks.append(chatbot_suggestions(parsed_data['response_format'], result["modelResponse"], parsed_data['user'], params['configuration']['prompt']))
+        tasks.append(chatbot_suggestions(
+            parsed_data['response_format'], 
+            result["modelResponse"], 
+            parsed_data['user'], 
+            params['configuration'].get('prompt', None), 
+            params['configuration'].get('tools', None)
+        ))
     if parsed_data['gpt_memory'] and parsed_data['configuration']['type'] == 'chat':
             tasks.append(handle_gpt_memory(parsed_data['id'], parsed_data['user'], result['modelResponse'], parsed_data['memory'], parsed_data['gpt_memory_context']))
     await asyncio.gather(*tasks, return_exceptions=True)
