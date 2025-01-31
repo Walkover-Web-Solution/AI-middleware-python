@@ -1,6 +1,6 @@
 from fastapi import Request
 from fastapi.responses import JSONResponse
-from src.db_services.ConfigurationServices import get_bridges
+from src.db_services.ConfigurationServices import get_bridges, get_bridges_with_tools
 from datetime import datetime, timezone
 from src.services.utils.apiservice import fetch
 from src.controllers.configController import duplicate_create_bridges
@@ -71,3 +71,48 @@ async def optimize_prompt_controller(request : Request, bridge_id: str):
         
     except Exception as e:
         return {'error': str(e)}
+    
+
+
+
+async def generate_summary(request):
+    try:
+        body = await request.json()
+        org_id = request.state.profile.get("org",{}).get("id","")
+        version_id = body.get('version_id')
+        get_version_data = (await get_bridges_with_tools(None, org_id, version_id)).get("bridges")
+        if not get_version_data:
+            return {
+                "success": False,
+                "error": "Version data not found"
+            }
+        tools = {tool['endpoint_name']: tool['description'] for tool in get_version_data.get('apiCalls', {}).values()}
+        system_prompt = get_version_data.get('configuration',{}).get('prompt')
+        if tools:
+            system_prompt += f'Available tool calls :-  {tools}'
+        variables = {'prompt' : system_prompt}
+        response, rs_headers = await fetch(
+            f"https://proxy.viasocket.com/proxy/api/1258584/29gjrmh24/api/v2/model/chat/completion",
+            "POST",
+            {
+                "pauthkey": "1b13a7a038ce616635899a239771044c",
+                "Content-Type": "application/json"
+            },
+            None,
+            {
+                "user": "generate summary from the user message provided in system prompt",
+                "bridge_id": "679ca9520a9b42277fd2a3c1",
+                "variables": variables,
+            }
+        )
+        
+        summary = response.get('response',{}).get('data',{}).get('content',"")
+        return JSONResponse(status_code=200, content={
+            "success": True,
+            "message": "Summary generated successfully",
+            "result" : summary
+        })
+            
+    except Exception as err:
+        print("Error calling function=>", err)
+    
