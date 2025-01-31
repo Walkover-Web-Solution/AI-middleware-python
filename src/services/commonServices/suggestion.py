@@ -21,8 +21,8 @@ async def chatbot_suggestions(response_format, assistant, user, prompt):
                 "variables": variables,
             }
         )
-        result = response.get('response', {}).get('data', {}).get('content', "")
-        await sendResponse(response_format, result, success=True)
+        response['response']['data'] = json.loads(response.get('response',{}).get('data',{}).get('content',""))
+        await sendResponse(response_format, response.get('response'), success=True)
             
     except Exception as err:
         print("Error calling function=>", err)
