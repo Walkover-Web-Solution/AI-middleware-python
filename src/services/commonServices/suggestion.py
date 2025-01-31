@@ -5,7 +5,7 @@ from src.services.utils.apiservice import fetch
 async def chatbot_suggestions(response_format, assistant, user, prompt, tools):
     try:
         if tools is not None:
-            tool_descriptions = [tool['description'] for tool in tools]
+            tool_descriptions = {tool['name']: tool['description'] for tool in tools}
             prompt += f'tool calls Available :-  {tool_descriptions}'
         
         conversations = [{"role": "user", "content": user}, {"role": "assistant", "content": assistant.get('data', '').get('content')}]
