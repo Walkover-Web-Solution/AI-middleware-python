@@ -56,6 +56,7 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
         if isinstance(tool, dict):
             tools.append(tool)
             names.append(tool.get('name'))
+            tool_id_and_name_mapping[tool.get('name')] =  tool.get('name')
     configuration.pop('tools', None)
     configuration['tools'] = tools
     service = service or (result.get('bridges', {}).get('service', '').lower())
@@ -97,7 +98,7 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
         "user_reference": result.get("bridges", {}).get("user_reference", ""),
         "variables_path": variables_path or variables_path_bridge,
         "names":names,
-        "tool_id_and_name_mapping":"tool_id_and_name_mapping",
+        "tool_id_and_name_mapping":tool_id_and_name_mapping,
         "gpt_memory" : gpt_memory,
         "version_id" : version_id or result.get('bridges', {}).get('published_version_id'),
         "gpt_memory_context" :  gpt_memory_context,

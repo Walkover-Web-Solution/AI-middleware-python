@@ -178,7 +178,7 @@ async def process_data_and_run_tools(codes_mapping, names, tool_id_and_name_mapp
             name = tool['name']
 
             # Get corresponding function code mapping
-            tool_mapping = {} if name in names else {"error": True, "response": "Wrong Function name"}
+            tool_mapping = {} if tool_id_and_name_mapping[name] in names else {"error": True, "response": "Wrong Function name"}
             tool_data = {**tool, **tool_mapping}
 
             if not tool_data.get("response"):
