@@ -6,7 +6,7 @@ from src.services.commonServices.createConversations import ConversationService
 async def chatbot_suggestions(response_format, assistant, parsed_data, params):
     try:
         user = parsed_data.get('user')
-        prompt_summary = parsed_data.get('prompt_summary')
+        prompt_summary = parsed_data.get('bridge_summary')
         prompt = params['configuration']['prompt']
         conversation = ConversationService.createOpenAiConversation(params.get('configuration',{}).get('conversation',{}), None).get('messages', [])
         if conversation is None:
