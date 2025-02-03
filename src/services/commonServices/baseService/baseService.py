@@ -52,8 +52,6 @@ class BaseService:
         self.image_data = params.get('images')
         self.tool_call_count = params.get('tool_call_count')
         self.text = params.get('text')
-        self.batch = params.get('batch')
-        self.webhook = params.get('webhook')
         self.tool_id_and_name_mapping = params.get('tool_id_and_name_mapping')
         self.batch = params.get('batch')
         self.webhook = params.get('webhook')
