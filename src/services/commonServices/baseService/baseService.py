@@ -53,6 +53,8 @@ class BaseService:
         self.tool_call_count = params.get('tool_call_count')
         self.text = params.get('text')
         self.tool_id_and_name_mapping = params.get('tool_id_and_name_mapping')
+        self.batch = params.get('batch')
+        self.webhook = params.get('webhook')
 
     def aiconfig(self):
         return self.customConfig
