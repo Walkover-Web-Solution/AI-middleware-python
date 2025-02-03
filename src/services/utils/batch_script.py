@@ -7,7 +7,7 @@ import asyncio
 async def repeat_function():
     while True:
         await check_batch_status()
-        await asyncio.sleep(2)
+        await asyncio.sleep(900)
 
 asyncio.ensure_future(repeat_function())
 
