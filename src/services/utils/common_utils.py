@@ -183,6 +183,8 @@ async def prepare_prompt(parsed_data, thread_info, model_config, custom_config):
                     custom_config['response_type'] = {"type": 'text'}
                 case _:
                     custom_config['response_type'] = res
+        if parsed_data['bridge_summary']is not None:
+            parsed_data['bridge_summary'], missing_vars = Helper.replace_variables_in_prompt(parsed_data['bridge_summary'], variables)
         
         return memory, missing_vars
     
