@@ -23,7 +23,7 @@ async def chatbot_suggestions(response_format, assistant, parsed_data, params):
             },
             None,
             {
-                "user": f'generate suggestions based on the user conversations, user prompt : {final_prompt} and user conversation : {conversation}',
+                "user": f'Generate suggestions based on the user conversations and user prompt. User prompt: {final_prompt} and user conversation: {conversation}',
                 "bridge_id": "674710c9141fcdaeb820aeb8"
             }
         )
