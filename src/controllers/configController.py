@@ -214,7 +214,8 @@ async def get_all_service_models_controller(service):
                 "reasoning" : {
                     "o1-preview" : restructure_configuration(model_configuration.o1_preview()),
                     "o1-mini" : restructure_configuration(model_configuration.o1_mini()),
-                    "o1" : restructure_configuration(model_configuration.o1())
+                    "o1" : restructure_configuration(model_configuration.o1()),
+                    "o3-mini" : restructure_configuration(model_configuration.o3_mini())
                 },
                 "image" : {
                     "dall-e-2" : restructure_configuration(model_configuration.dall_e_2()),
