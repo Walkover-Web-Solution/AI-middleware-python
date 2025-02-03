@@ -2,6 +2,7 @@ import json
 from .baseService.utils import sendResponse
 from src.services.utils.apiservice import fetch
 from src.services.commonServices.createConversations import ConversationService
+import uuid
 
 async def chatbot_suggestions(response_format, assistant, parsed_data, params):
     try:
@@ -13,7 +14,6 @@ async def chatbot_suggestions(response_format, assistant, parsed_data, params):
             conversation = []
         conversation.extend([{"role": "user", "content": user}, {"role": "assistant", "content": assistant.get('data', '').get('content')}])
         final_prompt = prompt_summary if prompt_summary is not None else prompt
-        # variables = {'prompt': prompt_summary if prompt_summary is not None else prompt}
         response, rs_headers = await fetch(
             f"https://proxy.viasocket.com/proxy/api/1258584/29gjrmh24/api/v2/model/chat/completion",
             "POST",
@@ -24,7 +24,8 @@ async def chatbot_suggestions(response_format, assistant, parsed_data, params):
             None,
             {
                 "user": f'Generate suggestions based on the user conversations and user prompt. User prompt: {final_prompt} and user conversation: {conversation}',
-                "bridge_id": "674710c9141fcdaeb820aeb8"
+                "bridge_id": "674710c9141fcdaeb820aeb8",
+                "thread_id": parsed_data.get('thread_id') or str(uuid.uuid4()),
             }
         )
         response['response']['data'] = json.loads(response.get('response',{}).get('data',{}).get('content',""))
