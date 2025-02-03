@@ -2381,6 +2381,77 @@ class ModelsConfig:
             "outputConfig": outputConfig,
             "inputConfig": inputConfig
         }
+    
+    @staticmethod
+    def o3_mini():
+        configuration = {
+            "model": {
+                "field": "drop",
+                "default": "o3-mini",
+                "level": 1,
+            },
+            "tools": {
+                "field": "array",
+                "level": 0,
+                "default": [],
+                "typeOf": "array"
+            },
+            "tool_choice": {
+                "field": "text",
+                "default": "auto",
+                "level": 0,
+                "typeOf": "string"
+            },
+            "response_type": {
+                "field": "select",
+                "options" : [{"type" : "text"},{"type" : "json_object"},{"type" : "json_schema"}],
+                "default": {
+                "type" : "text",
+                },
+                "level": 0
+            }, 
+            "max_tokens": {
+                "field": "slider",
+                "min": 1,
+                "max": 100_000,
+                "step": 1,
+                "default": 256,
+                "level": 2
+            }
+        }
+        outputConfig = {
+            "usage": [{
+                "prompt_tokens": "usage.prompt_tokens",
+                "completion_tokens": "usage.completion_tokens",
+                "total_tokens": "usage.total_tokens",
+                "cached_tokens": "usage.prompt_tokens_details.cached_tokens",
+                "reasoning_tokens": "usage.completion_tokens_details.cached_tokens",
+                "total_cost": {
+                    "input_cost": 1.10,
+                    "output_cost": 4.40,
+                    "cached_cost": 0.55
+                }
+            }],
+            "message": "choices[0].message.content",
+            "assistant": "choices[0].message",
+            "tools": "choices[0].message.tool_calls",
+            "id": "id"
+        }
+        inputConfig = {
+            "system": {
+                "role": "system",
+                "content": "",
+                "contentKey": "content",
+                "type": "json"
+            },
+            "content_location": "prompt[0].content"
+        }
+        return {
+            "configuration": configuration,
+            "outputConfig": outputConfig,
+            "inputConfig": inputConfig
+        }
+    
     @staticmethod
     def o1_preview():
         configuration = {
