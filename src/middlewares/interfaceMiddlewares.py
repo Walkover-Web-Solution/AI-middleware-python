@@ -69,7 +69,8 @@ async def send_data_middleware(request: Request, botId: str):
             "response_type": { 
                 "type": "json_object"
             },
-            "actions" : actions
+            "actions" : actions,
+            "bridge_summary" : bridges.get('bridge_summary')
         }
         await add_configuration_data_to_body(request=request)
         
