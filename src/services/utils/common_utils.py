@@ -151,7 +151,7 @@ async def prepare_prompt(parsed_data, thread_info, model_config, custom_config):
     gpt_memory = parsed_data['gpt_memory']
     memory = None
     
-    if configuration['type'] == 'chat':
+    if configuration['type'] == 'chat' or configuration['type'] == 'reasoning':
         id = f"{thread_info['thread_id']}_{parsed_data.get('version_id') or parsed_data.get('bridge_id')}"
         parsed_data['id'] = id
         if gpt_memory:
