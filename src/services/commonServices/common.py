@@ -12,7 +12,7 @@ from ..utils.send_error_webhook import send_error_to_webhook
 import json
 from src.handler.executionHandler import handle_exceptions
 from models.mongo_connection import db
-from src.services.utils.common_utils import parse_request_body, initialize_timer, load_model_configuration, handle_pre_tools, handle_fine_tune_model,manage_threads, prepare_prompt, configure_custom_settings, build_service_params, process_background_tasks, add_default_variables, build_service_params_for_batch
+from src.services.utils.common_utils import parse_request_body, initialize_timer, load_model_configuration, handle_pre_tools, handle_fine_tune_model,manage_threads, prepare_prompt, configure_custom_settings, build_service_params, process_background_tasks, build_service_params_for_batch, add_default_template
 from src.services.utils.rich_text_support import process_chatbot_response
 app = FastAPI()
 from src.services.utils.helper import Helper
@@ -26,8 +26,9 @@ async def chat(request_body):
     try:
         # Step 1: Parse and validate request body
         parsed_data = parse_request_body(request_body)
-        #  add defualt varaibles in prompt eg : time and date
-        parsed_data['variables'] = add_default_variables(parsed_data['variables'])
+
+        parsed_data['configuration']['prompt'] = add_default_template(parsed_data.get('configuration', {}).get('prompt', ''))
+
         # Step 2: Initialize Timer
         timer = initialize_timer(parsed_data['state'])
         
@@ -199,7 +200,6 @@ async def batch(request_body):
         if parsed_data['batch_webhook'] is None:
             raise ValueError("webhook is required")
         #  add defualt varaibles in prompt eg : time and date
-        parsed_data['variables'] = add_default_variables(parsed_data['variables'])
         
         # Step 3: Load Model Configuration
         model_config, custom_config, model_output_config = await load_model_configuration(

@@ -2,6 +2,7 @@ import src.db_services.ConfigurationServices as ConfigurationService
 from .helper import Helper
 from bson import ObjectId
 from models.mongo_connection import db
+from src.services.utils.common_utils import updateVariablesWithTimeZone
 apiCallModel = db['apicalls']
 
 # from src.services.commonServices.generateToken import generateToken
@@ -85,7 +86,7 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
         for param in required_params:
             if param in variables :
                 args[param] = variables[param]
-        
+
     return {
         'success': True,
         'configuration': configuration,
@@ -103,4 +104,5 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
         "version_id" : version_id or result.get('bridges', {}).get('published_version_id'),
         "gpt_memory_context" :  gpt_memory_context,
         "tool_call_count": result.get("bridges", {}).get("tool_call_count", 3),
+        "variables": await updateVariablesWithTimeZone(variables,org_id)
     }
