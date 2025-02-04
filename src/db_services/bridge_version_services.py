@@ -5,7 +5,10 @@ import json
 import asyncio
 from src.services.utils.apiservice import fetch
 from src.services.cache_service import delete_in_cache
-from .ConfigurationServices import get_bridges_with_tools
+from .ConfigurationServices import get_bridges_with_tools, get_bridges_with_tools_and_apikeys, get_bridges_without_tools
+from src.services.commonServices.common import chat
+from ..services.utils.helper import Helper
+from ..services.utils.nlp import compute_cosine_similarity
 
 configurationModel = db["configurations"]
 version_model = db['configuration_versions']
@@ -153,7 +156,7 @@ async def get_version_with_tools(bridge_id, org_id):
     
 async def publish(org_id, version_id):
     try:
-        get_version_data = (await get_bridges_with_tools(None, org_id, version_id)).get("bridges")
+        get_version_data = (await get_bridges_with_tools_and_apikeys(None, org_id, version_id)).get("bridges")
         if not get_version_data:
             return {
                 "success": False,
@@ -179,7 +182,7 @@ async def publish(org_id, version_id):
         get_version_data.pop('_id', None)
         updated_configuration = {**parent_configuration, **get_version_data}
         updated_configuration['published_version_id'] = published_version_id
-        asyncio.create_task(makeQuestion(parent_id, updated_configuration.get("configuration",{}).get("prompt",""), updated_configuration.get('apiCalls')))
+        comparison_score = await makeQuestion(parent_id, updated_configuration.get("configuration",{}).get("prompt",""), updated_configuration.get('apiCalls'), get_version_data, version_id)
         updated_configuration['function_ids'] = [ObjectId(fid) for fid in updated_configuration['function_ids']]
         await configurationModel.update_one(
             {'_id': ObjectId(parent_id)},
@@ -189,26 +192,66 @@ async def publish(org_id, version_id):
         
         return {
             "success": True,
-            "message": "Configuration updated successfully"
+            "message": "Configuration updated successfully", 
+            "data" : {
+                "comparison_score" : comparison_score
+            }
         }
     
     except Exception as e:
         print(f"An error occurred: {e}")
+        traceback.print_exc()
         return {
             "success": False,
             "error": str(e)
         }
-async def makeQuestion(parent_id, prompt, functions):
+async def makeQuestion(parent_id, prompt, functions, version_data, version_id):
     if functions: 
         filtered_functions = {
             function['endpoint_name']: function['description'] for function in functions.values()
         }
-
         prompt += "\nFunctionalities available\n" + json.dumps(filtered_functions)
+        
+    published_version = (await get_bridges_without_tools(parent_id))['bridges']
+    
     response, headers = await fetch(url='https://proxy.viasocket.com/proxy/api/1258584/29gjrmh24/api/v2/model/chat/completion',method='POST',json_body= {"user": prompt,"bridge_id": "67459164ea7147ad4b75f92a"},headers = {'pauthkey': '1b13a7a038ce616635899a239771044c','Content-Type': 'application/json'})
     # Update the document in the configurationModel
-    updated_configuration= {"starterQuestion": json.loads(response.get("response",{}).get("data",{}).get("content","{}")).get("questions",[])}
+    expected_questions = json.loads(response.get("response",{}).get("data",{}).get("content","{}")).get("questions",[])
+    updated_configuration= {"starterQuestion": expected_questions}
+    
+    version_data['apikey'] = Helper.decrypt(version_data['apikeys'][version_data['configuration']['service']])
+    
+    comparison_score = None 
+    
+    if not published_version.get('expected_qna'):
+        expected_answers_responses = await asyncio.gather(
+            *[chat({'body': { **version_data,  'user': question }, 'path_params': { 'bridge_id': version_id }, 'state': {'is_playground': True }}) 
+            for question in expected_questions]
+        )
+        expected_answers = [json.loads(response.__dict__['body'].decode('utf-8'))['response']['choices'][0]['message']['content'] for response in expected_answers_responses]
+        updated_configuration['expected_qna'] = [
+            {'question': expected_questions[i], 'answer': expected_answers[i]} 
+            for i in range(len(expected_questions))
+        ]
+    
+    else: 
+        expected_questions, expected_answers = zip(*[(qna['question'], qna['answer']) for qna in published_version.get('expected_qna')])
+        new_answer_responses = await asyncio.gather(
+            *[chat({'body': { **version_data,  'user': question }, 'path_params': { 'bridge_id': version_id }, 'state': {'is_playground': True }}) 
+            for question in expected_questions]
+        )
+        new_answers = [json.loads(response.__dict__['body'].decode('utf-8'))['response']['choices'][0]['message']['content'] for response in new_answer_responses]
+        
+        comparison_score = 0
+        
+        for i in range(len(expected_questions)):
+            comparison_score += compute_cosine_similarity(expected_questions[i], new_answers[i])
+        
+        comparison_score /= len(expected_questions)
+    
     configurationModel.update_one(
         {'_id': ObjectId(parent_id)},
         {'$set': updated_configuration}
     )
+    
+    return comparison_score

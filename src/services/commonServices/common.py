@@ -83,7 +83,7 @@ async def chat(request_body):
             if parsed_data.get('type') != 'image':
                 parsed_data['tokens'] = Helper.calculate_usage(parsed_data['model'],result["modelResponse"],parsed_data['service'])
         latency = {
-            "over_all_time": timer.stop("Api total time") or "",
+            "over_all_time": timer.stop("Api total time") if hasattr(timer, "start_time") else "",
             "model_execution_time": sum(params['execution_time_logs'].values()) or "",
             "execution_time_logs": params['execution_time_logs'] or {}
         }

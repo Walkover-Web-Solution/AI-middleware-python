@@ -55,7 +55,7 @@ async def publish_version(request, version_id):
         org_id = request.state.profile['org']['id']
         result = await publish(org_id, version_id)
         if result['success']:
-            return JSONResponse({"success": True, "message": "version published successfully", "version_id": version_id})
+            return JSONResponse({"success": True, "message": "version published successfully", "version_id": version_id, 'comparision_score': result['data']['comparison_score'] })
         return result
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e)
