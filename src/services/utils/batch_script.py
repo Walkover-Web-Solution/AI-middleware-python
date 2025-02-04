@@ -3,6 +3,7 @@ from openai import AsyncOpenAI
 from ..utils.send_error_webhook import create_response_format
 from ..commonServices.baseService.baseService import sendResponse
 import asyncio
+import json
 
 async def repeat_function():
     while True:
@@ -29,12 +30,17 @@ async def check_batch_status():
                 file_response = None
                 if file is not None:
                     file_response = await openAI.files.content(file)
-                    await sendResponse(response_format, data=file_response)
+                    file_content = await asyncio.to_thread(file_response.read)
+                    try:
+                        # Split the data by newline and parse each JSON object separately
+                        file_content = [json.loads(line) for line in file_content.decode('utf-8').splitlines() if line.strip()]
+                    except json.JSONDecodeError as e:
+                        print(f"JSON decoding error: {e}")
+                        file_content = None
+                    await sendResponse(response_format, data=file_response, success = True)
                 await delete_in_cache_for_batch(f'AIMIDDLEWARE_{batch_id}')
     except Exception as error:
         print(f"An error occurred while checking the batch status: {error}")
         
-
-
     
     
