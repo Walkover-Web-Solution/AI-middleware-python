@@ -216,7 +216,13 @@ async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None)
                             '$map': { 
                                 'input': '$apikeys_array.v', 
                                 'as': 'id', 
-                                'in': { '$toObjectId': '$$id' } 
+                                'in': {
+                                    '$cond': {
+                                        'if': { '$eq': ['$$id', ''] },
+                                        'then': None,
+                                        'else': { '$toObjectId': '$$id' }
+                                    }
+                                }
                             } 
                         } 
                     },
