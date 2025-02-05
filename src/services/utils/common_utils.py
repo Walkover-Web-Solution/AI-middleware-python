@@ -1,6 +1,6 @@
-from fastapi import APIRouter, Request
+import json
 import uuid
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 from src.services.utils.time import Timer
 from src.configs.modelConfiguration import ModelsConfig
 from src.services.commonServices.baseService.utils import axios_work
@@ -17,8 +17,9 @@ from ..commonServices.baseService.utils import sendResponse
 from ...db_services import metrics_service as metrics_service
 from ..utils.ai_middleware_format import validateResponse
 from ..utils.gpt_memory import handle_gpt_memory
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from src.services.commonServices.suggestion import chatbot_suggestions
+from src.services.cache_service import find_in_cache, store_in_cache
 
 def parse_request_body(request_body):
     body = request_body.get('body', {})
@@ -73,10 +74,11 @@ def parse_request_body(request_body):
         "batch_webhook" : body.get('webhook')
     }
 
-def add_default_variables(variables = {}):
-    current_time = datetime.now()
-    variables['current_time_and_date'] = current_time.strftime("%H:%M:%S") + '_' + current_time.strftime("%Y-%m-%d")
-    return variables
+
+
+def add_default_template(prompt):
+    prompt += ' \ncurrent_time_and_date : {{current_time_and_date}}'
+    return prompt
 
 def initialize_timer(state: Dict[str, Any]) -> Timer:
     timer_obj = Timer()
@@ -274,3 +276,25 @@ def build_service_params_for_batch(parsed_data, custom_config, model_output_conf
         "batch" : parsed_data['batch'],
         "webhook" : parsed_data['batch_webhook']
     }
+
+
+async def updateVariablesWithTimeZone(variables, org_id):
+    async def getTimezoneOfOrg():
+        timezone = "+5:30"
+        cached_data = await find_in_cache(org_id)
+        if cached_data:
+            # Deserialize the cached JSON data
+            cached_result = json.loads(cached_data)
+            timezone =  cached_result.get('timezone')
+        else:
+            response, _ = await fetch(f"https://routes.msg91.com/api/{Config.PUBLIC_REFERENCEID}/getCompanies?id={org_id}", "GET", {"Authkey": Config.ADMIN_API_KEY}, None, None)
+            timezone =  response.get('data', {}).get('data', [{}])[0].get('timezone')
+            await store_in_cache(org_id, response.get('data', {}).get('data', [{}])[0])
+        hour, minutes = timezone.split(':')
+        return int(hour), int(minutes)
+    if 'current_time_and_date' not in variables:
+        hour, minutes = await getTimezoneOfOrg()
+        current_time = datetime.now(timezone.utc)
+        current_time = current_time + timedelta(hours=hour, minutes=minutes)
+        variables['current_time_and_date'] = current_time.strftime("%H:%M:%S") + '_' + current_time.strftime("%Y-%m-%d")
+    return variables
