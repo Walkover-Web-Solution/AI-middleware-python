@@ -39,7 +39,8 @@ async def execute_with_retry(
                     "message_id": message_id,
                     "bridge_id": bridge_id,
                     "org_id": org_id,
-                    "message": f"Retry mechanism started due to error, {first_result['error']}"
+                    "message": "Retry mechanism started due to error",
+                    "error" : first_result.get('error')
                 })
 
             # Generate alternative configuration
