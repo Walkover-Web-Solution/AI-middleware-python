@@ -1,7 +1,7 @@
 import json
 from fastapi import HTTPException, status
 from fastapi.responses import JSONResponse
-from ..db_services.bridge_version_services import create_bridge_version, update_bridges, get_version_with_tools, publish
+from ..db_services.bridge_version_services import create_bridge_version, update_bridges, get_version_with_tools, publish, get_comparison_score
 from src.services.utils.helper import Helper
 from ..db_services.ConfigurationServices import get_bridges_with_tools, update_bridge, get_bridges_without_tools
 from bson import ObjectId
@@ -55,10 +55,18 @@ async def publish_version(request, version_id):
         org_id = request.state.profile['org']['id']
         result = await publish(org_id, version_id)
         if result['success']:
-            return JSONResponse({"success": True, "message": "version published successfully", "version_id": version_id, 'comparision_score': result['data']['comparison_score'] })
+            return JSONResponse({"success": True, "message": "version published successfully", "version_id": version_id })
         return result
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e)
+    
+async def check_testcases(request, version_id):
+    try:
+        org_id = request.state.profile['org']['id']
+        score = await get_comparison_score(org_id, version_id)
+        return JSONResponse({'success' : True, 'comparison_score' : score})
+    except Exception as e:
+        raise HTTPException(status_code = status.HTTP_400_BAD_REQUEST, detail = {'success' : False, 'score': None, 'error' : e })
 
 
 async def discard_version(request, version_id):
