@@ -16,6 +16,7 @@ async def execute_with_retry(
 ):
     try:
         # Start timer
+        firstAttemptError = {}
         timer.start()
 
         # Execute the first API call
@@ -29,6 +30,7 @@ async def execute_with_retry(
         else:
             print("First API call failed with error:", first_result['error'])
             traceback.print_exc()
+            firstAttemptError = first_result['error']
             if check_error_status_code(first_result.get('status_code')):
                 return first_result
 
@@ -49,6 +51,7 @@ async def execute_with_retry(
             execution_time_logs[len(execution_time_logs) + 1] = timer.stop("API chat completion")
             if second_result['success']:
                 print("Second API call completed successfully.")
+                second_result['response']['firstAttemptError'] = firstAttemptError
                 return second_result
             else:
                 print("Second API call failed with error:", second_result['error'])
