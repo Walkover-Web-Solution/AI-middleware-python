@@ -6,7 +6,8 @@ class ConversationService:
         try:
             threads = []
             if memory is not None:
-                threads.append({'role': 'user', 'content': memory })
+                threads.append({'role': 'user', 'content': 'provide the summary of the previous conversation stored in the memory?'})
+                threads.append({'role': 'assistant', 'content': f'Summary of previous conversations :  {memory}' })
             for message in conversation or []:
                 if message['role'] != "tools_call" and message['role'] != "tool":
                     content = [{"type": "text", "text": message['content']}]
