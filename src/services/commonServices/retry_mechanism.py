@@ -39,7 +39,8 @@ async def execute_with_retry(
                     "message_id": message_id,
                     "bridge_id": bridge_id,
                     "org_id": org_id,
-                    "message": "Retry mechanism started due to error"
+                    "message": "Retry mechanism started due to error",
+                    "error" : first_result.get('error')
                 })
 
             # Generate alternative configuration
@@ -65,7 +66,7 @@ async def execute_with_retry(
         }
     
 def check_error_status_code(error_code):
-    if error_code in [401,404]:
+    if error_code in [401,404,429]:
         return True
     return False
 
