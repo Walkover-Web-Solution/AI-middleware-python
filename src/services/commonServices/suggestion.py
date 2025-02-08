@@ -27,7 +27,7 @@ async def chatbot_suggestions(response_format, assistant, parsed_data, params):
                 "user": f'Generate suggestions based on the user conversations. \n **User Conversations**: {conversation[-2:]}',
                 "bridge_id": "674710c9141fcdaeb820aeb8",
                 "thread_id": f"{parsed_data.get('thread_id') or random_id}-{parsed_data.get('sub_thread_id') or random_id}",
-                "variables": { "promt_summary": final_prompt }
+                "variables": { "prompt_summary": final_prompt }
             }
         )
         response['response']['data'] = json.loads(response.get('response',{}).get('data',{}).get('content',""))
