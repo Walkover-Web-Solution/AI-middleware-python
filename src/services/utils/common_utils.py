@@ -21,6 +21,7 @@ from datetime import datetime, timedelta, timezone
 from src.services.commonServices.suggestion import chatbot_suggestions
 from src.services.cache_service import find_in_cache, store_in_cache
 
+
 def parse_request_body(request_body):
     body = request_body.get('body', {})
     state = request_body.get('state', {})
@@ -71,6 +72,7 @@ def parse_request_body(request_body):
         "bridge_summary" : body.get('bridge_summary'),
         "batch" : body.get('batch') or [],
         "batch_webhook" : body.get('webhook')
+
     }
 
 
