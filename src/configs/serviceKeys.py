@@ -1,9 +1,6 @@
 from .constant import service_name
 ServiceKeys = {
     service_name['openai']: {
-        "reasoning": {
-            "max_tokens" : "max_completion_tokens"
-        },
         "default" : {
             "creativity_level": "temperature",
             "probability_cutoff": "top_p",
