@@ -15,7 +15,7 @@ ServiceKeys = {
             "best_response_count": "best_of",
             "response_suffix": "suffix",
             "response_type": "response_format", 
-            "max_completion_tokens" : "max_tokens"
+            "max_tokens" : "max_completion_tokens"
         },
 
     },
