@@ -254,7 +254,7 @@ class BaseService:
             elif service == service_name['groq']:
                 response = await groq_runmodel(configuration, apikey, self.execution_time_logs, self.bridge_id,  self.timer)
             if not response['success']:
-                raise ValueError(response['error'])
+                raise ValueError(response['error'], self.func_tool_call_data)
             return {
                 'success': True,
                 'modelResponse': response['response']
@@ -262,7 +262,7 @@ class BaseService:
         except Exception as e:
             traceback.print_exc()
             print("chats error=>", e)
-            raise ValueError(f"error occurs from {self.service} api {e.args[0]}")
+            raise ValueError(f"error occurs from {self.service} api {e.args[0]}", *e.args[1:], self.func_tool_call_data)
 
     async def replace_variables_in_args(self, codes_mapping):
         variables = self.variables
