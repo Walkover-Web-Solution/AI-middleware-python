@@ -24,13 +24,15 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
     
     # make tools data
     tools = []
-    names =[]
     tool_id_and_name_mapping = {}
     for key, api_data in result.get('bridges', {}).get('apiCalls', {}).items():
         # if status is paused then only don't include it in tools
         name_of_function = api_data.get('endpoint_name') or  api_data.get("function_name")
         name_of_function = name_of_function.replace(" ", "")
-        tool_id_and_name_mapping[name_of_function] =  api_data.get("function_name")
+        tool_id_and_name_mapping[name_of_function] =  {
+            "url": f"https://flow.sokt.io/func/{api_data.get("function_name")}",
+            "headers":{}
+        }
         if api_data.get('status') == 0:
             continue
         format = {
@@ -50,14 +52,22 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
                api_data.get("required_params")
             )
         }
-        names.append(api_data.get("function_name"))
         tools.append(format)
 
     for tool in extra_tools:
         if isinstance(tool, dict):
-            tools.append(tool)
-            names.append(tool.get('name'))
-            tool_id_and_name_mapping[tool.get('name')] =  tool.get('name')
+            if tool.get("url"):
+                tools.append( {
+                        "type": "function",
+                        "name": tool.get('name').replace(" ", ""),
+                        "description": tool.get('description'),
+                        "properties":  tool.get('fields', {}),
+                        "required": tool.get("required_params",[])
+                    })
+                tool_id_and_name_mapping[tool.get('name').replace(" ", "")] = {
+                    "url": tool.get("url"),
+                    "headers": tool.get("headers", {})
+            }
     configuration.pop('tools', None)
     configuration['tools'] = tools
     service = service or (result.get('bridges', {}).get('service', '').lower())
@@ -98,7 +108,6 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
         'template': template_content.get('template') if template_content else None,
         "user_reference": result.get("bridges", {}).get("user_reference", ""),
         "variables_path": variables_path or variables_path_bridge,
-        "names":names,
         "tool_id_and_name_mapping":tool_id_and_name_mapping,
         "gpt_memory" : gpt_memory,
         "version_id" : version_id or result.get('bridges', {}).get('published_version_id'),

@@ -18,9 +18,9 @@ def validate_tool_call(modelOutputConfig, service, response):
         case _:
             return False
 
-async def axios_work(data, function_name):
+async def axios_work(data, function_payload):
     try:    
-        response,rs_headers = await fetch(f"https://flow.sokt.io/func/{function_name}","POST",None,None,data) # required is not send then it will still hit the curl
+        response,rs_headers = await fetch(function_payload.get("url"),"POST",function_payload.get("headers",{}),None,data) # required is not send then it will still hit the curl
         return {
             'response': response,
             'metadata':{
@@ -30,7 +30,7 @@ async def axios_work(data, function_name):
         }
         
     except Exception as err:
-        print("Error calling function=>",function_name,  err)
+        print("Error calling function=>",function_payload.get("url"),  err)
         return {
             'response': str(err),
             'metadata':{
@@ -166,7 +166,7 @@ async def sendResponse(response_format, data, success = False, variables={}):
     except Exception as e:
         print("error sending request", e)
 
-async def process_data_and_run_tools(codes_mapping, names, tool_id_and_name_mapping):
+async def process_data_and_run_tools(codes_mapping, tool_id_and_name_mapping):
     try:
         responses = []
         tool_call_logs = {**codes_mapping} 
@@ -178,7 +178,7 @@ async def process_data_and_run_tools(codes_mapping, names, tool_id_and_name_mapp
             name = tool['name']
 
             # Get corresponding function code mapping
-            tool_mapping = {} if tool_id_and_name_mapping[name] in names else {"error": True, "response": "Wrong Function name"}
+            tool_mapping = {} if tool_id_and_name_mapping[name] else {"error": True, "response": "Wrong Function name"}
             tool_data = {**tool, **tool_mapping}
 
             if not tool_data.get("response"):
