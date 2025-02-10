@@ -54,7 +54,6 @@ def parse_request_body(request_body):
         "actions": body.get('actions', {}),
         "user_reference": body.get("user_reference", ""),
         "variables_path": body.get('variables_path') or {},
-        "names": body.get('names'),
         "tool_id_and_name_mapping": body.get("tool_id_and_name_mapping"),
         "suggest": body.get('suggest', False),
         "message_id": str(uuid.uuid1()),
@@ -114,7 +113,9 @@ async def handle_pre_tools(parsed_data):
         parsed_data['pre_tools']['args']['user'] = parsed_data['user']
         pre_function_response = await axios_work(
             parsed_data['pre_tools'].get('args', {}),
-            parsed_data['pre_tools'].get('name', '')
+            {
+                "url":f"https://flow.sokt.io/func/{parsed_data['pre_tools'].get('name')}"
+            }
         )
         if pre_function_response.get('status') == 0:
             parsed_data['variables']['pre_function'] = f"Error while calling prefunction. Error message: {pre_function_response.get('response')}"
@@ -224,7 +225,6 @@ def build_service_params(parsed_data, custom_config, model_output_config, thread
         "variables_path": parsed_data['variables_path'],
         "message_id": parsed_data['message_id'],
         "bridgeType": parsed_data['bridgeType'],
-        "names": parsed_data['names'],
         "tool_id_and_name_mapping": parsed_data["tool_id_and_name_mapping"],
         "reasoning_model": parsed_data['reasoning_model'],
         "memory": memory,
@@ -269,7 +269,6 @@ def build_service_params_for_batch(parsed_data, custom_config, model_output_conf
         "variables_path": parsed_data['variables_path'],
         "message_id": parsed_data['message_id'],
         "bridgeType": parsed_data['bridgeType'],
-        "names": parsed_data['names'],
         "reasoning_model": parsed_data['reasoning_model'],
         "type": parsed_data['configuration'].get('type'),
         "apikey_object_id" : parsed_data['apikey_object_id'],
