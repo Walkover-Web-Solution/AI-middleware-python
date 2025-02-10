@@ -305,3 +305,6 @@ async def make_request_data(request: Request):
         'path_params': path_params
     }
     return result
+
+def makeFunctionName(name):
+    return re.sub(r'[^a-zA-Z0-9_-]', '', name)

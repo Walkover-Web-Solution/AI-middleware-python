@@ -3,6 +3,7 @@ from .helper import Helper
 from bson import ObjectId
 from models.mongo_connection import db
 from src.services.utils.common_utils import updateVariablesWithTimeZone
+from src.services.commonServices.baseService.utils import makeFunctionName
 apiCallModel = db['apicalls']
 
 # from src.services.commonServices.generateToken import generateToken
@@ -27,8 +28,7 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
     tool_id_and_name_mapping = {}
     for key, api_data in result.get('bridges', {}).get('apiCalls', {}).items():
         # if status is paused then only don't include it in tools
-        name_of_function = api_data.get('endpoint_name') or  api_data.get("function_name")
-        name_of_function = name_of_function.replace(" ", "")
+        name_of_function = makeFunctionName(api_data.get('endpoint_name') or  api_data.get("function_name"))
         tool_id_and_name_mapping[name_of_function] =  {
             "url": f"https://flow.sokt.io/func/{name_of_function}",
             "headers":{}
@@ -59,12 +59,12 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
             if tool.get("url"):
                 tools.append( {
                         "type": "function",
-                        "name": tool.get('name').replace(" ", ""),
+                        "name": makeFunctionName(tool.get('name')),
                         "description": tool.get('description'),
                         "properties":  tool.get('fields', {}),
                         "required": tool.get("required_params",[])
                     })
-                tool_id_and_name_mapping[tool.get('name').replace(" ", "")] = {
+                tool_id_and_name_mapping[makeFunctionName(tool.get('name'))] = {
                     "url": tool.get("url"),
                     "headers": tool.get("headers", {})
             }
