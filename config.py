@@ -43,3 +43,4 @@ class Config:
     GCP_CREDENTIALS = os.getenv('GCP_CREDENTIALS')
     REDIS_URI = os.getenv('REDIS_URI')
     TIMESCALE_SERVICE_URL = os.getenv('TIMESCALE_SERVICE_URL')
+    DOC_RTC_URL_FOR_TIPTAP = os.getenv('DOC_RTC_URL_FOR_TIPTAP')

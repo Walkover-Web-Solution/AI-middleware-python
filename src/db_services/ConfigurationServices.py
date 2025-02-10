@@ -3,6 +3,7 @@ from bson import ObjectId
 from ..services.cache_service import find_in_cache, store_in_cache, delete_in_cache
 import json
 import aiohttp
+from config import Config
 
 configurationModel = db["configurations"]
 apiCallModel = db['apicalls']
@@ -287,7 +288,8 @@ async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None)
             pipeline_result = await model.aggregate(pipeline).to_list(length=None)
 
             async with aiohttp.ClientSession() as session:
-                async with session.get(f"http://localhost:1234/content/{version_id}") as response:
+                url = f"{Config.DOC_RTC_URL_FOR_TIPTAP}/{version_id}"
+                async with session.get(url) as response:
                     content_result = await response.json()
 
             return pipeline_result, content_result
