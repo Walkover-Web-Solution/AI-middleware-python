@@ -21,6 +21,7 @@ async def check_batch_status():
             apikey = id.get('apikey')
             webhook = id.get('webhook')
             batch_id = id.get('id')
+            print("harsh this side")
             if webhook.get('url') is not None:
                 response_format = create_response_format(webhook.get('url'), webhook.get('headers'))
             openAI = AsyncOpenAI(api_key=apikey)
