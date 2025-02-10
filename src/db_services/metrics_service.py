@@ -69,7 +69,8 @@ async def create(dataset, history_params, version_id):
                 'message_id': data_object.get('message_id'),
                 'variables': data_object.get('variables') or {},
                 'is_present': 'prompt' in data_object,
-                'id' : str(uuid.uuid4())
+                'id' : str(uuid.uuid4()),
+                'firstAttemptError' : history_params.get('firstAttemptError')
             }
             for data_object in dataset
         ]

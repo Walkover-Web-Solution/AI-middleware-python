@@ -180,7 +180,8 @@ async def publish(org_id, version_id):
         updated_configuration = {**parent_configuration, **get_version_data}
         updated_configuration['published_version_id'] = published_version_id
         asyncio.create_task(makeQuestion(parent_id, updated_configuration.get("configuration",{}).get("prompt",""), updated_configuration.get('apiCalls')))
-        updated_configuration['function_ids'] = [ObjectId(fid) for fid in updated_configuration['function_ids']]
+        if updated_configuration.get('function_ids'):
+            updated_configuration['function_ids'] = [ObjectId(fid) for fid in updated_configuration.get('function_ids',[]) ]
         await configurationModel.update_one(
             {'_id': ObjectId(parent_id)},
             {'$set': updated_configuration}

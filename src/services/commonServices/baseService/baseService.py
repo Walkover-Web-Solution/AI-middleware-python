@@ -219,7 +219,8 @@ class BaseService:
             'image_url' : model_response.get('data',[{}])[0].get('url', None),
             'revised_prompt' : model_response.get('data',[{}])[0].get('revised_prompt', None),
             'urls' : self.image_data,
-            'AiConfig' : self.customConfig
+            'AiConfig' : self.customConfig,
+            "firstAttemptError" : model_response.get('firstAttemptError') or {}
         }
     
     def service_formatter(self, configuration : object, service : str ):

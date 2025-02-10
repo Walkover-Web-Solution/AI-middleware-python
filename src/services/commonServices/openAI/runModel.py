@@ -22,10 +22,10 @@ async def runModel(configuration, apiKey, execution_time_logs, bridge_id, timer,
         # Define how to get the alternative configuration
         def get_alternative_config(config):
             current_model = config.get('model', '')
-            if current_model == 'o1-preview':
+            if current_model == 'o1':
                 config['model'] = 'gpt-4o-2024-08-06'
             elif current_model == 'gpt-4o':
-                config['model'] = 'o1-preview'
+                config['model'] = 'o1'
             else:
                 config['model'] = 'gpt-4o'
             return config
