@@ -106,7 +106,7 @@ async def chat(request_body):
                 result['modelResponse']['data']['message_id'] = parsed_data['message_id']
             asyncio.create_task(process_background_tasks(parsed_data, result, params))
         return JSONResponse(status_code=200, content={"success": True, "response": result["modelResponse"]})
-    except Exception as error:
+    except (Exception, ValueError) as error:
         traceback.print_exc()
         if not parsed_data['is_playground']:
             latency = {
@@ -126,6 +126,7 @@ async def chat(request_body):
                 "expectedCost" : parsed_data['tokens'].get('expectedCost',0),
                 "variables" : parsed_data.get('variables') or {}
             })
+            func_tool_call_data = error.args[1] if len(error.args) > 1 else None
             # Combine the tasks into a single asyncio.gather call
             tasks = [
                 metrics_service.create([parsed_data['usage']], {
@@ -139,6 +140,7 @@ async def chat(request_body):
                     "channel": 'chat',
                     "type": "error",
                     "actor": "user",
+                    'tools_call_data' : func_tool_call_data,
                     "message_id": parsed_data['message_id'],
                     "AiConfig": class_obj.aiconfig()
                     }, parsed_data['version_id']),
