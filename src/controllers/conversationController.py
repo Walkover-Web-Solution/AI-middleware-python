@@ -90,7 +90,8 @@ async def savehistory(thread_id, sub_thread_id, userMessage, botMessage, org_id,
                 'chatbot_message' : chatbot_message or "",
                 'message_id' : message_id,
                 'revised_prompt' : revised_prompt,
-                "image_url" : image_url
+                "image_url" : image_url,
+                'version_id': version_id,
             })
 
         # if userRole == "tool":
