@@ -2347,6 +2347,14 @@ class ModelsConfig:
                 "support": True,
                  "level": 0,
                  "default" : False
+            },
+            "max_tokens": {
+                "field": "slider",
+                "min": 1,
+                "max": 100_000,
+                "step": 1,
+                "default": 256,
+                "level": 2
             }
         }
         outputConfig = {
