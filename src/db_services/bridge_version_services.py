@@ -230,7 +230,7 @@ async def get_comparison_score(org_id, version_id):
     
     version_data['apikey'] = Helper.decrypt(version_data['apikeys'][version_data['configuration']['service']])
     
-    comparison_score = None 
+    response = None 
     
     timer = Timer()
     timer.start()
@@ -261,11 +261,13 @@ async def get_comparison_score(org_id, version_id):
         )
         new_answers = [json.loads(response.__dict__['body'].decode('utf-8'))['response']['choices'][0]['message']['content'] for response in new_answer_responses]
         
-        comparison_score = 0
+        comparision_scores = []
         
         for i in range(len(expected_questions)):
-            comparison_score += compute_cosine_similarity(expected_questions[i], new_answers[i])
+            score = compute_cosine_similarity(expected_questions[i], new_answers[i])
+            comparision_scores.append(score)
         
-        comparison_score /= len(expected_questions)
+        response = [{ 'question' : expected_questions[i], 'expected_answers' : expected_answers[i], 'model_answer': new_answers[i], 'comparison_score': comparision_scores[i] }  for i in range(len(new_answers))]
+        
     
-    return comparison_score
+    return response
