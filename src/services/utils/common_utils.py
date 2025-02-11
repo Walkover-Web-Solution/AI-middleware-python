@@ -288,10 +288,9 @@ async def updateVariablesWithTimeZone(variables, org_id):
             cached_result = json.loads(cached_data)
             timezone =  cached_result.get('timezone')
         else:
-            # response, _ = await fetch(f"https://routes.msg91.com/api/{Config.PUBLIC_REFERENCEID}/getCompanies?id={org_id}", "GET", {"Authkey": Config.ADMIN_API_KEY}, None, None)
-            # timezone =  response.get('data', {}).get('data', [{}])[0].get('timezone')
-            # await store_in_cache(org_id, response.get('data', {}).get('data', [{}])[0])
-            print("")
+            response, _ = await fetch(f"https://routes.msg91.com/api/{Config.PUBLIC_REFERENCEID}/getCompanies?id={org_id}", "GET", {"Authkey": Config.ADMIN_API_KEY}, None, None)
+            timezone =  response.get('data', {}).get('data', [{}])[0].get('timezone')
+            await store_in_cache(org_id, response.get('data', {}).get('data', [{}])[0])
         hour, minutes = timezone.split(':')
         return int(hour), int(minutes)
     if 'current_time_and_date' not in variables:
