@@ -2,7 +2,9 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter, CharacterTex
 from langchain_experimental.text_splitter import SemanticChunker
 from typing import List, Optional
 from langchain_openai import OpenAIEmbeddings
+from config import Config
 
+apikey = Config.OPENAI_API_KEY
 async def manual_chunking(text, chunk_size = 1000, chunk_overlap =  200):
     """
     Split text into chunks manually using character-based splitting
@@ -23,7 +25,11 @@ async def manual_chunking(text, chunk_size = 1000, chunk_overlap =  200):
             length_function=len
         )
         chunks = text_splitter.split_text(text)
-        return chunks
+        embeddings = []
+        for chunk in chunks:
+            embedding = OpenAIEmbeddings(api_key=apikey).embed_text(chunk)
+            embeddings.append(embedding)
+        return chunks, embeddings
     except Exception as e:
         print(f"Error during manual chunking: {str(e)}")
         raise
@@ -48,12 +54,16 @@ async def recursive_chunking(text, chunk_size = 1000, chunk_overlap = 200):
             length_function=len
         )
         chunks = text_splitter.split_text(text)
-        return chunks
+        embeddings = []
+        for chunk in chunks:
+            embedding = OpenAIEmbeddings(api_key=apikey).embed_text(chunk)
+            embeddings.append(embedding)
+        return chunks, embeddings
     except Exception as e:
         print(f"Error during recursive chunking: {str(e)}")
         raise
 
-async def semantic_chunking(text, apikey):
+async def semantic_chunking(text):
     """
     Split text into semantically meaningful chunks using embeddings
     
@@ -69,8 +79,15 @@ async def semantic_chunking(text, apikey):
         if apikey is None:
             raise ValueError("API key is required for semantic chunking")
         text_splitter = SemanticChunker(OpenAIEmbeddings(api_key = apikey))
-        docs = text_splitter.create_documents([text])
-        return docs
+        chunks = text_splitter.create_documents([text])
+        # Convert Document objects to plain text for better readability
+        chunk_texts = [chunk.page_content for chunk in chunks]
+        print(chunk_texts)
+        embeddings = []
+        for chunk in chunk_texts:
+            embedding = OpenAIEmbeddings(api_key=apikey).embed_documents([chunk])
+            embeddings.append(embedding)
+        return chunk_texts, embeddings
     except Exception as e:
         print(f"Error during semantic chunking: {str(e)}")
         raise
