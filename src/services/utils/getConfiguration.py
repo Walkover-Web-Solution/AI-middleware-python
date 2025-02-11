@@ -2,6 +2,8 @@ import src.db_services.ConfigurationServices as ConfigurationService
 from .helper import Helper
 from bson import ObjectId
 from models.mongo_connection import db
+from src.services.utils.common_utils import updateVariablesWithTimeZone
+from src.services.commonServices.baseService.utils import makeFunctionName
 apiCallModel = db['apicalls']
 
 # from src.services.commonServices.generateToken import generateToken
@@ -23,15 +25,20 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
     
     # make tools data
     tools = []
-    names =[]
+    tool_id_and_name_mapping = {}
     for key, api_data in result.get('bridges', {}).get('apiCalls', {}).items():
         # if status is paused then only don't include it in tools
+        name_of_function = makeFunctionName(api_data.get('endpoint_name') or  api_data.get("function_name"))
+        tool_id_and_name_mapping[name_of_function] =  {
+            "url": f"https://flow.sokt.io/func/{name_of_function}",
+            "headers":{}
+        }
         if api_data.get('status') == 0:
             continue
         format = {
             "type": "function",
-            "name": api_data.get("function_name", api_data.get("endpoint")),
-            "description": api_data.get('description', api_data.get('short_description')) if not api_data.get('endpoint_name') else f"Name: {api_data.get('endpoint_name')}, Description: {api_data.get('description', api_data.get('short_description'))}",
+            "name": name_of_function,
+            "description": api_data.get('description'),
             "properties": (
                 api_data.get("fields", {}) if api_data.get("version") == 'v2' 
                 else {item["variable_name"]: {
@@ -42,16 +49,25 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
                 } for item in api_data.get('fields',{})}
             ),
             "required": (
-               api_data.get("required_params", api_data.get("required_fields"))
+               api_data.get("required_params")
             )
         }
-        names.append(api_data.get("function_name", api_data.get("endpoint")))
         tools.append(format)
 
     for tool in extra_tools:
         if isinstance(tool, dict):
-            tools.append(tool)
-            names.append(tool.get('name'))
+            if tool.get("url"):
+                tools.append( {
+                        "type": "function",
+                        "name": makeFunctionName(tool.get('name')),
+                        "description": tool.get('description'),
+                        "properties":  tool.get('fields', {}),
+                        "required": tool.get("required_params",[])
+                    })
+                tool_id_and_name_mapping[makeFunctionName(tool.get('name'))] = {
+                    "url": tool.get("url"),
+                    "headers": tool.get("headers", {})
+            }
     configuration.pop('tools', None)
     configuration['tools'] = tools
     service = service or (result.get('bridges', {}).get('service', '').lower())
@@ -80,7 +96,7 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
         for param in required_params:
             if param in variables :
                 args[param] = variables[param]
-        
+
     return {
         'success': True,
         'configuration': configuration,
@@ -92,9 +108,10 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
         'template': template_content.get('template') if template_content else None,
         "user_reference": result.get("bridges", {}).get("user_reference", ""),
         "variables_path": variables_path or variables_path_bridge,
-        "names":names,
+        "tool_id_and_name_mapping":tool_id_and_name_mapping,
         "gpt_memory" : gpt_memory,
         "version_id" : version_id or result.get('bridges', {}).get('published_version_id'),
         "gpt_memory_context" :  gpt_memory_context,
         "tool_call_count": result.get("bridges", {}).get("tool_call_count", 3),
+        "variables": await updateVariablesWithTimeZone(variables,org_id)
     }

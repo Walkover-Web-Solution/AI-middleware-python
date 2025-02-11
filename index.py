@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 import asyncio
 from contextlib import asynccontextmanager
+import src.services.utils.batch_script
 
 from config import Config
 from src.controllers.modelController import router as model_router
@@ -68,12 +69,13 @@ async def healthcheck():
     })
             
 
-@app.get("/5-sec")
+@app.get("/90-sec")
 async def bloking():
     try:
         async def blocking_io_function():
-            response = await fetch("https://flow.sokt.io/func/scriDLT6j3lB")
-            return response
+            await asyncio.sleep(90)  # Sleep for 2 minutes
+            # response = await fetch("https://flow.sokt.io/func/scriDLT6j3lB")
+            # return response
         result = await blocking_io_function()
         return JSONResponse(status_code=200, content={
                 "status": "OK running good... v1.1",

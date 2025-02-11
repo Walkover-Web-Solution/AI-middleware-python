@@ -2467,7 +2467,7 @@ class ModelsConfig:
                 "field": "drop",
                 "default": "o1-preview",
                 "level": 1
-            }
+            },
         }
         outputConfig = {
             "usage": [{
@@ -2509,7 +2509,7 @@ class ModelsConfig:
                 "field": "drop",
                 "default": "o1-mini",
                 "level": 1
-            }
+            },
         }
         outputConfig = {
             "usage": [{
@@ -2536,133 +2536,6 @@ class ModelsConfig:
                 "type": "json"
             },
             "content_location": "prompt[0].content"
-        }
-        return {
-            "configuration": configuration,
-            "outputConfig": outputConfig,
-            "inputConfig": inputConfig
-        }
-
-    @staticmethod
-    def text_embedding_3_large():
-        configuration = {
-            "model": {
-                "field": "dropdown",
-                "default": "text-embedding-3-large",
-                "level": 1
-            },
-            "encoding_format": {
-                "field": "dropdown",
-                "typeOf": "string",
-                "level": 2
-            },
-            "dimensions": {
-                "field": "number",
-                "level": 0
-            },
-             "type" : {
-                "default" : ["embedding"]
-            }
-        }
-        outputConfig = {
-            "usage": [{
-                "prompt_tokens": "usage.prompt_tokens",
-                "total_tokens": "usage.total_tokens",
-                "total_cost": 0.130
-            }],
-            "message": "data[0].embedding"
-        }
-        inputConfig = {
-            "input": {
-                "input": "",
-                "contentKey": "input",
-                "type": "text"
-            },
-            "content_location": "input"
-        }
-        return {
-            "configuration": configuration,
-            "outputConfig": outputConfig,
-            "inputConfig": inputConfig
-        }
-    
-    @staticmethod
-    def text_embedding_3_small():
-        configuration = {
-            "model": {
-                "field": "dropdown",
-                "default": "text-embedding-3-large",
-                "level": 1
-            },
-            "encoding_format": {
-                "field": "dropdown",
-                "values": ["float", "base64"],
-                "default": "float",
-                "level": 2
-            },
-            "dimensions": {
-                "field": "number",
-                "level": 0
-            },
-            "type" : {
-                "default" : ["embedding"]
-            }
-        }
-        outputConfig = {
-            "usage": [{
-                "prompt_tokens": "usage.prompt_tokens",
-                "total_tokens": "usage.total_tokens",
-                "total_cost": 0.130
-            }],
-            "message": "data[0].embedding"
-        }
-        inputConfig = {
-            "input": {
-                "input": "",
-                "contentKey": "input",
-                "type": "text"
-            },
-            "content_location": "input"
-        }
-        return {
-            "configuration": configuration,
-            "outputConfig": outputConfig,
-            "inputConfig": inputConfig
-        }
-    
-    @staticmethod
-    def text_embedding_ada_002():
-        configuration = {
-            "model": {
-                "field": "dropdown",
-                "default": "text-embedding-3-large",
-                "level": 1
-            },
-            "encoding_format": {
-                "field": "dropdown",
-                "values": ["float", "base64"],
-                "default": "float",
-                "level": 2
-            },
-            "type" : {
-                "default" : ["embedding"]
-            }
-        }
-        outputConfig = {
-            "usage": [{
-                "prompt_tokens": "usage.prompt_tokens",
-                "total_tokens": "usage.total_tokens",
-                "total_cost": 0.100
-            }],
-            "message": "data[0].embedding"
-        }
-        inputConfig = {
-            "input": {
-                "input": "",
-                "contentKey": "input",
-                "type": "text"
-            },
-            "content_location": "input"
         }
         return {
             "configuration": configuration,
@@ -2888,46 +2761,6 @@ class ModelsConfig:
             "inputConfig": inputConfig
         }
     
-    @staticmethod
-    def embedding_001():
-        configuration = {
-            "model": {
-                "field": "drop",
-                "default": "embedding-001",
-                "level": 1
-            },
-             "type" : {
-                "default" : ["embedding"]
-            }
-        }
-        outputConfig = {
-            "usage": [{
-                "prompt_tokens": "usage.input_tokens",
-                "output_tokens": "usage.output_tokens",
-                "total_tokens": "usage.total_tokens",
-                "total_cost": 0
-            }],
-            "message": "values",
-            "role": "model"
-        }
-        inputConfig = {
-            "model": {
-                "default": {
-                    "role": "model",
-                    "parts": [{
-                        "text": ""
-                    }]
-                },
-                "contentKey": "parts[0].text",
-                "type": "json"
-            },
-            "content_location": "prompt"
-        }
-        return {
-            "configuration": configuration,
-            "outputConfig": outputConfig,
-            "inputConfig": inputConfig
-        }
     
     @staticmethod
     def gemini_pro():
@@ -4860,6 +4693,133 @@ class ModelsConfig:
                 "type": "json"
             },
             "content_location": "prompt[0].content"
+        }
+        return {
+            "configuration": configuration,
+            "outputConfig": outputConfig,
+            "inputConfig": inputConfig
+        }
+    
+    @staticmethod
+    def text_embedding_3_large():
+        configuration = {
+            "model": {
+                "field": "dropdown",
+                "default": "text-embedding-3-large",
+                "level": 1
+            },
+            # "encoding_format": {
+            #     "field": "select",
+            #     "typeOf": "string",
+            #     "level": 2
+            # },
+            # "dimensions": {
+            #     "field": "number",
+            #     "level": 0
+            # },
+             "type" : {
+                "default" : ["embedding"]
+            }
+        }
+        outputConfig = {
+            "usage": [{
+                "prompt_tokens": "usage.prompt_tokens",
+                "total_tokens": "usage.total_tokens",
+                "total_cost": 0.130
+            }],
+            "message": "data[0].embedding"
+        }
+        inputConfig = {
+            "input": {
+                "input": "",
+                "contentKey": "input",
+                "type": "text"
+            },
+            "content_location": "input"
+        }
+        return {
+            "configuration": configuration,
+            "outputConfig": outputConfig,
+            "inputConfig": inputConfig
+        }
+    
+    @staticmethod
+    def text_embedding_3_small():
+        configuration = {
+            "model": {
+                "field": "dropdown",
+                "default": "text-embedding-3-small",
+                "level": 1
+            },
+            "encoding_format": {
+                "field": "select",
+                "options": ["float", "base64"],
+                "default": "float",
+                "level": 2
+            },
+            # "dimensions": {
+            #     "field": "number",
+            #     "level": 0
+            # },
+            "type" : {
+                "default" : ["embedding"]
+            }
+        }
+        outputConfig = {
+            "usage": [{
+                "prompt_tokens": "usage.prompt_tokens",
+                "total_tokens": "usage.total_tokens",
+                "total_cost": 0.020
+            }],
+            "message": "data[0].embedding"
+        }
+        inputConfig = {
+            "input": {
+                "input": "",
+                "contentKey": "input",
+                "type": "text"
+            },
+            "content_location": "input"
+        }
+        return {
+            "configuration": configuration,
+            "outputConfig": outputConfig,
+            "inputConfig": inputConfig
+        }
+    
+    @staticmethod
+    def text_embedding_ada_002():
+        configuration = {
+            "model": {
+                "field": "dropdown",
+                "default": "text-embedding-ada-002",
+                "level": 1
+            },
+            "encoding_format": {
+                "field": "select",
+                "options": ["float", "base64"],
+                "default": "float",
+                "level": 2
+            },
+            "type" : {
+                "default" : ["embedding"]
+            }
+        }
+        outputConfig = {
+            "usage": [{
+                "prompt_tokens": "usage.prompt_tokens",
+                "total_tokens": "usage.total_tokens",
+                "total_cost": 0.100
+            }],
+            "message": "data[0].embedding"
+        }
+        inputConfig = {
+            "input": {
+                "input": "",
+                "contentKey": "input",
+                "type": "text"
+            },
+            "content_location": "input"
         }
         return {
             "configuration": configuration,

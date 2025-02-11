@@ -43,7 +43,6 @@ class BaseService:
         self.variables_path = params.get('variables_path')
         self.message_id = params.get('message_id')
         self.bridgeType = params.get('bridgeType')
-        self.names = params.get('names', [])
         self.reasoning_model = params.get('reasoning_model')
         self.memory = params.get('memory')
         self.type = params.get('type')
@@ -51,13 +50,19 @@ class BaseService:
         self.apikey_object_id = params.get('apikey_object_id')
         self.image_data = params.get('images')
         self.tool_call_count = params.get('tool_call_count')
+        self.text = params.get('text')
+        self.tool_id_and_name_mapping = params.get('tool_id_and_name_mapping')
+        self.batch = params.get('batch')
+        self.webhook = params.get('webhook')
 
 
+    def aiconfig(self):
+        return self.customConfig
 
     async def run_tool(self, responses, service):
         codes_mapping = make_code_mapping_by_service(responses, service)
         codes_mapping = await self.replace_variables_in_args(codes_mapping)
-        return await process_data_and_run_tools(codes_mapping, self.names)
+        return await process_data_and_run_tools(codes_mapping, self.tool_id_and_name_mapping)
 
 
     def update_configration(self, response, function_responses, configuration, mapping_response_data, service, tools):    
@@ -214,7 +219,8 @@ class BaseService:
             'image_url' : model_response.get('data',[{}])[0].get('url', None),
             'revised_prompt' : model_response.get('data',[{}])[0].get('revised_prompt', None),
             'urls' : self.image_data,
-            'AiConfig' : self.customConfig
+            'AiConfig' : self.customConfig,
+            "firstAttemptError" : model_response.get('firstAttemptError') or {}
         }
     
     def service_formatter(self, configuration : object, service : str ):
@@ -248,7 +254,7 @@ class BaseService:
             elif service == service_name['groq']:
                 response = await groq_runmodel(configuration, apikey, self.execution_time_logs, self.bridge_id,  self.timer)
             if not response['success']:
-                raise ValueError(response['error'])
+                raise ValueError(response['error'], self.func_tool_call_data)
             return {
                 'success': True,
                 'modelResponse': response['response']
@@ -256,7 +262,7 @@ class BaseService:
         except Exception as e:
             traceback.print_exc()
             print("chats error=>", e)
-            raise ValueError(f"error occurs from {self.service} api {e.args[0]}")
+            raise ValueError(f"error occurs from {self.service} api {e.args[0]}", *e.args[1:], self.func_tool_call_data)
 
     async def replace_variables_in_args(self, codes_mapping):
         variables = self.variables

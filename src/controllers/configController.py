@@ -12,6 +12,7 @@ from bson import ObjectId
 from datetime import datetime, timezone
 from src.services.utils.getDefaultValue import get_default_values_controller
 from src.db_services.bridge_version_services import create_bridge_version
+from src.services.utils.apicallUtills import delete_all_version_and_bridge_ids_from_cache
 async def create_bridges_controller(request):
     try:
         bridges = await request.json()
@@ -219,12 +220,12 @@ async def get_all_service_models_controller(service):
                 "image" : {
                     "dall-e-2" : restructure_configuration(model_configuration.dall_e_2()),
                     "dall-e-3" : restructure_configuration(model_configuration.dall_e_3())
+                },
+                "embedding": {
+                    "text-embedding-3-large": restructure_configuration(model_configuration.text_embedding_3_large()),
+                    "text-embedding-3-small": restructure_configuration(model_configuration.text_embedding_3_small()),
+                    "text-embedding-ada-002": restructure_configuration(model_configuration.text_embedding_ada_002()),
                 }
-                # "embedding": {
-                #     "text-embedding-3-large": restructure_configuration(model_configuration.text_embedding_3_large()),
-                #     "text-embedding-3-small": restructure_configuration(model_configuration.text_embedding_3_small()),
-                #     "text-embedding-ada-002": restructure_configuration(model_configuration.text_embedding_ada_002()),
-                # }
             }
         elif service == service_name['gemini']:
             return {
@@ -288,6 +289,9 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
         service = body.get('service')
         bridgeType = body.get('bridgeType')
         new_configuration = body.get('configuration')
+        type = None
+        if new_configuration is not None:
+            type = new_configuration.get('type')
         apikey = body.get('apikey')
         apikey_object_id = body.get('apikey_object_id')
         variables_path = body.get('variables_path')
@@ -334,7 +338,7 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
         if service is not None:
             update_fields['service'] = service
             model = new_configuration['model']
-            configuration = await get_default_values_controller(service,model,current_configuration)
+            configuration = await get_default_values_controller(service,model,current_configuration,type)
             type = new_configuration.get('type', 'chat')
             configuration['type'] = type
             new_configuration = configuration
@@ -344,7 +348,7 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
             if(new_configuration.get('model') and service is None):
                 service = bridge.get('service')
                 model = new_configuration.get('model')
-                configuration = await get_default_values_controller(service,model,current_configuration)
+                configuration = await get_default_values_controller(service,model,current_configuration,type)
                 type = new_configuration.get('type', 'chat')
                 configuration['type'] = type
                 new_configuration = {**new_configuration,**configuration}
@@ -361,20 +365,25 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
                     updated_variables_path[key] = {}
             update_fields['variables_path'] = updated_variables_path
         if function_id is not None: 
-                if function_operation is not None:      # to add function id 
-                    if function_id not in function_ids:
-                        function_ids.append(function_id)
-                        update_fields['function_ids'] = [ObjectId(fid) for fid in function_ids]
-                        await update_bridge_ids_in_api_calls(function_id, bridge_id if bridge_id is not None else version_id, 1)# delete from history
-                elif function_operation is None:        # to remove function id 
-                    if function_name is not None:   
-                         if function_name in  current_variables_path:
-                             del current_variables_path[function_name]
-                             update_fields['variables_path'] = current_variables_path
-                    if function_id in function_ids:
-                        function_ids.remove(function_id)
-                        update_fields['function_ids'] = [ObjectId(fid) for fid in function_ids]
-                        await update_bridge_ids_in_api_calls(function_id, bridge_id if bridge_id is not None else version_id, 0)# delete from history
+            Id_to_delete = {
+                "bridge_ids": [],
+                "version_ids": []
+            }
+            if function_operation is not None:      # to add function id 
+                if function_id not in function_ids:
+                    function_ids.append(function_id)
+                    update_fields['function_ids'] = [ObjectId(fid) for fid in function_ids]
+                    Id_to_delete = await update_bridge_ids_in_api_calls(function_id, bridge_id if bridge_id is not None else version_id, 1)# delete from history
+            elif function_operation is None:        # to remove function id 
+                if function_name is not None:   
+                        if function_name in  current_variables_path:
+                            del current_variables_path[function_name]
+                            update_fields['variables_path'] = current_variables_path
+                if function_id in function_ids:
+                    function_ids.remove(function_id)
+                    update_fields['function_ids'] = [ObjectId(fid) for fid in function_ids]
+                    Id_to_delete = await update_bridge_ids_in_api_calls(function_id, bridge_id if bridge_id is not None else version_id, 0)# delete from history
+            await delete_all_version_and_bridge_ids_from_cache(Id_to_delete)
         
         for key, value in body.items():
             if key == 'configuration':

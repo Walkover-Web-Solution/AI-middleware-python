@@ -53,6 +53,7 @@ class RawData(Base):
     message_id = Column(UUID(as_uuid=True), nullable=True)
     variables = Column(JSON)
     is_present = Column(Boolean, default=False)
+    firstAttemptError = Column(Text,  nullable=True)
     # conversation = relationship("Conversation", back_populates="raw_data")
 
 class system_prompt_versionings(Base):

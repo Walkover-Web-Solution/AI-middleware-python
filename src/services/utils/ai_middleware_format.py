@@ -2,7 +2,7 @@ import json
 from config import Config
 from src.services.utils.apiservice import fetch
 
-async def Response_formatter(response, service, tools={}, type='chat', images = None):
+async def Response_formatter(response = {}, service = None, tools={}, type='chat', images = None):
     tools_data = tools
     if isinstance(tools_data, dict):
                 for key, value in tools_data.items():
@@ -12,7 +12,7 @@ async def Response_formatter(response, service, tools={}, type='chat', images = 
                         except json.JSONDecodeError:
                             pass
                         
-    if service == 'openai' and type !='image':
+    if service == 'openai' and (type !='image' and type != 'embedding'):
         return {
             "data" : {
                 "id" : response.get("id", None),
@@ -31,6 +31,13 @@ async def Response_formatter(response, service, tools={}, type='chat', images = 
 
             }
         }
+    elif service == 'openai' and type == 'embedding':
+         return {
+            "data" : {
+                "embedding" : response.get('data')[0].get('embedding')
+            }
+        }
+    
     elif service == 'openai':
         return {
             "data" : {

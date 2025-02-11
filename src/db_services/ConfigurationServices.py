@@ -345,118 +345,28 @@ async def update_api_call(id, update_fields):
     
 
 async def update_bridge_ids_in_api_calls(function_id, bridge_id, add=1):
-    try: 
-        to_update = {'$set': {'status': 1}}
-        if add == 1:
-            to_update['$addToSet'] = {'bridge_ids': ObjectId(bridge_id)}
-        else:
-            to_update['$pull'] = {'bridge_ids': ObjectId(bridge_id)}
-                                  
-        data = await apiCallModel.find_one_and_update(
-                {'_id': ObjectId(function_id)},
-                to_update,
-                return_document=True,
-                upsert=True
-            )
-        if not data:
-            return {
-                'success': False,
-                'error': 'No records updated or bridge not found'
-            }
-        if data:
-            data['_id'] = str(data['_id'])  # Convert ObjectId to string
-            if 'bridge_ids' in data:
-                data['bridge_ids'] = [str(bid) for bid in data['bridge_ids']]  # Convert bridge_ids to string
-        return {
-            'success': True,
-            'result': data
-        }
-    except Exception as error:
-        print(error)
+    to_update = {'$set': {'status': 1}}
+    if add == 1:
+        to_update['$addToSet'] = {'bridge_ids': ObjectId(bridge_id)}
+    else:
+        to_update['$pull'] = {'bridge_ids': ObjectId(bridge_id)}
+                                
+    data = await apiCallModel.find_one_and_update(
+            {'_id': ObjectId(function_id)},
+            to_update,
+            return_document=True,
+            upsert=True
+        )
+    if not data:
         return {
             'success': False,
-            'error': 'Something went wrong!'
+            'error': 'No records updated or bridge not found'
         }
-
-async def get_api_call_by_names(names, org_id):
-    try:
-        if not isinstance(names, list):
-            names = [names]
-        pipeline = [
-    {
-        '$match': {
-            '$or': [
-                {'function_name': {'$in': names}},
-                {'endpoint': {'$in': names}}
-            ],
-            'org_id': org_id
-        }
-    },
-    {
-        '$addFields': {
-            'name': {
-                '$cond': {
-                    'if': {'$ifNull': ['$function_name', False]},
-                    'then': '$function_name',
-                    'else': '$endpoint'
-                }
-            },
-            'code': {
-                '$cond': {
-                    'if': {'$ifNull': ['$code', False]},
-                    'then': '$code',
-                    'else': '$axios'
-                }
-            }
-        }
-    },
-    {
-        '$project': {
-            '_id': 0,  # Exclude the `_id` from the response if not needed
-            'name': 1,
-            'code': 1,
-            'is_python': 1
-        }
-    },
-    {
-        '$group': {
-            '_id': None,  # We don't need an actual group key
-            'apiCalls': {
-                '$push': {
-                    'name': '$name',
-                    'code': '$code',
-                    'is_python': '$is_python'
-                }
-            }
-        }
-    },
-    {
-        '$project': {
-            '_id': 0,  # Exclude the group _id
-            'apiCalls': {
-                '$arrayToObject': {
-                    '$map': {
-                        'input': '$apiCalls',
-                        'as': 'api',
-                        'in': {
-                            'k': '$$api.name',  # Use the name as the key
-                            'v': {
-                                'code': '$$api.code',
-                                'is_python': '$$api.is_python',
-                                'name': '$$api.name'
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-]
-        return await apiCallModel.aggregate(pipeline).to_list(length=None)
-
-    except Exception as error:
-        print(f"error: {error}")
-        raise error
+    if data:
+        data['_id'] = str(data['_id'])  # Convert ObjectId to string
+        if 'bridge_ids' in data:
+            data['bridge_ids'] = [str(bid) for bid in data['bridge_ids']]  # Convert bridge_ids to string
+    return data
 
 async def get_template_by_id(template_id):
     try:

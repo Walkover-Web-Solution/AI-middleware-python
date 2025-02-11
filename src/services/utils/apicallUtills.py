@@ -1,16 +1,11 @@
 import datetime 
 from models.mongo_connection import db
+from src.services.cache_service import delete_in_cache
 apiCallModel = db['apicalls']
 
 async def get_api_data(org_id, function_name):
     try:
-        api_call_data =  await apiCallModel.find_one(
-        {
-            "$or": [
-                {"org_id": org_id, "function_name": function_name},  # new data  function_name
-                {"org_id": org_id, "endpoint": function_name},  # previous data endpoint
-            ]
-        })
+        api_call_data =  await apiCallModel.find_one({"org_id": org_id, "function_name": function_name})
         api_call_data['__id'] = str(api_call_data.get('_id')) if api_call_data.get('_id') else None
         return api_call_data  if api_call_data.get('_id') else None
     except Exception as error:
@@ -19,7 +14,7 @@ async def get_api_data(org_id, function_name):
 
 
 
-async def save_api(desc, org_id, api_data=None, code="", required_params=None, function_name="", fields=None, activated=False, endpoint_name="", status = 1, version="v2"):
+async def save_api(desc, org_id, api_data=None, required_params=None, function_name="", fields=None, endpoint_name="", version="v2"):
     if fields is None:
         fields = []
     if required_params is None:
@@ -30,27 +25,19 @@ async def save_api(desc, org_id, api_data=None, code="", required_params=None, f
             old_fields  = api_data.get('fields',{} if api_data.get('version', 'v1')== 'v2' else [])
             fields = updateFields(old_fields, fields , api_data.get('version', 'v1') == version)
             required_params = [key for key in fields if key not in api_data.get('fields') or key in api_data["required_params"]] if api_data.get('version', 'v1')== 'v2' else required_params
-            # Delete certain keys from api_data
-            keys_to_delete = ["required_fields", "short_description", 'axios', "optional_fields", "endpoint", 'api_description']  # Replace with actual keys to delete
-            for key in keys_to_delete:
-                if key in api_data:
-                    del api_data[key]
-            
+
             api_data['description'] = desc
-            api_data['code'] = code
             api_data['required_params'] = required_params
             api_data['fields'] = fields
             api_data['old_fields'] = old_fields
-            api_data['activated'] = activated
             api_data['updated_at'] = datetime.datetime.now()
             api_data['function_name'] = function_name # script id will be set in this in case of viasocket
             api_data['endpoint_name'] = endpoint_name # flow name will be saved in this in case of viasocket
-            api_data['is_python'] = 1
-            api_data["status"] = status
             api_data['version']= version
 
             # saving updated fields in the db with same id
             saved_api = await apiCallModel.replace_one({"_id": api_data["_id"]}, api_data) # delete from history
+            await delete_all_version_and_bridge_ids_from_cache(api_data)
             if saved_api.modified_count == 1:
                 return {
                     "success": True,
@@ -62,12 +49,8 @@ async def save_api(desc, org_id, api_data=None, code="", required_params=None, f
                 "org_id": org_id,
                 "required_params": list(fields.keys()),
                 "fields": fields,
-                "activated": activated,
                 "function_name": function_name,
-                "code": code,
                 "endpoint_name": endpoint_name,
-                "is_python": 1,
-                "status": status,
                 "created_at": datetime.datetime.now(),
                 "updated_at": datetime.datetime.now(),
                 "version": version
@@ -117,12 +100,7 @@ def updateFields(oldFields, newFields, versionCheck):
 
 async def delete_api(function_name, org_id, status = 0):
     try:
-        data = await apiCallModel.find_one_and_update({
-            "$or": [
-                {"org_id": org_id, "endpoint": function_name},
-                {"org_id": org_id, "function_name": function_name},
-            ]
-        }, {"$set": {"status": status}}, return_document=True)
+        data = await apiCallModel.find_one_and_update({"org_id": org_id, "function_name": function_name}, {"$set": {"status": status}}, return_document=True)
         if data:
             data['_id'] = str(data['_id'])  # Convert ObjectId to string
             if 'bridge_ids' in data:
@@ -135,3 +113,12 @@ async def delete_api(function_name, org_id, status = 0):
     except Exception as error:
         print(f"Delete API error=> {error}")
         return {"success": False, "error": str(error)}
+    
+
+
+async def delete_all_version_and_bridge_ids_from_cache(Id_to_delete):
+    for ids in Id_to_delete.get('bridge_ids', []):
+        await delete_in_cache(str(ids))
+    for ids in Id_to_delete.get('version_ids', []):
+        await delete_in_cache(str(ids))
+    

@@ -12,7 +12,7 @@ from ..utils.send_error_webhook import send_error_to_webhook
 import json
 from src.handler.executionHandler import handle_exceptions
 from models.mongo_connection import db
-from src.services.utils.common_utils import parse_request_body, initialize_timer, load_model_configuration, handle_pre_tools, handle_fine_tune_model,manage_threads, prepare_prompt, configure_custom_settings, build_service_params, process_background_tasks, add_default_variables
+from src.services.utils.common_utils import parse_request_body, initialize_timer, load_model_configuration, handle_pre_tools, handle_fine_tune_model,manage_threads, prepare_prompt, configure_custom_settings, build_service_params, process_background_tasks, build_service_params_for_batch, add_default_template
 from src.services.utils.rich_text_support import process_chatbot_response
 app = FastAPI()
 from src.services.utils.helper import Helper
@@ -22,11 +22,13 @@ configurationModel = db["configurations"]
 @handle_exceptions
 async def chat(request_body): 
     result ={}
+    class_obj= {}
     try:
         # Step 1: Parse and validate request body
         parsed_data = parse_request_body(request_body)
-        #  add defualt varaibles in prompt eg : time and date
-        parsed_data['variables'] = add_default_variables(parsed_data['variables'])
+
+        parsed_data['configuration']['prompt'] = add_default_template(parsed_data.get('configuration', {}).get('prompt', ''))
+
         # Step 2: Initialize Timer
         timer = initialize_timer(parsed_data['state'])
         
@@ -104,7 +106,7 @@ async def chat(request_body):
                 result['modelResponse']['data']['message_id'] = parsed_data['message_id']
             asyncio.create_task(process_background_tasks(parsed_data, result, params))
         return JSONResponse(status_code=200, content={"success": True, "response": result["modelResponse"]})
-    except Exception as error:
+    except (Exception, ValueError) as error:
         traceback.print_exc()
         if not parsed_data['is_playground']:
             latency = {
@@ -124,6 +126,7 @@ async def chat(request_body):
                 "expectedCost" : parsed_data['tokens'].get('expectedCost',0),
                 "variables" : parsed_data.get('variables') or {}
             })
+            func_tool_call_data = error.args[1] if len(error.args) > 1 else None
             # Combine the tasks into a single asyncio.gather call
             tasks = [
                 metrics_service.create([parsed_data['usage']], {
@@ -137,7 +140,9 @@ async def chat(request_body):
                     "channel": 'chat',
                     "type": "error",
                     "actor": "user",
-                    "message_id": parsed_data['message_id']
+                    'tools_call_data' : func_tool_call_data,
+                    "message_id": parsed_data['message_id'],
+                    "AiConfig": class_obj.aiconfig()
                     }, parsed_data['version_id']),
                 # Only send the second response if the type is not 'default'
                 sendResponse(parsed_data['response_format'], result.get("modelResponse", str(error)), variables=parsed_data['variables']) if parsed_data['response_format']['type'] != 'default' else None,
@@ -148,3 +153,78 @@ async def chat(request_body):
             print("chat common error=>", error)
         raise ValueError(error)
     
+
+async def embedding(request_body):
+    result = {}
+    try:
+        body = request_body.get('body')
+        configuration = body.get('configuration')
+        text = body.get('text')
+        model = configuration.get('model')
+        service = body.get('service')
+        model_config, custom_config, model_output_config = await load_model_configuration(model, configuration)
+        chatbot = body.get('chatbot')
+        if chatbot:
+            raise ValueError("Error: Embedding not supported for chatbot")
+        params = {
+            "model": model,
+            "configuration": configuration,
+            "model_config": model_config,
+            "customConfig": custom_config,
+            "model_output_config": model_output_config,
+            "text": text,
+            "response_format": configuration.get("response_format") or {},
+            "service": service,
+            "version_id": body.get('version_id'),
+            "bridge_id": body.get('bridge_id'),
+            "org_id": body.get('org_id'),
+            "apikey" : body.get('apikey')
+        }
+
+        class_obj = await Helper.embedding_service_handler(params, service)
+        result = await class_obj.execute_embedding()
+
+        if not result["success"]:
+            raise ValueError(result)
+        
+        result['modelResponse'] = await Response_formatter(response = result["response"], service = service, type =configuration.get('type'))
+
+        return JSONResponse(status_code=200, content={"success": True, "response": result["modelResponse"]})
+    except Exception as error:
+        raise ValueError(error)
+
+async def batch(request_body):
+    result ={}
+    class_obj= {}
+    try:
+        # Step 1: Parse and validate request body
+        parsed_data = parse_request_body(request_body)
+        if parsed_data['batch_webhook'] is None:
+            raise ValueError("webhook is required")
+        #  add defualt varaibles in prompt eg : time and date
+        
+        # Step 3: Load Model Configuration
+        model_config, custom_config, model_output_config = await load_model_configuration(
+            parsed_data['model'], parsed_data['configuration']
+        )
+
+        # Step 4: Handle Pre-Tools Execution
+        await handle_pre_tools(parsed_data)
+        
+        # Step 7: Configure Custom Settings
+        custom_config = await configure_custom_settings(
+            model_config['configuration'], custom_config, parsed_data['service']
+        )
+        if 'tools' in custom_config:
+            del custom_config['tools']
+        # Step 8: Execute Service Handler
+        params = build_service_params_for_batch( parsed_data, custom_config, model_output_config )
+        class_obj = await Helper.create_service_handler_for_batch(params, parsed_data['service'])
+        result = await class_obj.batch_execute()
+            
+        if not result["success"]:
+            raise ValueError(result)
+        
+        return JSONResponse(status_code=200, content={"success": True, "response": result["message"]})
+    except Exception as error:
+        raise ValueError(error)
