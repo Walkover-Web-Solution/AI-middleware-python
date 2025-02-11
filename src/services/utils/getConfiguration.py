@@ -37,8 +37,8 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
             continue
         format = {
             "type": "function",
-            "name": api_data.get('function_name'),
-            "description": f"name - {api_data.get('endpoint_name')} \n description - {api_data.get('description')}",
+            "name": name_of_function,
+            "description": api_data.get('description'),
             "properties": (
                 api_data.get("fields", {}) if api_data.get("version") == 'v2' 
                 else {item["variable_name"]: {
