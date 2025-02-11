@@ -28,7 +28,7 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
     tool_id_and_name_mapping = {}
     for key, api_data in result.get('bridges', {}).get('apiCalls', {}).items():
         # if status is paused then only don't include it in tools
-        name_of_function = makeFunctionName(api_data.get('endpoint_name') or  api_data.get("function_name"))
+        name_of_function = makeFunctionName(api_data.get("function_name"))
         tool_id_and_name_mapping[name_of_function] =  {
             "url": f"https://flow.sokt.io/func/{name_of_function}",
             "headers":{}
