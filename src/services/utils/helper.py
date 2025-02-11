@@ -15,6 +15,7 @@ from ..commonServices.openAI.openai_batch import OpenaiBatch
 from ..commonServices.groq.groqCall import Groq
 from ..commonServices.anthrophic.antrophicCall import Antrophic
 from ...configs.constant import service_name
+from ..commonServices.openAI.openai_embedding_call import OpenaiEmbedding
 class Helper:
     @staticmethod
     def encrypt(text):
@@ -243,3 +244,7 @@ class Helper:
             
         return class_obj
 
+    async def embedding_service_handler(params, service):
+        if service == service_name['openai']:
+            class_obj = OpenaiEmbedding(params)
+        return class_obj
