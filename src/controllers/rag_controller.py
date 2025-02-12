@@ -7,6 +7,7 @@ from config import Config
 from models.mongo_connection import db
 
 rag_model = db["rag_data"]
+rag_parent_model = db["rag_parent_data"]
 # Initialize Pinecone with the API key
 pc = Pinecone(api_key=Config.PINECONE_APIKEY)
 
@@ -34,9 +35,13 @@ async def create_vectors(request):
         body = await request.json()
         org_id = '1234' or request.state.profile.get("org", {}).get("id", "")
         url = body.get('doc_url')
-        chunking_type = body.get('chunking_type') or 'semnatic'
+        chunking_type = body.get('chunking_type') or 'manual'
         chunk_size = body.get('chunk_size') or '1000'
         chunk_overlap = body.get('chunk_overlap') or '200'
+        name = body.get('name')
+        description = body.get('description')
+        if name is None or description is None:
+            raise ValueError("Name and description are required.")
         data = await get_google_docs_data(url)
         text = data.get('data')
         doc_id = data.get('doc_id')
@@ -49,7 +54,7 @@ async def create_vectors(request):
         else:
             raise ValueError("Invalid chunking type or method not supported.")
         
-        return await store_in_pinecone_and_mongo(embeddings, chunks, org_id, doc_id)
+        return await store_in_pinecone_and_mongo(embeddings, chunks, org_id, doc_id, name, description)
        
     except Exception as e:
         print(f"Error in create_vectors: {e}")
@@ -78,9 +83,10 @@ async def get_google_docs_data(url):
         print(f"Error in get_google_docs_data: {e}")
         raise
 
-async def store_in_pinecone_and_mongo(embeddings, chunks, org_id, doc_id):
+async def store_in_pinecone_and_mongo(embeddings, chunks, org_id, doc_id, name, description):
     try:
         index = pc.Index(pinecone_index)
+        chunks_array = []
         if doc_id is None:
             doc_id = str(uuid.uuid4())
         for embedding, chunk in zip(embeddings, chunks):
@@ -91,7 +97,7 @@ async def store_in_pinecone_and_mongo(embeddings, chunks, org_id, doc_id):
                 "values": embedding[0] if isinstance(embedding, list) and len(embedding) == 1 else list(map(float, embedding)),
                 "metadata": {"org_id": org_id, "doc_id": doc_id}
             }]
-            index.upsert(vectors=vectors, namespace="ns1")
+            index.upsert(vectors=vectors, namespace=org_id)
             # Store in MongoDB
             rag_model.insert_one({
                 "chunk": chunk,
@@ -99,6 +105,14 @@ async def store_in_pinecone_and_mongo(embeddings, chunks, org_id, doc_id):
                 "org_id": org_id,
                 "doc_id": doc_id
             })
+            chunks_array.append(chunk_id)
+        rag_parent_model.insert_one({
+            "name" : name,
+            "description" : description,
+            "doc_id" : doc_id,
+            "org_id" : org_id,
+            "chunks_id_array" : chunks_array
+        })
         return {
             "success": True,
             "message": "Data stored successfully in Pinecone and MongoDB.",
