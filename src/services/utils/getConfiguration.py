@@ -96,6 +96,10 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
         for param in required_params:
             if param in variables :
                 args[param] = variables[param]
+    rag_data = bridge.get('rag_data')
+    # if rag_data is not None:
+    #     tools.append({'type': 'function', 'name': 'getCurrentDateTimeFunction', 'description': "1. Create getCurrentDateTime function to get the current date and time.\n2. Use 'moment' library to format the current date and time into 'YYYY-MM-DD HH:mm:ss'.\n3. Return the formatted date and time.", 'properties': {}, 'required': []})
+
 
     return {
         'success': True,

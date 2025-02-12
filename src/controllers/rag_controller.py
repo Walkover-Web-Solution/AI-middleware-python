@@ -5,6 +5,8 @@ from pinecone import Pinecone, ServerlessSpec
 import uuid
 from config import Config
 from models.mongo_connection import db
+from langchain_openai import OpenAIEmbeddings
+from config import Config
 
 rag_model = db["rag_data"]
 rag_parent_model = db["rag_parent_data"]
@@ -121,4 +123,38 @@ async def store_in_pinecone_and_mongo(embeddings, chunks, org_id, doc_id, name, 
             
     except Exception as e:
         print(f"Error storing data in Pinecone or MongoDB: {e}")
+        raise
+
+async def get_vectors_and_text(request):
+    try:
+        body = await request.json()
+        org_id = '1234' or request.state.profile.get("org", {}).get("id", "")
+        doc_id = body.get('doc_id')
+        query = body.get('query')
+        if query is None:
+            raise ValueError("Query is required.")
+        embedding = OpenAIEmbeddings(api_key=Config.OPENAI_API_KEY).embed_documents([query])
+
+        # Query Pinecone
+        index = pc.Index(pinecone_index)
+        query_response = index.query(
+            vector=embedding[0] if isinstance(embedding, list) and len(embedding) == 1 else list(map(float, embedding)),
+            namespace=org_id,
+            filter={"doc_id": {"$in": doc_id} if isinstance(doc_id, list) else doc_id, "org_id": org_id},
+            top_k=3  # Adjust the number of results as needed
+        )
+        query_response_ids = [result['id'] for result in query_response['matches']]
+        
+        # Query MongoDB using query_response_ids
+        mongo_query = {"chunk_id": {"$in": query_response_ids}}
+        mongo_results = list(rag_model.find(mongo_query))
+        print(mongo_results)
+        
+        return {
+            "success": True,
+            "results": query_response
+        }
+        
+    except Exception as e:
+        print(f"Error in get_vectors_and_text: {e}")
         raise
