@@ -31,7 +31,8 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
         name_of_function = makeFunctionName(api_data.get('endpoint_name') or  api_data.get("function_name"))
         tool_id_and_name_mapping[name_of_function] =  {
             "url": f"https://flow.sokt.io/func/{api_data.get('function_name')}",
-            "headers":{}
+            "headers":{},
+            "name": api_data.get('function_name')
         }
         if api_data.get('status') == 0 and not name_of_function:
             continue
