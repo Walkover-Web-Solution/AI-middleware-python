@@ -10,8 +10,7 @@ rag_model = db["rag_data"]
 # Initialize Pinecone with the API key
 pc = Pinecone(api_key=Config.PINECONE_APIKEY)
 
-# Assuming the index name is provided or known
-pinecone_index = "aimiddleware"  # Ensure the index name is lowercase
+pinecone_index = "ai-middleware"  # Ensure the index name is lowercase
 # if not pc.index_exists(index_name):
 #     try:
 #         pinecone_index = pc.create_index(
@@ -35,9 +34,9 @@ async def create_vectors(request):
         body = await request.json()
         org_id = '1234' or request.state.profile.get("org", {}).get("id", "")
         url = body.get('doc_url')
-        chunking_type = body.get('chunking_type') or 'semantic'
-        chunk_size = body.get('chunk_size') or '1500'
-        chunk_overlap = body.get('chunk_overlap') or '500'
+        chunking_type = body.get('chunking_type') or 'semnatic'
+        chunk_size = body.get('chunk_size') or '1000'
+        chunk_overlap = body.get('chunk_overlap') or '200'
         data = await get_google_docs_data(url)
         text = data.get('data')
         doc_id = data.get('doc_id')
