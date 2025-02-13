@@ -15,13 +15,13 @@ asyncio.ensure_future(repeat_function())
 
 async def check_batch_status():
     try:
-
+        print("harsh this side before redis")
         batch_ids = await find_in_cache_with_prefix('batch_')
         for id in batch_ids:
             apikey = id.get('apikey')
             webhook = id.get('webhook')
             batch_id = id.get('id')
-            print("harsh this side")
+            print("harsh this side in if condition")
             if webhook.get('url') is not None:
                 response_format = create_response_format(webhook.get('url'), webhook.get('headers'))
             openAI = AsyncOpenAI(api_key=apikey)
