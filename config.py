@@ -46,4 +46,4 @@ class Config:
     PUBLIC_REFERENCEID = os.getenv('PUBLIC_REFERENCEID')
     ADMIN_API_KEY = os.getenv('ADMIN_API_KEY')
     OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
-    PINECONE_APIKEY = os.getenv('PINCONE_APIKEY')
+    PINECONE_APIKEY = os.getenv('PINCONE_APIKEY', 'SOMETHING')
