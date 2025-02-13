@@ -88,3 +88,7 @@ redis>=5.0.8,<6.0.0
 aiohttp>=3.10.10,<4.0.0
 aio-pika
 motor>=3.6.0,<4.0.0
+pinecone>=6.0.1
+langchain_openai>=0.3.5
+langchain_experimental>=0.3.4
+langchain>=0.3.18

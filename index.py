@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 import asyncio
 from contextlib import asynccontextmanager
-import src.services.utils.batch_script
+from src.services.utils.batch_script import repeat_function
 
 from config import Config
 from src.controllers.modelController import router as model_router
@@ -38,6 +38,7 @@ async def lifespan(app: FastAPI):
     if Config.CONSUMER_STATUS.lower() == "true":
         consume_task = asyncio.create_task(consume_messages_in_executor())
     
+    asyncio.create_task(repeat_function())
     yield  # Startup logic is complete
     # Shutdown logic
     logger.info("Shutting down...")

@@ -11,7 +11,7 @@ async def repeat_function():
         await check_batch_status()
         await asyncio.sleep(2)
 
-asyncio.ensure_future(repeat_function())
+# asyncio.ensure_future(repeat_function())
 
 
 async def check_batch_status():
