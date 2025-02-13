@@ -282,7 +282,7 @@ async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None)
             {
                 '$lookup': {
                     'from': 'rag_parent_data',
-                    'let': { 'rag_doc_ids': '$rag_doc_ids' },
+                    'let': { 'rag_doc_ids': { '$ifNull': ['$rag_doc_ids', []] } },
                     'pipeline': [
                         {
                             '$match': {
