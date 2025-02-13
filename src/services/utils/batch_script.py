@@ -7,8 +7,9 @@ import json
 
 async def repeat_function():
     while True:
+        print("harsh this side before function call")
         await check_batch_status()
-        await asyncio.sleep(900)
+        await asyncio.sleep(2)
 
 asyncio.ensure_future(repeat_function())
 
