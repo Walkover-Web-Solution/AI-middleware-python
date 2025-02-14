@@ -110,17 +110,19 @@ async def store_in_pinecone_and_mongo(embeddings, chunks, org_id, doc_id, name, 
                 "doc_id": doc_id
             })
             chunks_array.append(chunk_id)
-        rag_parent_model.insert_one({
-            "name" : name,
-            "description" : description,
-            "doc_id" : doc_id,
-            "org_id" : org_id,
-            "chunks_id_array" : chunks_array
+        result = await rag_parent_model.insert_one({
+            "name": name,
+            "description": description,
+            "doc_id": doc_id,
+            "org_id": org_id,
+            "chunks_id_array": chunks_array
         })
+        inserted_id = result.inserted_id
         return {
             "success": True,
             "message": "Data stored successfully in Pinecone and MongoDB.",
-            "doc_id": doc_id
+            "doc_id": doc_id,
+            "mongo_id": str(inserted_id)
         }
             
     except Exception as e:
