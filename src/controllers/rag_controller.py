@@ -166,7 +166,7 @@ async def get_vectors_and_text(request):
 
 async def get_all_docs(request):
     try:
-        org_id = '1234' or request.state.profile.get("org", {}).get("id", "")
+        org_id = request.state.profile.get("org", {}).get("id", "")
         result = await rag_parent_model.find({
             'org_id': org_id
         }).to_list(length=None)
