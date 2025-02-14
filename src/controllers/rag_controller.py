@@ -163,3 +163,23 @@ async def get_vectors_and_text(request):
     except Exception as e:
         print(f"Error in get_vectors_and_text: {e}")
         raise
+
+async def get_all_docs(request):
+    try:
+        org_id = '1234' or request.state.profile.get("org", {}).get("id", "")
+        result = await rag_parent_model.find({
+            'org_id': org_id
+        }).to_list(length=None)
+        
+        for doc in result:
+            if '_id' in doc:
+                doc['_id'] = str(doc['_id'])
+        
+        return JSONResponse(status_code=200, content={
+            "success": True,
+            "data": result
+        })
+
+    except Exception as e:
+        print(f"Error in get_all_docs: {e}")
+        raise
