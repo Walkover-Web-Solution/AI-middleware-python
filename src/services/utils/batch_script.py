@@ -4,25 +4,24 @@ from ..utils.send_error_webhook import create_response_format
 from ..commonServices.baseService.baseService import sendResponse
 import asyncio
 import json
+from .ai_middleware_format import Response_formatter
 
 async def repeat_function():
     while True:
         print("harsh this side before function call")
         await check_batch_status()
-        await asyncio.sleep(2)
+        await asyncio.sleep(900)
 
-# asyncio.ensure_future(repeat_function())
 
 
 async def check_batch_status():
     try:
-        print("harsh this side before redis")
+        print("Batch Script running...")
         batch_ids = await find_in_cache_with_prefix('batch_')
         for id in batch_ids:
             apikey = id.get('apikey')
             webhook = id.get('webhook')
             batch_id = id.get('id')
-            print("harsh this side in if condition")
             if webhook.get('url') is not None:
                 response_format = create_response_format(webhook.get('url'), webhook.get('headers'))
             openAI = AsyncOpenAI(api_key=apikey)
@@ -39,6 +38,11 @@ async def check_batch_status():
                     except json.JSONDecodeError as e:
                         print(f"JSON decoding error: {e}")
                         file_content = None
+                    for index, content in enumerate(file_content):
+                        response_body = content["response"]["body"]
+                        formatted_content = await Response_formatter(response=response_body, service='openai', tools={}, type='chat', images=None)
+                        file_content[index] = formatted_content
+                        
                     await sendResponse(response_format, data=file_content, success = True)
                 await delete_in_cache_for_batch(f'AIMIDDLEWARE_{batch_id}')
     except Exception as error:
