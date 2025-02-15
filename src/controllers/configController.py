@@ -298,6 +298,7 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
         bridge_summary = body.get('bridge_summary')
         gpt_memory = body.get('gpt_memory')
         gpt_memory_context = body.get('gpt_memory_context')
+        doc_ids = body.get('doc_ids')
         user_id = request.state.profile['user']['id']
         version_description = body.get('version_description')
         tool_call_count = body.get('tool_call_count')
@@ -335,6 +336,8 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
             update_fields['gpt_memory'] = gpt_memory
         if gpt_memory_context is not None:
             update_fields['gpt_memory_context'] = gpt_memory_context
+        if doc_ids is not None:
+            update_fields['doc_ids'] = doc_ids
         if service is not None:
             update_fields['service'] = service
             model = new_configuration['model']

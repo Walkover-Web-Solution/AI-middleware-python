@@ -71,7 +71,8 @@ def parse_request_body(request_body):
         "memory" : "",
         "bridge_summary" : body.get('bridge_summary'),
         "batch" : body.get('batch') or [],
-        "batch_webhook" : body.get('webhook')
+        "batch_webhook" : body.get('webhook'),
+        "doc_ids":body.get('ddc_ids')
 
     }
 
