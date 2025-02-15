@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Request, Depends
-from ..controllers.rag_controller import create_vectors, get_vectors_and_text, get_all_docs
+from ..controllers.rag_controller import create_vectors, get_vectors_and_text, get_all_docs, delete_doc
 from ..middlewares.middleware import jwt_middleware
 router = APIRouter()
 
@@ -15,3 +15,7 @@ async def get_query(request: Request):
 @router.get('/docs', dependencies=[Depends(jwt_middleware)])
 async def get_docs(request: Request):
     return await get_all_docs(request)
+
+@router.delete('/docs', dependencies=[Depends(jwt_middleware)])
+async def delete_org_docs(request: Request):
+    return await delete_doc(request)

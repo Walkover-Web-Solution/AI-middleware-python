@@ -8,6 +8,8 @@ from models.mongo_connection import db
 from langchain_openai import OpenAIEmbeddings
 from config import Config
 from fastapi.responses import JSONResponse
+from bson import ObjectId
+
 
 
 rag_model = db["rag_data"]
@@ -184,4 +186,28 @@ async def get_all_docs(request):
 
     except Exception as e:
         print(f"Error in get_all_docs: {e}")
+        raise
+
+async def delete_doc(request):
+    try:
+        body = await request.json()
+        index = pc.Index(pinecone_index)
+        org_id = request.state.profile.get("org", {}).get("id", "")
+        id = body.get('id')
+        result = await rag_parent_model.find_one({
+            '_id': ObjectId(id),
+            'org_id': org_id
+        })
+        chunks_array = result.get('chunks_array')
+        
+        for chunk_id in chunks_array:
+            index.delete(ids=[chunk_id], namespace=org_id)
+            rag_model.delete_one({"chunk_id": chunk_id})
+        rag_parent_model.delete_one({"_id": ObjectId(id)})
+        return JSONResponse(status_code=200, content={
+            "success": True,
+            "message": f"Deleted documents with chunk IDs: {chunks_array}."
+        })
+    except Exception as e:
+        print(f"Error in delete_docs: {e}")
         raise
