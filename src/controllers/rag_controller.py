@@ -198,7 +198,7 @@ async def delete_doc(request):
             '_id': ObjectId(id),
             'org_id': org_id
         })
-        chunks_array = result.get('chunks_array')
+        chunks_array = result.get('chunks_id_array')
         
         for chunk_id in chunks_array:
             index.delete(ids=[chunk_id], namespace=org_id)
