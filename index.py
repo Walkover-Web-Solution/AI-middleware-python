@@ -5,8 +5,8 @@ from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 import asyncio
 from contextlib import asynccontextmanager
+import src.services.utils.batch_script
 from src.services.utils.batch_script import repeat_function
-
 from config import Config
 from src.controllers.modelController import router as model_router
 from src.routes.chatBot_routes import router as chatbot_router
