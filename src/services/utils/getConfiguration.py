@@ -2,6 +2,8 @@ import src.db_services.ConfigurationServices as ConfigurationService
 from .helper import Helper
 from bson import ObjectId
 from models.mongo_connection import db
+from src.services.utils.common_utils import updateVariablesWithTimeZone
+from src.services.commonServices.baseService.utils import makeFunctionName
 apiCallModel = db['apicalls']
 
 # from src.services.commonServices.generateToken import generateToken
@@ -23,14 +25,16 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
     
     # make tools data
     tools = []
-    names =[]
     tool_id_and_name_mapping = {}
     for key, api_data in result.get('bridges', {}).get('apiCalls', {}).items():
         # if status is paused then only don't include it in tools
-        name_of_function = api_data.get('endpoint_name') or  api_data.get("function_name")
-        name_of_function = name_of_function.replace(" ", "")
-        tool_id_and_name_mapping[name_of_function] =  api_data.get("function_name")
-        if api_data.get('status') == 0:
+        name_of_function = makeFunctionName(api_data.get('endpoint_name') or  api_data.get("function_name"))
+        tool_id_and_name_mapping[name_of_function] =  {
+            "url": f"https://flow.sokt.io/func/{api_data.get('function_name')}",
+            "headers":{},
+            "name": api_data.get('function_name')
+        }
+        if api_data.get('status') == 0 and not name_of_function:
             continue
         format = {
             "type": "function",
@@ -49,14 +53,22 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
                api_data.get("required_params")
             )
         }
-        names.append(api_data.get("function_name"))
         tools.append(format)
 
     for tool in extra_tools:
         if isinstance(tool, dict):
-            tools.append(tool)
-            names.append(tool.get('name'))
-            tool_id_and_name_mapping[tool.get('name')] =  tool.get('name')
+            if tool.get("url"):
+                tools.append( {
+                        "type": "function",
+                        "name": makeFunctionName(tool.get('name')),
+                        "description": tool.get('description'),
+                        "properties":  tool.get('fields', {}),
+                        "required": tool.get("required_params",[])
+                    })
+                tool_id_and_name_mapping[makeFunctionName(tool.get('name'))] = {
+                    "url": tool.get("url"),
+                    "headers": tool.get("headers", {})
+            }
     configuration.pop('tools', None)
     configuration['tools'] = tools
     service = service or (result.get('bridges', {}).get('service', '').lower())
@@ -85,7 +97,11 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
         for param in required_params:
             if param in variables :
                 args[param] = variables[param]
-        
+    rag_data = bridge.get('rag_data')
+    # if rag_data is not None:
+    #     tools.append({'type': 'function', 'name': 'getCurrentDateTimeFunction', 'description': "1. Create getCurrentDateTime function to get the current date and time.\n2. Use 'moment' library to format the current date and time into 'YYYY-MM-DD HH:mm:ss'.\n3. Return the formatted date and time.", 'properties': {}, 'required': []})
+
+
     return {
         'success': True,
         'configuration': configuration,
@@ -97,10 +113,10 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
         'template': template_content.get('template') if template_content else None,
         "user_reference": result.get("bridges", {}).get("user_reference", ""),
         "variables_path": variables_path or variables_path_bridge,
-        "names":names,
         "tool_id_and_name_mapping":tool_id_and_name_mapping,
         "gpt_memory" : gpt_memory,
         "version_id" : version_id or result.get('bridges', {}).get('published_version_id'),
         "gpt_memory_context" :  gpt_memory_context,
         "tool_call_count": result.get("bridges", {}).get("tool_call_count", 3),
+        "variables": await updateVariablesWithTimeZone(variables,org_id)
     }

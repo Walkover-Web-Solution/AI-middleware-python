@@ -12,7 +12,7 @@ from ..utils.send_error_webhook import send_error_to_webhook
 import json
 from src.handler.executionHandler import handle_exceptions
 from models.mongo_connection import db
-from src.services.utils.common_utils import parse_request_body, initialize_timer, load_model_configuration, handle_pre_tools, handle_fine_tune_model,manage_threads, prepare_prompt, configure_custom_settings, build_service_params, process_background_tasks, add_default_variables, build_service_params_for_batch
+from src.services.utils.common_utils import parse_request_body, initialize_timer, load_model_configuration, handle_pre_tools, handle_fine_tune_model,manage_threads, prepare_prompt, configure_custom_settings, build_service_params, process_background_tasks, build_service_params_for_batch, add_default_template
 from src.services.utils.rich_text_support import process_chatbot_response
 app = FastAPI()
 from src.services.utils.helper import Helper
@@ -26,8 +26,9 @@ async def chat(request_body):
     try:
         # Step 1: Parse and validate request body
         parsed_data = parse_request_body(request_body)
-        #  add defualt varaibles in prompt eg : time and date
-        parsed_data['variables'] = add_default_variables(parsed_data['variables'])
+
+        parsed_data['configuration']['prompt'] = add_default_template(parsed_data.get('configuration', {}).get('prompt', ''))
+
         # Step 2: Initialize Timer
         timer = initialize_timer(parsed_data['state'])
         
@@ -105,7 +106,7 @@ async def chat(request_body):
                 result['modelResponse']['data']['message_id'] = parsed_data['message_id']
             asyncio.create_task(process_background_tasks(parsed_data, result, params))
         return JSONResponse(status_code=200, content={"success": True, "response": result["modelResponse"]})
-    except Exception as error:
+    except (Exception, ValueError) as error:
         traceback.print_exc()
         if not parsed_data['is_playground']:
             latency = {
@@ -125,6 +126,7 @@ async def chat(request_body):
                 "expectedCost" : parsed_data['tokens'].get('expectedCost',0),
                 "variables" : parsed_data.get('variables') or {}
             })
+            func_tool_call_data = error.args[1] if len(error.args) > 1 else None
             # Combine the tasks into a single asyncio.gather call
             tasks = [
                 metrics_service.create([parsed_data['usage']], {
@@ -138,6 +140,7 @@ async def chat(request_body):
                     "channel": 'chat',
                     "type": "error",
                     "actor": "user",
+                    'tools_call_data' : func_tool_call_data,
                     "message_id": parsed_data['message_id'],
                     "AiConfig": class_obj.aiconfig()
                     }, parsed_data['version_id']),
@@ -199,7 +202,6 @@ async def batch(request_body):
         if parsed_data['batch_webhook'] is None:
             raise ValueError("webhook is required")
         #  add defualt varaibles in prompt eg : time and date
-        parsed_data['variables'] = add_default_variables(parsed_data['variables'])
         
         # Step 3: Load Model Configuration
         model_config, custom_config, model_output_config = await load_model_configuration(

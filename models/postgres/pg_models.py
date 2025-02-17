@@ -53,6 +53,7 @@ class RawData(Base):
     message_id = Column(UUID(as_uuid=True), nullable=True)
     variables = Column(JSON)
     is_present = Column(Boolean, default=False)
+    firstAttemptError = Column(Text,  nullable=True)
     # conversation = relationship("Conversation", back_populates="raw_data")
 
 class system_prompt_versionings(Base):
@@ -76,4 +77,4 @@ class user_bridge_config_history(Base):
     bridge_id = Column(String, nullable=False)
     type = Column(String, nullable=False)
     time = Column(DateTime, nullable=False, default=func.now())
-    version_id = Column(String)
+    version_id = Column(String, nullable=True, default="")

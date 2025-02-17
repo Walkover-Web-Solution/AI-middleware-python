@@ -6,7 +6,7 @@ import uvicorn
 import asyncio
 from contextlib import asynccontextmanager
 import src.services.utils.batch_script
-
+from src.services.utils.batch_script import repeat_function
 from config import Config
 from src.controllers.modelController import router as model_router
 from src.routes.chatBot_routes import router as chatbot_router
@@ -21,6 +21,7 @@ from src.routes.bridge_version_routes import router as bridge_version
 from src.routes.image_process_routes import router as image_process_routes
 from src.routes.utils_routes import router as utils_routes
 from src.routes.utility_routes import router as utility_routes
+from src.routes.rag_routes import router as rag_routes
 
 async def consume_messages_in_executor():
     await queue_obj.consume_messages()
@@ -37,6 +38,7 @@ async def lifespan(app: FastAPI):
     if Config.CONSUMER_STATUS.lower() == "true":
         consume_task = asyncio.create_task(consume_messages_in_executor())
     
+    asyncio.create_task(repeat_function())
     yield  # Startup logic is complete
     # Shutdown logic
     logger.info("Shutting down...")
@@ -117,6 +119,7 @@ app.include_router(bridge_version, prefix="/bridge/versions" )
 app.include_router(image_process_routes, prefix="/image/processing" )
 app.include_router(utils_routes, prefix="/utils" )
 app.include_router(utility_routes,prefix="/utility")
+app.include_router(rag_routes,prefix="/rag")
 
 
 if __name__ == "__main__":

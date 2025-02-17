@@ -14,6 +14,7 @@ async def chatbot_suggestions(response_format, assistant, parsed_data, params):
             conversation = []
         conversation.extend([{"role": "user", "content": user}, {"role": "assistant", "content": assistant.get('data', '').get('content')}])
         final_prompt = prompt_summary if prompt_summary is not None else prompt
+        random_id = str(uuid.uuid4())
         response, rs_headers = await fetch(
             f"https://proxy.viasocket.com/proxy/api/1258584/29gjrmh24/api/v2/model/chat/completion",
             "POST",
@@ -23,9 +24,10 @@ async def chatbot_suggestions(response_format, assistant, parsed_data, params):
             },
             None,
             {
-                "user": f'Generate suggestions based on the user conversations and user prompt. User prompt: {final_prompt} and user conversation: {conversation}',
+                "user": f'Generate suggestions based on the user conversations. \n **User Conversations**: {conversation[-2:]}',
                 "bridge_id": "674710c9141fcdaeb820aeb8",
-                "thread_id": parsed_data.get('thread_id') or str(uuid.uuid4()),
+                "thread_id": f"{parsed_data.get('thread_id') or random_id}-{parsed_data.get('sub_thread_id') or random_id}",
+                "variables": { "prompt_summary": final_prompt }
             }
         )
         response['response']['data'] = json.loads(response.get('response',{}).get('data',{}).get('content',""))
