@@ -283,7 +283,7 @@ class ModelsConfig:
                 "default": []
             },
             "tool_choice": {
-                "field": "text",
+                "field": "dropdown",
                 "default": "auto",
                 "level": 0
             },
@@ -405,7 +405,7 @@ class ModelsConfig:
                 "default": []
             },
             "tool_choice": {
-                "field": "text",
+                "field": "dropdown",
                 "default": "auto",
                 "level": 0
             },
@@ -527,7 +527,7 @@ class ModelsConfig:
                 "default": []
             },
             "tool_choice": {
-                "field": "text",
+                "field": "dropdown",
                 "default": "auto",
                 "level": 0
             },
@@ -649,7 +649,7 @@ class ModelsConfig:
                 "default": []
             },
             "tool_choice": {
-                "field": "text",
+                "field": "dropdown",
                 "default": "auto",
                 "level": 0
             },
@@ -771,7 +771,7 @@ class ModelsConfig:
                 "default": []
             },
             "tool_choice": {
-                "field": "text",
+                "field": "dropdown",
                 "default": "auto",
                 "level": 0
             },
@@ -889,7 +889,7 @@ class ModelsConfig:
                 "default": []
             },
             "tool_choice": {
-                "field": "text",
+                "field": "dropdown",
                 "default": "auto",
                 "level": 0
             },
@@ -1003,7 +1003,7 @@ class ModelsConfig:
                 "default": []
             },
             "tool_choice": {
-                "field": "text",
+                "field": "dropdown",
                 "default": "auto",
                 "level": 0
             },
@@ -1117,7 +1117,7 @@ class ModelsConfig:
                 "default": []
             },
             "tool_choice": {
-                "field": "text",
+                "field": "dropdown",
                 "default": "auto",
                 "level": 0
             },
@@ -1238,7 +1238,7 @@ class ModelsConfig:
                 "default": []
             },
             "tool_choice": {
-                "field": "text",
+                "field": "dropdown",
                 "default": "auto",
                 "level": 0
             },
@@ -1359,7 +1359,7 @@ class ModelsConfig:
                 "default": []
             },
             "tool_choice": {
-                "field": "text",
+                "field": "dropdown",
                 "default": "auto",
                 "level": 0
             },
@@ -1484,7 +1484,7 @@ class ModelsConfig:
                 "typeOf": "array"
             },
             "tool_choice": {
-                "field": "text",
+                "field": "dropdown",
                 "default": "auto",
                 "level": 0,
                 "typeOf": "string"
@@ -1610,7 +1610,7 @@ class ModelsConfig:
                 "typeOf": "array"
             },
             "tool_choice": {
-                "field": "text",
+                "field": "dropdown",
                 "default": "auto",
                 "level": 0,
                 "typeOf": "string"
@@ -1734,7 +1734,7 @@ class ModelsConfig:
                 "typeOf": "array"
             },
             "tool_choice": {
-                "field": "text",
+                "field": "dropdown",
                 "default": "auto",
                 "level": 0,
                 "typeOf": "string"
@@ -1869,7 +1869,7 @@ class ModelsConfig:
                 "typeOf": "array"
             },
             "tool_choice": {
-                "field": "text",
+                "field": "dropdown",
                 "default": "auto",
                 "level": 0,
                 "typeOf": "string"
@@ -2119,7 +2119,7 @@ class ModelsConfig:
                 "default": []
             },
             "tool_choice": {
-                "field": "text",
+                "field": "dropdown",
                 "default": "auto",
                 "level": 0
             },
@@ -2254,7 +2254,7 @@ class ModelsConfig:
                 "default": []
             },
             "tool_choice": {
-                "field": "text",
+                "field": "dropdown",
                 "default": "auto",
                 "level": 0
             },
@@ -2330,7 +2330,7 @@ class ModelsConfig:
                 "typeOf": "array"
             },
             "tool_choice": {
-                "field": "text",
+                "field": "dropdown",
                 "default": "auto",
                 "level": 0,
                 "typeOf": "string"
@@ -3858,7 +3858,7 @@ class ModelsConfig:
                 "typeOf": "array"
             },
             "tool_choice": {
-                "field": "text",
+                "field": "dropdown",
                 "default": "auto",
                 "level": 0,
                 "typeOf": "string"
@@ -3980,7 +3980,7 @@ class ModelsConfig:
                 "typeOf": "array"
             },
             "tool_choice": {
-                "field": "text",
+                "field": "dropdown",
                 "default": "auto",
                 "level": 0,
                 "typeOf": "string"
@@ -4102,7 +4102,7 @@ class ModelsConfig:
                 "typeOf": "array"
             },
             "tool_choice": {
-                "field": "text",
+                "field": "dropdown",
                 "default": "auto",
                 "level": 0,
                 "typeOf": "string"
@@ -4216,7 +4216,7 @@ class ModelsConfig:
                 "typeOf": "array"
             },
             "tool_choice": {
-                "field": "text",
+                "field": "dropdown",
                 "default": "auto",
                 "level": 0,
                 "typeOf": "string"
@@ -4338,7 +4338,7 @@ class ModelsConfig:
                 "typeOf": "array"
             },
             "tool_choice": {
-                "field": "text",
+                "field": "dropdown",
                 "default": "auto",
                 "level": 0,
                 "typeOf": "string"
@@ -4460,7 +4460,7 @@ class ModelsConfig:
                 "typeOf": "array"
             },
             "tool_choice": {
-                "field": "text",
+                "field": "dropdown",
                 "default": "auto",
                 "level": 0,
                 "typeOf": "string"
@@ -4582,7 +4582,7 @@ class ModelsConfig:
                 "typeOf": "array"
             },
             "tool_choice": {
-                "field": "text",
+                "field": "dropdown",
                 "default": "auto",
                 "level": 0,
                 "typeOf": "string"
