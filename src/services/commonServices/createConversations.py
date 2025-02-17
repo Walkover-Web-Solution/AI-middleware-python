@@ -1,5 +1,6 @@
 import traceback
 from fastapi import HTTPException
+from ..utils.apiservice import fetch_images_b64
 class ConversationService:
     @staticmethod
     def createOpenAiConversation(conversation, memory):
@@ -66,25 +67,31 @@ class ConversationService:
             }
 
     @staticmethod
-    def createAnthropicConversation(conversation, memory):
+    async def createAnthropicConversation(conversation, memory):
         try:
             if conversation == None:
                 conversation = []
             threads = []
             expected_role = 'user'
+            
             if memory is not None:
                 threads.append({'role': 'user', 'content': [{"type": "text", "text": f"GPT-Memory Data:- {memory}"}]})
                 threads.append({'role': 'assistant', 'content': [{"type": "text", "text": "memory updated."}]})
-
+            
+            image_urls = [url for message in conversation for url in message.get('image_urls', [])]
+            images_data = await fetch_images_b64(image_urls)
+            images = {url : data for url, data in zip(image_urls, images_data)}
+            
             for i, message in enumerate(conversation):
                 if message['role'] not in ['assistant', 'user']:
                     raise ValueError(f"Invalid role '{message['role']}' at index {i}. Allowed roles are 'assistant' and 'user'.")
                 if message['role'] != expected_role:
                     raise ValueError(f"Conversation format is not correct at index {i}. Expected role: {expected_role}")
                 
+                image_data = [{'type': 'image', 'source': {'type': 'base64', 'media_type': image_media_type, 'data': image_data }} for image_url in message.get('image_urls', []) for image_data, image_media_type in [images[image_url]]]
                 threads.append({
                     'role': message['role'], 
-                    'content': [{"type": "text", "text": message['content']}]
+                    'content': image_data + [{"type": "text", "text": message['content']}]
                 })
                 expected_role = 'user' if expected_role == 'assistant' else 'assistant'
             if len(threads) % 2 != 0:

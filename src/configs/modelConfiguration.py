@@ -3122,7 +3122,12 @@ class ModelsConfig:
             #     "default": "auto",
             #     "level": 0,
             #     "typeOf": "string"
-            # }
+            # },
+             "vision": {
+                "support": True,
+                 "level": 0,
+                 "default" : False
+            },
         }
         outputConfig = {
             "usage": [{
@@ -3206,7 +3211,12 @@ class ModelsConfig:
             #     "default": "auto",
             #     "level": 0,
             #     "typeOf": "string"
-            # }
+            # },
+             "vision": {
+                "support": True,
+                 "level": 0,
+                 "default" : False
+            },
         }
         outputConfig = {
             "usage": [{
@@ -3290,7 +3300,12 @@ class ModelsConfig:
             #     "default": "auto",
             #     "level": 0,
             #     "typeOf": "string"
-            # }
+            # },
+             "vision": {
+                "support": True,
+                 "level": 0,
+                 "default" : False
+            },
         }
         outputConfig = {
             "usage": [{
@@ -3375,6 +3390,11 @@ class ModelsConfig:
             #     "level": 0,
             #     "typeOf": "string"
             # },
+             "vision": {
+                "support": True,
+                 "level": 0,
+                 "default" : False
+            },
         }
         outputConfig = {
         "usage": [{
@@ -3458,6 +3478,11 @@ class ModelsConfig:
             #     "level": 0,
             #     "typeOf": "string"
             # },
+             "vision": {
+                "support": True,
+                 "level": 0,
+                 "default" : False
+            },
         }
         outputConfig = {
         "usage": [{
@@ -3542,6 +3567,11 @@ class ModelsConfig:
             #     "level": 0,
             #     "typeOf": "string"
             # },
+             "vision": {
+                "support": True,
+                 "level": 0,
+                 "default" : False
+            },
         }
         outputConfig = {
             "usage": [{
@@ -3622,6 +3652,11 @@ class ModelsConfig:
             #     "level": 0,
             #     "typeOf": "string"
             # },
+             "vision": {
+                "support": True,
+                 "level": 0,
+                 "default" : False
+            },
         }
         outputConfig = {
             "usage": [{
@@ -3705,6 +3740,11 @@ class ModelsConfig:
             #     "level": 0,
             #     "typeOf": "string"
             # },
+             "vision": {
+                "support": True,
+                 "level": 0,
+                 "default" : False
+            },
         }
         outputConfig = {
             "usage": [{
