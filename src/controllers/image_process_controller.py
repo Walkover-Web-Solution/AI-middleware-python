@@ -17,13 +17,13 @@ async def image_processing(request):
         storage_client = storage.Client(credentials=credentials)
         
         # Define the bucket and file path
-        bucket = storage_client.bucket('ai_middleware_testing')
+        bucket = storage_client.bucket('resources.gtwy.ai')
         filename = f"uploads/{uuid.uuid4()}_{file.filename}"
         blob = bucket.blob(filename)
         
         # Upload the file to GCP
         blob.upload_from_string(file_content, content_type=file.content_type)
-        image_url = f"https://storage.googleapis.com/ai_middleware_testing/{filename}"
+        image_url = f"https://resources.gtwy.ai/{filename}"
         
         return {
             'success': True,

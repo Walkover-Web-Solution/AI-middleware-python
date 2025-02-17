@@ -22,7 +22,7 @@ async def OpenAIImageModel(configuration, apiKey, execution_time_logs, timer):
         credentials = service_account.Credentials.from_service_account_info(credentials_dict)
         storage_client = storage.Client(credentials=credentials)
 
-        bucket = storage_client.bucket('ai_middleware_testing')
+        bucket = storage_client.bucket('resources.gtwy.ai')
         
         filename = f"generated-images/{uuid.uuid4()}.png"
         blob = bucket.blob(filename)
@@ -31,7 +31,7 @@ async def OpenAIImageModel(configuration, apiKey, execution_time_logs, timer):
         blob.upload_from_file(image_content, content_type='image/png')
         
         # Get the public URL
-        gcp_url = f"https://storage.googleapis.com/ai_middleware_testing/{filename}"
+        gcp_url = f"https://resources.gtwy.ai/{filename}"
         response['data'][0]['url'] = gcp_url
         execution_time_logs[len(execution_time_logs) + 1] = timer.stop("Openai image stop")
         return {

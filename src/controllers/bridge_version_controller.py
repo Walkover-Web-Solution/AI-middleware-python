@@ -1,10 +1,17 @@
 import json
 from fastapi import HTTPException, status
 from fastapi.responses import JSONResponse
-from ..db_services.bridge_version_services import create_bridge_version, update_bridges, get_version_with_tools, publish
+from ..db_services.bridge_version_services import create_bridge_version, update_bridges, get_version_with_tools, publish, get_comparison_score
 from src.services.utils.helper import Helper
 from ..db_services.ConfigurationServices import get_bridges_with_tools, update_bridge, get_bridges_without_tools
 from bson import ObjectId
+from ..services.utils.apiservice import fetch
+from ..configs.models import services
+import traceback
+
+with open('src/services/utils/model_features.json', 'r') as file: 
+    model_features = json.load(file)
+
 async def create_version(request):
    try:
       body = await request.json()
@@ -55,10 +62,18 @@ async def publish_version(request, version_id):
         org_id = request.state.profile['org']['id']
         result = await publish(org_id, version_id)
         if result['success']:
-            return JSONResponse({"success": True, "message": "version published successfully", "version_id": version_id})
+            return JSONResponse({"success": True, "message": "version published successfully", "version_id": version_id })
         return result
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e)
+    
+async def check_testcases(request, version_id):
+    try:
+        org_id = request.state.profile['org']['id']
+        score = await get_comparison_score(org_id, version_id)
+        return JSONResponse({'success' : True, 'comparison_score' : score})
+    except Exception as e:
+        raise HTTPException(status_code = status.HTTP_400_BAD_REQUEST, detail = {'success' : False, 'score': None, 'error' : e })
 
 
 async def discard_version(request, version_id):
@@ -76,4 +91,27 @@ async def discard_version(request, version_id):
         return JSONResponse({"success": True, "message": "version changes discarded successfully", "version_id": version_id})
     return result
     
+async def suggest_model(request, version_id):
+    try: 
+        org_id = request.state.profile['org']['id']
+        version_data = (await get_version_with_tools(version_id, org_id))['bridges']
+        available_services = version_data['apikey_object_id'].keys()
+        if not available_services:
+            raise Exception('Please select api key for proceeding further')
+        
+        available_models = [{model: model_features[model]} for s in services if s in available_services for model in services[s]['models'] if model in model_features]
+        unavailable_models = [{model: model_features[model]} for s in services if s not in available_services for model in services[s]['models'] if model in model_features]
+        
+        
+        prompt = version_data['configuration']['prompt']
+        tool_calls = [{call['endpoint_name'] : call['description']} for call in version_data['apiCalls'].values()]
+
+        response, headers = await fetch(url='https://proxy.viasocket.com/proxy/api/1258584/29gjrmh24/api/v2/model/chat/completion', method='POST', json_body={'user' : json.dumps({'prompt' : prompt, 'tool_calls' : tool_calls}), 'bridge_id': '67a75ab42d85a6d4f16a4c7e', 'variables' : {'available_models': str(available_models), 'unavailable_models': str(unavailable_models) }}, headers = {'pauthkey' : '1b13a7a038ce616635899a239771044c', 'Content-Type': 'application/json' })
+        
+        response = json.loads(response['response']['data']['content'])
+
+        return JSONResponse({'success' : True, 'message': 'suggestion fetched successfully', 'data': response })
+    except Exception as e: 
+        traceback.print_exc()
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail= {'model' : None, 'error' : str(e) })
     

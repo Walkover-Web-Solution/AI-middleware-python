@@ -278,7 +278,22 @@ async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None)
                     }
                 }
             },
-            # New Stage 4: (Optional) Remove temporary fields to clean up the output
+            # New Stage 4: Lookup 'rag_parent_data' using 'rag_doc_ids'
+            {
+                '$lookup': {
+                    'from': 'rag_parent_data',
+                    'let': { 'rag_doc_ids': { '$ifNull': ['$rag_doc_ids', []] } },
+                    'pipeline': [
+                        {
+                            '$match': {
+                                '$expr': { '$in': ['$doc_id', '$$rag_doc_ids'] }
+                            }
+                        }
+                    ],
+                    'as': 'rag_data'
+                }
+            },
+            # New Stage 5: (Optional) Remove temporary fields to clean up the output
             {
                 '$project': {
                     'apikeys_array': 0,

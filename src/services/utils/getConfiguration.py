@@ -30,10 +30,11 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
         # if status is paused then only don't include it in tools
         name_of_function = makeFunctionName(api_data.get('endpoint_name') or  api_data.get("function_name"))
         tool_id_and_name_mapping[name_of_function] =  {
-            "url": f"https://flow.sokt.io/func/{name_of_function}",
-            "headers":{}
+            "url": f"https://flow.sokt.io/func/{api_data.get('function_name')}",
+            "headers":{},
+            "name": api_data.get('function_name')
         }
-        if api_data.get('status') == 0:
+        if api_data.get('status') == 0 and not name_of_function:
             continue
         format = {
             "type": "function",
@@ -96,6 +97,10 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
         for param in required_params:
             if param in variables :
                 args[param] = variables[param]
+    rag_data = bridge.get('rag_data')
+    # if rag_data is not None:
+    #     tools.append({'type': 'function', 'name': 'getCurrentDateTimeFunction', 'description': "1. Create getCurrentDateTime function to get the current date and time.\n2. Use 'moment' library to format the current date and time into 'YYYY-MM-DD HH:mm:ss'.\n3. Return the formatted date and time.", 'properties': {}, 'required': []})
+
 
     return {
         'success': True,
