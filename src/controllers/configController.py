@@ -296,6 +296,7 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
         apikey_object_id = body.get('apikey_object_id')
         variables_path = body.get('variables_path')
         bridge_summary = body.get('bridge_summary')
+        expected_qna = body.get('expected_qna', None)
         gpt_memory = body.get('gpt_memory')
         gpt_memory_context = body.get('gpt_memory_context')
         doc_ids = body.get('doc_ids')
@@ -326,6 +327,8 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
             new_configuration['system_prompt_version_id'] = result.get('id')
         if bridge_summary is not None:
             update_fields['bridge_summary'] = bridge_summary
+        if expected_qna is not None:
+            update_fields['expected_qna'] = expected_qna
         if slugName is not None:
             update_fields['slugName'] = slugName
         if tool_call_count is not None:
