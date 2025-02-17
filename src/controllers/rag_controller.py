@@ -9,8 +9,14 @@ from langchain_openai import OpenAIEmbeddings
 from config import Config
 from fastapi.responses import JSONResponse
 from bson import ObjectId
-
-
+import io
+import PyPDF2
+import docx
+import pandas as pd
+from fastapi import UploadFile, File
+from fastapi import HTTPException
+from langchain.document_loaders import CSVLoader
+from langchain.text_splitter import RecursiveCharacterTextSplitter
 
 rag_model = db["rag_data"]
 rag_parent_model = db["rag_parent_data"]
@@ -35,10 +41,49 @@ pinecone_index = "ai-middleware"  # Ensure the index name is lowercase
 # else:
 #     pinecone_index = pc.get_index(index_name)
 
+async def extract_pdf_text(file: UploadFile) -> str:
+    pdf_reader = PyPDF2.PdfReader(io.BytesIO(await file.read()))
+    text = ""
+    for page in pdf_reader.pages:
+        text += page.extract_text()
+    return text
+
+# Function to extract text from DOCX file
+async def extract_docx_text(file: UploadFile) -> str:
+    doc = docx.Document(io.BytesIO(await file.read()))
+    text = ""
+    for para in doc.paragraphs:
+        text += para.text + "\n"
+    return text
+
+# Function to extract text from CSV file
+async def extract_csv_text(file: UploadFile) -> str:
+    df = pd.read_csv(io.BytesIO(await file.read()))
+    def row_to_string(row):
+        return ', '.join([f"{col}: {value}" for col, value in row.items()])
+
+    data = df.apply(row_to_string, axis=1).tolist()
+    # Assuming you want to extract the text from the CSV as a string of all its rows
+    # text = df.to_string(index=False)
+    return data
+
 async def create_vectors(request):
     try:
         # Extract the document ID from the URL
-        body = await request.json()
+        body = await request.form()
+        file = body.get('file')
+        if file:
+            file_extension = file.filename.split('.')[-1].lower()
+            
+            # Extract text based on file type
+            if file_extension == 'pdf':
+                text = await extract_pdf_text(file)
+            elif file_extension == 'docx':
+                text = await extract_docx_text(file)
+            elif file_extension == 'csv':
+                text = await extract_csv_text(file)
+            else:
+                raise HTTPException(status_code=400, detail="Unsupported file type. Only PDF, DOCX, and CSV are supported.")
         org_id = request.state.profile.get("org", {}).get("id", "")
         url = body.get('doc_url')
         chunking_type = body.get('chunking_type') or 'manual'
@@ -46,11 +91,13 @@ async def create_vectors(request):
         chunk_overlap = body.get('chunk_overlap') or '200'
         name = body.get('name')
         description = body.get('description')
-        if name is None or description is None:
-            raise ValueError("Name and description are required.")
-        data = await get_google_docs_data(url)
-        text = data.get('data')
-        doc_id = data.get('doc_id')
+        # if name is None or description is None:
+        #     raise HTTPException(status_code=400, detail="Name and description are required.")
+        if url is not None:
+            data = await get_google_docs_data(url)
+            text = data.get('data')
+            doc_id = data.get('doc_id')
+        text = str(text)
         if chunking_type == 'semantic':
             chunks, embeddings = await semantic_chunking(text=text)
         elif chunking_type == 'manual': 
@@ -58,13 +105,16 @@ async def create_vectors(request):
         elif chunking_type == 'recursive': 
             chunks, embeddings = await recursive_chunking(text=text, chunk_size=chunk_size, chunk_overlap=chunk_overlap)
         else:
-            raise ValueError("Invalid chunking type or method not supported.")
+            raise HTTPException(status_code=400, detail="Invalid chunking type or method not supported.")
         
-        return await store_in_pinecone_and_mongo(embeddings, chunks, org_id, doc_id, name, description)
+        return await store_in_pinecone_and_mongo(embeddings, chunks, org_id, doc_id = None, name = "abc", description = "abc")
        
-    except Exception as e:
-        print(f"Error in create_vectors: {e}")
-        raise
+    except HTTPException as http_error:
+        print(f"HTTP error in create_vectors: {http_error.detail}")
+        raise http_error
+    except Exception as error:
+        print(f"Error in create_vectors: {error}")
+        raise HTTPException(status_code=500, detail="An unexpected error occurred.")
 
 async def get_google_docs_data(url):
     try:
@@ -84,10 +134,10 @@ async def get_google_docs_data(url):
                 "doc_id": doc_id
             }
         else:
-            raise Exception(f"Error fetching the document. Status code: {response.status_code}")
-    except Exception as e:
-        print(f"Error in get_google_docs_data: {e}")
-        raise
+            raise HTTPException(status_code=500, detail=f"Error fetching the document. Status code: {response.status_code}")
+    except Exception as error:
+        print(f"Error in get_google_docs_data: {error}")
+        raise HTTPException(status_code=500, detail="An unexpected error occurred.")
 
 async def store_in_pinecone_and_mongo(embeddings, chunks, org_id, doc_id, name, description):
     try:
@@ -127,9 +177,9 @@ async def store_in_pinecone_and_mongo(embeddings, chunks, org_id, doc_id, name, 
             "mongo_id": str(inserted_id)
         }
             
-    except Exception as e:
-        print(f"Error storing data in Pinecone or MongoDB: {e}")
-        raise
+    except Exception as error:
+        print(f"Error storing data in Pinecone or MongoDB: {error}")
+        raise HTTPException(status_code=500, detail="An unexpected error occurred.")
 
 async def get_vectors_and_text(request):
     try:
@@ -138,7 +188,7 @@ async def get_vectors_and_text(request):
         doc_id = body.get('doc_id')
         query = body.get('query')
         if query is None:
-            raise ValueError("Query is required.")
+            raise HTTPException(status_code=400, detail="Query is required.")
         embedding = OpenAIEmbeddings(api_key=Config.OPENAI_API_KEY).embed_documents([query])
 
         # Query Pinecone
@@ -164,9 +214,9 @@ async def get_vectors_and_text(request):
             "text": text
         })
         
-    except Exception as e:
-        print(f"Error in get_vectors_and_text: {e}")
-        raise
+    except Exception as error:
+        print(f"Error in get_vectors_and_text: {error}")
+        raise HTTPException(status_code=500, detail="An unexpected error occurred.")
 
 async def get_all_docs(request):
     try:
@@ -184,9 +234,9 @@ async def get_all_docs(request):
             "data": result
         })
 
-    except Exception as e:
-        print(f"Error in get_all_docs: {e}")
-        raise
+    except Exception as error:
+        print(f"Error in get_all_docs: {error}")
+        raise HTTPException(status_code=500, detail="An unexpected error occurred.")
 
 async def delete_doc(request):
     try:
@@ -208,6 +258,6 @@ async def delete_doc(request):
             "success": True,
             "message": f"Deleted documents with chunk IDs: {chunks_array}."
         })
-    except Exception as e:
-        print(f"Error in delete_docs: {e}")
-        raise
+    except Exception as error:
+        print(f"Error in delete_docs: {error}")
+        raise HTTPException(status_code=500, detail="An unexpected error occurred.")
