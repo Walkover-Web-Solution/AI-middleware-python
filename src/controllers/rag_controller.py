@@ -1,7 +1,7 @@
 import requests
 import re
 from ..services.rag_services.chunking_methords import semantic_chunking, manual_chunking, recursive_chunking
-from pinecone import Pinecone, ServerlessSpec
+from pinecone import Pinecone
 import uuid
 from config import Config
 from models.mongo_connection import db
@@ -9,14 +9,8 @@ from langchain_openai import OpenAIEmbeddings
 from config import Config
 from fastapi.responses import JSONResponse
 from bson import ObjectId
-import io
-import PyPDF2
-import docx
-import pandas as pd
-from fastapi import UploadFile, File
 from fastapi import HTTPException
-from langchain.document_loaders import CSVLoader
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from ..services.utils.rag_utils import extract_pdf_text, extract_csv_text, extract_docx_text
 
 rag_model = db["rag_data"]
 rag_parent_model = db["rag_parent_data"]
@@ -41,32 +35,6 @@ pinecone_index = "ai-middleware"  # Ensure the index name is lowercase
 # else:
 #     pinecone_index = pc.get_index(index_name)
 
-async def extract_pdf_text(file: UploadFile) -> str:
-    pdf_reader = PyPDF2.PdfReader(io.BytesIO(await file.read()))
-    text = ""
-    for page in pdf_reader.pages:
-        text += page.extract_text()
-    return text
-
-# Function to extract text from DOCX file
-async def extract_docx_text(file: UploadFile) -> str:
-    doc = docx.Document(io.BytesIO(await file.read()))
-    text = ""
-    for para in doc.paragraphs:
-        text += para.text + "\n"
-    return text
-
-# Function to extract text from CSV file
-async def extract_csv_text(file: UploadFile) -> str:
-    df = pd.read_csv(io.BytesIO(await file.read()))
-    def row_to_string(row):
-        return ', '.join([f"{col}: {value}" for col, value in row.items()])
-
-    data = df.apply(row_to_string, axis=1).tolist()
-    # Assuming you want to extract the text from the CSV as a string of all its rows
-    # text = df.to_string(index=False)
-    return data
-
 async def create_vectors(request):
     try:
         # Extract the document ID from the URL
@@ -78,12 +46,12 @@ async def create_vectors(request):
             # Extract text based on file type
             if file_extension == 'pdf':
                 text = await extract_pdf_text(file)
-            elif file_extension == 'docx':
-                text = await extract_docx_text(file)
+            # elif file_extension == 'docx':
+            #     text = await extract_docx_text(file)
             elif file_extension == 'csv':
                 text = await extract_csv_text(file)
             else:
-                raise HTTPException(status_code=400, detail="Unsupported file type. Only PDF, DOCX, and CSV are supported.")
+                raise HTTPException(status_code=400, detail="Unsupported file type. Only PDF, and CSV are supported.")
         org_id = request.state.profile.get("org", {}).get("id", "")
         url = body.get('doc_url')
         chunking_type = body.get('chunking_type') or 'manual'
@@ -91,8 +59,9 @@ async def create_vectors(request):
         chunk_overlap = body.get('chunk_overlap') or '200'
         name = body.get('name')
         description = body.get('description')
-        # if name is None or description is None:
-        #     raise HTTPException(status_code=400, detail="Name and description are required.")
+        doc_id = None
+        if name is None or description is None:
+            raise HTTPException(status_code=400, detail="Name and description are required.")
         if url is not None:
             data = await get_google_docs_data(url)
             text = data.get('data')
@@ -107,7 +76,7 @@ async def create_vectors(request):
         else:
             raise HTTPException(status_code=400, detail="Invalid chunking type or method not supported.")
         
-        return await store_in_pinecone_and_mongo(embeddings, chunks, org_id, doc_id = None, name = "abc", description = "abc")
+        return await store_in_pinecone_and_mongo(embeddings, chunks, org_id, name, description, doc_id)
        
     except HTTPException as http_error:
         print(f"HTTP error in create_vectors: {http_error.detail}")
@@ -139,7 +108,7 @@ async def get_google_docs_data(url):
         print(f"Error in get_google_docs_data: {error}")
         raise HTTPException(status_code=500, detail="An unexpected error occurred.")
 
-async def store_in_pinecone_and_mongo(embeddings, chunks, org_id, doc_id, name, description):
+async def store_in_pinecone_and_mongo(embeddings, chunks, org_id, name, description, doc_id):
     try:
         index = pc.Index(pinecone_index)
         chunks_array = []
