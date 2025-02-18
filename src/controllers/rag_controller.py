@@ -13,7 +13,7 @@ from fastapi import HTTPException
 from ..services.utils.rag_utils import extract_pdf_text, extract_csv_text, extract_docx_text
 
 rag_model = db["rag_data"]
-rag_parent_model = db["rag_parent_data"]
+rag_parent_model = db["rag_parent_datas"]
 # Initialize Pinecone with the API key
 pc = Pinecone(api_key=Config.PINECONE_APIKEY)
 
