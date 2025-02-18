@@ -44,11 +44,14 @@ async def jwt_middleware(request: Request):
                 check_token['org']['id'] = str(check_token['org']['id'])
                 request.state.profile = check_token
                 request.state.org_id = str(check_token.get('org', {}).get('id'))
-                request.state.embed = check_token['user'].get('meta', {}).get('type', False) == 'embed'
+                if isinstance(check_token['user'].get('meta'), str):
+                    request.state.embed = False
+                else:
+                    request.state.embed = check_token['user'].get('meta', {}).get('type', False) == 'embed'
                 return 
             
             raise HTTPException(status_code=404, detail="unauthorized user")        
         except Exception as err:
             traceback.print_exc()
             print(f"middleware error => {err}")
-            raise HTTPException(status_code=401, detail={"msg":"unauthorized user", "auth": request.headers.get('Authorization')})
+            raise HTTPException(status_code=401, detail="unauthorized user")
