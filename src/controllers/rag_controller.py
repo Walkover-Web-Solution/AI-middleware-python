@@ -40,6 +40,7 @@ async def create_vectors(request):
         # Extract the document ID from the URL
         body = await request.form()
         file = body.get('file')
+        file_extension = 'url'
         if file:
             file_extension = file.filename.split('.')[-1].lower()
             
@@ -77,8 +78,16 @@ async def create_vectors(request):
             chunks, embeddings = await recursive_chunking(text=text, chunk_size=chunk_size, chunk_overlap=chunk_overlap)
         else:
             raise HTTPException(status_code=400, detail="Invalid chunking type or method not supported.")
-        
-        return await store_in_pinecone_and_mongo(embeddings, chunks, org_id, user['id'] if embed else None, name, description, doc_id)
+        return JSONResponse(
+            status_code=200,
+            content={
+                "name" : name, 
+                "description" : description,
+                'type' : file_extension,
+                **(await store_in_pinecone_and_mongo(embeddings, chunks, org_id, user['id'] if embed else None, name, description, doc_id, file_extension))
+            }
+        )
+
        
     except HTTPException as http_error:
         print(f"HTTP error in create_vectors: {http_error.detail}")
@@ -110,7 +119,7 @@ async def get_google_docs_data(url):
         print(f"Error in get_google_docs_data: {error}")
         raise HTTPException(status_code=500, detail= error)
 
-async def store_in_pinecone_and_mongo(embeddings, chunks, org_id, user_id, name, description, doc_id):
+async def store_in_pinecone_and_mongo(embeddings, chunks, org_id, user_id, name, description, doc_id, file_extension):
     try:
         index = pc.Index(pinecone_index)
         chunks_array = []
@@ -139,7 +148,8 @@ async def store_in_pinecone_and_mongo(embeddings, chunks, org_id, user_id, name,
             "doc_id": doc_id,
             "org_id": org_id,
             "chunks_id_array": chunks_array,
-            "user_id" : user_id if user_id else None
+            "user_id" : user_id if user_id else None,
+            "type" : file_extension
         })
         inserted_id = result.inserted_id
         return {
