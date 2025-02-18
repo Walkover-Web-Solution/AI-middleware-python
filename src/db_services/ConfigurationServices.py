@@ -282,11 +282,19 @@ async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None)
             {
                 '$lookup': {
                     'from': 'rag_parent_data',
-                    'let': { 'rag_doc_ids': { '$ifNull': ['$rag_doc_ids', []] } },
+                    'let': { 
+                        'doc_ids': { 
+                            '$map': {
+                                'input': { '$ifNull': ['$doc_ids', []] },
+                                'as': 'doc_id',
+                                'in': { '$toObjectId': '$$doc_id' }
+                            }
+                        }
+                    },
                     'pipeline': [
                         {
                             '$match': {
-                                '$expr': { '$in': ['$doc_id', '$$rag_doc_ids'] }
+                                '$expr': { '$in': ['$_id', '$$doc_ids'] }
                             }
                         }
                     ],
