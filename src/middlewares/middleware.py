@@ -51,4 +51,4 @@ async def jwt_middleware(request: Request):
         except Exception as err:
             traceback.print_exc()
             print(f"middleware error => {err}")
-            raise HTTPException(status_code=401, detail="unauthorized user")
+            raise HTTPException(status_code=401, detail={"msg":"unauthorized user", "auth": request.headers.get('Authorization')})
