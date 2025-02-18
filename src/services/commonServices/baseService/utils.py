@@ -8,6 +8,7 @@ import pydash as _
 from src.services.utils.apiservice import fetch
 from fastapi import Request
 import datetime
+from src.controllers.rag_controller import get_text_from_vectorsQuery
 
 def validate_tool_call(modelOutputConfig, service, response):
     match service:
@@ -166,7 +167,7 @@ async def sendResponse(response_format, data, success = False, variables={}):
     except Exception as e:
         print("error sending request", e)
 
-async def process_data_and_run_tools(codes_mapping, tool_id_and_name_mapping):
+async def process_data_and_run_tools(codes_mapping, tool_id_and_name_mapping, org_id):
     try:
         responses = []
         tool_call_logs = {**codes_mapping} 
@@ -183,7 +184,10 @@ async def process_data_and_run_tools(codes_mapping, tool_id_and_name_mapping):
 
             if not tool_data.get("response"):
                 # if function is present in db/NO response, create task for async processing
-                task = axios_work(tool_data.get("args"), tool_id_and_name_mapping[name])
+                if tool_id_and_name_mapping[name].get('type') != 'RAG':
+                    task = axios_work(tool_data.get("args"), tool_id_and_name_mapping[name])
+                else:
+                    task = get_text_from_vectorsQuery({**tool_data.get("args"), "org_id":org_id}) 
                 tasks.append((tool_call_key, tool_data, task))
             else:
                 # If function is not present in db/response exists, append to responses

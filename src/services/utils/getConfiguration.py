@@ -97,6 +97,28 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
         for param in required_params:
             if param in variables :
                 args[param] = variables[param]
+    rag_data = bridge.get('rag_data')
+    if rag_data is not None:
+        # description = ", ".join([f"id: {rag.get('doc_id')}: name:{rag.get('name')} description: {rag.get('description')}" for rag in rag_data])
+        tools.append({'type': 'function', 'name': 'GetLatestDataAsPerDocumentId', 'description': "When user want to take any data from the knowledge", 'properties': {
+                "Document_id": {
+                "description": "document id as per your requirement",
+                "type": "string",
+                "enum": [],
+                "required": True,
+                "parameter": {}
+                },
+                "query": {
+                "description": "query",
+                "type": "string",
+                "enum": [],
+                "required": True,
+                "parameter": {}
+                }
+            }, 'required': ['Document_id', 'query']})
+        tool_id_and_name_mapping['GetLatestDataAsPerDocumentId'] = {
+                "type": "RAG"
+            }
 
     return {
         'success': True,
@@ -114,5 +136,6 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
         "version_id" : version_id or result.get('bridges', {}).get('published_version_id'),
         "gpt_memory_context" :  gpt_memory_context,
         "tool_call_count": result.get("bridges", {}).get("tool_call_count", 3),
-        "variables": await updateVariablesWithTimeZone(variables,org_id)
+        "variables": await updateVariablesWithTimeZone(variables,org_id),
+        "rag_data":rag_data
     }

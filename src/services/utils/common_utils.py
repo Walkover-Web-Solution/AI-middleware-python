@@ -71,7 +71,9 @@ def parse_request_body(request_body):
         "memory" : "",
         "bridge_summary" : body.get('bridge_summary'),
         "batch" : body.get('batch') or [],
-        "batch_webhook" : body.get('webhook')
+        "batch_webhook" : body.get('webhook'),
+        "doc_ids":body.get('ddc_ids'),
+        "rag_data": body.get('rag_data')
 
     }
 
@@ -234,7 +236,9 @@ def build_service_params(parsed_data, custom_config, model_output_config, thread
         "token_calculator": token_calculator,
         "apikey_object_id" : parsed_data['apikey_object_id'],
         "images" : parsed_data['images'],
-        "tool_call_count": parsed_data['tool_call_count']
+        "tool_call_count": parsed_data['tool_call_count'],
+        "rag_data": parsed_data['rag_data']
+
     }
 
 async def process_background_tasks(parsed_data, result, params):

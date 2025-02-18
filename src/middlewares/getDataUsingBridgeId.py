@@ -32,5 +32,5 @@ async def add_configuration_data_to_body(request: Request):
         print("Error in get_data: ", e)
         traceback.print_exc()
         raise HTTPException(status_code=400, detail={"success": False, "error": "Error in getting data: "+ str(e)})
-
+    
 
