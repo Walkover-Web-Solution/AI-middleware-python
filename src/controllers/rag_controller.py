@@ -53,6 +53,8 @@ async def create_vectors(request):
             else:
                 raise HTTPException(status_code=400, detail="Unsupported file type. Only PDF, and CSV are supported.")
         org_id = request.state.profile.get("org", {}).get("id", "")
+        user = request.state.profile.get("user", {})
+        embed = user.get('meta', {}).get('type') == 'embed'
         url = body.get('doc_url')
         chunking_type = body.get('chunking_type') or 'manual'
         chunk_size = body.get('chunk_size') or '1000'
@@ -76,7 +78,7 @@ async def create_vectors(request):
         else:
             raise HTTPException(status_code=400, detail="Invalid chunking type or method not supported.")
         
-        return await store_in_pinecone_and_mongo(embeddings, chunks, org_id, name, description, doc_id)
+        return await store_in_pinecone_and_mongo(embeddings, chunks, org_id, user['id'] if embed else None, name, description, doc_id)
        
     except HTTPException as http_error:
         print(f"HTTP error in create_vectors: {http_error.detail}")
@@ -108,7 +110,7 @@ async def get_google_docs_data(url):
         print(f"Error in get_google_docs_data: {error}")
         raise HTTPException(status_code=500, detail="An unexpected error occurred.")
 
-async def store_in_pinecone_and_mongo(embeddings, chunks, org_id, name, description, doc_id):
+async def store_in_pinecone_and_mongo(embeddings, chunks, org_id, user_id, name, description, doc_id):
     try:
         index = pc.Index(pinecone_index)
         chunks_array = []
@@ -136,12 +138,13 @@ async def store_in_pinecone_and_mongo(embeddings, chunks, org_id, name, descript
             "description": description,
             "doc_id": doc_id,
             "org_id": org_id,
-            "chunks_id_array": chunks_array
+            "chunks_id_array": chunks_array,
+            "user_id" : user_id if user_id else None
         })
         inserted_id = result.inserted_id
         return {
             "success": True,
-            "message": "Data stored successfully in Pinecone and MongoDB.",
+            "message": "Data stored successfully.",
             "doc_id": doc_id,
             "mongo_id": str(inserted_id)
         }
@@ -190,8 +193,11 @@ async def get_vectors_and_text(request):
 async def get_all_docs(request):
     try:
         org_id = request.state.profile.get("org", {}).get("id", "")
+        user_id = request.state.profile.get("user", {}).get('id')
+        embed = request.state.embed
         result = await rag_parent_model.find({
-            'org_id': org_id
+            'org_id' : org_id, 
+            'user_id' : user_id if embed else None
         }).to_list(length=None)
         
         for doc in result:
