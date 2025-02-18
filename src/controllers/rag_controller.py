@@ -106,7 +106,7 @@ async def get_google_docs_data(url):
             raise HTTPException(status_code=500, detail=f"Error fetching the document. Status code: {response.status_code}")
     except Exception as error:
         print(f"Error in get_google_docs_data: {error}")
-        raise HTTPException(status_code=500, detail="An unexpected error occurred.")
+        raise HTTPException(status_code=500, detail= error)
 
 async def store_in_pinecone_and_mongo(embeddings, chunks, org_id, name, description, doc_id):
     try:
@@ -148,7 +148,7 @@ async def store_in_pinecone_and_mongo(embeddings, chunks, org_id, name, descript
             
     except Exception as error:
         print(f"Error storing data in Pinecone or MongoDB: {error}")
-        raise HTTPException(status_code=500, detail="An unexpected error occurred.")
+        raise HTTPException(status_code=500, detail= error)
 
 async def get_vectors_and_text(request):
     try:
@@ -185,7 +185,7 @@ async def get_vectors_and_text(request):
         
     except Exception as error:
         print(f"Error in get_vectors_and_text: {error}")
-        raise HTTPException(status_code=500, detail="An unexpected error occurred.")
+        raise HTTPException(status_code=500, detail=error)
 
 async def get_all_docs(request):
     try:
@@ -205,7 +205,7 @@ async def get_all_docs(request):
 
     except Exception as error:
         print(f"Error in get_all_docs: {error}")
-        raise HTTPException(status_code=500, detail="An unexpected error occurred.")
+        raise HTTPException(status_code=500, detail=error)
 
 async def delete_doc(request):
     try:
@@ -229,4 +229,4 @@ async def delete_doc(request):
         })
     except Exception as error:
         print(f"Error in delete_docs: {error}")
-        raise HTTPException(status_code=500, detail="An unexpected error occurred.")
+        raise HTTPException(status_code=500, detail = error)
