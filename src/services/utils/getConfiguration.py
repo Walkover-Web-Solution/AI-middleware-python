@@ -98,7 +98,7 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
             if param in variables :
                 args[param] = variables[param]
     rag_data = bridge.get('rag_data')
-    if rag_data is not None:
+    if rag_data is not None and rag_data != []:
         # description = ", ".join([f"id: {rag.get('doc_id')}: name:{rag.get('name')} description: {rag.get('description')}" for rag in rag_data])
         tools.append({'type': 'function', 'name': 'GetLatestDataAsPerDocumentId', 'description': "When user want to take any data from the knowledge", 'properties': {
                 "Document_id": {
