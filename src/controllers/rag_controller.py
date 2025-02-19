@@ -158,7 +158,7 @@ async def store_in_pinecone_and_mongo(embeddings, chunks, org_id, user_id, name,
             "success": True,
             "message": "Data stored successfully.",
             "doc_id": doc_id,
-            "mongo_id": str(inserted_id)
+            "_id": str(inserted_id)
         }
             
     except Exception as error:
