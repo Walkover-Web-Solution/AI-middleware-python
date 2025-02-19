@@ -13,11 +13,11 @@ from fastapi import HTTPException
 from ..services.utils.rag_utils import extract_pdf_text, extract_csv_text, extract_docx_text
 
 rag_model = db["rag_data"]
-rag_parent_model = db["rag_parent_data"]
+rag_parent_model = db["rag_parent_datas"]
 # Initialize Pinecone with the API key
 pc = Pinecone(api_key=Config.PINECONE_APIKEY)
 
-pinecone_index = "ai-middleware"  # Ensure the index name is lowercase
+pinecone_index = "gtwyai"  # Ensure the index name is lowercase
 # if not pc.index_exists(index_name):
 #     try:
 #         pinecone_index = pc.create_index(
@@ -156,7 +156,7 @@ async def store_in_pinecone_and_mongo(embeddings, chunks, org_id, user_id, name,
             "success": True,
             "message": "Data stored successfully.",
             "doc_id": doc_id,
-            "mongo_id": str(inserted_id)
+            "_id": str(inserted_id)
         }
             
     except Exception as error:
@@ -246,3 +246,49 @@ async def delete_doc(request):
     except Exception as error:
         print(f"Error in delete_docs: {error}")
         raise HTTPException(status_code=500, detail = error)
+    
+
+async def get_text_from_vectorsQuery(args):
+    try:
+        doc_id = args.get('doc_id')
+        query = args.get('query')
+        org_id = args.get('org_id')
+        if query is None:
+            raise HTTPException(status_code=400, detail="Query is required.")
+        embedding = OpenAIEmbeddings(api_key=Config.OPENAI_API_KEY).embed_documents([query])
+
+        # Query Pinecone
+        index = pc.Index(pinecone_index)
+        query_response = index.query(
+            vector=embedding[0] if isinstance(embedding, list) and len(embedding) == 1 else list(map(float, embedding)),
+            namespace=org_id,
+            filter={"doc_id": {"$in": doc_id} if isinstance(doc_id, list) else doc_id, "org_id": org_id},
+            top_k=3  # Adjust the number of results as needed
+        )
+        query_response_ids = [result['id'] for result in query_response['matches']]
+        
+        # Query MongoDB using query_response_ids
+        mongo_query = {"chunk_id": {"$in": query_response_ids}}
+        cursor = rag_model.find(mongo_query)
+        mongo_results = await cursor.to_list(length=None)
+        text = ""
+        for result in mongo_results:
+            text += result.get('chunk', '')
+        
+        return {
+            'response': text,
+            'metadata': {
+                'flowHitId': ''
+            },
+            'status': 1
+        }
+        
+    except Exception as error:
+        print(f"Error in get_vectors_and_text: {error}")
+        raise {
+            'response': error,
+            'metadata': {
+                'flowHitId': ''
+            },
+            'status': 1
+        }
