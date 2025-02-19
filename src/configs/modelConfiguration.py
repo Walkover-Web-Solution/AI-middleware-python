@@ -284,6 +284,7 @@ class ModelsConfig:
             },
             "tool_choice": {
                 "field": "dropdown",
+                "options" : ["auto", "none"],
                 "default": "auto",
                 "level": 0
             },
@@ -406,6 +407,7 @@ class ModelsConfig:
             },
             "tool_choice": {
                 "field": "dropdown",
+                "options" : ["auto", "none"],
                 "default": "auto",
                 "level": 0
             },
@@ -528,6 +530,7 @@ class ModelsConfig:
             },
             "tool_choice": {
                 "field": "dropdown",
+                "options" : ["auto", "none"],
                 "default": "auto",
                 "level": 0
             },
@@ -650,6 +653,7 @@ class ModelsConfig:
             },
             "tool_choice": {
                 "field": "dropdown",
+                "options" : ["auto", "none"],
                 "default": "auto",
                 "level": 0
             },
@@ -772,6 +776,7 @@ class ModelsConfig:
             },
             "tool_choice": {
                 "field": "dropdown",
+                "options" : ["auto", "none"],
                 "default": "auto",
                 "level": 0
             },
@@ -890,6 +895,7 @@ class ModelsConfig:
             },
             "tool_choice": {
                 "field": "dropdown",
+                "options" : ["auto", "none"],
                 "default": "auto",
                 "level": 0
             },
@@ -1004,6 +1010,7 @@ class ModelsConfig:
             },
             "tool_choice": {
                 "field": "dropdown",
+                "options" : ["auto", "none"],
                 "default": "auto",
                 "level": 0
             },
@@ -1118,6 +1125,7 @@ class ModelsConfig:
             },
             "tool_choice": {
                 "field": "dropdown",
+                "options" : ["auto", "none"],
                 "default": "auto",
                 "level": 0
             },
@@ -1239,6 +1247,7 @@ class ModelsConfig:
             },
             "tool_choice": {
                 "field": "dropdown",
+                "options" : ["auto", "none"],
                 "default": "auto",
                 "level": 0
             },
@@ -1360,6 +1369,7 @@ class ModelsConfig:
             },
             "tool_choice": {
                 "field": "dropdown",
+                "options" : ["auto", "none"],
                 "default": "auto",
                 "level": 0
             },
@@ -1485,6 +1495,7 @@ class ModelsConfig:
             },
             "tool_choice": {
                 "field": "dropdown",
+                "options" : ["auto", "none"],
                 "default": "auto",
                 "level": 0,
                 "typeOf": "string"
@@ -1611,6 +1622,7 @@ class ModelsConfig:
             },
             "tool_choice": {
                 "field": "dropdown",
+                "options" : ["auto", "none"],
                 "default": "auto",
                 "level": 0,
                 "typeOf": "string"
@@ -1735,6 +1747,7 @@ class ModelsConfig:
             },
             "tool_choice": {
                 "field": "dropdown",
+                "options" : ["auto", "none"],
                 "default": "auto",
                 "level": 0,
                 "typeOf": "string"
@@ -1870,6 +1883,7 @@ class ModelsConfig:
             },
             "tool_choice": {
                 "field": "dropdown",
+                "options" : ["auto", "none"],
                 "default": "auto",
                 "level": 0,
                 "typeOf": "string"
@@ -2120,6 +2134,7 @@ class ModelsConfig:
             },
             "tool_choice": {
                 "field": "dropdown",
+                "options" : ["auto", "none"],
                 "default": "auto",
                 "level": 0
             },
@@ -2255,6 +2270,7 @@ class ModelsConfig:
             },
             "tool_choice": {
                 "field": "dropdown",
+                "options" : ["auto", "none"],
                 "default": "auto",
                 "level": 0
             },
@@ -2331,6 +2347,7 @@ class ModelsConfig:
             },
             "tool_choice": {
                 "field": "dropdown",
+                "options" : ["auto", "none"],
                 "default": "auto",
                 "level": 0,
                 "typeOf": "string"
@@ -2406,6 +2423,7 @@ class ModelsConfig:
             },
             "tool_choice": {
                 "field": "text",
+                "options" : ["auto", "none"],
                 "default": "auto",
                 "level": 0,
                 "typeOf": "string"
@@ -3859,6 +3877,7 @@ class ModelsConfig:
             },
             "tool_choice": {
                 "field": "dropdown",
+                "options" : ["auto", "none"],
                 "default": "auto",
                 "level": 0,
                 "typeOf": "string"
@@ -3981,6 +4000,7 @@ class ModelsConfig:
             },
             "tool_choice": {
                 "field": "dropdown",
+                "options" : ["auto", "none"],
                 "default": "auto",
                 "level": 0,
                 "typeOf": "string"
@@ -4103,6 +4123,7 @@ class ModelsConfig:
             },
             "tool_choice": {
                 "field": "dropdown",
+                "options" : ["auto", "none"],
                 "default": "auto",
                 "level": 0,
                 "typeOf": "string"
@@ -4217,6 +4238,7 @@ class ModelsConfig:
             },
             "tool_choice": {
                 "field": "dropdown",
+                "options" : ["auto", "none"],
                 "default": "auto",
                 "level": 0,
                 "typeOf": "string"
@@ -4339,6 +4361,7 @@ class ModelsConfig:
             },
             "tool_choice": {
                 "field": "dropdown",
+                "options" : ["auto", "none"],
                 "default": "auto",
                 "level": 0,
                 "typeOf": "string"
@@ -4461,6 +4484,7 @@ class ModelsConfig:
             },
             "tool_choice": {
                 "field": "dropdown",
+                "options" : ["auto", "none"],
                 "default": "auto",
                 "level": 0,
                 "typeOf": "string"
@@ -4583,6 +4607,7 @@ class ModelsConfig:
             },
             "tool_choice": {
                 "field": "dropdown",
+                "options" : ["auto", "none"],
                 "default": "auto",
                 "level": 0,
                 "typeOf": "string"
