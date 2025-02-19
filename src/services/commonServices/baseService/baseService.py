@@ -272,7 +272,7 @@ class BaseService:
 
         for key, value in codes_mapping.items():
             args = value.get('args')
-            function_name = self.tool_id_and_name_mapping[value.get('name')].get('name',value.get('name'))
+            function_name = self.tool_id_and_name_mapping.get(value.get('name'), {}).get('name', value.get('name'))
 
             if args is not None and function_name in variables_path:
                 function_variables_path = variables_path[function_name]

@@ -11,6 +11,7 @@ from fastapi.responses import JSONResponse
 from bson import ObjectId
 from fastapi import HTTPException
 from ..services.utils.rag_utils import extract_pdf_text, extract_csv_text, extract_docx_text
+import traceback
 
 rag_model = db["rag_data"]
 rag_parent_model = db["rag_parent_datas"]
@@ -55,7 +56,7 @@ async def create_vectors(request):
                 raise HTTPException(status_code=400, detail="Unsupported file type. Only PDF, and CSV are supported.")
         org_id = request.state.profile.get("org", {}).get("id", "")
         user = request.state.profile.get("user", {})
-        embed = user.get('meta', {}).get('type') == 'embed'
+        embed = request.state.embed
         url = body.get('doc_url')
         chunking_type = body.get('chunking_type') or 'manual'
         chunk_size = body.get('chunk_size') or '1000'
@@ -93,6 +94,7 @@ async def create_vectors(request):
         print(f"HTTP error in create_vectors: {http_error.detail}")
         raise http_error
     except Exception as error:
+        traceback.print_exc()
         print(f"Error in create_vectors: {error}")
         raise HTTPException(status_code=500, detail="An unexpected error occurred.")
 
