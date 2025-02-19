@@ -235,15 +235,18 @@ async def delete_doc(request):
             '_id': ObjectId(id),
             'org_id': org_id
         })
-        chunks_array = result.get('chunks_id_array')
+        chunks_array = [] if result is None else result.get('chunks_id_array', [])
         
         for chunk_id in chunks_array:
             index.delete(ids=[chunk_id], namespace=org_id)
             rag_model.delete_one({"chunk_id": chunk_id})
-        rag_parent_model.delete_one({"_id": ObjectId(id)})
+        deleted_doc = await rag_parent_model.find_one_and_delete({"_id": ObjectId(id)})
+        if deleted_doc:
+            deleted_doc['_id'] = str(deleted_doc['_id'])
         return JSONResponse(status_code=200, content={
             "success": True,
-            "message": f"Deleted documents with chunk IDs: {chunks_array}."
+            "message": f"Deleted documents with chunk IDs: {chunks_array}.",
+            "data": deleted_doc
         })
     except Exception as error:
         print(f"Error in delete_docs: {error}")
