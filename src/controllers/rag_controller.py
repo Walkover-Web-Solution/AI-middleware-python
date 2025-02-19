@@ -56,7 +56,7 @@ async def create_vectors(request):
                 raise HTTPException(status_code=400, detail="Unsupported file type. Only PDF, and CSV are supported.")
         org_id = request.state.profile.get("org", {}).get("id", "")
         user = request.state.profile.get("user", {})
-        embed = user.get('meta', {}).get('type') == 'embed'
+        embed = request.state.embed
         url = body.get('doc_url')
         chunking_type = body.get('chunking_type') or 'manual'
         chunk_size = body.get('chunk_size') or '1000'
