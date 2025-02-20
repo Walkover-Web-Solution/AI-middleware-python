@@ -5,7 +5,7 @@ from langchain_openai import OpenAIEmbeddings
 from config import Config
 
 apikey = Config.OPENAI_API_KEY
-async def manual_chunking(text, chunk_size = 1000, chunk_overlap =  200):
+async def manual_chunking(text, chunk_size:int = 1000, chunk_overlap:int =  200):
     """
     Split text into chunks manually using character-based splitting
     
@@ -19,9 +19,6 @@ async def manual_chunking(text, chunk_size = 1000, chunk_overlap =  200):
     """
     try:
         # Convert string parameters to integers
-        chunk_size = int(chunk_size)
-        chunk_overlap = int(chunk_overlap)
-        
         # Validate chunk_size and chunk_overlap
         if chunk_overlap >= chunk_size:
             raise ValueError("Chunk overlap must be smaller than chunk size")
@@ -42,7 +39,7 @@ async def manual_chunking(text, chunk_size = 1000, chunk_overlap =  200):
         print(f"Error during manual chunking: {str(e)}")
         raise
 
-async def recursive_chunking(text, chunk_size = 1000, chunk_overlap = 200):
+async def recursive_chunking(text, chunk_size:int = 1000, chunk_overlap:int = 200):
     """
     Split text recursively into chunks using multiple separators
     
@@ -55,14 +52,12 @@ async def recursive_chunking(text, chunk_size = 1000, chunk_overlap = 200):
         List[str]: List of text chunks
     """
     try:
-        chunk_size = int(chunk_size)
-        chunk_overlap = int(chunk_overlap)
         
         if chunk_overlap >= chunk_size:
             raise ValueError("Chunk overlap must be smaller than chunk size")
 
         text_splitter = RecursiveCharacterTextSplitter(
-            separators=["\n\n", "\n", ".", "!", "?", ",", " "],
+            # separators=["\n\n", "\n", ".", "!", "?", ",", " "],
             chunk_size=chunk_size,
             chunk_overlap=chunk_overlap,
             length_function=len

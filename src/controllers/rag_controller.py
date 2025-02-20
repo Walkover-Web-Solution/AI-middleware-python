@@ -58,9 +58,9 @@ async def create_vectors(request):
         user = request.state.profile.get("user", {})
         embed = request.state.embed
         url = body.get('doc_url')
-        chunking_type = body.get('chunking_type') or 'manual'
-        chunk_size = body.get('chunk_size') or '1000'
-        chunk_overlap = body.get('chunk_overlap') or '200'
+        chunking_type = body.get('chunking_type') or 'recursive'
+        chunk_size = int(body.get('chunk_size', 512))
+        chunk_overlap = int(body.get('chunk_overlap', chunk_size*0.15))
         name = body.get('name')
         description = body.get('description')
         doc_id = None
@@ -171,6 +171,7 @@ async def get_vectors_and_text(request):
         org_id = request.state.profile.get("org", {}).get("id", "")
         doc_id = body.get('doc_id')
         query = body.get('query')
+        top_k = body.get('top_k', 2)
         if query is None:
             raise HTTPException(status_code=400, detail="Query is required.")
         embedding = OpenAIEmbeddings(api_key=Config.OPENAI_API_KEY).embed_documents([query])
@@ -181,7 +182,7 @@ async def get_vectors_and_text(request):
             vector=embedding[0] if isinstance(embedding, list) and len(embedding) == 1 else list(map(float, embedding)),
             namespace=org_id,
             filter={"doc_id": {"$in": doc_id} if isinstance(doc_id, list) else doc_id, "org_id": org_id},
-            top_k=2  # Adjust the number of results as needed
+            top_k=top_k  # Adjust the number of results as needed
         )
         query_response_ids = [result['id'] for result in query_response['matches']]
         
