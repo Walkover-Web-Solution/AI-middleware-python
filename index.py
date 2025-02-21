@@ -22,6 +22,7 @@ from src.routes.image_process_routes import router as image_process_routes
 from src.routes.utils_routes import router as utils_routes
 from src.routes.utility_routes import router as utility_routes
 from src.routes.rag_routes import router as rag_routes
+from src.routes.Internal_routes import router as Internal_routes
 
 async def consume_messages_in_executor():
     await queue_obj.consume_messages()
@@ -120,6 +121,7 @@ app.include_router(image_process_routes, prefix="/image/processing" )
 app.include_router(utils_routes, prefix="/utils" )
 app.include_router(utility_routes,prefix="/utility")
 app.include_router(rag_routes,prefix="/rag")
+app.include_router(Internal_routes,prefix="/internal")
 
 
 if __name__ == "__main__":
