@@ -18,7 +18,7 @@ async def create_semantic_chuncking(request,id):
         if apikey is None:
             raise ValueError("API key is required for semantic chunking")
         text_splitter = SemanticChunker(OpenAIEmbeddings(api_key = apikey))
-        chunks = text_splitter.create_documents([result.get('content','')])
+        chunks = text_splitter.create_documents([result[0].get('content','')])
         chunk_texts = [chunk.page_content for chunk in chunks]
         return JSONResponse(status_code=200, content={
                 "success": True,
