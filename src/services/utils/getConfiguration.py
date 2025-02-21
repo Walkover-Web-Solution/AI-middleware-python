@@ -24,8 +24,19 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
     configuration = db_configuration
     
     tool_choice_ids = configuration.get('tool_choice', [])
-    toolchoice = [makeFunctionName(api_data['endpoint_name'] or api_data['function_name']) for key, api_data in result.get('bridges', {}).get('apiCalls', {}).items() if api_data['_id'] in tool_choice_ids]
-    configuration['tool_choice'] = toolchoice
+    toolchoice = None
+    for api_data in result.get('bridges', {}).get('apiCalls', {}).items():
+        if api_data['_id'] in tool_choice_ids:
+            toolchoice = makeFunctionName(api_data['endpoint_name'] or api_data['function_name'])
+            break
+            
+    found_choice = None
+    for choice in ['auto', 'none', 'required']:
+        if choice in tool_choice_ids:
+            found_choice = choice
+            break
+            
+    configuration['tool_choice'] = found_choice if found_choice is not None else toolchoice
     
     # make tools data
     tools = []
