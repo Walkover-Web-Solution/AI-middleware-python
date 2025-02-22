@@ -301,5 +301,5 @@ async def updateVariablesWithTimeZone(variables, org_id):
         hour, minutes = await getTimezoneOfOrg()
         current_time = datetime.now(timezone.utc)
         current_time = current_time + timedelta(hours=hour, minutes=minutes)
-        variables['current_time_and_date'] = f"{current_time.strftime("%Y-%m-%d")} {current_time.strftime("%H:%M:%S")}"
+        variables['current_time_and_date'] = current_time.strftime("%Y-%m-%d")  + ' ' + current_time.strftime("%H:%M:%S")
     return variables
