@@ -80,7 +80,7 @@ def parse_request_body(request_body):
 
 
 def add_default_template(prompt):
-    prompt += ' \n Always use current_date_and_time : {{current_time_and_date}}'
+    prompt += ' \n For current date and time always refer: {{current_time_and_date}}'
     return prompt
 
 def initialize_timer(state: Dict[str, Any]) -> Timer:
