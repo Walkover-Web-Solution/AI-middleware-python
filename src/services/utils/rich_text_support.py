@@ -19,9 +19,13 @@ async def process_chatbot_response(result, params, data, model_config, modelOutp
         raise RuntimeError(e)
     
     if params.get('actions'): 
-        system_prompt = (await ConfigurationService.get_template_by_id(Config.MUI_TEMPLATE_ID)).get('template', '')
+        template_data = await ConfigurationService.get_template_by_id(Config.MUI_TEMPLATE_ID)
+        system_prompt = template_data.get('template', '')
+        configuration = template_data.get('configuration') or {}
     else: 
-        system_prompt = (await ConfigurationService.get_template_by_id(Config.MUI_TEMPLATE_ID_WITHOUT_ACTION)).get('template', '')
+        template_data = await ConfigurationService.get_template_by_id(Config.MUI_TEMPLATE_ID_WITHOUT_ACTION)
+        system_prompt = template_data.get('template', '')
+        configuration = template_data.get('configuration') or {}
         
     if params.get('user_reference'): 
         user_reference = f"\"user reference\": \"{params.get('user_reference')}\""
@@ -36,10 +40,9 @@ async def process_chatbot_response(result, params, data, model_config, modelOutp
     if params["configuration"].get('conversation'):
         del params["configuration"]['conversation']
     model_response_content = result.get('historyParams', {}).get('message')
-    # custom config for the rich text
-    if data.get('service') != "anthropic":
-        params['customConfig']['response_type'] = {"type": "json_object"}
-    params['customConfig']['max_tokens'] = model_config['configuration']['max_tokens']['max']
+    params['customConfig'] = {**params['customConfig'],**configuration}
+    if params['customConfig']['max_tokens'] == 'max':
+        params['customConfig']['max_tokens'] = model_config['configuration']['max_tokens']['max']
     if params.get('tools'):
         del params['tools']
     obj = await Helper.create_service_handler(params, data.get('service'))
