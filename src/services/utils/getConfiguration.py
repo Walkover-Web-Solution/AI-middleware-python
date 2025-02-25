@@ -136,5 +136,6 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
         "gpt_memory_context" :  gpt_memory_context,
         "tool_call_count": result.get("bridges", {}).get("tool_call_count", 3),
         "variables": await updateVariablesWithTimeZone(variables,org_id),
-        "rag_data":rag_data
+        "rag_data":rag_data,
+        "actions": result.get("bridges", {}).get("actions", [])
     }
