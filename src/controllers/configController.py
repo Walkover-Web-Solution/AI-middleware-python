@@ -254,7 +254,8 @@ async def get_all_service_models_controller(service):
                     "claude-3-opus-latest" : restructure_configuration(model_configuration.claude_3_opus_latest()),  
                     "claude-3-sonnet-20240229" : restructure_configuration(model_configuration.claude_3_sonnet_20240229()), 
                     "claude-3-haiku-20240307" : restructure_configuration(model_configuration.claude_3_haiku_20240307()), 
-                    "claude-3-5-haiku-20241022" : restructure_configuration(model_configuration.claude_3_5_haiku_20241022()) 
+                    "claude-3-5-haiku-20241022" : restructure_configuration(model_configuration.claude_3_5_haiku_20241022()),
+                    "claude-3-7-sonnet-latest" : restructure_configuration(model_configuration.claude_3_7_sonnet_latest()) 
                 }
             }
         
