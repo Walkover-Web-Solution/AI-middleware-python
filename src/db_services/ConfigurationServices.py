@@ -425,7 +425,8 @@ async def get_all_bridges_in_org(org_id):
         "slugName":1,
         "status": 1,
         "versions": 1,
-        "published_version_id": 1
+        "published_version_id": 1,
+        "total_tokens": 1
     })
     bridges_list = await bridge.to_list(length=None)
     for itr in bridges_list:
