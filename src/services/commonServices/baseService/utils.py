@@ -55,6 +55,9 @@ def transform_required_params_to_required(properties, variables={}, variables_pa
     if not isinstance(properties, dict):
         return properties
     transformed_properties = properties.copy()
+    if properties.get('type') == 'array':
+        transformed_properties[key]['items'] = transform_required_params_to_required( items.get('items', {}), variables, variables_path, function_name, key, value)
+        return transformed_properties
     for key, value in properties.items():
         if value.get('required_params') is not None:
             transformed_properties[key]['required'] = value.pop('required_params')
