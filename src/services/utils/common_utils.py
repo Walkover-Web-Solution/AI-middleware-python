@@ -80,7 +80,7 @@ def parse_request_body(request_body):
 
 
 def add_default_template(prompt):
-    prompt += ' \n Always use current_date_and_time : {{current_time_and_date}}'
+    prompt += ' \n For current date and time always refer: {{current_time_and_date}}'
     return prompt
 
 def initialize_timer(state: Dict[str, Any]) -> Timer:
@@ -301,5 +301,5 @@ async def updateVariablesWithTimeZone(variables, org_id):
         hour, minutes = await getTimezoneOfOrg()
         current_time = datetime.now(timezone.utc)
         current_time = current_time + timedelta(hours=hour, minutes=minutes)
-        variables['current_time_and_date'] = current_time.strftime("%Y-%m-%d")  + '_' + current_time.strftime("%H:%M:%S")
+        variables['current_time_and_date'] = current_time.strftime("%Y-%m-%d")  + ' ' + current_time.strftime("%H:%M:%S")
     return variables
