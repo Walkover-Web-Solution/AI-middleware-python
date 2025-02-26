@@ -3779,6 +3779,90 @@ class ModelsConfig:
             "inputConfig": inputConfig
         }
 
+    @staticmethod
+    def claude_3_7_sonnet_latest(): 
+        configuration = {
+            "model": {
+                "field": "drop",
+                "default": "claude-3-7-sonnet-latest",
+                "level": 1
+            },
+            "creativity_level": {
+                "field": "slider",
+                "min": 0,
+                "max": 1,
+                "step": 0.1,
+                "default": 0,
+                "level": 2
+            },
+            "max_tokens": {
+                "field": "slider",
+                "min": 1,
+                "max": 8192,
+                "step": 1,
+                "default": 1046,
+                "level": 2
+            },
+            "top_p": {
+                "field": "slider",
+                "min": 0,
+                "max": 1,
+                "step": 0.1,
+                "default": 0.9,
+                "level": 2
+            },
+            # "stream": {
+            #     "field": "boolean",
+            #     "default": False,
+            #     "level": 0,
+            #     "typeOf": "boolean"
+            # },
+            "tools": {
+                "field": "array",
+                "level": 0,
+                "default": [],
+                "typeOf": "array"
+            },
+            # "tool_choice": {
+            #     "field": "text",
+            #     "default": "auto",
+            #     "level": 0,
+            #     "typeOf": "string"
+            # },
+             "vision": {
+                "support": True,
+                 "level": 0,
+                 "default" : False
+            },
+        }
+        outputConfig = {
+            "usage": [{
+                "prompt_tokens": "usage.input_tokens",
+                "completion_tokens": "usage.output_tokens",
+                "total_cost": {
+                    "input_cost": 3.00,
+                    "output_cost": 15.00
+                }
+            }],
+            "message": "content[0].text",
+            "tools": "content[1].type",
+            "assistant": "role",
+            "id": "id"
+        }
+        inputConfig = {
+            "system": {
+                "role": "system",
+                "content": "",
+                "contentKey": "content",
+                "type": "json"
+            },
+            "content_location": "prompt[0].content"
+        }
+        return {
+            "configuration": configuration,
+            "outputConfig": outputConfig,
+            "inputConfig": inputConfig
+        }
 
     @staticmethod
     def llama_3_3_70b_versatile():
