@@ -2,6 +2,7 @@ from models.mongo_connection import db
 from bson.json_util import dumps, loads
 from bson import ObjectId
 from pymongo import ReturnDocument
+from ..services.cache_service import delete_in_cache
 configurationModel = db["configurations"]
 apiCallModel = db['apicalls']
 templateModel = db['templates']
@@ -76,7 +77,12 @@ async def update_api_call_by_function_id(org_id, function_id, data_to_update):
         
         if updated_document:
             updated_document['_id'] = str(updated_document['_id'])
-        
+        bridge_ids = updated_document.get('bridge_ids') or []
+        version_ids = updated_document.get('version_ids') or []
+        if bridge_ids:
+            await delete_in_cache(bridge_ids)
+        if version_ids:
+            await delete_in_cache(version_ids)
         if updated_document:
                 return {
                 "success": True, 
