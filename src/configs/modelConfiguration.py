@@ -1792,6 +1792,141 @@ class ModelsConfig:
         }
     
     @staticmethod
+    def gpt_4_5_preview():
+        configuration = {
+            "model": {
+                "field": "drop",
+                "default": "gpt-4.5-preview",
+                "level": 1
+            },
+            "creativity_level": {
+                "field": "slider",
+                "min": 0,
+                "max": 2,
+                "step": 0.1,
+                "default": 0,
+                "level": 2
+            },
+            "max_tokens": {
+                "field": "slider",
+                "min": 256,
+                "max": 16384,
+                "step": 1,
+                "default": 256,
+                "level": 2
+            },
+            "probability_cutoff": {
+                "field": "slider",
+                "min": 0,
+                "max": 1,
+                "step": 0.1,
+                "default": 1,
+                "level": 2
+            },
+            "log_probability": {
+                "field": "boolean",
+                "default": False,
+                "level": 0,
+                "typeOf": "boolean"
+            },
+            "repetition_penalty": {
+                "field": "slider",
+                "min": 0,
+                "max": 2,
+                "step": 0.01,
+                "default": 0,
+                "level": 2
+            },
+            "novelty_penalty": {
+                "field": "slider",
+                "min": 0,
+                "max": 2,
+                "step": 0.01,
+                "default": 0,
+                "level": 2
+            },
+            "response_count": {
+                "field": "number",
+                "default": 1,
+                "typeOf": "number",
+                "level": 0
+            },
+            "stop": {
+                "field": "text",
+                "default": "",
+                "level": 0
+            },
+            "stream": {
+                "field": "boolean",
+                "default": False,
+                "level": 0,
+                "typeOf": "boolean"
+            },
+            "tools": {
+                "field": "array",
+                "level": 0,
+                "default": [],
+                "typeOf": "array"
+            },
+            "tool_choice": {
+                "field": "text",
+                "default": "auto",
+                "level": 0,
+                "typeOf": "string"
+            },
+            "response_type": {
+                "field": "select",
+                "options" : [{"type" : "text"},{"type" : "json_object"},{"type" : "json_schema"}],
+                "default": {
+                "type" : "text",
+                },
+                "level": 0
+            },
+            "vision": {
+                "support": True,
+                 "level": 0,
+                 "default" : False
+            },
+            "parallel_tool_calls": {
+                "field": "boolean",
+                "default": True,
+                "level": 0,
+                "typeOf": "boolean"  
+            }
+        }
+        outputConfig = {
+            "usage": [{
+                "prompt_tokens": "usage.prompt_tokens",
+                "completion_tokens": "usage.completion_tokens",
+                "total_tokens": "usage.total_tokens",
+                "cached_tokens": "usage.prompt_tokens_details.cached_tokens",
+                "total_cost": {
+                    "input_cost": 2.50,
+                    "output_cost": 10.00,
+                    "cached_cost": 1.25
+                }
+            }],
+            "message": "choices[0].message.content",
+            "tools": "choices[0].message.tool_calls",
+            "assistant": "choices[0].message",
+            "id": "id"
+        }
+        inputConfig = {
+            "system": {
+                "role": "system",
+                "content": "",
+                "contentKey": "content",
+                "type": "json"
+            },
+            "content_location": "prompt[0].content"
+        }
+        return {
+            "configuration": configuration,
+            "outputConfig": outputConfig,
+            "inputConfig": inputConfig
+        }
+    
+    @staticmethod
     def gpt_4o_2024_08_06():
         configuration = {
             "model": {
