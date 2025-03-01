@@ -69,6 +69,7 @@ def parse_request_body(request_body):
         "tool_call_count": body.get('tool_call_count'),
         "tokens" : {},
         "memory" : "",
+        "bridge_name" : body.get('bridge_name'),
         "bridge_summary" : body.get('bridge_summary'),
         "batch" : body.get('batch') or [],
         "batch_webhook" : body.get('webhook'),

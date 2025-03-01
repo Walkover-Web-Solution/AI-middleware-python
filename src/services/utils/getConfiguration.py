@@ -86,6 +86,7 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
     pre_tools = bridge.get('pre_tools', [])
     variables_path_bridge = bridge.get('variables_path', None)
     gpt_memory_context = bridge.get('gpt_memory_context')
+    bridge_name = bridge.get('name')
     if len(pre_tools)>0:
         api_data = await apiCallModel.find_one({"_id": ObjectId( pre_tools[0]), "org_id": org_id})
 
@@ -124,6 +125,7 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
         'configuration': configuration,
         'pre_tools': {'name': name, 'args': args} if len(pre_tools)>0 else None,
         'service': service,
+        'bridge_name':bridge_name,
         'apikey': apikey,
         'apikey_object_id': apikey_object_id,
         'RTLayer': RTLayer,
