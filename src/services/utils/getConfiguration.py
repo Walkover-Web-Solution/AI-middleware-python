@@ -99,26 +99,28 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
                 args[param] = variables[param]
     rag_data = bridge.get('rag_data')
     if rag_data is not None and rag_data != []:
-        tools.append({'type': 'function', 'name': 'GetLatestDataAsPerDocumentId', 'description': "When user want to take any data from the knowledge", 'properties': {
+        tools.append({'type': 'function', 'name': 'GetLatestDataAsPerDocumentId', 'description': "When user want to take any data from the knowledge, Call this function to get the corresponding document using document id.", 'properties': {
                 "Document_id": {
-                "description": "document id as per your requirement",
-                "type": "string",
-                "enum": [],
-                "required": True,
-                "parameter": {}
+                    "description": "document id as per your requirement",
+                    "type": "string",
+                    "enum": [],
+                    "required_params": [],
+                    "parameter": {}
                 },
                 "query": {
-                "description": "query",
-                "type": "string",
-                "enum": [],
-                "required": True,
-                "parameter": {}
+                    "description": "query",
+                    "type": "string",
+                    "enum": [],
+                    "required_params": [],
+                    "parameter": {}
                 }
             }, 'required': ['Document_id', 'query']})
+
         tool_id_and_name_mapping['GetLatestDataAsPerDocumentId'] = {
                 "type": "RAG"
             }
-
+        configuration['prompt'] = Helper.add_doc_description_to_prompt(configuration['prompt'], rag_data)
+        
     return {
         'success': True,
         'configuration': configuration,
