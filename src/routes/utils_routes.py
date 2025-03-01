@@ -17,5 +17,5 @@ async def get_data_for_demo(request: Request):
     return await get_all_data_for_demo(request)
 
 @router.put('/update/{id}')
-async def update_data_for_demo(request: Request, id: str):
+async def update_demo_data(request: Request, id: str):
     return await update_data_for_demo(request, id)

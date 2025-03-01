@@ -75,12 +75,13 @@ async def get_all_data_for_demo(request: Request):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@router.put('/{id}')
 async def update_data_for_demo(request: Request, id: str):
     try:
         # Get form data
         form = await request.form()
         name = form.get('name')
-        description = form.get('description') 
+        description = form.get('description')
         link = form.get('link')
         image = form.get('image')
 
