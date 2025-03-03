@@ -73,7 +73,7 @@ async def check_testcases(request, version_id):
         score = await get_comparison_score(org_id, version_id)
         return JSONResponse({'success' : True, 'comparison_score' : score})
     except Exception as e:
-        raise HTTPException(status_code = status.HTTP_400_BAD_REQUEST, detail = {'success' : False, 'score': None, 'error' : e })
+        raise HTTPException(status_code = status.HTTP_400_BAD_REQUEST, detail = {'success' : False, 'score': None, 'error' : str(e) })
 
 
 async def discard_version(request, version_id):

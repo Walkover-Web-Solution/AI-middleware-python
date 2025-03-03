@@ -9,6 +9,7 @@ from src.services.utils.apiservice import fetch
 from fastapi import Request
 import datetime
 from src.controllers.rag_controller import get_text_from_vectorsQuery
+import traceback
 
 def validate_tool_call(modelOutputConfig, service, response):
     match service:
@@ -239,6 +240,7 @@ async def process_data_and_run_tools(codes_mapping, tool_id_and_name_mapping, or
 
     except Exception as error:
         print(f"Error in process_data_and_run_tools: {error}")
+        traceback.print_exc()
         raise error
   
 

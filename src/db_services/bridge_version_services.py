@@ -183,7 +183,7 @@ async def publish(org_id, version_id):
         get_version_data.pop('_id', None)
         updated_configuration = {**parent_configuration, **get_version_data}
         updated_configuration['published_version_id'] = published_version_id
-        asyncio.create_task(makeQuestion(parent_id, updated_configuration.get("configuration",{}).get("prompt",""), updated_configuration.get('apiCalls'), get_version_data, version_id))
+        asyncio.create_task(makeQuestion(parent_id, updated_configuration.get("configuration",{}).get("prompt",""), updated_configuration.get('apiCalls'), save=True))
         if updated_configuration.get('function_ids'):
             updated_configuration['function_ids'] = [ObjectId(fid) for fid in updated_configuration['function_ids']]
         await configurationModel.update_one(
@@ -204,7 +204,7 @@ async def publish(org_id, version_id):
             "success": False,
             "error": str(e)
         }
-async def makeQuestion(parent_id, prompt, functions, version_data, version_id):
+async def makeQuestion(parent_id, prompt, functions, save = False):
     if functions: 
         filtered_functions = {
             function['endpoint_name']: function['description'] for function in functions.values()
@@ -218,11 +218,12 @@ async def makeQuestion(parent_id, prompt, functions, version_data, version_id):
     expected_questions = json.loads(response.get("response",{}).get("data",{}).get("content","{}")).get("questions",[])
     updated_configuration= {"starterQuestion": expected_questions}
     
-    
-    configurationModel.update_one(  # this should be async
-        {'_id': ObjectId(parent_id)},
-        {'$set': updated_configuration}
-    )
+    if save: 
+        configurationModel.update_one(  # this should be async
+            {'_id': ObjectId(parent_id)},
+            {'$set': updated_configuration}
+        )
+    return expected_questions
     
 
 async def get_comparison_score(org_id, version_id):
@@ -235,23 +236,23 @@ async def get_comparison_score(org_id, version_id):
     
     timer = Timer()
     timer.start()
-    
+
     if not published_version.get('expected_qna'):
         expected_questions = published_version.get('starterQuestion')
         if not expected_questions: 
-            return None
+            expected_questions = await makeQuestion(version_data['parent_id'], version_data.get('configuration').get('prompt'), version_data.get('apiCalls'))
         expected_answers_responses = await asyncio.gather(
             *[chat({'body': { **version_data,  'user': question }, 'path_params': { 'bridge_id': version_id }, 'state': {'is_playground': True, 'timer' : timer.getTime() }}) 
             for question in expected_questions]
         )
         expected_answers = [json.loads(response.__dict__['body'].decode('utf-8'))['response']['choices'][0]['message']['content'] for response in expected_answers_responses]
-        
+        response = [
+            {'question': expected_questions[i], 'answer': expected_answers[i]} 
+            for i in range(len(expected_questions))
+        ]
         configurationModel.update_one(
             {'_id': ObjectId(published_version['_id'])},
-            {'$set': {'expected_qna': [
-                {'question': expected_questions[i], 'answer': expected_answers[i]} 
-                for i in range(len(expected_questions))
-            ]}}
+            {'$set': {'expected_qna': response }}
         )
     
     else: 
@@ -265,10 +266,10 @@ async def get_comparison_score(org_id, version_id):
         comparision_scores = []
         
         for i in range(len(expected_questions)):
-            score = compute_cosine_similarity(expected_questions[i], new_answers[i])
+            score = compute_cosine_similarity(expected_answers[i], new_answers[i])
             comparision_scores.append(score)
         
-        response = [{ 'question' : expected_questions[i], 'expected_answers' : expected_answers[i], 'model_answer': new_answers[i], 'comparison_score': comparision_scores[i] }  for i in range(len(new_answers))]
+        response = [{ 'question' : expected_questions[i], 'expected_answer' : expected_answers[i], 'model_answer': new_answers[i], 'comparison_score': comparision_scores[i] }  for i in range(len(new_answers))]
         
     
     return response
