@@ -18,7 +18,7 @@ rag_parent_model = db["rag_parent_datas"]
 # Initialize Pinecone with the API key
 pc = Pinecone(api_key=Config.PINECONE_APIKEY)
 
-pinecone_index = "dev-gtwyai"  # Ensure the index name is lowercase
+pinecone_index = Config.PINECONE_INDEX
 # if not pc.index_exists(index_name):
 #     try:
 #         pinecone_index = pc.create_index(
