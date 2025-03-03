@@ -56,9 +56,8 @@ def transform_required_params_to_required(properties, variables={}, variables_pa
     if not isinstance(properties, dict):
         return properties
     transformed_properties = properties.copy()
-    if properties.get('type') == 'array':
-        transformed_properties[key]['items'] = transform_required_params_to_required( items.get('items', {}), variables, variables_path, function_name, key, value)
-        return transformed_properties
+    if properties.get('type') == 'array' or properties.get('type') == 'object':
+        return {'items':properties}
     for key, value in properties.items():
         if value.get('required_params') is not None:
             transformed_properties[key]['required'] = value.pop('required_params')
@@ -84,6 +83,7 @@ def transform_required_params_to_required(properties, variables={}, variables_pa
                 transformed_properties[key]['items'] = nextedObject
             elif item_type == 'array':
                 transformed_properties[key]['items'] = transform_required_params_to_required( items.get('items', {}), variables, variables_path, function_name, key, value)
+                transformed_properties[key]['items']['type'] = 'array'
     return transformed_properties
 
 def tool_call_formatter(configuration: dict, service: str, variables: dict, variables_path: dict) -> dict:
