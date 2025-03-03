@@ -250,6 +250,6 @@ class Helper:
         return class_obj
     
     def add_doc_description_to_prompt(prompt, rag_data):
-        prompt += 'Here are your available documents that you can refer to through tool call: \n' +  '\n'.join([f'name : {data.get('name')} description : {data.get('description')}  doc_id : {data.get('_id')}' for data in rag_data])    
+        prompt += 'Here are your available documents that you can refer to through tool call: \n' +  '\n'.join([f'name : {data.get('name')}, description : {data.get('description')},  doc_id : {data.get('_id')} \n' for data in rag_data])    
         return prompt
         
