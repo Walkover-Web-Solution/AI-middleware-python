@@ -41,7 +41,7 @@ async def get_csv_query_type(doc_data, query):
         method='POST',
         headers={'pauthkey': '1b13a7a038ce616635899a239771044c'},
         json_body={
-            'user': 'Hello',
+            'user': 'Tell me the query type',
             'variables': {'headers' : doc_data['content']['headers'], 'query' : query},
             'bridge_id': '67c2f4b40ef03932ed9a2b40'
         }
