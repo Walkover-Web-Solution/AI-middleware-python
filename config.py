@@ -27,6 +27,7 @@ class Config:
     Access_key = os.getenv('Access_key')
     ORG_ID = os.getenv('ORG_ID')
     PROJECT_ID = os.getenv('PROJECT_ID')
+    ALERTING_PROJECT_ID = os.getenv('ALERTING_PROJECT_ID')
     RTLAYER_AUTH = os.getenv('RTLAYER_AUTH')
     PORT = os.getenv('PORT', 8080)
     CHATBOTSECRETKEY = os.getenv('CHATBOTSECRETKEY')
