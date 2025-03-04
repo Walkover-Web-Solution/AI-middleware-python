@@ -275,7 +275,7 @@ async def get_all_service_models_controller(service):
                     "gemma2-9b-it" : restructure_configuration(model_configuration.gemma2_9b_it()),
                     "llama-guard-3-8b" : restructure_configuration(model_configuration.llama_guard_3_8b()),
                     "deepseek-r1-distill-llama-70b" : restructure_configuration(model_configuration.deepseek_r1_distill_llama_70b()),
-                    "deepseek-r1-distill-llama-70b-specdec" : restructure_configuration(model_configuration.deepseek_r1_distill_llama_70b_specdec()),
+                    # "deepseek-r1-distill-llama-70b-specdec" : restructure_configuration(model_configuration.deepseek_r1_distill_llama_70b_specdec()),
                     "deepseek-r1-distill-qwen-32b" : restructure_configuration(model_configuration.deepseek_r1_distill_qwen_32b()),
                     "qwen-2.5-32b" : restructure_configuration(model_configuration.qwen_2_5_32b()),
                     "qwen-2.5-coder-32b" : restructure_configuration(model_configuration.qwen_2_5_coder_32b())
