@@ -120,7 +120,7 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
                 "type": "RAG"
             }
         configuration['prompt'] = Helper.add_doc_description_to_prompt(configuration['prompt'], rag_data)
-        
+    variables, org_name = await updateVariablesWithTimeZone(variables,org_id)
     return {
         'success': True,
         'configuration': configuration,
@@ -137,7 +137,9 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
         "version_id" : version_id or result.get('bridges', {}).get('published_version_id'),
         "gpt_memory_context" :  gpt_memory_context,
         "tool_call_count": result.get("bridges", {}).get("tool_call_count", 3),
-        "variables": await updateVariablesWithTimeZone(variables,org_id),
+        "variables": variables,
         "rag_data":rag_data,
-        "actions": result.get("bridges", {}).get("actions", [])
+        "actions": result.get("bridges", {}).get("actions", []),
+        "name" : result.get("bridges", {}).get("name") or '',
+        "org_name" : org_name
     }

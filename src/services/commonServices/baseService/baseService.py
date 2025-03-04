@@ -54,6 +54,8 @@ class BaseService:
         self.tool_id_and_name_mapping = params.get('tool_id_and_name_mapping')
         self.batch = params.get('batch')
         self.webhook = params.get('webhook')
+        self.name = params.get('name')
+        self.org_name = params.get('org_name')
 
 
     def aiconfig(self):
@@ -248,11 +250,11 @@ class BaseService:
             response = {}
             loop = asyncio.get_event_loop()
             if service == service_name['openai']:
-                response = await runModel(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer, self.message_id, self.org_id)
+                response = await runModel(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer, self.message_id, self.org_id, self.name, self.org_name)
             elif service == service_name['anthropic']:
-                response = await loop.run_in_executor(executor, lambda: asyncio.run(anthropic_runmodel(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer)))
+                response = await loop.run_in_executor(executor, lambda: asyncio.run(anthropic_runmodel(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer, self.name, self.org_name)))
             elif service == service_name['groq']:
-                response = await groq_runmodel(configuration, apikey, self.execution_time_logs, self.bridge_id,  self.timer)
+                response = await groq_runmodel(configuration, apikey, self.execution_time_logs, self.bridge_id,  self.timer, self.name, self.org_name)
             if not response['success']:
                 raise ValueError(response['error'], self.func_tool_call_data)
             return {
