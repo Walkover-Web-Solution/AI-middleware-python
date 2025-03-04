@@ -76,7 +76,7 @@ async def savehistory(thread_id, sub_thread_id, userMessage, botMessage, org_id,
                 'version_id': version_id
             })
 
-        if botMessage:
+        if botMessage is not None:
             chatToSave.append({
                 'thread_id': thread_id,
                 'sub_thread_id': sub_thread_id,
