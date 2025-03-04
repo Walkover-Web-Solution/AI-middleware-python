@@ -39,7 +39,7 @@ def handle_exceptions(func):
                 }
             bridge_id = path_params.get('bridge_id') or body.get("bridge_id")
             org_id = state['profile']['org']['id']
-            if not is_playground:
+            if is_playground == False:
                 await send_error_to_webhook(bridge_id, org_id,error_json, error_type = 'Error')
             return JSONResponse(
                 status_code=400,
