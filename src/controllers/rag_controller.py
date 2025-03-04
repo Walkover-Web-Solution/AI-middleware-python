@@ -14,12 +14,12 @@ from ..services.utils.rag_utils import extract_pdf_text, extract_csv_text, extra
 import traceback
 from ..services.utils.rag_utils import get_csv_query_type
 
-rag_model = db["rag_data"]
+rag_model = db["rag_datas"]
 rag_parent_model = db["rag_parent_datas"]
 # Initialize Pinecone with the API key
 pc = Pinecone(api_key=Config.PINECONE_APIKEY)
 
-pinecone_index = "gtwyai"  # Ensure the index name is lowercase
+pinecone_index = Config.PINECONE_INDEX
 # if not pc.index_exists(index_name):
 #     try:
 #         pinecone_index = pc.create_index(
@@ -245,7 +245,7 @@ async def delete_doc(request):
 
 async def get_text_from_vectorsQuery(args):
     try:
-        doc_id = args.get('doc_id')
+        doc_id = args.get('Document_id')
         query = args.get('query')
         org_id = args.get('org_id')
         top_k = args.get('top_k', 3)
@@ -279,12 +279,12 @@ async def get_text_from_vectorsQuery(args):
         query_response_ids = [result['id'] for result in query_response['matches']]
         
         # Query MongoDB using query_response_ids
-        mongo_query = {"chunk_id": {"$in": query_response_ids}}
+        mongo_query = {"_id": {"$in": [ObjectId(id) for id in query_response_ids] }}
         cursor = rag_model.find(mongo_query)
         mongo_results = await cursor.to_list(length=None)
         text = ""
         for result in mongo_results:
-            text += result.get('chunk', '')
+            text += result.get('data', '')
         
         return {
             'response': text,

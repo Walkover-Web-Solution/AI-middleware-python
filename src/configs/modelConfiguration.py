@@ -1792,6 +1792,141 @@ class ModelsConfig:
         }
     
     @staticmethod
+    def gpt_4_5_preview():
+        configuration = {
+            "model": {
+                "field": "drop",
+                "default": "gpt-4.5-preview",
+                "level": 1
+            },
+            "creativity_level": {
+                "field": "slider",
+                "min": 0,
+                "max": 2,
+                "step": 0.1,
+                "default": 0,
+                "level": 2
+            },
+            "max_tokens": {
+                "field": "slider",
+                "min": 256,
+                "max": 16384,
+                "step": 1,
+                "default": 256,
+                "level": 2
+            },
+            "probability_cutoff": {
+                "field": "slider",
+                "min": 0,
+                "max": 1,
+                "step": 0.1,
+                "default": 1,
+                "level": 2
+            },
+            "log_probability": {
+                "field": "boolean",
+                "default": False,
+                "level": 0,
+                "typeOf": "boolean"
+            },
+            "repetition_penalty": {
+                "field": "slider",
+                "min": 0,
+                "max": 2,
+                "step": 0.01,
+                "default": 0,
+                "level": 2
+            },
+            "novelty_penalty": {
+                "field": "slider",
+                "min": 0,
+                "max": 2,
+                "step": 0.01,
+                "default": 0,
+                "level": 2
+            },
+            "response_count": {
+                "field": "number",
+                "default": 1,
+                "typeOf": "number",
+                "level": 0
+            },
+            "stop": {
+                "field": "text",
+                "default": "",
+                "level": 0
+            },
+            "stream": {
+                "field": "boolean",
+                "default": False,
+                "level": 0,
+                "typeOf": "boolean"
+            },
+            "tools": {
+                "field": "array",
+                "level": 0,
+                "default": [],
+                "typeOf": "array"
+            },
+            "tool_choice": {
+                "field": "text",
+                "default": "auto",
+                "level": 0,
+                "typeOf": "string"
+            },
+            "response_type": {
+                "field": "select",
+                "options" : [{"type" : "text"},{"type" : "json_object"},{"type" : "json_schema"}],
+                "default": {
+                "type" : "text",
+                },
+                "level": 0
+            },
+            "vision": {
+                "support": True,
+                 "level": 0,
+                 "default" : False
+            },
+            "parallel_tool_calls": {
+                "field": "boolean",
+                "default": True,
+                "level": 0,
+                "typeOf": "boolean"  
+            }
+        }
+        outputConfig = {
+            "usage": [{
+                "prompt_tokens": "usage.prompt_tokens",
+                "completion_tokens": "usage.completion_tokens",
+                "total_tokens": "usage.total_tokens",
+                "cached_tokens": "usage.prompt_tokens_details.cached_tokens",
+                "total_cost": {
+                    "input_cost": 2.50,
+                    "output_cost": 10.00,
+                    "cached_cost": 1.25
+                }
+            }],
+            "message": "choices[0].message.content",
+            "tools": "choices[0].message.tool_calls",
+            "assistant": "choices[0].message",
+            "id": "id"
+        }
+        inputConfig = {
+            "system": {
+                "role": "system",
+                "content": "",
+                "contentKey": "content",
+                "type": "json"
+            },
+            "content_location": "prompt[0].content"
+        }
+        return {
+            "configuration": configuration,
+            "outputConfig": outputConfig,
+            "inputConfig": inputConfig
+        }
+    
+    @staticmethod
     def gpt_4o_2024_08_06():
         configuration = {
             "model": {
@@ -3779,6 +3914,90 @@ class ModelsConfig:
             "inputConfig": inputConfig
         }
 
+    @staticmethod
+    def claude_3_7_sonnet_latest(): 
+        configuration = {
+            "model": {
+                "field": "drop",
+                "default": "claude-3-7-sonnet-latest",
+                "level": 1
+            },
+            "creativity_level": {
+                "field": "slider",
+                "min": 0,
+                "max": 1,
+                "step": 0.1,
+                "default": 0,
+                "level": 2
+            },
+            "max_tokens": {
+                "field": "slider",
+                "min": 1,
+                "max": 8192,
+                "step": 1,
+                "default": 1046,
+                "level": 2
+            },
+            "top_p": {
+                "field": "slider",
+                "min": 0,
+                "max": 1,
+                "step": 0.1,
+                "default": 0.9,
+                "level": 2
+            },
+            # "stream": {
+            #     "field": "boolean",
+            #     "default": False,
+            #     "level": 0,
+            #     "typeOf": "boolean"
+            # },
+            "tools": {
+                "field": "array",
+                "level": 0,
+                "default": [],
+                "typeOf": "array"
+            },
+            # "tool_choice": {
+            #     "field": "text",
+            #     "default": "auto",
+            #     "level": 0,
+            #     "typeOf": "string"
+            # },
+             "vision": {
+                "support": True,
+                 "level": 0,
+                 "default" : False
+            },
+        }
+        outputConfig = {
+            "usage": [{
+                "prompt_tokens": "usage.input_tokens",
+                "completion_tokens": "usage.output_tokens",
+                "total_cost": {
+                    "input_cost": 3.00,
+                    "output_cost": 15.00
+                }
+            }],
+            "message": "content[0].text",
+            "tools": "content[1].type",
+            "assistant": "role",
+            "id": "id"
+        }
+        inputConfig = {
+            "system": {
+                "role": "system",
+                "content": "",
+                "contentKey": "content",
+                "type": "json"
+            },
+            "content_location": "prompt[0].content"
+        }
+        return {
+            "configuration": configuration,
+            "outputConfig": outputConfig,
+            "inputConfig": inputConfig
+        }
 
     @staticmethod
     def llama_3_3_70b_versatile():
@@ -4124,6 +4343,317 @@ class ModelsConfig:
                 "total_cost": {
                     "input_cost": 0.59,
                     "output_cost": 0.79
+                }
+            }],
+            "message": "choices[0].message.content",
+            "tools": "choices[0].message.tool_calls",
+            "assistant": "choices[0].message",
+            "id": "id"
+        }
+        inputConfig = {
+            "system": {
+                "role": "system",
+                "content": "",
+                "contentKey": "content",
+                "type": "json"
+            },
+            "content_location": "prompt[0].content"
+        }
+        return {
+            "configuration": configuration,
+            "outputConfig": outputConfig,
+            "inputConfig": inputConfig
+        }
+    
+    @staticmethod
+    def qwen_2_5_coder_32b():
+        configuration = {
+            "model": {
+                "field": "drop",
+                "default": "qwen-2.5-coder-32b",
+                "level": 1
+            },
+            "tools": {
+                "field": "array",
+                "level": 0,
+                "default": [],
+                "typeOf": "array"
+            },
+            "tool_choice": {
+                "field": "text",
+                "default": "auto",
+                "level": 0,
+                "typeOf": "string"
+            },
+            "response_type": {
+                "field": "select",
+                "options" : [{"type" : "text"},{"type" : "json_object"}],
+                "default": {
+                "type" : "text",
+                },
+                "level": 0
+            }
+        }
+        outputConfig = {
+            "usage": [{
+                "prompt_tokens": "usage.prompt_tokens",
+                "completion_tokens": "usage.completion_tokens",
+                "total_tokens": "usage.total_tokens",
+                "total_cost": {
+                    "input_cost": 0.05,
+                    "output_cost": 0.08
+                }
+            }],
+            "message": "choices[0].message.content",
+            "tools": "choices[0].message.tool_calls",
+            "assistant": "choices[0].message",
+            "id": "id"
+        }
+        inputConfig = {
+            "system": {
+                "role": "system",
+                "content": "",
+                "contentKey": "content",
+                "type": "json"
+            },
+            "content_location": "prompt[0].content"
+        }
+        return {
+            "configuration": configuration,
+            "outputConfig": outputConfig,
+            "inputConfig": inputConfig
+        }
+    
+    @staticmethod
+    def qwen_2_5_32b():
+        configuration = {
+            "model": {
+                "field": "drop",
+                "default": "qwen-2.5-32b",
+                "level": 1
+            },
+            "tools": {
+                "field": "array",
+                "level": 0,
+                "default": [],
+                "typeOf": "array"
+            },
+            "tool_choice": {
+                "field": "text",
+                "default": "auto",
+                "level": 0,
+                "typeOf": "string"
+            },
+            "response_type": {
+                "field": "select",
+                "options" : [{"type" : "text"},{"type" : "json_object"}],
+                "default": {
+                "type" : "text",
+                },
+                "level": 0
+            }
+        }
+        outputConfig = {
+            "usage": [{
+                "prompt_tokens": "usage.prompt_tokens",
+                "completion_tokens": "usage.completion_tokens",
+                "total_tokens": "usage.total_tokens",
+                "total_cost": {
+                    "input_cost": 0.05,
+                    "output_cost": 0.08
+                }
+            }],
+            "message": "choices[0].message.content",
+            "tools": "choices[0].message.tool_calls",
+            "assistant": "choices[0].message",
+            "id": "id"
+        }
+        inputConfig = {
+            "system": {
+                "role": "system",
+                "content": "",
+                "contentKey": "content",
+                "type": "json"
+            },
+            "content_location": "prompt[0].content"
+        }
+        return {
+            "configuration": configuration,
+            "outputConfig": outputConfig,
+            "inputConfig": inputConfig
+        }
+    
+    @staticmethod
+    def deepseek_r1_distill_qwen_32b():
+        configuration = {
+            "model": {
+                "field": "drop",
+                "default": "deepseek-r1-distill-qwen-32b",
+                "level": 1
+            },
+            "max_tokens": {
+                "field": "slider",
+                "min": 1,
+                "max": 16384,
+                "step": 1,
+                "default": 256,
+                "level": 2
+            },
+            "tools": {
+                "field": "array",
+                "level": 0,
+                "default": [],
+                "typeOf": "array"
+            },
+            "tool_choice": {
+                "field": "text",
+                "default": "auto",
+                "level": 0,
+                "typeOf": "string"
+            },
+            "response_type": {
+                "field": "select",
+                "options" : [{"type" : "text"},{"type" : "json_object"}],
+                "default": {
+                "type" : "text",
+                },
+                "level": 0
+            }
+        }
+        outputConfig = {
+            "usage": [{
+                "prompt_tokens": "usage.prompt_tokens",
+                "completion_tokens": "usage.completion_tokens",
+                "total_tokens": "usage.total_tokens",
+                "total_cost": {
+                    "input_cost": 0.05,
+                    "output_cost": 0.08
+                }
+            }],
+            "message": "choices[0].message.content",
+            "tools": "choices[0].message.tool_calls",
+            "assistant": "choices[0].message",
+            "id": "id"
+        }
+        inputConfig = {
+            "system": {
+                "role": "system",
+                "content": "",
+                "contentKey": "content",
+                "type": "json"
+            },
+            "content_location": "prompt[0].content"
+        }
+        return {
+            "configuration": configuration,
+            "outputConfig": outputConfig,
+            "inputConfig": inputConfig
+        }
+    
+    @staticmethod
+    def deepseek_r1_distill_llama_70b_specdec():
+        configuration = {
+            "model": {
+                "field": "drop",
+                "default": "deepseek-r1-distill-llama-70b-specdec",
+                "level": 1
+            },
+            "max_tokens": {
+                "field": "slider",
+                "min": 1,
+                "max": 16384,
+                "step": 1,
+                "default": 256,
+                "level": 2
+            },
+            "tools": {
+                "field": "array",
+                "level": 0,
+                "default": [],
+                "typeOf": "array"
+            },
+            "tool_choice": {
+                "field": "text",
+                "default": "auto",
+                "level": 0,
+                "typeOf": "string"
+            },
+            "response_type": {
+                "field": "select",
+                "options" : [{"type" : "text"},{"type" : "json_object"}],
+                "default": {
+                "type" : "text",
+                },
+                "level": 0
+            }
+        }
+        outputConfig = {
+            "usage": [{
+                "prompt_tokens": "usage.prompt_tokens",
+                "completion_tokens": "usage.completion_tokens",
+                "total_tokens": "usage.total_tokens",
+                "total_cost": {
+                    "input_cost": 0.05,
+                    "output_cost": 0.08
+                }
+            }],
+            "message": "choices[0].message.content",
+            "tools": "choices[0].message.tool_calls",
+            "assistant": "choices[0].message",
+            "id": "id"
+        }
+        inputConfig = {
+            "system": {
+                "role": "system",
+                "content": "",
+                "contentKey": "content",
+                "type": "json"
+            },
+            "content_location": "prompt[0].content"
+        }
+        return {
+            "configuration": configuration,
+            "outputConfig": outputConfig,
+            "inputConfig": inputConfig
+        }
+    
+    @staticmethod
+    def deepseek_r1_distill_llama_70b():
+        configuration = {
+            "model": {
+                "field": "drop",
+                "default": "deepseek-r1-distill-llama-70b",
+                "level": 1
+            },
+            "tools": {
+                "field": "array",
+                "level": 0,
+                "default": [],
+                "typeOf": "array"
+            },
+            "tool_choice": {
+                "field": "text",
+                "default": "auto",
+                "level": 0,
+                "typeOf": "string"
+            },
+            "response_type": {
+                "field": "select",
+                "options" : [{"type" : "text"},{"type" : "json_object"}],
+                "default": {
+                "type" : "text",
+                },
+                "level": 0
+            }
+        }
+        outputConfig = {
+            "usage": [{
+                "prompt_tokens": "usage.prompt_tokens",
+                "completion_tokens": "usage.completion_tokens",
+                "total_tokens": "usage.total_tokens",
+                "total_cost": {
+                    "input_cost": 0.05,
+                    "output_cost": 0.08
                 }
             }],
             "message": "choices[0].message.content",

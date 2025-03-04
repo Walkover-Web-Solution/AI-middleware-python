@@ -9,6 +9,7 @@ from src.services.utils.apiservice import fetch
 from fastapi import Request
 import datetime
 from src.controllers.rag_controller import get_text_from_vectorsQuery
+import traceback
 
 def validate_tool_call(modelOutputConfig, service, response):
     match service:
@@ -55,6 +56,8 @@ def transform_required_params_to_required(properties, variables={}, variables_pa
     if not isinstance(properties, dict):
         return properties
     transformed_properties = properties.copy()
+    if properties.get('type') == 'array' or properties.get('type') == 'object':
+        return {'items':properties}
     for key, value in properties.items():
         if value.get('required_params') is not None:
             transformed_properties[key]['required'] = value.pop('required_params')
@@ -80,6 +83,7 @@ def transform_required_params_to_required(properties, variables={}, variables_pa
                 transformed_properties[key]['items'] = nextedObject
             elif item_type == 'array':
                 transformed_properties[key]['items'] = transform_required_params_to_required( items.get('items', {}), variables, variables_path, function_name, key, value)
+                transformed_properties[key]['items']['type'] = 'array'
     return transformed_properties
 
 def tool_call_formatter(configuration: dict, service: str, variables: dict, variables_path: dict) -> dict:
@@ -236,6 +240,7 @@ async def process_data_and_run_tools(codes_mapping, tool_id_and_name_mapping, or
 
     except Exception as error:
         print(f"Error in process_data_and_run_tools: {error}")
+        traceback.print_exc()
         raise error
   
 

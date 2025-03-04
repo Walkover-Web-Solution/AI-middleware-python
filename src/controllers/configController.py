@@ -156,11 +156,13 @@ async def get_all_bridges(request):
         org_id = request.state.profile['org']['id']
         bridges = await get_all_bridges_in_org(org_id)
         embed_token = Helper.generate_token({ "org_id": Config.ORG_ID, "project_id": Config.PROJECT_ID, "user_id": org_id },Config.Access_key )
+        alerting_embed_token = Helper.generate_token({ "org_id": Config.ORG_ID, "project_id": Config.ALERTING_PROJECT_ID, "user_id": org_id },Config.Access_key )
         return JSONResponse(status_code=200, content={
                 "success": True,
                 "message": "Get all bridges successfully",
                 "bridge" : bridges,
                 "embed_token": embed_token,
+                "alerting_embed_token": alerting_embed_token,
                 "org_id": org_id
 
             })
@@ -204,6 +206,7 @@ async def get_all_service_models_controller(service):
                     "gpt-4o": restructure_configuration(model_configuration.gpt_4o()),
                     "chatgpt-4o-latest": restructure_configuration(model_configuration.chatgpt_4o_latest()),
                     "gpt-4o-mini": restructure_configuration(model_configuration.gpt_4o_mini()),
+                    "gpt-4.5-preview": restructure_configuration(model_configuration.gpt_4_5_preview())
                 },
                 "fine-tune" : {
                      "gpt-4-0613": restructure_configuration(model_configuration.gpt_4_0613()),
@@ -254,7 +257,8 @@ async def get_all_service_models_controller(service):
                     "claude-3-opus-latest" : restructure_configuration(model_configuration.claude_3_opus_latest()),  
                     "claude-3-sonnet-20240229" : restructure_configuration(model_configuration.claude_3_sonnet_20240229()), 
                     "claude-3-haiku-20240307" : restructure_configuration(model_configuration.claude_3_haiku_20240307()), 
-                    "claude-3-5-haiku-20241022" : restructure_configuration(model_configuration.claude_3_5_haiku_20241022()) 
+                    "claude-3-5-haiku-20241022" : restructure_configuration(model_configuration.claude_3_5_haiku_20241022()),
+                    "claude-3-7-sonnet-latest" : restructure_configuration(model_configuration.claude_3_7_sonnet_latest()) 
                 }
             }
         
@@ -271,7 +275,12 @@ async def get_all_service_models_controller(service):
                     "mixtral-8x7b-32768" : restructure_configuration(model_configuration.mixtral_8x7b_32768()),
                     # "gemma-7b-it" : restructure_configuration(model_configuration.gemma_7b_it()),
                     "gemma2-9b-it" : restructure_configuration(model_configuration.gemma2_9b_it()),
-                    "llama-guard-3-8b" : restructure_configuration(model_configuration.llama_guard_3_8b())
+                    "llama-guard-3-8b" : restructure_configuration(model_configuration.llama_guard_3_8b()),
+                    "deepseek-r1-distill-llama-70b" : restructure_configuration(model_configuration.deepseek_r1_distill_llama_70b()),
+                    # "deepseek-r1-distill-llama-70b-specdec" : restructure_configuration(model_configuration.deepseek_r1_distill_llama_70b_specdec()),
+                    "deepseek-r1-distill-qwen-32b" : restructure_configuration(model_configuration.deepseek_r1_distill_qwen_32b()),
+                    "qwen-2.5-32b" : restructure_configuration(model_configuration.qwen_2_5_32b()),
+                    "qwen-2.5-coder-32b" : restructure_configuration(model_configuration.qwen_2_5_coder_32b())
                 }
             }
 
