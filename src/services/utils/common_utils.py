@@ -291,7 +291,7 @@ async def updateVariablesWithTimeZone(variables, org_id):
         data = await Helper.get_timezone_and_org_name(org_id)
         timezone = data.get('timezone') or "+5:30"
         hour, minutes = timezone.split(':')
-        return int(hour), int(minutes), data.get('meta').get('about', '')
+        return int(hour), int(minutes), data.get('name') or ""
     if 'current_time_and_date' not in variables:
         hour, minutes, org_name = await getTimezoneOfOrg()
         current_time = datetime.now(timezone.utc)
