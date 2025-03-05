@@ -296,6 +296,11 @@ async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None)
                             '$match': {
                                 '$expr': { '$in': ['$_id', '$$doc_ids'] }
                             }
+                        },
+                        {
+                            '$addFields': {
+                                '_id': { '$toString': '$_id' }
+                            }
                         }
                     ],
                     'as': 'rag_data'
