@@ -12,7 +12,9 @@ async def execute_with_retry(
     bridge_id=None,
     message_id=None,
     org_id=None,
-    alert_on_retry=False
+    alert_on_retry=False,
+    name = "",
+    org_name= ""
 ):
     try:
         # Start timer
@@ -36,6 +38,8 @@ async def execute_with_retry(
             # Send alert if required
             if alert_on_retry:
                 await send_alert(data={
+                    "org_name" : org_name,
+                    "bridge_name" : name,
                     "configuration": configuration,
                     "message_id": message_id,
                     "bridge_id": bridge_id,

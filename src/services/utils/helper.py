@@ -16,6 +16,8 @@ from ..commonServices.groq.groqCall import Groq
 from ..commonServices.anthrophic.antrophicCall import Antrophic
 from ...configs.constant import service_name
 from ..commonServices.openAI.openai_embedding_call import OpenaiEmbedding
+from ..cache_service import find_in_cache, store_in_cache
+from ..utils.apiservice import fetch
 class Helper:
     @staticmethod
     def encrypt(text):
@@ -253,3 +255,13 @@ class Helper:
         prompt += '\n Available Knowledge Base :- Here are the available documents to get data when needed call the function get_knowledge_base_data: \n' +  '\n'.join([f"name : {data.get('name')}, description : {data.get('description')},  doc_id : {data.get('_id')} \n" for data in rag_data])    
         return prompt
         
+    async def get_timezone_and_org_name(org_id):
+        cached_data = await find_in_cache(org_id)
+        if cached_data:
+            # Deserialize the cached JSON data
+            cached_result = json.loads(cached_data)
+            return cached_result
+        else:
+            response, _ = await fetch(f"https://routes.msg91.com/api/{Config.PUBLIC_REFERENCEID}/getCompanies?id={org_id}", "GET", {"Authkey": Config.ADMIN_API_KEY}, None, None)
+            await store_in_cache(org_id, response.get('data', {}).get('data', [{}])[0])
+            return response.get('data', {}).get('data', [{}])[0]
