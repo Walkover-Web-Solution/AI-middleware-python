@@ -115,4 +115,31 @@ async def generate_summary(request):
             
     except Exception as err:
         print("Error calling function=>", err)
+async def function_agrs_using_ai(request):
+    try:
+        body = await request.json()
+        data = body.get('example_json')
+        response, rs_headers = await fetch(
+            f"https://proxy.viasocket.com/proxy/api/1258584/29gjrmh24/api/v2/model/chat/completion",
+            "POST",
+            {
+                "pauthkey": "1b13a7a038ce616635899a239771044c",
+                "Content-Type": "application/json"
+            },
+            None,
+            {
+                "user": f"geneate the json using the example json data : {data}",
+                "bridge_id": "67c81a424f3136bfb0e81906",
+            }
+        )
+        
+        json = response.get('response',{}).get('data',{}).get('content',"")
+        return JSONResponse(status_code=200, content={
+            "success": True,
+            "message": "json generated successfully",
+            "result" : json
+        })
+            
+    except Exception as err:
+        print("Error calling function=>", err)
     
