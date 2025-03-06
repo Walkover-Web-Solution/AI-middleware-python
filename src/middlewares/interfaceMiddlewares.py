@@ -64,7 +64,8 @@ async def send_data_middleware(request: Request, botId: str):
                         "ttl": 1,
                         'apikey': Config.RTLAYER_AUTH
                     }
-                }
+                },
+                **body.get('configuration', {}),
             },
             "chatbot": True,
             "response_type": { 

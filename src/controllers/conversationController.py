@@ -20,6 +20,7 @@ async def getThread(thread_id, sub_thread_id, org_id, bridge_id, bridgeType):
                 else:
                     filtered_chats.append(chat)
             chats = filtered_chats
+        chats = await add_tool_call_data_in_history(chats)
         return { 'success': True, 'data': chats }
     except Exception as err:
         print("Error in getting thread:",err)
@@ -106,6 +107,31 @@ async def savehistory(thread_id, sub_thread_id, userMessage, botMessage, org_id,
         print("saveconversation error=>", error)
         traceback.print_exc()
         return { 'success': False, 'message': str(error) }
+
+async def add_tool_call_data_in_history(chats):
+        tools_call_indices = []
+    
+        for i in range(len(chats)):
+            current_chat = chats[i]
+            if current_chat['role'] == 'tools_call':
+                if i > 0 and (i + 1) < len(chats):
+                    prev_chat = chats[i - 1]
+                    next_chat = chats[i + 1]
+                    if prev_chat['role'] == 'user' and next_chat['role'] == 'assistant':
+                        tools_call_data = current_chat.get('tools_call_data', [])
+                        messages = []
+                        for call_data in tools_call_data:
+                            call_info = next(iter(call_data.values()))
+                            name = call_info.get('name', '')
+                            messages.append(f"{name}")
+                        if messages:
+                            combined_message = "tool_call has been done function name:-  " +  ', '.join(messages)
+                            if next_chat['content']:
+                                next_chat['content'] += '\n' + combined_message
+                        tools_call_indices.append(i)
+        
+        processed_chats = [chat for idx, chat in enumerate(chats) if idx not in tools_call_indices]
+        return processed_chats
 
 # Exporting the functions
 __all__ = ['getAllThreads', 'savehistory', 'getThread', 'getThreadHistory', 'getChatData']

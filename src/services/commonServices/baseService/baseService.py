@@ -4,7 +4,7 @@ import json
 import traceback
 from config import Config
 from ....db_services import metrics_service, ConfigurationServices as ConfigurationService
-from .utils import validate_tool_call, tool_call_formatter, sendResponse, make_code_mapping_by_service, process_data_and_run_tools
+from .utils import validate_tool_call, tool_call_formatter, sendResponse, make_code_mapping_by_service, process_data_and_run_tools, clean_json
 from src.configs.serviceKeys import ServiceKeys
 from src.configs.modelConfiguration import ModelsConfig
 from ..openAI.runModel import runModel
@@ -54,6 +54,8 @@ class BaseService:
         self.tool_id_and_name_mapping = params.get('tool_id_and_name_mapping')
         self.batch = params.get('batch')
         self.webhook = params.get('webhook')
+        self.name = params.get('name')
+        self.org_name = params.get('org_name')
 
 
     def aiconfig(self):
@@ -95,9 +97,11 @@ class BaseService:
         modelObj = modelfunc()
         modelOutputConfig = modelObj['outputConfig']
         model_response = response.get('modelResponse', {})
-
+        if configuration.get('tool_choice') is not None and configuration['tool_choice'] not in ['auto', 'none', 'required']:
+                configuration['tool_choice'] = 'auto'
         if validate_tool_call(modelOutputConfig, service, model_response) and l <= self.tool_call_count:
             l += 1
+            
             # Continue with the rest of the logic here
         else:
             return response
@@ -230,10 +234,12 @@ class BaseService:
                 if service == service_name['anthropic']:
                     new_config['tool_choice'] =  {"type": "auto"}
                 elif service == service_name['openai'] or service_name['groq']:
-                    new_config['tool_choice'] = "auto"
-
-                
-                new_config['tools'] = tool_call_formatter(configuration, service, self.variables, self.variables_path)
+                    if configuration.get('tool_choice'):
+                        if configuration['tool_choice'] not in ['auto', 'none', 'required', 'default']:
+                            new_config['tool_choice'] = {"type": "function", "function": {"name": configuration['tool_choice']}}
+                        else:
+                            new_config['tool_choice'] = configuration['tool_choice']
+                new_config['tools'] = clean_json(tool_call_formatter(configuration, service, self.variables, self.variables_path))
             elif 'tool_choice' in configuration:
                 del new_config['tool_choice']  
             if 'tools' in new_config and len(new_config['tools']) == 0:
@@ -248,11 +254,11 @@ class BaseService:
             response = {}
             loop = asyncio.get_event_loop()
             if service == service_name['openai']:
-                response = await runModel(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer, self.message_id, self.org_id)
+                response = await runModel(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer, self.message_id, self.org_id, self.name, self.org_name)
             elif service == service_name['anthropic']:
-                response = await loop.run_in_executor(executor, lambda: asyncio.run(anthropic_runmodel(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer)))
+                response = await loop.run_in_executor(executor, lambda: asyncio.run(anthropic_runmodel(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer, self.name, self.org_name)))
             elif service == service_name['groq']:
-                response = await groq_runmodel(configuration, apikey, self.execution_time_logs, self.bridge_id,  self.timer)
+                response = await groq_runmodel(configuration, apikey, self.execution_time_logs, self.bridge_id,  self.timer, self.name, self.org_name)
             if not response['success']:
                 raise ValueError(response['error'], self.func_tool_call_data)
             return {

@@ -23,6 +23,21 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
         db_configuration.update(configuration)
     configuration = db_configuration
     
+    tool_choice_ids = configuration.get('tool_choice', [])
+    toolchoice = None
+    for key, api_data in result.get('bridges', {}).get('apiCalls', {}).items():
+        if api_data['_id'] in tool_choice_ids:
+            toolchoice = makeFunctionName(api_data['endpoint_name'] or api_data['function_name'])
+            break
+            
+    found_choice = None
+    for choice in ['auto', 'none', 'required', 'default']:
+        if choice in tool_choice_ids:
+            found_choice = choice
+            break
+            
+    configuration['tool_choice'] = found_choice if found_choice is not None else toolchoice
+    
     # make tools data
     tools = []
     tool_id_and_name_mapping = {}
@@ -120,7 +135,7 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
                 "type": "RAG"
             }
         configuration['prompt'] = Helper.add_doc_description_to_prompt(configuration['prompt'], rag_data)
-        
+    variables, org_name = await updateVariablesWithTimeZone(variables,org_id)
     return {
         'success': True,
         'configuration': configuration,
@@ -137,7 +152,9 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
         "version_id" : version_id or result.get('bridges', {}).get('published_version_id'),
         "gpt_memory_context" :  gpt_memory_context,
         "tool_call_count": result.get("bridges", {}).get("tool_call_count", 3),
-        "variables": await updateVariablesWithTimeZone(variables,org_id),
+        "variables": variables,
         "rag_data":rag_data,
-        "actions": result.get("bridges", {}).get("actions", [])
+        "actions": result.get("bridges", {}).get("actions", []),
+        "name" : result.get("bridges", {}).get("name") or '',
+        "org_name" : org_name
     }
