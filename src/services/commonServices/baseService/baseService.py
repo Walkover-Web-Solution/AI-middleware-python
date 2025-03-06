@@ -98,6 +98,8 @@ class BaseService:
 
         if validate_tool_call(modelOutputConfig, service, model_response) and l <= self.tool_call_count:
             l += 1
+            if l == 1 and configuration.get('tool_choice') not in ['auto', 'none', 'required']:
+                configuration['tool_choice'] = 'auto'
             # Continue with the rest of the logic here
         else:
             return response
