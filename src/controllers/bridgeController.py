@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, Request
 from ..middlewares.middleware import jwt_middleware
-from src.services.commonServices.bridgeServices import duplicate_bridge, optimize_prompt_controller, generate_summary
+from src.services.commonServices.bridgeServices import duplicate_bridge, optimize_prompt_controller, generate_summary, function_agrs_using_ai
 router = APIRouter()
 
 @router.post('/duplicate',dependencies=[Depends(jwt_middleware)])
@@ -15,3 +15,7 @@ async def update_apicalls(request: Request, bridge_id: str):
 @router.post('/summary', dependencies=[Depends(jwt_middleware)])
 async def generate_brideg_summary(request: Request):
     return await generate_summary(request)
+
+@router.post('/genrate/rawjson', dependencies=[Depends(jwt_middleware)])
+async def function_args(request: Request):
+    return await function_agrs_using_ai(request)
