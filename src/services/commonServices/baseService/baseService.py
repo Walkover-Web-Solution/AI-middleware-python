@@ -97,9 +97,11 @@ class BaseService:
         modelObj = modelfunc()
         modelOutputConfig = modelObj['outputConfig']
         model_response = response.get('modelResponse', {})
-
+        if configuration.get('tool_choice') is not None and configuration['tool_choice'] not in ['auto', 'none', 'required']:
+                configuration['tool_choice'] = 'auto'
         if validate_tool_call(modelOutputConfig, service, model_response) and l <= self.tool_call_count:
             l += 1
+            
             # Continue with the rest of the logic here
         else:
             return response
@@ -232,9 +234,11 @@ class BaseService:
                 if service == service_name['anthropic']:
                     new_config['tool_choice'] =  {"type": "auto"}
                 elif service == service_name['openai'] or service_name['groq']:
-                    new_config['tool_choice'] = "auto"
-
-                
+                    if configuration.get('tool_choice'):
+                        if configuration['tool_choice'] not in ['auto', 'none', 'required', 'default']:
+                            new_config['tool_choice'] = {"type": "function", "function": {"name": configuration['tool_choice']}}
+                        else:
+                            new_config['tool_choice'] = configuration['tool_choice']
                 new_config['tools'] = clean_json(tool_call_formatter(configuration, service, self.variables, self.variables_path))
             elif 'tool_choice' in configuration:
                 del new_config['tool_choice']  
