@@ -106,8 +106,8 @@ def tool_call_formatter(configuration: dict, service: str, variables: dict, vari
                     'description': transformed_tool['description'],
                     'parameters': {
                         'type': 'object',
-                        'properties': transform_required_params_to_required(transformed_tool.get('properties', {}), variables=variables, variables_path=variables_path, function_name=transformed_tool['name'], parentValue={'required': transformed_tool.get('required', [])}),
-                        'required': transformed_tool.get('required', []),
+                        'properties': clean_json(transform_required_params_to_required(transformed_tool.get('properties', {}), variables=variables, variables_path=variables_path, function_name=transformed_tool['name'], parentValue={'required': transformed_tool.get('required', [])})),
+                        'required': transformed_tool.get('required'),
                         # "additionalProperties": False,
                     }
                 }
@@ -121,8 +121,8 @@ def tool_call_formatter(configuration: dict, service: str, variables: dict, vari
                 'description': transformed_tool['description'],
                 'input_schema': {
                     "type": "object",
-                    'properties': transform_required_params_to_required(transformed_tool.get('properties', {}), variables=variables, variables_path=variables_path, function_name=transformed_tool['name'], parentValue={'required': transformed_tool.get('required', [])}),
-                    'required': transformed_tool.get('required', [])
+                    'properties': clean_json(transform_required_params_to_required(transformed_tool.get('properties', {}), variables=variables, variables_path=variables_path, function_name=transformed_tool['name'], parentValue={'required': transformed_tool.get('required', [])})),
+                    'required': transformed_tool.get('required')
                 }
             } for transformed_tool in configuration.get('tools', [])
         ]
@@ -135,8 +135,8 @@ def tool_call_formatter(configuration: dict, service: str, variables: dict, vari
                 "description": transformed_tool['description'],
                 "parameters": {
                     "type": "object",
-                    "properties": transform_required_params_to_required(transformed_tool.get('properties', {}), variables=variables, variables_path=variables_path, function_name=transformed_tool['name'], parentValue={'required': transformed_tool.get('required', [])}),
-                    "required": transformed_tool.get('required', []),
+                    "properties": clean_json(transform_required_params_to_required(transformed_tool.get('properties', {}), variables=variables, variables_path=variables_path, function_name=transformed_tool['name'], parentValue={'required': transformed_tool.get('required', [])})),
+                    "required": transformed_tool.get('required'),
                 },
                     },
             } for transformed_tool in configuration.get('tools', [])
