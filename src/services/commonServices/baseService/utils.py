@@ -11,6 +11,15 @@ import datetime
 from src.controllers.rag_controller import get_text_from_vectorsQuery
 import traceback
 
+def clean_json(data):
+    """Recursively remove keys with empty string, empty list, or empty dictionary."""
+    if isinstance(data, dict):
+        return {k: clean_json(v) for k, v in data.items() if v not in ['', [], {}]}
+    elif isinstance(data, list):
+        return [clean_json(item) for item in data]
+    else:
+        return data
+
 def validate_tool_call(modelOutputConfig, service, response):
     match service:
         case 'openai' | 'groq':
