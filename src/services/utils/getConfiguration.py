@@ -37,7 +37,8 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
             break
             
     configuration['tool_choice'] = found_choice if found_choice is not None else toolchoice
-    
+    bridge = result.get('bridges')
+    variables_path_bridge = bridge.get('variables_path', {})
     # make tools data
     tools = []
     tool_id_and_name_mapping = {}
@@ -49,13 +50,8 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
             "headers":{},
             "name": api_data.get('function_name')
         }
-        if api_data.get('status') == 0 and not name_of_function:
-            continue
-        format = {
-            "type": "function",
-            "name": name_of_function,
-            "description": api_data.get('description'),
-            "properties": (
+        variablesFillByGtwy = list(variables_path_bridge.get(api_data.get("function_name"), {}).keys())
+        properties = (
                 api_data.get("fields", {}) if api_data.get("version") == 'v2' 
                 else {item["variable_name"]: {
                     "description": item.get("description", ""), 
@@ -63,10 +59,20 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
                     "type": "string",
                     "parameter": {}
                 } for item in api_data.get('fields',{})}
-            ),
-            "required": (
-               api_data.get("required_params")
             )
+        for key in variablesFillByGtwy:
+            properties.pop(key, None)
+        required = api_data.get("required_params")
+        required = [key for key in required if key not in variablesFillByGtwy]
+
+        if api_data.get('status') == 0 and not name_of_function:
+            continue
+        format = {
+            "type": "function",
+            "name": name_of_function,
+            "description": api_data.get('description'),
+            "properties": properties,
+            "required": required
         }
         tools.append(format)
 
@@ -96,10 +102,8 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
         raise Exception('Could not find api key')
     apikey = apikey if apikey else Helper.decrypt(db_api_key)
     RTLayer = True if configuration and 'RTLayer' in configuration else False 
-    bridge = result.get('bridges')
     template_content = await ConfigurationService.get_template_by_id(template_id) if template_id else None
     pre_tools = bridge.get('pre_tools', [])
-    variables_path_bridge = bridge.get('variables_path', None)
     gpt_memory_context = bridge.get('gpt_memory_context')
     if len(pre_tools)>0:
         api_data = await apiCallModel.find_one({"_id": ObjectId( pre_tools[0]), "org_id": org_id})
