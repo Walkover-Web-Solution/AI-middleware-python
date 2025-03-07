@@ -172,13 +172,14 @@ async def timescale_metrics(metrics_data) :
 async def get_timescale_data(org_id):
     cache_key = f"metrix_{org_id}"
     # Attempt to retrieve data from Redis cache
-    try:
-        cached_data = await find_in_cache(cache_key)
-        if cached_data:
-            # Deserialize the cached JSON data
-            cached_result = json.loads(cached_data)
-            return cached_result 
-        else:
+
+    cached_data = await find_in_cache(cache_key)
+    if cached_data:
+        # Deserialize the cached JSON data
+        cached_result = json.loads(cached_data)
+        return cached_result 
+    else:
+        try:
             session = timescale['session']()
             query = text(f"""
                 SELECT bridge_id,
@@ -191,8 +192,8 @@ async def get_timescale_data(org_id):
             data = result.fetchall()
             await store_in_cache(cache_key, data, 86400)
             return data
-    except Exception as e:
-        session.rollback()
-        raise e
-    finally:
-        session.close()
+        except Exception as e:
+            session.rollback()
+            raise e
+        finally:
+            session.close()
