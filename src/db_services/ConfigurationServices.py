@@ -281,7 +281,7 @@ async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None)
             # New Stage 4: Lookup 'rag_parent_data' using 'doc_ids'
             {
                 '$lookup': {
-                    'from': 'rag_parent_data',
+                    'from': 'rag_parent_datas',
                     'let': { 
                         'doc_ids': { 
                             '$map': {
@@ -295,6 +295,11 @@ async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None)
                         {
                             '$match': {
                                 '$expr': { '$in': ['$_id', '$$doc_ids'] }
+                            }
+                        },
+                        {
+                            '$addFields': {
+                                '_id': { '$toString': '$_id' }
                             }
                         }
                     ],

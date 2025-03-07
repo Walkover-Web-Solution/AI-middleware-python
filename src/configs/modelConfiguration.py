@@ -72,6 +72,14 @@ class ModelsConfig:
                 "type" : "text",
                 },
                 "level": 0
+            },
+            "specification" : {
+                "input_cost": 3.00,
+                "output_cost": 6.00,
+                "description" : "GPT-3.5 Turbo models can understand and generate natural language or code and have been optimized for chat using the Chat Completions API but work well for non-chat tasks as well. As of July 2024, use gpt-4o-mini in place of GPT-3.5 Turbo, as it is cheaper, more capable, multimodal, and just as fast",
+                "knowledge_cutoff" : "Sep 01, 2021",
+                "usecase" : [""]
+            
             }
         }
         outputConfig = {
@@ -283,7 +291,8 @@ class ModelsConfig:
                 "default": []
             },
             "tool_choice": {
-                "field": "text",
+                "field": "dropdown",
+                "options" : ["auto", "none", "required"],
                 "default": "auto",
                 "level": 0
             },
@@ -405,7 +414,8 @@ class ModelsConfig:
                 "default": []
             },
             "tool_choice": {
-                "field": "text",
+                "field": "dropdown",
+                 "options" : ["auto", "none", "required"],
                 "default": "auto",
                 "level": 0
             },
@@ -527,7 +537,8 @@ class ModelsConfig:
                 "default": []
             },
             "tool_choice": {
-                "field": "text",
+                "field": "dropdown",
+                "options" : ["auto", "none", "required"],
                 "default": "auto",
                 "level": 0
             },
@@ -649,7 +660,8 @@ class ModelsConfig:
                 "default": []
             },
             "tool_choice": {
-                "field": "text",
+                "field": "dropdown",
+                "options" : ["auto", "none", "required"],
                 "default": "auto",
                 "level": 0
             },
@@ -771,7 +783,8 @@ class ModelsConfig:
                 "default": []
             },
             "tool_choice": {
-                "field": "text",
+                "field": "dropdown",
+                "options" : ["auto", "none", "required"],
                 "default": "auto",
                 "level": 0
             },
@@ -889,12 +902,20 @@ class ModelsConfig:
                 "default": []
             },
             "tool_choice": {
-                "field": "text",
+                "field": "dropdown",
+                "options" : ["auto", "none", "required"],
                 "default": "auto",
                 "level": 0
             },
              "type" : {
                 "default" : ["chat"]
+            },
+            "specification" : {
+                "input_cost": 30.00,
+                "output_cost": 60.00,
+                "description" : "GPT-4 is an advanced AI language model by OpenAI, capable of understanding and generating human-like text with improved reasoning, creativity, and context retention. It supports both text and image inputs, making it highly versatile. With enhanced problem-solving skills, it excels in writing, coding, and complex queries.",
+                "knowledge_cutoff" : "Dec 01, 2023",
+                "usecase" : [""]
             }
         }
         outputConfig = {
@@ -1003,13 +1024,22 @@ class ModelsConfig:
                 "default": []
             },
             "tool_choice": {
-                "field": "text",
+                "field": "dropdown",
+                "options" : ["auto", "none", "required"],
                 "default": "auto",
                 "level": 0
             },
              "type" : {
                 "default" : ["chat"]
+            },
+            "specification" : {
+                "input_cost": 30.00,
+                "output_cost": 60.00,
+                "description" : "GPT-4o-2024-08-06 is a version of OpenAI's GPT-4 model released in August 2024. It likely includes optimizations and updates for better performance. The model excels in tasks like natural language understanding, creative writing, and problem-solving. It does not have real-time data access, relying on its pre-existing knowledge base.",
+                "knowledge_cutoff" : "Oct 01, 2023",
+                "usecase" : [""]
             }
+
         }
         outputConfig = {
             "usage": [{
@@ -1117,7 +1147,8 @@ class ModelsConfig:
                 "default": []
             },
             "tool_choice": {
-                "field": "text",
+                "field": "dropdown",
+                "options" : ["auto", "none", "required"],
                 "default": "auto",
                 "level": 0
             },
@@ -1238,7 +1269,8 @@ class ModelsConfig:
                 "default": []
             },
             "tool_choice": {
-                "field": "text",
+                "field": "dropdown",
+                "options" : ["auto", "none", "required"],
                 "default": "auto",
                 "level": 0
             },
@@ -1359,7 +1391,8 @@ class ModelsConfig:
                 "default": []
             },
             "tool_choice": {
-                "field": "text",
+                "field": "dropdown",
+                "options" : ["auto", "none", "required"],
                 "default": "auto",
                 "level": 0
             },
@@ -1484,7 +1517,8 @@ class ModelsConfig:
                 "typeOf": "array"
             },
             "tool_choice": {
-                "field": "text",
+                "field": "dropdown",
+                "options" : ["auto", "none", "required"],
                 "default": "auto",
                 "level": 0,
                 "typeOf": "string"
@@ -1610,7 +1644,8 @@ class ModelsConfig:
                 "typeOf": "array"
             },
             "tool_choice": {
-                "field": "text",
+                "field": "dropdown",
+                "options" : ["auto", "none", "required"],
                 "default": "auto",
                 "level": 0,
                 "typeOf": "string"
@@ -1625,6 +1660,12 @@ class ModelsConfig:
             },
             "type" : {
                 "default" : ["chat"]
+            },"specification" : {
+                "input_cost": 10.00,
+                "output_cost": 30.00,
+                "description" : ["GPT-4 Turbo is a faster, more efficient, and cost-effective version of GPT-4, optimized for speed and scalability. It offers improved reasoning, longer context handling, and better performance in coding and complex tasks. Designed for high responsiveness, it balances power with efficiency for seamless interactions"],
+                "knowledge_cutoff" : "Dec 01, 2023",
+                "usecase" : [""]
             }
         }
         outputConfig = {
@@ -1734,7 +1775,144 @@ class ModelsConfig:
                 "typeOf": "array"
             },
             "tool_choice": {
+                "field": "dropdown",
+                "options" : ["auto", "none", "required"],
+                "default": "auto",
+                "level": 0,
+                "typeOf": "string"
+            },
+            "response_type": {
+                "field": "select",
+                "options" : [{"type" : "text"},{"type" : "json_object"},{"type" : "json_schema"}],
+                "default": {
+                "type" : "text",
+                },
+                "level": 0
+            },
+            "vision": {
+                "support": True,
+                 "level": 0,
+                 "default" : False
+            },
+            "parallel_tool_calls": {
+                "field": "boolean",
+                "default": True,
+                "level": 0,
+                "typeOf": "boolean"  
+            }
+        }
+        outputConfig = {
+            "usage": [{
+                "prompt_tokens": "usage.prompt_tokens",
+                "completion_tokens": "usage.completion_tokens",
+                "total_tokens": "usage.total_tokens",
+                "cached_tokens": "usage.prompt_tokens_details.cached_tokens",
+                "total_cost": {
+                    "input_cost": 2.50,
+                    "output_cost": 10.00,
+                    "cached_cost": 1.25
+                }
+            }],
+            "message": "choices[0].message.content",
+            "tools": "choices[0].message.tool_calls",
+            "assistant": "choices[0].message",
+            "id": "id"
+        }
+        inputConfig = {
+            "system": {
+                "role": "system",
+                "content": "",
+                "contentKey": "content",
+                "type": "json"
+            },
+            "content_location": "prompt[0].content"
+        }
+        return {
+            "configuration": configuration,
+            "outputConfig": outputConfig,
+            "inputConfig": inputConfig
+        }
+    
+    @staticmethod
+    def gpt_4_5_preview():
+        configuration = {
+            "model": {
+                "field": "drop",
+                "default": "gpt-4.5-preview",
+                "level": 1
+            },
+            "creativity_level": {
+                "field": "slider",
+                "min": 0,
+                "max": 2,
+                "step": 0.1,
+                "default": 0,
+                "level": 2
+            },
+            "max_tokens": {
+                "field": "slider",
+                "min": 256,
+                "max": 16384,
+                "step": 1,
+                "default": 256,
+                "level": 2
+            },
+            "probability_cutoff": {
+                "field": "slider",
+                "min": 0,
+                "max": 1,
+                "step": 0.1,
+                "default": 1,
+                "level": 2
+            },
+            "log_probability": {
+                "field": "boolean",
+                "default": False,
+                "level": 0,
+                "typeOf": "boolean"
+            },
+            "repetition_penalty": {
+                "field": "slider",
+                "min": 0,
+                "max": 2,
+                "step": 0.01,
+                "default": 0,
+                "level": 2
+            },
+            "novelty_penalty": {
+                "field": "slider",
+                "min": 0,
+                "max": 2,
+                "step": 0.01,
+                "default": 0,
+                "level": 2
+            },
+            "response_count": {
+                "field": "number",
+                "default": 1,
+                "typeOf": "number",
+                "level": 0
+            },
+            "stop": {
                 "field": "text",
+                "default": "",
+                "level": 0
+            },
+            "stream": {
+                "field": "boolean",
+                "default": False,
+                "level": 0,
+                "typeOf": "boolean"
+            },
+            "tools": {
+                "field": "array",
+                "level": 0,
+                "default": [],
+                "typeOf": "array"
+            },
+            "tool_choice": {
+                "field": "dropdown",
+                "options" : ["auto", "none", "required"],
                 "default": "auto",
                 "level": 0,
                 "typeOf": "string"
@@ -1869,7 +2047,8 @@ class ModelsConfig:
                 "typeOf": "array"
             },
             "tool_choice": {
-                "field": "text",
+                "field": "dropdown",
+                "options" : ["auto", "none", "required"],
                 "default": "auto",
                 "level": 0,
                 "typeOf": "string"
@@ -2014,6 +2193,13 @@ class ModelsConfig:
                 "default": True,
                 "level": 0,
                 "typeOf": "boolean"  
+            },
+            "specification" : {
+                "input_cost": 5.00,
+                "output_cost": 15.00,
+                "description" : [""],
+                "knowledge_cutoff" : "",
+                "usecase" : [""]
             }
         }
         outputConfig = {
@@ -2119,7 +2305,8 @@ class ModelsConfig:
                 "default": []
             },
             "tool_choice": {
-                "field": "text",
+                "field": "dropdown",
+                "options" : ["auto", "none", "required"],
                 "default": "auto",
                 "level": 0
             },
@@ -2144,6 +2331,13 @@ class ModelsConfig:
                 "default": True,
                 "level": 0,
                 "typeOf": "boolean"  
+            },
+            "specification" : {
+                "input_cost": 0.150,
+                "output_cost": 0.600,
+                "description" : "GPT-4o mini (“o” for “omni”) is a fast, affordable small model for focused tasks. It accepts both text and image inputs, and produces text outputs (including Structured Outputs). It is ideal for fine-tuning, and model outputs from a larger model like GPT-4o can be distilled to GPT-4o-mini to produce similar results at lower cost and latency",
+                "knowledge_cutoff" : "Oct 01, 2023",
+                "usecase" : [""]
             }
         }
         outputConfig = {
@@ -2254,7 +2448,8 @@ class ModelsConfig:
                 "default": []
             },
             "tool_choice": {
-                "field": "text",
+                "field": "dropdown",
+                "options" : ["auto", "none", "required"],
                 "default": "auto",
                 "level": 0
             },
@@ -2279,7 +2474,15 @@ class ModelsConfig:
                 "default": True,
                 "level": 0,
                 "typeOf": "boolean"  
+            },
+            "specification" : {
+                "input_cost":  0.150,
+                "output_cost": 0.600,
+                "description" : "GPT-4o-mini-2024-07-18 is a smaller, optimized version of GPT-4 released in July 2024. It offers improved efficiency with faster processing and lower resource usage. The model excels in natural language understanding and generation tasks. It’s ideal for applications with resource constraints while maintaining strong performance",
+                "knowledge_cutoff" : "Oct 01, 2023",
+                "usecase" : [""]
             }
+
         }
         outputConfig = {
             "usage": [{
@@ -2330,7 +2533,8 @@ class ModelsConfig:
                 "typeOf": "array"
             },
             "tool_choice": {
-                "field": "text",
+                "field": "dropdown",
+                "options" : ["auto", "none", "required"],
                 "default": "auto",
                 "level": 0,
                 "typeOf": "string"
@@ -2350,12 +2554,24 @@ class ModelsConfig:
             },
             "max_tokens": {
                 "field": "slider",
-                "min": 256,
+                "min": 1,
                 "max": 100_000,
                 "step": 1,
                 "default": 256,
                 "level": 2
-            }
+            },
+            "vision": {
+                "support": True,
+                 "level": 0,
+                 "default" : False
+            },
+            "specification" : {
+                "input_cost": 15.00,
+                "output_cost": 60.00,
+                "description" : "The o1 series of models are trained with reinforcement learning to perform complex reasoning. o1 models think before they answer, producing a long internal chain of thought before responding to the user.",
+                "knowledge_cutoff" : "Oct 01, 2023",
+                "usecase" : [""]
+            },
         }
         outputConfig = {
             "usage": [{
@@ -2406,6 +2622,7 @@ class ModelsConfig:
             },
             "tool_choice": {
                 "field": "text",
+                "options" : ["auto", "none", "required"],
                 "default": "auto",
                 "level": 0,
                 "typeOf": "string"
@@ -2468,6 +2685,13 @@ class ModelsConfig:
                 "default": "o1-preview",
                 "level": 1
             },
+            "specification" : {
+                "input_cost": 3.00,
+                "output_cost": 12.00,
+                "description" : "o3-mini is our newest small reasoning model, providing high intelligence at the same cost and latency targets of o1-mini. o3-mini supports key developer features, like Structured Outputs, function calling, and Batch API",
+                "knowledge_cutoff" : "Oct 01, 2023",
+                "usecase" : [""]
+            },
         }
         outputConfig = {
             "usage": [{
@@ -2509,6 +2733,26 @@ class ModelsConfig:
                 "field": "drop",
                 "default": "o1-mini",
                 "level": 1
+            },
+            "encoding_format": {
+                "field": "dropdown",
+                "values": ["float", "base64"],
+                "default": "float",
+                "level": 2
+            },
+            "dimensions": {
+                "field": "number",
+                "level": 0
+            },
+            "type" : {
+                "default" : ["embedding"]
+            },
+            "specification" : {
+                "input_cost": "",
+                "output_cost": "",
+                "description" : "text-embedding-3-small is our improved, more performant version of our ada embedding model. Embeddings are a numerical representation of text that can be used to measure the relatedness between two pieces of text. Embeddings are useful for search, clustering, recommendations, anomaly detection, and classification tasks.",
+                "knowledge_cutoff" : "",
+                "usecase" : [""]
             },
         }
         outputConfig = {
@@ -3942,7 +4186,8 @@ class ModelsConfig:
                 "typeOf": "array"
             },
             "tool_choice": {
-                "field": "text",
+                "field": "dropdown",
+                "options" : ["auto", "none", "required"],
                 "default": "auto",
                 "level": 0,
                 "typeOf": "string"
@@ -4064,7 +4309,8 @@ class ModelsConfig:
                 "typeOf": "array"
             },
             "tool_choice": {
-                "field": "text",
+                "field": "dropdown",
+                "options" : ["auto", "none", "required"],
                 "default": "auto",
                 "level": 0,
                 "typeOf": "string"
@@ -4186,7 +4432,8 @@ class ModelsConfig:
                 "typeOf": "array"
             },
             "tool_choice": {
-                "field": "text",
+                "field": "dropdown",
+                "options" : ["auto", "none", "required"],
                 "default": "auto",
                 "level": 0,
                 "typeOf": "string"
@@ -4208,6 +4455,322 @@ class ModelsConfig:
                 "total_cost": {
                     "input_cost": 0.59,
                     "output_cost": 0.79
+                }
+            }],
+            "message": "choices[0].message.content",
+            "tools": "choices[0].message.tool_calls",
+            "assistant": "choices[0].message",
+            "id": "id"
+        }
+        inputConfig = {
+            "system": {
+                "role": "system",
+                "content": "",
+                "contentKey": "content",
+                "type": "json"
+            },
+            "content_location": "prompt[0].content"
+        }
+        return {
+            "configuration": configuration,
+            "outputConfig": outputConfig,
+            "inputConfig": inputConfig
+        }
+    
+    @staticmethod
+    def qwen_2_5_coder_32b():
+        configuration = {
+            "model": {
+                "field": "drop",
+                "default": "qwen-2.5-coder-32b",
+                "level": 1
+            },
+            "tools": {
+                "field": "array",
+                "level": 0,
+                "default": [],
+                "typeOf": "array"
+            },
+            "tool_choice": {
+                "field": "dropdown",
+                "options" : ["auto", "none", "required"],
+                "default": "auto",
+                "level": 0,
+                "typeOf": "string"
+            },
+            "response_type": {
+                "field": "select",
+                "options" : [{"type" : "text"},{"type" : "json_object"}],
+                "default": {
+                "type" : "text",
+                },
+                "level": 0
+            }
+        }
+        outputConfig = {
+            "usage": [{
+                "prompt_tokens": "usage.prompt_tokens",
+                "completion_tokens": "usage.completion_tokens",
+                "total_tokens": "usage.total_tokens",
+                "total_cost": {
+                    "input_cost": 0.05,
+                    "output_cost": 0.08
+                }
+            }],
+            "message": "choices[0].message.content",
+            "tools": "choices[0].message.tool_calls",
+            "assistant": "choices[0].message",
+            "id": "id"
+        }
+        inputConfig = {
+            "system": {
+                "role": "system",
+                "content": "",
+                "contentKey": "content",
+                "type": "json"
+            },
+            "content_location": "prompt[0].content"
+        }
+        return {
+            "configuration": configuration,
+            "outputConfig": outputConfig,
+            "inputConfig": inputConfig
+        }
+    
+    @staticmethod
+    def qwen_2_5_32b():
+        configuration = {
+            "model": {
+                "field": "drop",
+                "default": "qwen-2.5-32b",
+                "level": 1
+            },
+            "tools": {
+                "field": "array",
+                "level": 0,
+                "default": [],
+                "typeOf": "array"
+            },
+            "tool_choice": {
+                "field": "dropdown",
+                "options" : ["auto", "none", "required"],
+                "default": "auto",
+                "level": 0,
+                "typeOf": "string"
+            },
+            "response_type": {
+                "field": "select",
+                "options" : [{"type" : "text"},{"type" : "json_object"}],
+                "default": {
+                "type" : "text",
+                },
+                "level": 0
+            }
+        }
+        outputConfig = {
+            "usage": [{
+                "prompt_tokens": "usage.prompt_tokens",
+                "completion_tokens": "usage.completion_tokens",
+                "total_tokens": "usage.total_tokens",
+                "total_cost": {
+                    "input_cost": 0.05,
+                    "output_cost": 0.08
+                }
+            }],
+            "message": "choices[0].message.content",
+            "tools": "choices[0].message.tool_calls",
+            "assistant": "choices[0].message",
+            "id": "id"
+        }
+        inputConfig = {
+            "system": {
+                "role": "system",
+                "content": "",
+                "contentKey": "content",
+                "type": "json"
+            },
+            "content_location": "prompt[0].content"
+        }
+        return {
+            "configuration": configuration,
+            "outputConfig": outputConfig,
+            "inputConfig": inputConfig
+        }
+    
+    @staticmethod
+    def deepseek_r1_distill_qwen_32b():
+        configuration = {
+            "model": {
+                "field": "drop",
+                "default": "deepseek-r1-distill-qwen-32b",
+                "level": 1
+            },
+            "max_tokens": {
+                "field": "slider",
+                "min": 1,
+                "max": 16384,
+                "step": 1,
+                "default": 256,
+                "level": 2
+            },
+            "tools": {
+                "field": "array",
+                "level": 0,
+                "default": [],
+                "typeOf": "array"
+            },
+            "tool_choice":{
+                "field": "dropdown",
+                "options" : ["auto", "none", "required"],
+                "default": "auto",
+                "level": 0,
+                "typeOf": "string"
+            },
+            "response_type": {
+                "field": "select",
+                "options" : [{"type" : "text"},{"type" : "json_object"}],
+                "default": {
+                "type" : "text",
+                },
+                "level": 0
+            }
+        }
+        outputConfig = {
+            "usage": [{
+                "prompt_tokens": "usage.prompt_tokens",
+                "completion_tokens": "usage.completion_tokens",
+                "total_tokens": "usage.total_tokens",
+                "total_cost": {
+                    "input_cost": 0.05,
+                    "output_cost": 0.08
+                }
+            }],
+            "message": "choices[0].message.content",
+            "tools": "choices[0].message.tool_calls",
+            "assistant": "choices[0].message",
+            "id": "id"
+        }
+        inputConfig = {
+            "system": {
+                "role": "system",
+                "content": "",
+                "contentKey": "content",
+                "type": "json"
+            },
+            "content_location": "prompt[0].content"
+        }
+        return {
+            "configuration": configuration,
+            "outputConfig": outputConfig,
+            "inputConfig": inputConfig
+        }
+    
+    @staticmethod
+    def deepseek_r1_distill_llama_70b_specdec():
+        configuration = {
+            "model": {
+                "field": "drop",
+                "default": "deepseek-r1-distill-llama-70b-specdec",
+                "level": 1
+            },
+            "max_tokens": {
+                "field": "slider",
+                "min": 1,
+                "max": 16384,
+                "step": 1,
+                "default": 256,
+                "level": 2
+            },
+            "tools": {
+                "field": "array",
+                "level": 0,
+                "default": [],
+                "typeOf": "array"
+            },
+            "tool_choice": {
+                "field": "dropdown",
+                "options" : ["auto", "none", "required"],
+                "default": "auto",
+                "level": 0,
+                "typeOf": "string"
+            },
+            "response_type": {
+                "field": "select",
+                "options" : [{"type" : "text"},{"type" : "json_object"}],
+                "default": {
+                "type" : "text",
+                },
+                "level": 0
+            }
+        }
+        outputConfig = {
+            "usage": [{
+                "prompt_tokens": "usage.prompt_tokens",
+                "completion_tokens": "usage.completion_tokens",
+                "total_tokens": "usage.total_tokens",
+                "total_cost": {
+                    "input_cost": 0.05,
+                    "output_cost": 0.08
+                }
+            }],
+            "message": "choices[0].message.content",
+            "tools": "choices[0].message.tool_calls",
+            "assistant": "choices[0].message",
+            "id": "id"
+        }
+        inputConfig = {
+            "system": {
+                "role": "system",
+                "content": "",
+                "contentKey": "content",
+                "type": "json"
+            },
+            "content_location": "prompt[0].content"
+        }
+        return {
+            "configuration": configuration,
+            "outputConfig": outputConfig,
+            "inputConfig": inputConfig
+        }
+    
+    @staticmethod
+    def deepseek_r1_distill_llama_70b():
+        configuration = {
+            "model": {
+                "field": "drop",
+                "default": "deepseek-r1-distill-llama-70b",
+                "level": 1
+            },
+            "tools": {
+                "field": "array",
+                "level": 0,
+                "default": [],
+                "typeOf": "array"
+            },
+            "tool_choice": {
+                "field": "dropdown",
+                "options" : ["auto", "none", "required"],
+                "default": "auto",
+                "level": 0,
+                "typeOf": "string"
+            },
+            "response_type": {
+                "field": "select",
+                "options" : [{"type" : "text"},{"type" : "json_object"}],
+                "default": {
+                "type" : "text",
+                },
+                "level": 0
+            }
+        }
+        outputConfig = {
+            "usage": [{
+                "prompt_tokens": "usage.prompt_tokens",
+                "completion_tokens": "usage.completion_tokens",
+                "total_tokens": "usage.total_tokens",
+                "total_cost": {
+                    "input_cost": 0.05,
+                    "output_cost": 0.08
                 }
             }],
             "message": "choices[0].message.content",
@@ -4300,7 +4863,8 @@ class ModelsConfig:
                 "typeOf": "array"
             },
             "tool_choice": {
-                "field": "text",
+                "field": "dropdown",
+                "options" : ["auto", "none", "required"],
                 "default": "auto",
                 "level": 0,
                 "typeOf": "string"
@@ -4422,7 +4986,8 @@ class ModelsConfig:
                 "typeOf": "array"
             },
             "tool_choice": {
-                "field": "text",
+                "field": "dropdown",
+                "options" : ["auto", "none", "required"],
                 "default": "auto",
                 "level": 0,
                 "typeOf": "string"
@@ -4544,7 +5109,8 @@ class ModelsConfig:
                 "typeOf": "array"
             },
             "tool_choice": {
-                "field": "text",
+                "field": "dropdown",
+                "options" : ["auto", "none", "required"],
                 "default": "auto",
                 "level": 0,
                 "typeOf": "string"
@@ -4666,7 +5232,8 @@ class ModelsConfig:
                 "typeOf": "array"
             },
             "tool_choice": {
-                "field": "text",
+                "field": "dropdown",
+                "options" : ["auto", "none", "required"],
                 "default": "auto",
                 "level": 0,
                 "typeOf": "string"
@@ -4786,6 +5353,13 @@ class ModelsConfig:
                 "options": ['standard','hd'],
                 "default": 'standard',
                 "level": 0
+            },
+            "specification" : {
+                "input_cost":  0.01,
+                "output_cost":  0.03,
+                "description" : "DALL-E 2 is an AI model by OpenAI that generates high-quality images from text descriptions. It improves upon the original DALL-E with higher resolution and more accurate image generation. The model uses a neural network and transformer architecture. It is designed for creative applications, producing detailed visuals based on written prompts.",
+                "knowledge_cutoff" : "",
+                "usecase" : [""]
             },
             # "response_format": {
             #     "field": "select",

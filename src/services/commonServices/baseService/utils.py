@@ -9,6 +9,16 @@ from src.services.utils.apiservice import fetch
 from fastapi import Request
 import datetime
 from src.controllers.rag_controller import get_text_from_vectorsQuery
+import traceback
+
+def clean_json(data):
+    """Recursively remove keys with empty string, empty list, or empty dictionary."""
+    if isinstance(data, dict):
+        return {k: clean_json(v) for k, v in data.items() if v not in ['', []]}
+    elif isinstance(data, list):
+        return [clean_json(item) for item in data]
+    else:
+        return data
 
 def validate_tool_call(modelOutputConfig, service, response):
     match service:
@@ -55,6 +65,8 @@ def transform_required_params_to_required(properties, variables={}, variables_pa
     if not isinstance(properties, dict):
         return properties
     transformed_properties = properties.copy()
+    if properties.get('type') == 'array' or properties.get('type') == 'object':
+        return {'items':properties}
     for key, value in properties.items():
         if value.get('required_params') is not None:
             transformed_properties[key]['required'] = value.pop('required_params')
@@ -80,6 +92,7 @@ def transform_required_params_to_required(properties, variables={}, variables_pa
                 transformed_properties[key]['items'] = nextedObject
             elif item_type == 'array':
                 transformed_properties[key]['items'] = transform_required_params_to_required( items.get('items', {}), variables, variables_path, function_name, key, value)
+                transformed_properties[key]['items']['type'] = 'array'
     return transformed_properties
 
 def tool_call_formatter(configuration: dict, service: str, variables: dict, variables_path: dict) -> dict:
@@ -93,8 +106,8 @@ def tool_call_formatter(configuration: dict, service: str, variables: dict, vari
                     'description': transformed_tool['description'],
                     'parameters': {
                         'type': 'object',
-                        'properties': transform_required_params_to_required(transformed_tool.get('properties', {}), variables=variables, variables_path=variables_path, function_name=transformed_tool['name'], parentValue={'required': transformed_tool.get('required', [])}),
-                        'required': transformed_tool.get('required', []),
+                        'properties': clean_json(transform_required_params_to_required(transformed_tool.get('properties', {}), variables=variables, variables_path=variables_path, function_name=transformed_tool['name'], parentValue={'required': transformed_tool.get('required', [])})),
+                        'required': transformed_tool.get('required'),
                         # "additionalProperties": False,
                     }
                 }
@@ -108,8 +121,8 @@ def tool_call_formatter(configuration: dict, service: str, variables: dict, vari
                 'description': transformed_tool['description'],
                 'input_schema': {
                     "type": "object",
-                    'properties': transform_required_params_to_required(transformed_tool.get('properties', {}), variables=variables, variables_path=variables_path, function_name=transformed_tool['name'], parentValue={'required': transformed_tool.get('required', [])}),
-                    'required': transformed_tool.get('required', [])
+                    'properties': clean_json(transform_required_params_to_required(transformed_tool.get('properties', {}), variables=variables, variables_path=variables_path, function_name=transformed_tool['name'], parentValue={'required': transformed_tool.get('required', [])})),
+                    'required': transformed_tool.get('required')
                 }
             } for transformed_tool in configuration.get('tools', [])
         ]
@@ -122,8 +135,8 @@ def tool_call_formatter(configuration: dict, service: str, variables: dict, vari
                 "description": transformed_tool['description'],
                 "parameters": {
                     "type": "object",
-                    "properties": transform_required_params_to_required(transformed_tool.get('properties', {}), variables=variables, variables_path=variables_path, function_name=transformed_tool['name'], parentValue={'required': transformed_tool.get('required', [])}),
-                    "required": transformed_tool.get('required', []),
+                    "properties": clean_json(transform_required_params_to_required(transformed_tool.get('properties', {}), variables=variables, variables_path=variables_path, function_name=transformed_tool['name'], parentValue={'required': transformed_tool.get('required', [])})),
+                    "required": transformed_tool.get('required'),
                 },
                     },
             } for transformed_tool in configuration.get('tools', [])
@@ -236,12 +249,14 @@ async def process_data_and_run_tools(codes_mapping, tool_id_and_name_mapping, or
 
     except Exception as error:
         print(f"Error in process_data_and_run_tools: {error}")
+        traceback.print_exc()
         raise error
   
 
 
 def make_code_mapping_by_service(responses, service):
     codes_mapping = {}
+    function_list = []
     match service:
         case 'openai' | 'groq':
 
@@ -260,6 +275,7 @@ def make_code_mapping_by_service(responses, service):
                     'args': args,
                     "error": error
                 }
+                function_list.append(name)
         case 'anthropic':
             for tool_call in responses['content'][1:]:  # Skip the first item
                 name = tool_call['name']
@@ -269,9 +285,10 @@ def make_code_mapping_by_service(responses, service):
                     'args': args,
                     "error": False
                 }
+                function_list.append(name)
         case _:
-            return False, {}
-    return codes_mapping
+            return {}, []
+    return codes_mapping, function_list
     
 def convert_datetime(obj):
     """Recursively convert datetime objects in a dictionary or list to ISO format strings."""

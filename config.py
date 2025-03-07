@@ -27,6 +27,7 @@ class Config:
     Access_key = os.getenv('Access_key')
     ORG_ID = os.getenv('ORG_ID')
     PROJECT_ID = os.getenv('PROJECT_ID')
+    ALERTING_PROJECT_ID = os.getenv('ALERTING_PROJECT_ID')
     RTLAYER_AUTH = os.getenv('RTLAYER_AUTH')
     PORT = os.getenv('PORT', 8080)
     CHATBOTSECRETKEY = os.getenv('CHATBOTSECRETKEY')
@@ -47,3 +48,4 @@ class Config:
     ADMIN_API_KEY = os.getenv('ADMIN_API_KEY')
     OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
     PINECONE_APIKEY = os.getenv('PINECONE_API_KEY')
+    PINECONE_INDEX = os.getenv('PINECONE_INDEX')

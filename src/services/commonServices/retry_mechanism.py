@@ -12,7 +12,9 @@ async def execute_with_retry(
     bridge_id=None,
     message_id=None,
     org_id=None,
-    alert_on_retry=False
+    alert_on_retry=False,
+    name = "",
+    org_name= ""
 ):
     try:
         # Start timer
@@ -24,9 +26,8 @@ async def execute_with_retry(
         first_result = await api_call(first_config)
 
         if first_result['success']:
-            if not await check_space_issue(first_result.get('response')):
-                execution_time_logs[len(execution_time_logs) + 1] = timer.stop("API chat completion")
-                return first_result
+            execution_time_logs[len(execution_time_logs) + 1] = timer.stop("API chat completion")
+            return first_result
         else:
             print("First API call failed with error:", first_result['error'])
             traceback.print_exc()
@@ -37,6 +38,8 @@ async def execute_with_retry(
             # Send alert if required
             if alert_on_retry:
                 await send_alert(data={
+                    "org_name" : org_name,
+                    "bridge_name" : name,
                     "configuration": configuration,
                     "message_id": message_id,
                     "bridge_id": bridge_id,

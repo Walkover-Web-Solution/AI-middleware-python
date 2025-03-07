@@ -75,14 +75,15 @@ def parse_request_body(request_body):
         "batch" : body.get('batch') or [],
         "batch_webhook" : body.get('webhook'),
         "doc_ids":body.get('ddc_ids'),
-        "rag_data": body.get('rag_data')
-
+        "rag_data": body.get('rag_data'),
+        "name" : body.get('name'),
+        "org_name" : body.get('org_name')
     }
 
 
 
 def add_default_template(prompt):
-    prompt += ' \n Always use current_date_and_time : {{current_time_and_date}}'
+    prompt += ' \n Additional Information if requied : For current date and time always refer: {{current_time_and_date}}'
     return prompt
 
 def initialize_timer(state: Dict[str, Any]) -> Timer:
@@ -239,7 +240,9 @@ def build_service_params(parsed_data, custom_config, model_output_config, thread
         "apikey_object_id" : parsed_data['apikey_object_id'],
         "images" : parsed_data['images'],
         "tool_call_count": parsed_data['tool_call_count'],
-        "rag_data": parsed_data['rag_data']
+        "rag_data": parsed_data['rag_data'],
+        "name" : parsed_data['name'],
+        "org_name" : parsed_data['org_name']
 
     }
 async def total_token_calculation(parsed_data):
@@ -301,21 +304,13 @@ def build_service_params_for_batch(parsed_data, custom_config, model_output_conf
 
 async def updateVariablesWithTimeZone(variables, org_id):
     async def getTimezoneOfOrg():
-        timezone = "+5:30"
-        cached_data = await find_in_cache(org_id)
-        if cached_data:
-            # Deserialize the cached JSON data
-            cached_result = json.loads(cached_data)
-            timezone =  cached_result.get('timezone')
-        else:
-            response, _ = await fetch(f"https://routes.msg91.com/api/{Config.PUBLIC_REFERENCEID}/getCompanies?id={org_id}", "GET", {"Authkey": Config.ADMIN_API_KEY}, None, None)
-            timezone =  response.get('data', {}).get('data', [{}])[0].get('timezone')
-            await store_in_cache(org_id, response.get('data', {}).get('data', [{}])[0])
+        data = await Helper.get_timezone_and_org_name(org_id)
+        timezone = data.get('timezone') or "+5:30"
         hour, minutes = timezone.split(':')
-        return int(hour), int(minutes)
+        return int(hour), int(minutes), data.get('name') or ""
     if 'current_time_and_date' not in variables:
-        hour, minutes = await getTimezoneOfOrg()
+        hour, minutes, org_name = await getTimezoneOfOrg()
         current_time = datetime.now(timezone.utc)
         current_time = current_time + timedelta(hours=hour, minutes=minutes)
-        variables['current_time_and_date'] = current_time.strftime("%Y-%m-%d")  + '_' + current_time.strftime("%H:%M:%S")
-    return variables
+        variables['current_time_and_date'] = current_time.strftime("%Y-%m-%d") + ' ' + current_time.strftime("%H:%M:%S") + ' ' + current_time.strftime("%A")
+    return variables, org_name

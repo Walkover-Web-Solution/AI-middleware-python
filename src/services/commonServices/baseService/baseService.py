@@ -3,7 +3,7 @@ import pydash as _
 import json
 import traceback
 from config import Config
-from ....db_services import metrics_service, ConfigurationServices as ConfigurationService
+from ....db_services import metrics_service
 from .utils import validate_tool_call, tool_call_formatter, sendResponse, make_code_mapping_by_service, process_data_and_run_tools
 from src.configs.serviceKeys import ServiceKeys
 from src.configs.modelConfiguration import ModelsConfig
@@ -54,13 +54,17 @@ class BaseService:
         self.tool_id_and_name_mapping = params.get('tool_id_and_name_mapping')
         self.batch = params.get('batch')
         self.webhook = params.get('webhook')
+        self.name = params.get('name')
+        self.org_name = params.get('org_name')
 
 
     def aiconfig(self):
         return self.customConfig
 
     async def run_tool(self, responses, service):
-        codes_mapping = make_code_mapping_by_service(responses, service)
+        codes_mapping, function_list = make_code_mapping_by_service(responses, service)
+        if not self.playground:
+            asyncio.create_task(sendResponse(self.response_format, data = {'function_call': True, 'Name': function_list}, success = True))
         codes_mapping = await self.replace_variables_in_args(codes_mapping)
         return await process_data_and_run_tools(codes_mapping, self.tool_id_and_name_mapping, self.org_id)
 
@@ -95,21 +99,22 @@ class BaseService:
         modelObj = modelfunc()
         modelOutputConfig = modelObj['outputConfig']
         model_response = response.get('modelResponse', {})
-
+        if configuration.get('tool_choice') is not None and configuration['tool_choice'] not in ['auto', 'none', 'required']:
+                configuration['tool_choice'] = 'auto'
         if validate_tool_call(modelOutputConfig, service, model_response) and l <= self.tool_call_count:
             l += 1
+            
             # Continue with the rest of the logic here
         else:
             return response
         
         if not self.playground:
-            await sendResponse(self.response_format, data = {'function_call': True}, success = True)
             self.token_calculator.calculate_usage(response.get('modelResponse'))
         func_response_data,mapping_response_data, tools_call_data = await self.run_tool(model_response, service)
         self.func_tool_call_data.append(tools_call_data)
         configuration, tools = self.update_configration(model_response, func_response_data, configuration, mapping_response_data, service, tools)
         if not self.playground:
-            await sendResponse(self.response_format, data = {'function_call': True, 'success': True, 'message': 'Going to GPT'}, success=True)
+            asyncio.create_task(sendResponse(self.response_format, data = {'function_call': True, 'success': True, 'message': 'Going to GPT'}, success=True))
         ai_response = await self.chats(configuration, self.apikey, service)
         ai_response['tools'] = tools
         return await self.function_call(configuration, service, ai_response, l, tools)
@@ -230,9 +235,11 @@ class BaseService:
                 if service == service_name['anthropic']:
                     new_config['tool_choice'] =  {"type": "auto"}
                 elif service == service_name['openai'] or service_name['groq']:
-                    new_config['tool_choice'] = "auto"
-
-                
+                    if configuration.get('tool_choice'):
+                        if configuration['tool_choice'] not in ['auto', 'none', 'required', 'default']:
+                            new_config['tool_choice'] = {"type": "function", "function": {"name": configuration['tool_choice']}}
+                        else:
+                            new_config['tool_choice'] = configuration['tool_choice']
                 new_config['tools'] = tool_call_formatter(configuration, service, self.variables, self.variables_path)
             elif 'tool_choice' in configuration:
                 del new_config['tool_choice']  
@@ -248,11 +255,11 @@ class BaseService:
             response = {}
             loop = asyncio.get_event_loop()
             if service == service_name['openai']:
-                response = await runModel(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer, self.message_id, self.org_id)
+                response = await runModel(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer, self.message_id, self.org_id, self.name, self.org_name)
             elif service == service_name['anthropic']:
-                response = await loop.run_in_executor(executor, lambda: asyncio.run(anthropic_runmodel(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer)))
+                response = await loop.run_in_executor(executor, lambda: asyncio.run(anthropic_runmodel(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer, self.name, self.org_name)))
             elif service == service_name['groq']:
-                response = await groq_runmodel(configuration, apikey, self.execution_time_logs, self.bridge_id,  self.timer)
+                response = await groq_runmodel(configuration, apikey, self.execution_time_logs, self.bridge_id,  self.timer, self.name, self.org_name)
             if not response['success']:
                 raise ValueError(response['error'], self.func_tool_call_data)
             return {

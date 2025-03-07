@@ -23,6 +23,22 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
         db_configuration.update(configuration)
     configuration = db_configuration
     
+    tool_choice_ids = configuration.get('tool_choice', [])
+    toolchoice = None
+    for key, api_data in result.get('bridges', {}).get('apiCalls', {}).items():
+        if api_data['_id'] in tool_choice_ids:
+            toolchoice = makeFunctionName(api_data['endpoint_name'] or api_data['function_name'])
+            break
+            
+    found_choice = None
+    for choice in ['auto', 'none', 'required', 'default']:
+        if choice in tool_choice_ids:
+            found_choice = choice
+            break
+            
+    configuration['tool_choice'] = found_choice if found_choice is not None else toolchoice
+    bridge = result.get('bridges')
+    variables_path_bridge = bridge.get('variables_path', {})
     # make tools data
     tools = []
     tool_id_and_name_mapping = {}
@@ -34,13 +50,8 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
             "headers":{},
             "name": api_data.get('function_name')
         }
-        if api_data.get('status') == 0 and not name_of_function:
-            continue
-        format = {
-            "type": "function",
-            "name": name_of_function,
-            "description": api_data.get('description'),
-            "properties": (
+        variablesFillByGtwy = list(variables_path_bridge.get(api_data.get("function_name"), {}).keys())
+        properties = (
                 api_data.get("fields", {}) if api_data.get("version") == 'v2' 
                 else {item["variable_name"]: {
                     "description": item.get("description", ""), 
@@ -48,10 +59,20 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
                     "type": "string",
                     "parameter": {}
                 } for item in api_data.get('fields',{})}
-            ),
-            "required": (
-               api_data.get("required_params")
             )
+        for key in variablesFillByGtwy:
+            properties.pop(key, None)
+        required = api_data.get("required_params")
+        required = [key for key in required if key not in variablesFillByGtwy]
+
+        if api_data.get('status') == 0 and not name_of_function:
+            continue
+        format = {
+            "type": "function",
+            "name": name_of_function,
+            "description": api_data.get('description'),
+            "properties": properties,
+            "required": required
         }
         tools.append(format)
 
@@ -81,10 +102,8 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
         raise Exception('Could not find api key')
     apikey = apikey if apikey else Helper.decrypt(db_api_key)
     RTLayer = True if configuration and 'RTLayer' in configuration else False 
-    bridge = result.get('bridges')
     template_content = await ConfigurationService.get_template_by_id(template_id) if template_id else None
     pre_tools = bridge.get('pre_tools', [])
-    variables_path_bridge = bridge.get('variables_path', None)
     gpt_memory_context = bridge.get('gpt_memory_context')
     if len(pre_tools)>0:
         api_data = await apiCallModel.find_one({"_id": ObjectId( pre_tools[0]), "org_id": org_id})
@@ -99,26 +118,28 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
                 args[param] = variables[param]
     rag_data = bridge.get('rag_data')
     if rag_data is not None and rag_data != []:
-        tools.append({'type': 'function', 'name': 'GetLatestDataAsPerDocumentId', 'description': "When user want to take any data from the knowledge", 'properties': {
+        tools.append({'type': 'function', 'name': 'get_knowledge_base_data', 'description': "When user want to take any data from the knowledge, Call this function to get the corresponding document using document id.", 'properties': {
                 "Document_id": {
-                "description": "document id as per your requirement",
-                "type": "string",
-                "enum": [],
-                "required": True,
-                "parameter": {}
+                    "description": "document id as per your requirement",
+                    "type": "string",
+                    "enum": [],
+                    "required_params": [],
+                    "parameter": {}
                 },
                 "query": {
-                "description": "query",
-                "type": "string",
-                "enum": [],
-                "required": True,
-                "parameter": {}
+                    "description": "query",
+                    "type": "string",
+                    "enum": [],
+                    "required_params": [],
+                    "parameter": {}
                 }
             }, 'required': ['Document_id', 'query']})
-        tool_id_and_name_mapping['GetLatestDataAsPerDocumentId'] = {
+
+        tool_id_and_name_mapping['get_knowledge_base_data'] = {
                 "type": "RAG"
             }
-
+        configuration['prompt'] = Helper.add_doc_description_to_prompt(configuration['prompt'], rag_data)
+    variables, org_name = await updateVariablesWithTimeZone(variables,org_id)
     return {
         'success': True,
         'configuration': configuration,
@@ -135,7 +156,9 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
         "version_id" : version_id or result.get('bridges', {}).get('published_version_id'),
         "gpt_memory_context" :  gpt_memory_context,
         "tool_call_count": result.get("bridges", {}).get("tool_call_count", 3),
-        "variables": await updateVariablesWithTimeZone(variables,org_id),
+        "variables": variables,
         "rag_data":rag_data,
-        "actions": result.get("bridges", {}).get("actions", [])
+        "actions": result.get("bridges", {}).get("actions", []),
+        "name" : result.get("bridges", {}).get("name") or '',
+        "org_name" : org_name
     }

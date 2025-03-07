@@ -18,6 +18,7 @@ def handle_exceptions(func):
             exc_type, exc_obj, exc_tb = sys.exc_info()
             path_params = request_body['path_params']
             state = request_body['state']
+            is_playground = request_body.get('state', {}).get('is_playground')
             tb = traceback.extract_tb(exc_tb)
             last_frame = tb[-1] if tb else None
             error_location = f"{last_frame.filename.split('/')[-1]}:{last_frame.lineno}" if last_frame else "unknown location"
@@ -38,7 +39,8 @@ def handle_exceptions(func):
                 }
             bridge_id = path_params.get('bridge_id') or body.get("bridge_id")
             org_id = state['profile']['org']['id']
-            await send_error_to_webhook(bridge_id, org_id,error_json, error_type = 'Error')
+            if is_playground == False:
+                await send_error_to_webhook(bridge_id, org_id,error_json, error_type = 'Error')
             return JSONResponse(
                 status_code=400,
                 content=json.loads(json.dumps({

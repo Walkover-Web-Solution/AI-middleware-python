@@ -3,7 +3,7 @@ import traceback
 from ..retry_mechanism import execute_with_retry
 
 
-async def runModel(configuration, apiKey, execution_time_logs, bridge_id, timer, message_id=None, org_id=None):
+async def runModel(configuration, apiKey, execution_time_logs, bridge_id, timer, message_id=None, org_id=None, name = "", org_name= ""):
     try:
         openAI = AsyncOpenAI(api_key=apiKey)
 
@@ -40,7 +40,9 @@ async def runModel(configuration, apiKey, execution_time_logs, bridge_id, timer,
             bridge_id=bridge_id,
             message_id=message_id,
             org_id=org_id,
-            alert_on_retry=True
+            alert_on_retry=True,
+            name = name,
+            org_name = org_name
         )
 
     except Exception as error:

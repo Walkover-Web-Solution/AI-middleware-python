@@ -3,7 +3,7 @@ import traceback
 from ..retry_mechanism import execute_with_retry
 
 
-async def anthropic_runmodel(configuration, apikey, execution_time_logs, bridge_id, timer):
+async def anthropic_runmodel(configuration, apikey, execution_time_logs, bridge_id, timer, name = "", org_name = ""):
     try:
         # Initialize async client
         anthropic_client = AsyncAnthropic(api_key=apikey)
@@ -39,7 +39,9 @@ async def anthropic_runmodel(configuration, apikey, execution_time_logs, bridge_
             bridge_id=bridge_id,
             message_id=None,  # Adjust if needed
             org_id=None,      # Adjust if needed
-            alert_on_retry=False  # Adjust if needed
+            alert_on_retry=False,  # Adjust if needed
+            name=name,
+            org_name=org_name
         )
 
     except Exception as e:

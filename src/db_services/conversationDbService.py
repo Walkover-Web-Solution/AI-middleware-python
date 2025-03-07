@@ -47,6 +47,7 @@ async def find(org_id, thread_id, sub_thread_id, bridge_id):
                 Conversation.id,
                 Conversation.function,
                 Conversation.is_reset,
+                Conversation.tools_call_data,
                 RawData.error,
                 func.coalesce(Conversation.urls, []).label('urls')  # Updated to handle 'urls' as an array
             )
@@ -58,11 +59,11 @@ async def find(org_id, thread_id, sub_thread_id, bridge_id):
                     Conversation.bridge_id == bridge_id,
                     Conversation.sub_thread_id == sub_thread_id,
                     or_(RawData.error == '', RawData.error.is_(None)),
-                    Conversation.message_by.in_(["user", "assistant"])
+                    Conversation.message_by.in_(["user", "tools_call", "assistant"])
                 )
             )
             .order_by(Conversation.id.desc())
-            .limit(6)
+            .limit(9)
             .all()
         )
         conversations.reverse()
