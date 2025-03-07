@@ -274,12 +274,15 @@ class Helper:
         not_present = []
         for bridge in bridges:
             if bridge['_id'] in token_map:
+                bridge['total_token'] = token_map[bridge['_id']]
                 present.append(bridge)
+
             else:
+                bridge['total_token'] = 0
                 not_present.append(bridge)
         
         # Sort the present bridges by descending token count
-        present.sort(key=lambda x: token_map[x['_id']], reverse=True)
+        # present.sort(key=lambda x: token_map[x['_id']], reverse=True)
         
         # Combine the lists, keeping not_present bridges in their original order at the end
         return present + not_present

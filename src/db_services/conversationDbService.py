@@ -1,9 +1,9 @@
+import json
 from models.index import combined_models as models
 import sqlalchemy as sa
 from sqlalchemy import func, and_ , insert, delete, or_ , update, select
 from sqlalchemy.exc import SQLAlchemyError
-import asyncio
-import traceback
+from ..services.cache_service import find_in_cache, store_in_cache
 from datetime import datetime
 from models.postgres.pg_models import Conversation, RawData, system_prompt_versionings, user_bridge_config_history
 from models.Timescale.timescale_models import Metrics_model
@@ -170,18 +170,27 @@ async def timescale_metrics(metrics_data) :
 
 
 async def get_timescale_data(org_id):
-    session = timescale['session']()
+    cache_key = f"metrix_{org_id}"
+    # Attempt to retrieve data from Redis cache
     try:
-        query = text(f"""
-            SELECT bridge_id,
-                   SUM(total_token_count) as total_tokens 
-            FROM fifteen_minute_data 
-            WHERE org_id = :org_id 
-            GROUP BY bridge_id
-        """)
-        result = session.execute(query, {'org_id': org_id})
-        data = result.fetchall()
-        return data
+        cached_data = await find_in_cache(cache_key)
+        if cached_data:
+            # Deserialize the cached JSON data
+            cached_result = json.loads(cached_data)
+            return cached_result 
+        else:
+            session = timescale['session']()
+            query = text(f"""
+                SELECT bridge_id,
+                        SUM(total_token_count) as total_tokens 
+                FROM fifteen_minute_data 
+                WHERE org_id = :org_id 
+                GROUP BY bridge_id
+            """)
+            result = session.execute(query, {'org_id': org_id})
+            data = result.fetchall()
+            await store_in_cache(cache_key, data, 86400)
+            return data
     except Exception as e:
         session.rollback()
         raise e
