@@ -5513,6 +5513,16 @@ class ModelsConfig:
                 "options": ['vivid', 'natural'],
                 "default": 'vivid',
                 "level": 0
+            },
+            "specification" : {
+                "input_cost": 0.01,
+                "output_cost": 0.03,
+                "description" : "DALL·E 3 is OpenAI's advanced image-generation model capable of creating highly detailed and realistic images from text prompts. It understands complex descriptions, generating accurate compositions with improved coherence, lighting, and textures. The model is designed to follow user instructions closely, making it ideal for creative design, concept art, and visual storytelling. It excels in producing high-quality images with fewer artifacts compared to its predecessors.",
+                "knowledge_cutoff" : "",
+                "usecase": [
+                "The dall_e_3 model can be used for creating high-quality, customized images from textual descriptions, making it ideal for digital artists, graphic designers, and marketing teams.",
+                "It can also be applied in augmented reality and virtual reality applications, generating realistic and contextually relevant visual assets for immersive experiences."
+             ]
             }
         }
         outputConfig = {
