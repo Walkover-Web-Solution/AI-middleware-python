@@ -2210,7 +2210,10 @@ class ModelsConfig:
                 "output_cost": 15.00,
                 "description" : [""],
                 "knowledge_cutoff" : "",
-                "usecase" : [""]
+                "usecase": [
+                "The chatgpt_4o_latest model can be used for developing advanced conversational agents that provide personalized customer service and support across multiple industries.",
+                "It can also be applied in content creation tools, assisting writers by generating high-quality, context-aware content for blogs, articles, and marketing materials."
+                ]
             }
         }
         outputConfig = {
@@ -4318,7 +4321,10 @@ class ModelsConfig:
                 "output_cost":  0.79,
                 "description" : "LLaMA 3.3 70B Versatile is a version of Meta's LLaMA (Large Language Model Meta AI) model, with 70 billion parameters. It is designed to be highly versatile, offering improvements in natural language processing tasks such as text generation, summarization, translation, and question answering. This model excels at understanding complex queries and producing coherent, contextually relevant responses. With its large scale, LLaMA 3.3 70B Versatile provides high-quality language understanding and generation across a wide range of applications.",
                 "knowledge_cutoff" : "December 2023",
-                "usecase" : [""]
+                 "usecase": [
+                 "The llama_3_3_70b_versatile model can be used for large-scale natural language understanding tasks, such as document classification, sentiment analysis, and summarization in enterprise settings.",
+                 "It can also be applied in advanced research applications, helping scientists and engineers generate insights from complex datasets and scientific papers."
+                 ]
             }
 
         }
@@ -4449,7 +4455,10 @@ class ModelsConfig:
                 "output_cost": 0.08,
                 "description" : "LLaMA 3.1 8B Instant is a version of Meta’s LLaMA (Large Language Model Meta AI) with 8 billion parameters. It is designed to be highly efficient and capable of performing a variety of natural language processing tasks like text generation, summarization, and question answering. The Instant designation likely implies an optimized version for faster, low-latency inference, making it suitable for real-time applications. Despite being smaller than other models in the LLaMA series, LLaMA 3.1 8B Instant balances performance with speed, making it versatile for a wide range of use cases.",
                 "knowledge_cutoff" : "",
-                "usecase" : [""]
+                "usecase": [
+                "The llama_3_1_8b_instant model can be used in real-time chat applications, providing quick and accurate responses for customer support, virtual assistants, or interactive learning.",
+                "It can also be applied in dynamic content generation tools, rapidly producing text for blogs, social media, and e-commerce platforms."
+               ]
             }
 
         }
@@ -4698,7 +4707,10 @@ class ModelsConfig:
                 "output_cost": 08.00,
                 "description" : "Qwen 2.5 32B is a version of the Qwen (Quantum-enhanced Neural Engine) model with 32 billion parameters. The 2.5 likely indicates an updated or intermediate iteration, offering improvements over previous versions. With 32 billion parameters, it is a large model capable of handling a variety of complex natural language tasks such as text generation, summarization, and question answering",
                 "knowledge_cutoff" : "",
-                "usecase" : [""]
+                "usecase": [
+                "The qwen_2_5_32b model can be used in large-scale language processing tasks, such as translating documents, extracting information, and answering complex queries in research and enterprise environments.",
+                "It can also be applied in AI-driven writing assistants, helping to generate high-quality, contextually relevant content for marketing campaigns, reports, and creative projects."
+               ]
             }
 
         }
@@ -4771,9 +4783,12 @@ class ModelsConfig:
             "specification" : {
                 "input_cost": 0.05,
                 "output_cost": 0.08,
-                "description" : "",
+                "description" : "DeepSeek R1 Distill Qwen 32B is a distilled version of the Qwen 32B model, optimized for efficiency and performance. It retains strong reasoning, comprehension, and generation capabilities while being more lightweight. Designed for AI applications requiring high-quality responses with reduced computational cost. Ideal for chatbots, content generation, and various NLP tasks.",
                 "knowledge_cutoff" : "",
-                "usecase" : [""]
+                 "usecase": [
+                 "The deepseek_r1_distill_qwen_32b model can be used for fast and efficient document retrieval systems, enabling quick access to relevant information from large datasets in research and legal industries.",
+                 "It can also be applied in AI-powered chatbots for customer service, offering precise and contextually aware answers to user inquiries while reducing response time."
+                ]
             }
 
 
@@ -4908,7 +4923,10 @@ class ModelsConfig:
                 "output_cost": 0.08,
                 "description" : "DeepSeek R1 Distill LLaMA 70B is a compressed version of the LLaMA model with 70 billion parameters. It has been distilled to reduce size while maintaining much of its original performance. The model is optimized for efficient and fast processing of complex language tasks. It provides high-quality natural language understanding and generation with reduced computational requirements.",
                 "knowledge_cutoff" : "",
-                "usecase" : [""]
+                 "usecase": [
+                 "The deepseek_r1_distill_llama_70b model can be used for advanced information retrieval systems, providing fast, accurate, and context-aware searches through large data repositories in industries like finance or healthcare.",
+                 "It can also be applied in personalized recommendation systems, helping businesses deliver tailored content or product suggestions based on user preferences and behaviors."
+                ]
             }
 
         }
@@ -5031,7 +5049,10 @@ class ModelsConfig:
                 "output_cost": 0.08,
                 "description" : "LLaMA 3 8B 8192 is a version of Meta’s LLaMA (Large Language Model Meta AI) with 8 billion parameters. The 3 suggests it is part of the third iteration of the LLaMA model series. The 8B indicates that the model has 8 billion parameters, which allows it to handle a variety of natural language processing tasks effectively. The 8192 refers to the model's context window or token limit, which represents the maximum number of tokens (words or pieces of words) the model can process in a single input",
                 "knowledge_cutoff" : "",
-                "usecase" : [""]
+                "usecase": [
+                "The llama3_8b_8192 model can be used for high-performance language generation tasks, such as creating long-form articles, reports, or creative content with detailed context and coherence.",
+                "It can also be applied in real-time natural language understanding for virtual assistants, enabling smooth, conversational interactions with users across a variety of platforms."
+                ]
             }
 
         }
@@ -5162,7 +5183,10 @@ class ModelsConfig:
                 "output_cost": 0.24,
                 "description" : "Mixtral 8x7B 32768 is a version of a language model with a unique architecture. The 8x7B suggests that the model consists of 8 components, each with 7 billion parameters, totaling 56 billion parameters. The 32768 refers to the model's context window or token limit, which is 32,768 tokens — an exceptionally large context window that allows the model to process long text inputs effectively",
                 "knowledge_cutoff" : "",
-                "usecase" : [""]
+                "usecase": [
+                "The mixtral_8x7b_32768 model can be used for large-scale language understanding tasks, such as processing complex legal, medical, or scientific documents to extract key insights and summarize information.",
+                "It can also be applied in real-time AI-powered translation systems, providing high-quality translations with the ability to handle extensive vocabulary and varied contexts across multiple languages."
+  ]
             }
 
         }
@@ -5293,7 +5317,10 @@ class ModelsConfig:
                 "output_cost":  0.20,
                 "description" : "Gemma2 9B IT refers to a language model named Gemma2 with 9 billion parameters. The IT likely indicates that this version is specialized or fine-tuned for tasks related to Information Technology (IT), such as technical support, coding, system administration, and other IT-related domains.",
                 "knowledge_cutoff" : "",
-                "usecase" : [""]
+                "usecase": [
+               "The gemma2_9b_it model can be used in Italian language processing tasks, such as translation, sentiment analysis, and content generation, making it ideal for businesses targeting Italian-speaking audiences.",
+               "It can also be applied in conversational AI for Italian language chatbots, enabling more natural, context-aware interactions in customer support or virtual assistant applications."
+             ]
             }
 
         }
@@ -5604,6 +5631,16 @@ class ModelsConfig:
             # },
              "type" : {
                 "default" : ["embedding"]
+            },
+            "specification" : {
+                "input_cost": null,
+                "output_cost": null,
+                "description" : "Text-Embedding-3-Large is a high-performance embedding model from OpenAI, designed for converting text into dense vector representations. It excels in tasks like semantic search, clustering, and text similarity. The model offers improved accuracy and efficiency over previous versions. It is ideal for applications requiring deep contextual understanding and large-scale text processing.",
+                "knowledge_cutoff" : "",
+                "usecase": [
+                "The text_embedding_3_large model can be used for semantic search applications, improving the relevance and accuracy of search results by understanding the meaning behind user queries.",
+                "It can also be applied in recommendation systems, helping to match users with personalized content, products, or services based on their preferences and behavior."
+  ]
             }
         }
         outputConfig = {
@@ -5648,6 +5685,16 @@ class ModelsConfig:
             # },
             "type" : {
                 "default" : ["embedding"]
+            },
+            "specification" : {
+                "input_cost": null,
+                "output_cost": null,
+                "description" : "Text-Embedding-3-Small is a lightweight embedding model from OpenAI, optimized for efficiency and speed while maintaining strong performance. It converts text into dense vector representations for tasks like semantic search, text similarity, and clustering. With lower computational requirements, it is well-suited for real-time and large-scale applications",
+                "knowledge_cutoff" : "",
+                "usecase": [
+                "The text_embedding_3_small model can be used for efficient text classification tasks in environments with limited computational resources, such as mobile devices or edge computing.",
+                "It can also be applied in real-time sentiment analysis, quickly processing user feedback and social media content to identify trends and public sentiment."
+                ]
             }
         }
         outputConfig = {
@@ -5688,6 +5735,16 @@ class ModelsConfig:
             },
             "type" : {
                 "default" : ["embedding"]
+            },
+            "specification" : {
+                "input_cost": 30.00,
+                "output_cost": 60.00,
+                "description" : "text-embedding-ada-002 is an OpenAI embedding model designed for converting text into dense vector representations. It is optimized for tasks like semantic search, clustering, and text similarity. Known for its balance of efficiency and accuracy, it provides high-quality embeddings at a lower computational cost. It is widely used in NLP applications, including recommendation systems and knowledge retrieval.",
+                "knowledge_cutoff" : "",
+                "usecase": [
+               "The text_embedding_ada_002 model can be used for document clustering, grouping similar pieces of content based on their semantic meaning for better organization in databases or knowledge management systems.",
+               "It can also be applied in improving search engine capabilities by enhancing keyword matching with semantic understanding, offering more relevant results for user queries."
+              ]
             }
         }
         outputConfig = {
