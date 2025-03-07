@@ -1775,7 +1775,8 @@ class ModelsConfig:
                 "typeOf": "array"
             },
             "tool_choice": {
-                "field": "text",
+                "field": "dropdown",
+                "options" : ["auto", "none", "required"],
                 "default": "auto",
                 "level": 0,
                 "typeOf": "string"
@@ -4491,7 +4492,8 @@ class ModelsConfig:
                 "typeOf": "array"
             },
             "tool_choice": {
-                "field": "text",
+                "field": "dropdown",
+                "options" : ["auto", "none", "required"],
                 "default": "auto",
                 "level": 0,
                 "typeOf": "string"
@@ -4550,7 +4552,8 @@ class ModelsConfig:
                 "typeOf": "array"
             },
             "tool_choice": {
-                "field": "text",
+                "field": "dropdown",
+                "options" : ["auto", "none", "required"],
                 "default": "auto",
                 "level": 0,
                 "typeOf": "string"
@@ -4616,8 +4619,9 @@ class ModelsConfig:
                 "default": [],
                 "typeOf": "array"
             },
-            "tool_choice": {
-                "field": "text",
+            "tool_choice":{
+                "field": "dropdown",
+                "options" : ["auto", "none", "required"],
                 "default": "auto",
                 "level": 0,
                 "typeOf": "string"
@@ -4684,7 +4688,8 @@ class ModelsConfig:
                 "typeOf": "array"
             },
             "tool_choice": {
-                "field": "text",
+                "field": "dropdown",
+                "options" : ["auto", "none", "required"],
                 "default": "auto",
                 "level": 0,
                 "typeOf": "string"
@@ -4743,7 +4748,8 @@ class ModelsConfig:
                 "typeOf": "array"
             },
             "tool_choice": {
-                "field": "text",
+                "field": "dropdown",
+                "options" : ["auto", "none", "required"],
                 "default": "auto",
                 "level": 0,
                 "typeOf": "string"

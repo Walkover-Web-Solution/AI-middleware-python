@@ -275,7 +275,7 @@ def make_code_mapping_by_service(responses, service):
                     'args': args,
                     "error": error
                 }
-                function_list.push(name)
+                function_list.append(name)
         case 'anthropic':
             for tool_call in responses['content'][1:]:  # Skip the first item
                 name = tool_call['name']
@@ -285,7 +285,7 @@ def make_code_mapping_by_service(responses, service):
                     'args': args,
                     "error": False
                 }
-                function_list.push(name)
+                function_list.append(name)
         case _:
             return {}, []
     return codes_mapping, function_list
