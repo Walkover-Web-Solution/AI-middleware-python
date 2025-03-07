@@ -72,6 +72,14 @@ class ModelsConfig:
                 "type" : "text",
                 },
                 "level": 0
+            },
+            "specification" : {
+                "input_cost": 3.00,
+                "output_cost": 6.00,
+                "description" : "GPT-3.5 Turbo models can understand and generate natural language or code and have been optimized for chat using the Chat Completions API but work well for non-chat tasks as well. As of July 2024, use gpt-4o-mini in place of GPT-3.5 Turbo, as it is cheaper, more capable, multimodal, and just as fast",
+                "knowledge_cutoff" : "Sep 01, 2021",
+                "usecase" : [""]
+            
             }
         }
         outputConfig = {
@@ -895,6 +903,13 @@ class ModelsConfig:
             },
              "type" : {
                 "default" : ["chat"]
+            },
+            "specification" : {
+                "input_cost": 30.00,
+                "output_cost": 60.00,
+                "description" : "GPT-4 is an advanced AI language model by OpenAI, capable of understanding and generating human-like text with improved reasoning, creativity, and context retention. It supports both text and image inputs, making it highly versatile. With enhanced problem-solving skills, it excels in writing, coding, and complex queries.",
+                "knowledge_cutoff" : "Dec 01, 2023",
+                "usecase" : [""]
             }
         }
         outputConfig = {
@@ -1009,7 +1024,15 @@ class ModelsConfig:
             },
              "type" : {
                 "default" : ["chat"]
+            },
+            "specification" : {
+                "input_cost": 30.00,
+                "output_cost": 60.00,
+                "description" : "GPT-4o-2024-08-06 is a version of OpenAI's GPT-4 model released in August 2024. It likely includes optimizations and updates for better performance. The model excels in tasks like natural language understanding, creative writing, and problem-solving. It does not have real-time data access, relying on its pre-existing knowledge base.",
+                "knowledge_cutoff" : "Oct 01, 2023",
+                "usecase" : [""]
             }
+
         }
         outputConfig = {
             "usage": [{
@@ -1625,6 +1648,12 @@ class ModelsConfig:
             },
             "type" : {
                 "default" : ["chat"]
+            },"specification" : {
+                "input_cost": 10.00,
+                "output_cost": 30.00,
+                "description" : ["GPT-4 Turbo is a faster, more efficient, and cost-effective version of GPT-4, optimized for speed and scalability. It offers improved reasoning, longer context handling, and better performance in coding and complex tasks. Designed for high responsiveness, it balances power with efficiency for seamless interactions"],
+                "knowledge_cutoff" : "Dec 01, 2023",
+                "usecase" : [""]
             }
         }
         outputConfig = {
@@ -1757,6 +1786,12 @@ class ModelsConfig:
                 "default": True,
                 "level": 0,
                 "typeOf": "boolean"  
+            },"specification" : {
+                "input_cost": 2.50,
+                "output_cost": 10.00,
+                "description" : "GPT-4o omni is OpenAI’s latest AI model, offering faster, more efficient, and highly capable multimodal processing for text, images, and potentially audio. It improves reasoning, context retention, and real-time interaction while being more cost-effective. Designed for seamless AI experiences, it balances power, speed, and versatility",
+                "knowledge_cutoff" : "Oct 01, 2023",
+                "usecase" : [""]
             }
         }
         outputConfig = {
@@ -2014,6 +2049,13 @@ class ModelsConfig:
                 "default": True,
                 "level": 0,
                 "typeOf": "boolean"  
+            },
+            "specification" : {
+                "input_cost": 5.00,
+                "output_cost": 15.00,
+                "description" : [""],
+                "knowledge_cutoff" : "",
+                "usecase" : [""]
             }
         }
         outputConfig = {
@@ -2144,6 +2186,13 @@ class ModelsConfig:
                 "default": True,
                 "level": 0,
                 "typeOf": "boolean"  
+            },
+            "specification" : {
+                "input_cost": 0.150,
+                "output_cost": 0.600,
+                "description" : "GPT-4o mini (“o” for “omni”) is a fast, affordable small model for focused tasks. It accepts both text and image inputs, and produces text outputs (including Structured Outputs). It is ideal for fine-tuning, and model outputs from a larger model like GPT-4o can be distilled to GPT-4o-mini to produce similar results at lower cost and latency",
+                "knowledge_cutoff" : "Oct 01, 2023",
+                "usecase" : [""]
             }
         }
         outputConfig = {
@@ -2279,7 +2328,15 @@ class ModelsConfig:
                 "default": True,
                 "level": 0,
                 "typeOf": "boolean"  
+            },
+            "specification" : {
+                "input_cost":  0.150,
+                "output_cost": 0.600,
+                "description" : "GPT-4o-mini-2024-07-18 is a smaller, optimized version of GPT-4 released in July 2024. It offers improved efficiency with faster processing and lower resource usage. The model excels in natural language understanding and generation tasks. It’s ideal for applications with resource constraints while maintaining strong performance",
+                "knowledge_cutoff" : "Oct 01, 2023",
+                "usecase" : [""]
             }
+
         }
         outputConfig = {
             "usage": [{
@@ -2355,7 +2412,14 @@ class ModelsConfig:
                 "support": True,
                  "level": 0,
                  "default" : False
-            }
+            },
+            "specification" : {
+                "input_cost": 15.00,
+                "output_cost": 60.00,
+                "description" : "The o1 series of models are trained with reinforcement learning to perform complex reasoning. o1 models think before they answer, producing a long internal chain of thought before responding to the user.",
+                "knowledge_cutoff" : "Oct 01, 2023",
+                "usecase" : [""]
+            },
         }
         outputConfig = {
             "usage": [{
@@ -2397,6 +2461,13 @@ class ModelsConfig:
                 "default": "o1-preview",
                 "level": 1
             },
+            "specification" : {
+                "input_cost": 15.00,
+                "output_cost": 60.00,
+                "description" :"",
+                "knowledge_cutoff" : "Oct 01, 2023",
+                "usecase" : [""]
+            }
         }
         outputConfig = {
             "usage": [{
@@ -2438,6 +2509,13 @@ class ModelsConfig:
                 "field": "drop",
                 "default": "o1-mini",
                 "level": 1
+            },
+            "specification" : {
+                "input_cost": 3.00,
+                "output_cost": 12.00,
+                "description" : "o3-mini is our newest small reasoning model, providing high intelligence at the same cost and latency targets of o1-mini. o3-mini supports key developer features, like Structured Outputs, function calling, and Batch API",
+                "knowledge_cutoff" : "Oct 01, 2023",
+                "usecase" : [""]
             },
         }
         outputConfig = {
@@ -2491,6 +2569,13 @@ class ModelsConfig:
             },
              "type" : {
                 "default" : ["embedding"]
+            },
+            "specification" : {
+                "input_cost": "",
+                "output_cost": "",
+                "description" : "text-embedding-3-large is our most capable embedding model for both english and non-english tasks. Embeddings are a numerical representation of text that can be used to measure the relatedness between two pieces of text. Embeddings are useful for search, clustering, recommendations, anomaly detection, and classification tasks.",
+                "knowledge_cutoff" : "",
+                "usecase" : [""]
             }
         }
         outputConfig = {
@@ -2535,7 +2620,14 @@ class ModelsConfig:
             },
             "type" : {
                 "default" : ["embedding"]
-            }
+            },
+            "specification" : {
+                "input_cost": "",
+                "output_cost": "",
+                "description" : "text-embedding-3-small is our improved, more performant version of our ada embedding model. Embeddings are a numerical representation of text that can be used to measure the relatedness between two pieces of text. Embeddings are useful for search, clustering, recommendations, anomaly detection, and classification tasks.",
+                "knowledge_cutoff" : "",
+                "usecase" : [""]
+            },
         }
         outputConfig = {
             "usage": [{
@@ -2575,7 +2667,14 @@ class ModelsConfig:
             },
             "type" : {
                 "default" : ["embedding"]
-            }
+            },
+            "specification" : {
+                "input_cost": "",
+                "output_cost": "",
+                "description" : "text-embedding-ada-002 is our improved, more performant version of our ada embedding model. Embeddings are a numerical representation of text that can be used to measure the relatedness between two pieces of text. Embeddings are useful for search, clustering, recommendations, anomaly detection, and classification tasks.",
+                "knowledge_cutoff" : "",
+                "usecase" : [""]
+            },
         }
         outputConfig = {
             "usage": [{
@@ -4707,7 +4806,14 @@ class ModelsConfig:
                 "options": ['vivid', 'natural'],
                 "default": 'vivid',
                 "level": 0
-            }
+            },
+            "specification" : {
+                "input_cost": 0.01,
+                "output_cost":0.03,
+                "description" : "DALL·E 3 is the latest version of OpenAI's image generation model. It creates highly detailed and realistic images from text prompts, with even better understanding of complex descriptions compared to DALL·E",
+                "knowledge_cutoff" : "",
+                "usecase" : [""]
+            },
         }
         outputConfig = {
             "usage": [{
@@ -4758,6 +4864,13 @@ class ModelsConfig:
                 "options": ['standard','hd'],
                 "default": 'standard',
                 "level": 0
+            },
+            "specification" : {
+                "input_cost":  0.01,
+                "output_cost":  0.03,
+                "description" : "DALL-E 2 is an AI model by OpenAI that generates high-quality images from text descriptions. It improves upon the original DALL-E with higher resolution and more accurate image generation. The model uses a neural network and transformer architecture. It is designed for creative applications, producing detailed visuals based on written prompts.",
+                "knowledge_cutoff" : "",
+                "usecase" : [""]
             },
             # "response_format": {
             #     "field": "select",
