@@ -51,7 +51,6 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
             "name": api_data.get('function_name')
         }
         variablesFillByGtwy = list(variables_path_bridge.get(api_data.get("function_name"), {}).keys())
-        print(variablesFillByGtwy)
         properties = (
                 api_data.get("fields", {}) if api_data.get("version") == 'v2' 
                 else {item["variable_name"]: {
