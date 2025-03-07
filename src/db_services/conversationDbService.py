@@ -7,6 +7,7 @@ import traceback
 from datetime import datetime
 from models.postgres.pg_models import Conversation, RawData, system_prompt_versionings, user_bridge_config_history
 from models.Timescale.timescale_models import Metrics_model
+from sqlalchemy.sql import text
 
 pg = models['pg']
 timescale = models['timescale']
@@ -165,3 +166,24 @@ async def timescale_metrics(metrics_data) :
     except Exception as e: 
         session.rollback()
         raise e
+
+
+
+async def get_timescale_data(org_id):
+    session = timescale['session']()
+    try:
+        query = text(f"""
+            SELECT bridge_id,
+                   SUM(total_token_count) as total_tokens 
+            FROM fifteen_minute_data 
+            WHERE org_id = :org_id 
+            GROUP BY bridge_id
+        """)
+        result = session.execute(query, {'org_id': org_id})
+        data = result.fetchall()
+        return data
+    except Exception as e:
+        session.rollback()
+        raise e
+    finally:
+        session.close()

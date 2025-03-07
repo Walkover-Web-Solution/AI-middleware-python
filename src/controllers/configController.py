@@ -13,6 +13,7 @@ from datetime import datetime, timezone
 from src.services.utils.getDefaultValue import get_default_values_controller
 from src.db_services.bridge_version_services import create_bridge_version
 from src.services.utils.apicallUtills import delete_all_version_and_bridge_ids_from_cache
+from src.db_services.conversationDbService import get_timescale_data
 async def create_bridges_controller(request):
     try:
         bridges = await request.json()
@@ -157,6 +158,8 @@ async def get_all_bridges(request):
         bridges = await get_all_bridges_in_org(org_id)
         embed_token = Helper.generate_token({ "org_id": Config.ORG_ID, "project_id": Config.PROJECT_ID, "user_id": org_id },Config.Access_key )
         alerting_embed_token = Helper.generate_token({ "org_id": Config.ORG_ID, "project_id": Config.ALERTING_PROJECT_ID, "user_id": org_id },Config.Access_key )
+        metrics_data = await get_timescale_data(org_id)
+        bridges = Helper.sort_bridges(bridges, metrics_data)
         return JSONResponse(status_code=200, content={
                 "success": True,
                 "message": "Get all bridges successfully",
@@ -164,7 +167,6 @@ async def get_all_bridges(request):
                 "embed_token": embed_token,
                 "alerting_embed_token": alerting_embed_token,
                 "org_id": org_id
-
             })
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
