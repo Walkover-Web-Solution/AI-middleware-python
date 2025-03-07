@@ -14,7 +14,7 @@ import traceback
 def clean_json(data):
     """Recursively remove keys with empty string, empty list, or empty dictionary."""
     if isinstance(data, dict):
-        return {k: clean_json(v) for k, v in data.items() if v not in ['', [], {}]}
+        return {k: clean_json(v) for k, v in data.items() if v not in ['', []]}
     elif isinstance(data, list):
         return [clean_json(item) for item in data]
     else:
