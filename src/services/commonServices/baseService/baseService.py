@@ -4,7 +4,7 @@ import json
 import traceback
 from config import Config
 from ....db_services import metrics_service, ConfigurationServices as ConfigurationService
-from .utils import validate_tool_call, tool_call_formatter, sendResponse, make_code_mapping_by_service, process_data_and_run_tools
+from .utils import validate_tool_call, tool_call_formatter, sendResponse, make_code_mapping_by_service, process_data_and_run_tools, clean_json
 from src.configs.serviceKeys import ServiceKeys
 from src.configs.modelConfiguration import ModelsConfig
 from ..openAI.runModel import runModel
