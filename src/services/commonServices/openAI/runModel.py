@@ -53,3 +53,15 @@ async def runModel(configuration, apiKey, execution_time_logs, bridge_id, timer,
             'success': False,
             'error': str(error)
         }
+
+async def openai_test_model(configuration, api_key):
+    openAI = AsyncOpenAI(api_key=api_key)
+    try:
+        chat_completion = await openAI.chat.completions.create(**configuration)
+        return {'success': True, 'response': chat_completion.to_dict()}
+    except Exception as error:
+        return {
+            'success': False,
+            'error': str(error),
+            'status_code': getattr(error, 'status_code', None)
+        }

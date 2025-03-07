@@ -12,7 +12,7 @@ from src.controllers.rag_controller import get_text_from_vectorsQuery
 import traceback
 
 def validate_tool_call(modelOutputConfig, service, response):
-    match service:
+    match service: # TODO: Fix validation process.
         case 'openai' | 'groq':
             return len(response.get('choices', [])[0].get('message', {}).get("tool_calls", [])) > 0
         case 'anthropic':
