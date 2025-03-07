@@ -5592,7 +5592,6 @@ class ModelsConfig:
                "The dall_e_2 model can be used in creative industries to generate unique, high-quality images from textual descriptions, helping artists and designers with visual inspiration.",
                "It can also be applied in e-commerce platforms to create product mockups or advertisements, providing businesses with visually appealing content generated automatically."
                ]
-=======
             
             },
             # "response_format": {
