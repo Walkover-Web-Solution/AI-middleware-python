@@ -3,7 +3,7 @@ import pydash as _
 import json
 import traceback
 from config import Config
-from ....db_services import metrics_service, ConfigurationServices as ConfigurationService
+from ....db_services import metrics_service
 from .utils import validate_tool_call, tool_call_formatter, sendResponse, make_code_mapping_by_service, process_data_and_run_tools
 from src.configs.serviceKeys import ServiceKeys
 from src.configs.modelConfiguration import ModelsConfig
@@ -62,7 +62,9 @@ class BaseService:
         return self.customConfig
 
     async def run_tool(self, responses, service):
-        codes_mapping = make_code_mapping_by_service(responses, service)
+        codes_mapping, function_list = make_code_mapping_by_service(responses, service)
+        if not self.playground:
+            asyncio.create_task(sendResponse(self.response_format, data = {'function_call': True, 'Name': function_list}, success = True))
         codes_mapping = await self.replace_variables_in_args(codes_mapping)
         return await process_data_and_run_tools(codes_mapping, self.tool_id_and_name_mapping, self.org_id)
 
@@ -107,13 +109,12 @@ class BaseService:
             return response
         
         if not self.playground:
-            await sendResponse(self.response_format, data = {'function_call': True}, success = True)
             self.token_calculator.calculate_usage(response.get('modelResponse'))
         func_response_data,mapping_response_data, tools_call_data = await self.run_tool(model_response, service)
         self.func_tool_call_data.append(tools_call_data)
         configuration, tools = self.update_configration(model_response, func_response_data, configuration, mapping_response_data, service, tools)
         if not self.playground:
-            await sendResponse(self.response_format, data = {'function_call': True, 'success': True, 'message': 'Going to GPT'}, success=True)
+            asyncio.create_task(sendResponse(self.response_format, data = {'function_call': True, 'success': True, 'message': 'Going to GPT'}, success=True))
         ai_response = await self.chats(configuration, self.apikey, service)
         ai_response['tools'] = tools
         return await self.function_call(configuration, service, ai_response, l, tools)

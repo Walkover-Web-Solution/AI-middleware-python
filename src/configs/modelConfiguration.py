@@ -921,7 +921,7 @@ class ModelsConfig:
                 "usecase": [
                 "The gpt_4 model can be used for complex problem-solving tasks, such as assisting in research and development for scientific studies or technical innovations.",
                 "It can also be utilized in creating detailed, personalized content for marketing campaigns, including tailored emails, landing pages, and product descriptions."
-               ]
+                ]
             }
         }
         outputConfig = {
@@ -1047,6 +1047,7 @@ class ModelsConfig:
                "The gpt_4_0613 model can be used for advanced data analysis and predictive modeling, assisting in decision-making processes for industries like finance or healthcare.",
                "It can also be employed in automated content creation for dynamic platforms, producing high-quality content that adapts to audience preferences and trends."
               ]
+
             }
 
         }
@@ -1678,6 +1679,7 @@ class ModelsConfig:
                 "The gpt_4_turbo model can be used to enhance customer service platforms by providing fast, accurate, and context-aware responses in live chat interactions.",
                "It can also be leveraged in content generation applications, delivering high-quality articles, reports, and creative writing pieces with improved speed and efficiency."
             ]
+
             }
         }
         outputConfig = {
@@ -1787,7 +1789,8 @@ class ModelsConfig:
                 "typeOf": "array"
             },
             "tool_choice": {
-                "field": "text",
+                "field": "dropdown",
+                "options" : ["auto", "none", "required"],
                 "default": "auto",
                 "level": 0,
                 "typeOf": "string"
@@ -2352,6 +2355,7 @@ class ModelsConfig:
                  "The gpt_4o_mini model can be used in low-resource environments to perform text generation and summarization tasks in applications with constrained computational power.",
                  "It can also be applied in mobile applications to provide conversational AI capabilities, offering quick, responsive interactions for users on the go."
               ]
+
             }
         }
         outputConfig = {
@@ -2571,7 +2575,7 @@ class ModelsConfig:
             },
             "max_tokens": {
                 "field": "slider",
-                "min": 256,
+                "min": 1,
                 "max": 100_000,
                 "step": 1,
                 "default": 256,
@@ -2768,7 +2772,6 @@ class ModelsConfig:
                 "default": "o1-mini",
                 "level": 1
             },
-
             "specification" : {
                 "input_cost": "",
                 "output_cost": "",
@@ -4621,7 +4624,8 @@ class ModelsConfig:
                 "typeOf": "array"
             },
             "tool_choice": {
-                "field": "text",
+                "field": "dropdown",
+                "options" : ["auto", "none", "required"],
                 "default": "auto",
                 "level": 0,
                 "typeOf": "string"
@@ -4680,7 +4684,8 @@ class ModelsConfig:
                 "typeOf": "array"
             },
             "tool_choice": {
-                "field": "text",
+                "field": "dropdown",
+                "options" : ["auto", "none", "required"],
                 "default": "auto",
                 "level": 0,
                 "typeOf": "string"
@@ -4754,8 +4759,9 @@ class ModelsConfig:
                 "default": [],
                 "typeOf": "array"
             },
-            "tool_choice": {
-                "field": "text",
+            "tool_choice":{
+                "field": "dropdown",
+                "options" : ["auto", "none", "required"],
                 "default": "auto",
                 "level": 0,
                 "typeOf": "string"
@@ -4831,7 +4837,8 @@ class ModelsConfig:
                 "typeOf": "array"
             },
             "tool_choice": {
-                "field": "text",
+                "field": "dropdown",
+                "options" : ["auto", "none", "required"],
                 "default": "auto",
                 "level": 0,
                 "typeOf": "string"
@@ -4890,7 +4897,8 @@ class ModelsConfig:
                 "typeOf": "array"
             },
             "tool_choice": {
-                "field": "text",
+                "field": "dropdown",
+                "options" : ["auto", "none", "required"],
                 "default": "auto",
                 "level": 0,
                 "typeOf": "string"
@@ -5547,6 +5555,8 @@ class ModelsConfig:
                "The dall_e_2 model can be used in creative industries to generate unique, high-quality images from textual descriptions, helping artists and designers with visual inspiration.",
                "It can also be applied in e-commerce platforms to create product mockups or advertisements, providing businesses with visually appealing content generated automatically."
                ]
+=======
+            
             },
             # "response_format": {
             #     "field": "select",
