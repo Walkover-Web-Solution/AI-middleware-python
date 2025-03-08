@@ -1,11 +1,14 @@
+
+import json
+import uuid
+import traceback
 from datetime import datetime, timezone
 from models.index import combined_models
 from sqlalchemy import and_
 from ..controllers.conversationController import savehistory
-import traceback
 from .conversationDbService import insertRawData, timescale_metrics
-import uuid
-import json
+from ..services.cache_service import find_in_cache, store_in_cache
+from src.services.utils.send_error_webhook import send_error_to_webhook
 
 postgres = combined_models['pg']
 timescale = combined_models['timescale']
@@ -94,8 +97,11 @@ async def create(dataset, history_params, version_id):
             }
             for data_object in dataset
         ]
-
-
+        cache_key = f"metrix_bridges{history_params['bridge_id']}"
+        oldTotalToken = find_in_cache(cache_key) or 0 
+        totaltoken = sum(data_object.get('totalTokens', 0) for data_object in dataset) + oldTotalToken
+        await store_in_cache(cache_key, float(totaltoken))
+        await send_error_to_webhook(history_params['bridge_id'], history_params['org_id'],totaltoken , 'metrix_limit_reached')
         await insertRawData(insert_ai_data_in_pg)
         await timescale_metrics(metrics_data)
     except Exception as error:
