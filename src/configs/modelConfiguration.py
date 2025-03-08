@@ -76,6 +76,7 @@ class ModelsConfig:
             "specification" : {
                 "input_cost": 3.00,
                 "output_cost": 6.00,
+                "level": 0,
                 "description" : "GPT-3.5 Turbo models can understand and generate natural language or code and have been optimized for chat using the Chat Completions API but work well for non-chat tasks as well. As of July 2024, use gpt-4o-mini in place of GPT-3.5 Turbo, as it is cheaper, more capable, multimodal, and just as fast",
                 "knowledge_cutoff" : "Sep 01, 2021",
                  "usecase": [
@@ -916,6 +917,7 @@ class ModelsConfig:
             "specification" : {
                 "input_cost": 30.00,
                 "output_cost": 60.00,
+                "level": 0,
                 "description" : "GPT-4 is an advanced AI language model by OpenAI, capable of understanding and generating human-like text with improved reasoning, creativity, and context retention. It supports both text and image inputs, making it highly versatile. With enhanced problem-solving skills, it excels in writing, coding, and complex queries.",
                 "knowledge_cutoff" : "Dec 01, 2023",
                 "usecase": [
@@ -1041,6 +1043,7 @@ class ModelsConfig:
             "specification" : {
                 "input_cost": 30.00,
                 "output_cost": 60.00,
+                "level": 0,
                 "description" : "GPT-4o-2024-08-06 is a version of OpenAI's GPT-4 model released in August 2024. It likely includes optimizations and updates for better performance. The model excels in tasks like natural language understanding, creative writing, and problem-solving. It does not have real-time data access, relying on its pre-existing knowledge base.",
                 "knowledge_cutoff" : "Oct 01, 2023",
                 "usecase": [
@@ -1673,6 +1676,7 @@ class ModelsConfig:
             },"specification" : {
                 "input_cost": 10.00,
                 "output_cost": 30.00,
+                "level": 0,
                 "description" : ["GPT-4 Turbo is a faster, more efficient, and cost-effective version of GPT-4, optimized for speed and scalability. It offers improved reasoning, longer context handling, and better performance in coding and complex tasks. Designed for high responsiveness, it balances power with efficiency for seamless interactions"],
                 "knowledge_cutoff" : "Dec 01, 2023",
                  "usecase": [
@@ -2211,6 +2215,7 @@ class ModelsConfig:
             "specification" : {
                 "input_cost": 5.00,
                 "output_cost": 15.00,
+                "level": 0,
                 "description" : [""],
                 "knowledge_cutoff" : "",
                 "usecase": [
@@ -2352,6 +2357,7 @@ class ModelsConfig:
             "specification" : {
                 "input_cost": 0.150,
                 "output_cost": 0.600,
+                "level": 0,
                 "description" : "GPT-4o mini (“o” for “omni”) is a fast, affordable small model for focused tasks. It accepts both text and image inputs, and produces text outputs (including Structured Outputs). It is ideal for fine-tuning, and model outputs from a larger model like GPT-4o can be distilled to GPT-4o-mini to produce similar results at lower cost and latency",
                 "knowledge_cutoff" : "Oct 01, 2023",
                 "usecase": [
@@ -2499,6 +2505,7 @@ class ModelsConfig:
             "specification" : {
                 "input_cost":  0.150,
                 "output_cost": 0.600,
+                "level": 0,
                 "description" : "GPT-4o-mini-2024-07-18 is a smaller, optimized version of GPT-4 released in July 2024. It offers improved efficiency with faster processing and lower resource usage. The model excels in natural language understanding and generation tasks. It’s ideal for applications with resource constraints while maintaining strong performance",
                 "knowledge_cutoff" : "Oct 01, 2023",
                 "usecase": [
@@ -2592,6 +2599,7 @@ class ModelsConfig:
             "specification" : {
                 "input_cost": 15.00,
                 "output_cost": 60.00,
+                "level": 0,
                 "description" : "The o1 series of models are trained with reinforcement learning to perform complex reasoning. o1 models think before they answer, producing a long internal chain of thought before responding to the user.",
                 "knowledge_cutoff" : "Oct 01, 2023",
                 "usecase": [
@@ -2673,6 +2681,7 @@ class ModelsConfig:
             "specification" : {
                 "input_cost": 1.10,
                 "output_cost": 4.40,
+                "level": 0,
                 "description" : "O3 Mini is likely a smaller, more optimized version of a model from the O3 series, designed for efficiency and faster processing. The Mini designation typically indicates a compact model with fewer parameters, making it suitable for environments with limited resources or for applications requiring lower latency.",
                 "knowledge_cutoff" : "October 2023",
                 "usecase": [
@@ -2726,6 +2735,7 @@ class ModelsConfig:
             "specification" : {
                 "input_cost": 3.00,
                 "output_cost": 12.00,
+                "level": 0,
                 "description" : "o3-mini is our newest small reasoning model, providing high intelligence at the same cost and latency targets of o1-mini. o3-mini supports key developer features, like Structured Outputs, function calling, and Batch API",
                 "knowledge_cutoff" : "Oct 01, 2023",
                  "usecase": [
@@ -2791,6 +2801,7 @@ class ModelsConfig:
             "specification" : {
                 "input_cost": "",
                 "output_cost": "",
+                "level": 0,
                 "description" : "text-embedding-3-small is our improved, more performant version of our ada embedding model. Embeddings are a numerical representation of text that can be used to measure the relatedness between two pieces of text. Embeddings are useful for search, clustering, recommendations, anomaly detection, and classification tasks.",
                 "knowledge_cutoff" : "",
                 "usecase": [
@@ -3419,6 +3430,7 @@ class ModelsConfig:
             "specification" : {
                 "input_cost": 30.00,
                 "output_cost": 60.00,
+                "level": 0,
                 "description" : "Claude 3.5 Sonnet is an advanced AI model designed for real-world software engineering tasks, featuring enhanced reasoning capabilities and state-of-the-art coding skills. It allows for sophisticated interaction with computer environments, making it suitable for a wide range of applications.",
                 "knowledge_cutoff" : "June 2023 ",
                 "usecase": [
@@ -3608,6 +3620,7 @@ class ModelsConfig:
             "specification" : {
                 "input_cost": 3.00,
                 "output_cost": 15.00,
+                "level": 0,
                 "description" : "LLaDE 3.5 Sonnet Latest is a version of the LLaDE (Large Language and Domain-specific Engine) model, optimized for creating and understanding sonnets. The 3.5 suggests it is an updated iteration, improving upon earlier versions with refined capabilities in natural language generation, particularly for structured forms like sonnets. This model is designed to generate poetry with a focus on artistic qualities, such as rhyme, meter, and thematic depth, making it well-suited for creative applications in literature",
                 "knowledge_cutoff" : "April 2024",
                 "usecase": [
@@ -3708,6 +3721,7 @@ class ModelsConfig:
             "specification" : {
                 "input_cost": 15.00,
                 "output_cost": 75.00,
+                "level": 0,
                 "description" : "Claude 3 Opus 20240229 is a version of the Claude model, which is part of the family of language models developed by Anthropic. The Opus label suggests it may be an enhanced or specialized version of the model, possibly optimized for specific tasks or features. The 20240229 indicates its release date, February 29, 2024, making it a relatively recent update. This model is likely designed to offer improvements in areas like natural language understanding, generation, and safety, with a focus on producing high-quality",
                 "knowledge_cutoff" : " August 2023",
                  "usecase": [
@@ -3807,6 +3821,7 @@ class ModelsConfig:
             "specification" : {
                 "input_cost": 15.00,
                 "output_cost": 75.00,
+                "level": 0,
                 "description" : "Claude 3 Opus Latest is the most recent iteration of the Claude 3 model developed by Anthropic. The Opus designation suggests it may be a more advanced or specialized version, potentially optimized for improved performance, safety, and versatility in natural language tasks. The Latest label indicates that this version includes the most up-to-date features and enhancements, aiming to provide high-quality, contextually relevant, and reliable responses across a wide range of applications.",
                 "knowledge_cutoff" : " October 2024",
                 "usecase": [
@@ -3907,6 +3922,7 @@ class ModelsConfig:
             "specification" : {
                 "input_cost": 3.00,
                 "output_cost": 15.00,
+                "level": 0,
                 "description" : "Claude 3 Sonnet 20240229 is a version of the Claude 3 model developed by Anthropic, specifically tailored for generating and understanding sonnets. The Sonnet designation indicates that this model has been fine-tuned or optimized for tasks involving poetic forms, especially the structured and rhythmic style of sonnets",
                 "knowledge_cutoff" : "",
                 "usecase": [
@@ -4003,6 +4019,7 @@ class ModelsConfig:
             "specification" : {
                 "input_cost": 0.25,
                 "output_cost": 1.25,
+                "level": 0,
                 "description" : "Claude 3 Haiku 20240307 is a version of the Claude 3 model developed by Anthropic, specifically optimized for generating and understanding haikus. The Haiku designation indicates that this model is fine-tuned to produce short, structured poems typically consisting of 3 lines with a 5-7-5 syllable pattern. The 20240307 refers to the release date, March 7, 2024. This version likely focuses on creating concise, evocative, and thematically rich haikus, adhering to the traditional style while maintaining the model's natural language generation capabilities",
                 "knowledge_cutoff" : "",
                 "usecase": [
@@ -4102,6 +4119,7 @@ class ModelsConfig:
             "specification" : {
                 "input_cost": 0.80,
                 "output_cost":4.00,
+                "level": 0,
                 "description" : "Claude 3.5 Haiku 20241022 is an updated version of the Claude 3 model, specifically fine-tuned for generating and understanding haikus. The 3.5 indicates an iteration with improvements over previous versions, offering enhanced performance and accuracy in producing poetic forms. The Haiku label signifies that the model is optimized for generating 3-line poems with a 5-7-5 syllable structure",
                 "knowledge_cutoff" : "July 2024",
                 "usecase": [
@@ -4202,6 +4220,7 @@ class ModelsConfig:
             "specification" : {
                 "input_cost": 3.00,
                 "output_cost": 15.00,
+                "level": 0,
                 "description" : "Claude 3.7 Sonnet Latest is a refined version of the Claude 3 model, specifically optimized for generating and understanding sonnets. The 3.7 designation suggests it is a more advanced iteration, offering enhancements in performance, creativity, and accuracy. The Sonnet label indicates that it is fine-tuned to handle the structure, rhythm, and themes typically associated with sonnets",
                 "knowledge_cutoff" : "October 2024",
                 "usecase": [
@@ -4335,6 +4354,7 @@ class ModelsConfig:
             "specification" : {
                 "input_cost":  0.59,
                 "output_cost":  0.79,
+                "level": 0,
                 "description" : "LLaMA 3.3 70B Versatile is a version of Meta's LLaMA (Large Language Model Meta AI) model, with 70 billion parameters. It is designed to be highly versatile, offering improvements in natural language processing tasks such as text generation, summarization, translation, and question answering. This model excels at understanding complex queries and producing coherent, contextually relevant responses. With its large scale, LLaMA 3.3 70B Versatile provides high-quality language understanding and generation across a wide range of applications.",
                 "knowledge_cutoff" : "December 2023",
                  "usecase": [
@@ -4469,6 +4489,7 @@ class ModelsConfig:
             "specification" : {
                 "input_cost": 0.05,
                 "output_cost": 0.08,
+                "level": 0,
                 "description" : "LLaMA 3.1 8B Instant is a version of Meta’s LLaMA (Large Language Model Meta AI) with 8 billion parameters. It is designed to be highly efficient and capable of performing a variety of natural language processing tasks like text generation, summarization, and question answering. The Instant designation likely implies an optimized version for faster, low-latency inference, making it suitable for real-time applications. Despite being smaller than other models in the LLaMA series, LLaMA 3.1 8B Instant balances performance with speed, making it versatile for a wide range of use cases.",
                 "knowledge_cutoff" : "",
                 "usecase": [
@@ -4723,6 +4744,7 @@ class ModelsConfig:
             "specification" : {
                 "input_cost": 0.05,
                 "output_cost": 08.00,
+                "level": 0,
                 "description" : "Qwen 2.5 32B is a version of the Qwen (Quantum-enhanced Neural Engine) model with 32 billion parameters. The 2.5 likely indicates an updated or intermediate iteration, offering improvements over previous versions. With 32 billion parameters, it is a large model capable of handling a variety of complex natural language tasks such as text generation, summarization, and question answering",
                 "knowledge_cutoff" : "",
                 "usecase": [
@@ -4802,6 +4824,7 @@ class ModelsConfig:
             "specification" : {
                 "input_cost": 0.05,
                 "output_cost": 0.08,
+                "level": 0,
                 "description" : "DeepSeek R1 Distill Qwen 32B is a distilled version of the Qwen 32B model, optimized for efficiency and performance. It retains strong reasoning, comprehension, and generation capabilities while being more lightweight. Designed for AI applications requiring high-quality responses with reduced computational cost. Ideal for chatbots, content generation, and various NLP tasks.",
                 "knowledge_cutoff" : "",
                  "usecase": [
@@ -4942,6 +4965,7 @@ class ModelsConfig:
             "specification" : {
                 "input_cost": 0.05,
                 "output_cost": 0.08,
+                "level": 0,
                 "description" : "DeepSeek R1 Distill LLaMA 70B is a compressed version of the LLaMA model with 70 billion parameters. It has been distilled to reduce size while maintaining much of its original performance. The model is optimized for efficient and fast processing of complex language tasks. It provides high-quality natural language understanding and generation with reduced computational requirements.",
                 "knowledge_cutoff" : "",
                  "usecase": [
@@ -5068,6 +5092,7 @@ class ModelsConfig:
             "specification" : {
                 "input_cost": 0.05,
                 "output_cost": 0.08,
+                "level": 0,
                 "description" : "LLaMA 3 8B 8192 is a version of Meta’s LLaMA (Large Language Model Meta AI) with 8 billion parameters. The 3 suggests it is part of the third iteration of the LLaMA model series. The 8B indicates that the model has 8 billion parameters, which allows it to handle a variety of natural language processing tasks effectively. The 8192 refers to the model's context window or token limit, which represents the maximum number of tokens (words or pieces of words) the model can process in a single input",
                 "knowledge_cutoff" : "",
                 "usecase": [
@@ -5202,6 +5227,7 @@ class ModelsConfig:
             "specification" : {
                 "input_cost": 0.24,
                 "output_cost": 0.24,
+                "level": 0,
                 "description" : "Mixtral 8x7B 32768 is a version of a language model with a unique architecture. The 8x7B suggests that the model consists of 8 components, each with 7 billion parameters, totaling 56 billion parameters. The 32768 refers to the model's context window or token limit, which is 32,768 tokens — an exceptionally large context window that allows the model to process long text inputs effectively",
                 "knowledge_cutoff" : "",
                 "usecase": [
@@ -5336,6 +5362,7 @@ class ModelsConfig:
             "specification" : {
                 "input_cost":  0.20,
                 "output_cost":  0.20,
+                "level": 0,
                 "description" : "Gemma2 9B IT refers to a language model named Gemma2 with 9 billion parameters. The IT likely indicates that this version is specialized or fine-tuned for tasks related to Information Technology (IT), such as technical support, coding, system administration, and other IT-related domains.",
                 "knowledge_cutoff" : "",
                 "usecase": [
@@ -5470,6 +5497,7 @@ class ModelsConfig:
             "specification" : {
                 "input_cost":  0.20,
                 "output_cost": 0.20,
+                "level": 0,
                 "description" : "LLaMA Guard 3 8B is a version of the LLaMA (Large Language Model Meta AI) model with 8 billion parameters, specifically designed with added safety or moderation features. The Guard in its name suggests that it may have additional safety mechanisms to help prevent harmful or biased outputs, making it more suitable for use in sensitive applications.",
                 "knowledge_cutoff" : "March 2023",
                 "usecase": [
@@ -5538,6 +5566,7 @@ class ModelsConfig:
             "specification" : {
                 "input_cost": 0.01,
                 "output_cost": 0.03,
+                "level": 0,
                 "description" : "DALL·E 3 is OpenAI's advanced image-generation model capable of creating highly detailed and realistic images from text prompts. It understands complex descriptions, generating accurate compositions with improved coherence, lighting, and textures. The model is designed to follow user instructions closely, making it ideal for creative design, concept art, and visual storytelling. It excels in producing high-quality images with fewer artifacts compared to its predecessors.",
                 "knowledge_cutoff" : "",
                 "usecase": [
@@ -5599,6 +5628,7 @@ class ModelsConfig:
             "specification" : {
                 "input_cost":  0.01,
                 "output_cost":  0.03,
+                "level": 0,
                 "description" : "DALL-E 2 is an AI model by OpenAI that generates high-quality images from text descriptions. It improves upon the original DALL-E with higher resolution and more accurate image generation. The model uses a neural network and transformer architecture. It is designed for creative applications, producing detailed visuals based on written prompts.",
                 "knowledge_cutoff" : "",
                "usecase": [
@@ -5665,8 +5695,8 @@ class ModelsConfig:
                 "default" : ["embedding"]
             },
             "specification" : {
-                "input_cost": null,
-                "output_cost": null,
+                "input_cost": 0.13,
+                "level": 0,
                 "description" : "Text-Embedding-3-Large is a high-performance embedding model from OpenAI, designed for converting text into dense vector representations. It excels in tasks like semantic search, clustering, and text similarity. The model offers improved accuracy and efficiency over previous versions. It is ideal for applications requiring deep contextual understanding and large-scale text processing.",
                 "knowledge_cutoff" : "",
                 "usecase": [
@@ -5719,8 +5749,8 @@ class ModelsConfig:
                 "default" : ["embedding"]
             },
             "specification" : {
-                "input_cost": null,
-                "output_cost": null,
+                "input_cost": 0.02,
+                "level": 0,
                 "description" : "Text-Embedding-3-Small is a lightweight embedding model from OpenAI, optimized for efficiency and speed while maintaining strong performance. It converts text into dense vector representations for tasks like semantic search, text similarity, and clustering. With lower computational requirements, it is well-suited for real-time and large-scale applications",
                 "knowledge_cutoff" : "",
                 "usecase": [
@@ -5769,8 +5799,8 @@ class ModelsConfig:
                 "default" : ["embedding"]
             },
             "specification" : {
-                "input_cost": 30.00,
-                "output_cost": 60.00,
+                "input_cost": 0.10,
+                "level": 0,
                 "description" : "text-embedding-ada-002 is an OpenAI embedding model designed for converting text into dense vector representations. It is optimized for tasks like semantic search, clustering, and text similarity. Known for its balance of efficiency and accuracy, it provides high-quality embeddings at a lower computational cost. It is widely used in NLP applications, including recommendation systems and knowledge retrieval.",
                 "knowledge_cutoff" : "",
                 "usecase": [
