@@ -103,7 +103,7 @@ async def load_model_configuration(model, configuration):
     
     custom_config = {}
     for key, config in model_config.items():
-        if key == 'type':
+        if key == 'type' or key == 'specification':
             continue
         if config["level"] == 2 or key in configuration:
             custom_config[key] = configuration.get(key, config["default"])
