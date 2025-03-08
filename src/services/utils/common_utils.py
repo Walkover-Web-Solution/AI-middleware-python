@@ -259,10 +259,10 @@ async def total_token_calculation(parsed_data):
     await update_bridge(bridge_id=bridge_id, update_fields={'total_tokens': total_tokens})
     del parsed_data['total_tokens']
 
-async def process_background_tasks(parsed_data, result, params):
+async def process_background_tasks(parsed_data, result, params, send_error_to_webhook):
     tasks = [
             sendResponse(parsed_data['response_format'], result["modelResponse"], success=True, variables=parsed_data.get('variables',{})),
-            metrics_service.create([parsed_data['usage']], result["historyParams"], parsed_data['version_id']),
+            metrics_service.create([parsed_data['usage']], result["historyParams"], parsed_data['version_id'], send_error_to_webhook),
             validateResponse(final_response=result['modelResponse'], configration=parsed_data['configuration'], bridgeId=parsed_data['bridge_id'], message_id=parsed_data['message_id'], org_id=parsed_data['org_id']),
             total_token_calculation(parsed_data),
         ]

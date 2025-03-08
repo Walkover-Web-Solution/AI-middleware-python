@@ -8,7 +8,6 @@ from sqlalchemy import and_
 from ..controllers.conversationController import savehistory
 from .conversationDbService import insertRawData, timescale_metrics
 from ..services.cache_service import find_in_cache, store_in_cache
-from src.services.utils.send_error_webhook import send_error_to_webhook
 
 postgres = combined_models['pg']
 timescale = combined_models['timescale']
@@ -42,7 +41,7 @@ async def find_one_pg(id):
     model = postgres.raw_data
     return await model.find_by_pk(id)
 
-async def create(dataset, history_params, version_id):
+async def create(dataset, history_params, version_id, send_error_to_webhook):
     try:
         result = await savehistory(
             history_params['thread_id'], history_params['sub_thread_id'], history_params['user'], history_params['message'],
