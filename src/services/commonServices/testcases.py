@@ -55,7 +55,8 @@ async def run_testcase_for_tools(testcase_data, parsed_data, function_names, giv
         
         if not validate_tool_call(model_output_config, parsed_data['service'], result['response']):
             return testcase_result
-        tool_call_response = make_code_mapping_by_service(result['response'], parsed_data['service']).values()
+        tool_call_response, function_Calls_ignore = make_code_mapping_by_service(result['response'], parsed_data['service'])
+        tool_call_response = tool_call_response.values()
         expected_tool_calls = { tool_call['id'] : tool_call['arguments'] for tool_call in testcase_data['expected']['tool_calls']} 
         
         for tool_call in tool_call_response:
@@ -74,7 +75,7 @@ async def run_testcase_for_tools(testcase_data, parsed_data, function_names, giv
 
 async def run_testcases(parsed_data, org_id, bridge_id, chat):
     functions = await get_all_api_calls_by_org_id(org_id)
-    function_names = {makeFunctionName(func['endpoint_name']): func['_id'] for func in functions}
+    function_names = {makeFunctionName(func['endpoint_name'] or func['function_name']): func['_id'] for func in functions}
         
     testcases_data = await get_testcases(bridge_id)
     # version_data = (await get_bridges_with_tools_and_apikeys(None, parsed_data['org_id'], version_id))['bridges']
