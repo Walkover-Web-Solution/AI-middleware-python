@@ -160,5 +160,6 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
         "rag_data":rag_data,
         "actions": result.get("bridges", {}).get("actions", []),
         "name" : result.get("bridges", {}).get("name") or '',
-        "org_name" : org_name
+        "org_name" : org_name,
+        "bridge_id" : result['bridges'].get('parent_id', result['bridges'].get('_id')) 
     }

@@ -17,6 +17,11 @@ from src.services.utils.rich_text_support import process_chatbot_response
 app = FastAPI()
 from src.services.utils.helper import Helper
 configurationModel = db["configurations"]
+import pydash as _
+from src.services.commonServices.testcases import run_testcases as run_bridge_testcases
+
+
+
 
 @app.post("/chat/{bridge_id}")
 @handle_exceptions
@@ -106,6 +111,7 @@ async def chat(request_body):
                 result['modelResponse']['data']['message_id'] = parsed_data['message_id']
             asyncio.create_task(process_background_tasks(parsed_data, result, params, send_error_to_webhook))
         return JSONResponse(status_code=200, content={"success": True, "response": result["modelResponse"]})
+    
     except (Exception, ValueError) as error:
         traceback.print_exc()
         if not parsed_data['is_playground']:
@@ -227,4 +233,18 @@ async def batch(request_body):
         
         return JSONResponse(status_code=200, content={"success": True, "response": result["message"]})
     except Exception as error:
+        traceback.print_exc()
         raise ValueError(error)
+    
+    
+async def run_testcases(request_body):
+    try:
+        parsed_data = parse_request_body(request_body)
+        org_id = request_body['state']['profile']['org']['id']
+        result = await run_bridge_testcases(parsed_data, org_id, parsed_data['body']['bridge_id'], chat)
+        return JSONResponse(content={'success': True, 'response': {'testcases_result': dict(result)}})
+    except Exception as error:
+        print('Error in running testcases')
+        traceback.print_exc()
+        return JSONResponse(status_code=400, content={'success': False, 'error': str(error)})
+    
