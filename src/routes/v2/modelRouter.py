@@ -9,6 +9,7 @@ from config import Config
 from src.services.commonServices.queueService.queueService import queue_obj
 from src.middlewares.ratelimitMiddleware import rate_limit
 
+
 router = APIRouter()
 
 executor = ThreadPoolExecutor(max_workers= int(Config.max_workers) or 10)

@@ -21,6 +21,8 @@ import pydash as _
 from src.services.commonServices.testcases import run_testcases as run_bridge_testcases
 
 
+
+
 @app.post("/chat/{bridge_id}")
 @handle_exceptions
 async def chat(request_body): 
@@ -239,7 +241,7 @@ async def run_testcases(request_body):
     try:
         parsed_data = parse_request_body(request_body)
         org_id = request_body['state']['profile']['org']['id']
-        result = await run_bridge_testcases(parsed_data, org_id, parsed_data['body']['bridge_id'])
+        result = await run_bridge_testcases(parsed_data, org_id, parsed_data['body']['bridge_id'], chat)
         return JSONResponse(content={'success': True, 'response': {'testcases_result': dict(result)}})
     except Exception as error:
         print('Error in running testcases')
