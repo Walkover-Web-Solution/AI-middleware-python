@@ -3,7 +3,7 @@ import json
 import uuid
 
 def add_prompt_and_conversations(custom_config, conversations, service, prompt):
-    custom_config['messages'] = custom_messages(custom_config, conversations, service, prompt)
+    custom_config['messages'] = custom_messages(custom_config, MakeConversationsAsPerService(conversations), service, prompt)
     base_service = BaseService({})
     return base_service.service_formatter(custom_config, service)
 
