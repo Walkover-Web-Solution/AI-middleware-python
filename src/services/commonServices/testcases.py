@@ -1,6 +1,6 @@
 from models.mongo_connection import db
 configurationModel = db["configurations"]
-from src.services.utils.testcase_utils import add_prompt_and_conversations
+from src.services.utils.testcase_utils import add_prompt_and_conversations, MakeConversationsAsPerService
 from src.services.commonServices.openAI.runModel import openai_test_model
 from src.services.commonServices.anthrophic.antrophicModelRun import anthropic_test_model
 from src.services.commonServices.groq.groqModelRun import groq_test_model
@@ -107,7 +107,7 @@ async def run_testcase_for_response(testcase_data, parsed_data, given_custom_con
         
     timer = Timer()
     timer.start()
-    parsed_data['configuration']['conversation'] = testcase_data['conversation'][:-1]
+    parsed_data['configuration']['conversation'] = MakeConversationsAsPerService(testcase_data['conversation'][:-1], parsed_data['service'])
     result = await chat({'body': { **parsed_data, 'user' : testcase_data['conversation'][-1]['content']}, 'path_params': { 'bridge_id': parsed_data['version_id'] }, 'state': {'is_playground': True, 'timer' : timer.getTime() , 'version': 2}}) 
     response = json.loads(result.__dict__['body'].decode('utf-8'))['response']['data']['content']
     

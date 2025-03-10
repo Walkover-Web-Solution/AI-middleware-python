@@ -3,7 +3,7 @@ import json
 import uuid
 
 def add_prompt_and_conversations(custom_config, conversations, service, prompt):
-    custom_config['messages'] = custom_messages(custom_config, MakeConversationsAsPerService(conversations), service, prompt)
+    custom_config['messages'] = custom_messages(custom_config, MakeConversationsAsPerService(conversations, service), service, prompt)
     base_service = BaseService({})
     return base_service.service_formatter(custom_config, service)
 
@@ -12,9 +12,9 @@ def MakeConversationsAsPerService(conversations, service):
     for conversation in conversations:    
         match service:
             case 'openai' | 'groq':
-                if conversation.role == 'tools_call':
+                if conversation.get('role') == 'tools_call':
                     id =  f"call_{uuid.uuid4().hex[:6]}"
-                    for i, tools in enumerate(conversation.content):
+                    for i, tools in enumerate(conversation.get('content')):
                         convers = {
                             "role": "assistant",
                             "content": None,
@@ -23,21 +23,21 @@ def MakeConversationsAsPerService(conversations, service):
                                 "id": f"{id}{i}{j}",
                                 "type": "function",
                                 "function": {
-                                "name": tool.name,
-                                "arguments": json.dumps(tool.args)
+                                "name": tool['name'],
+                                "arguments": json.dumps(tool['args'])
                                 }
                             } for j, tool in enumerate(tools)
                             ]
                         }
                         Newconversations.append(convers)
-                        for i, tools in enumerate(conversation.content):
+                        for i, tools in enumerate(conversation.get('content')):
                              for j, tool in enumerate(tools):
                                 conversResponse = {
                                     "role": "tool",
                                     "content": json.dumps({
-                                            "response": tool.response,
-                                            "metadata": tool.metadata,
-                                            "status": tool.status
+                                            "response": tool['response'],
+                                            "metadata": tool['metadata'],
+                                            "status": tool['status']
                                         }),
                                     "tool_call_id": f"{id}{i}{j}"
                                 }
@@ -45,26 +45,26 @@ def MakeConversationsAsPerService(conversations, service):
                 else:
                     Newconversations.append(conversation)
             case 'anthropic':
-                if conversation.role == 'tools_call':
+                if conversation.get('role') == 'tools_call':
                     id =  f"toolu_{uuid.uuid4().hex[:6]}"
-                    for i, tools in enumerate(conversation.content):
+                    for i, tools in enumerate(conversation.get('content')):
                         convers = {
-                            "role": "assistant",
-                            "content":  [
+                                "role": "assistant",
+                                "content": [
                                     {
                                         "type": "text",
                                         "text": "Call the function for better response"
                                     },
-                            {
-                                "id": f"{id}{i}{j}",
-                                "type": "tool_use",
-                                "name": tool.name,
-                                "input": tool.args
-                            } for j, tool in enumerate(tools)
-                            ]
-                        }
+                                    *[{
+                                        "id": f"{id}{i}{j}",
+                                        "type": "tool_use",
+                                        "name": tool['name'],
+                                        "input": tool['args']
+                                    } for j, tool in enumerate(tools)]
+                                ]
+                                }
                         Newconversations.append(convers)
-                        for i, tools in enumerate(conversation.content):
+                        for i, tools in enumerate(conversation.get('content')):
                             conversResponse = {
                                 "role": "user",
                                 "content": [
@@ -72,9 +72,9 @@ def MakeConversationsAsPerService(conversations, service):
                                         "id": f"{id}{i}{j}",
                                         "type": "tool_result",
                                         "content": json.dumps({
-                                            "response": tool.response,
-                                            "metadata": tool.metadata,
-                                            "status": tool.status
+                                            "response": tool['response'],
+                                            "metadata": tool['metadata'],
+                                            "status": tool['status']
                                         })
                                     } for j, tool in enumerate(tools)
                                 ]
