@@ -1,6 +1,6 @@
 from .apiservice import fetch
 
-async def call_ai_middleware(user, variables, configuration, response_type, thread_id, bridge_id):
+async def call_ai_middleware(user, bridge_id, variables = None, configuration = None, response_type = None, thread_id = None):
     try:
         request_body = {
             "configuration": configuration,
@@ -28,4 +28,4 @@ async def call_ai_middleware(user, variables, configuration, response_type, thre
         return response.get('response', {}).get('data', {}).get('content', "")
     except Exception as err:
         print("Error calling function=>", err)
-        return None
+        raise err
