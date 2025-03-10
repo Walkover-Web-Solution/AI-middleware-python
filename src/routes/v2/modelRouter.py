@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, Request, HTTPException
 import asyncio
-from src.services.commonServices.common import chat, embedding, batch
+from src.services.commonServices.common import chat, embedding, batch, run_testcases
 from src.services.commonServices.baseService.utils import make_request_data
 from ...middlewares.middleware import jwt_middleware
 from ...middlewares.getDataUsingBridgeId import add_configuration_data_to_body
@@ -8,6 +8,7 @@ from concurrent.futures import ThreadPoolExecutor
 from config import Config
 from src.services.commonServices.queueService.queueService import queue_obj
 from src.middlewares.ratelimitMiddleware import rate_limit
+
 
 router = APIRouter()
 
@@ -59,4 +60,11 @@ async def playground_chat_completion(request: Request, db_config: dict = Depends
 async def batch_chat_completion(request: Request, db_config: dict = Depends(add_configuration_data_to_body)):
     data_to_send = await make_request_data(request)
     result = await batch(data_to_send)
+    return result
+
+
+@router.post('/testcases/{version_id}', dependencies=[Depends(auth_and_rate_limit)])
+async def playground_chat_completion(request: Request, db_config: dict = Depends(add_configuration_data_to_body)):
+    data_to_send = await make_request_data(request)
+    result = await run_testcases(data_to_send)
     return result

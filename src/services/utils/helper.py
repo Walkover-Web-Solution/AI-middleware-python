@@ -265,3 +265,24 @@ class Helper:
             response, _ = await fetch(f"https://routes.msg91.com/api/{Config.PUBLIC_REFERENCEID}/getCompanies?id={org_id}", "GET", {"Authkey": Config.ADMIN_API_KEY}, None, None)
             await store_in_cache(org_id, response.get('data', {}).get('data', [{}])[0])
             return response.get('data', {}).get('data', [{}])[0]
+    def sort_bridges(bridges, metrics_data):
+        # Create a dictionary to map _id to total tokens
+        token_map = {_id: tokens for _id, tokens in metrics_data}
+        
+        # Split bridges into those with and without metrics data
+        present = []
+        not_present = []
+        for bridge in bridges:
+            if bridge['_id'] in token_map:
+                bridge['total_tokens'] = token_map[bridge['_id']]
+                present.append(bridge)
+
+            else:
+                bridge['total_tokens'] = 0
+                not_present.append(bridge)
+        
+        # Sort the present bridges by descending token count
+        # present.sort(key=lambda x: token_map[x['_id']], reverse=True)
+        
+        # Combine the lists, keeping not_present bridges in their original order at the end
+        return present + not_present

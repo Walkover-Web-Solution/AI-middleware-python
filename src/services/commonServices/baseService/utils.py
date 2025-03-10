@@ -21,7 +21,7 @@ def clean_json(data):
         return data
 
 def validate_tool_call(modelOutputConfig, service, response):
-    match service:
+    match service: # TODO: Fix validation process.
         case 'openai' | 'groq':
             return len(response.get('choices', [])[0].get('message', {}).get("tool_calls", [])) > 0
         case 'anthropic':
@@ -256,6 +256,7 @@ async def process_data_and_run_tools(codes_mapping, tool_id_and_name_mapping, or
 
 def make_code_mapping_by_service(responses, service):
     codes_mapping = {}
+    function_list = []
     match service:
         case 'openai' | 'groq':
 
@@ -274,6 +275,7 @@ def make_code_mapping_by_service(responses, service):
                     'args': args,
                     "error": error
                 }
+                function_list.append(name)
         case 'anthropic':
             for tool_call in responses['content'][1:]:  # Skip the first item
                 name = tool_call['name']
@@ -283,9 +285,10 @@ def make_code_mapping_by_service(responses, service):
                     'args': args,
                     "error": False
                 }
+                function_list.append(name)
         case _:
-            return False, {}
-    return codes_mapping
+            return {}, []
+    return codes_mapping, function_list
     
 def convert_datetime(obj):
     """Recursively convert datetime objects in a dictionary or list to ISO format strings."""

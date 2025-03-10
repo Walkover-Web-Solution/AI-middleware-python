@@ -20,6 +20,8 @@ from ..utils.gpt_memory import handle_gpt_memory
 from datetime import datetime, timedelta, timezone
 from src.services.commonServices.suggestion import chatbot_suggestions
 from src.services.cache_service import find_in_cache, store_in_cache
+from src.db_services.ConfigurationServices import get_bridges_without_tools
+from src.db_services.ConfigurationServices import update_bridge
 
 
 def parse_request_body(request_body):
@@ -101,7 +103,7 @@ async def load_model_configuration(model, configuration):
     
     custom_config = {}
     for key, config in model_config.items():
-        if key == 'type':
+        if key == 'type' or key == 'specification':
             continue
         if config["level"] == 2 or key in configuration:
             custom_config[key] = configuration.get(key, config["default"])
@@ -243,12 +245,26 @@ def build_service_params(parsed_data, custom_config, model_output_config, thread
         "org_name" : parsed_data['org_name']
 
     }
+async def total_token_calculation(parsed_data):
+    total_tokens = parsed_data['tokens'].get('inputTokens', 0) + parsed_data['tokens'].get('outputTokens', 0)
+    parsed_data['total_tokens'] = total_tokens
+    bridge_id = parsed_data['bridge_id']
+    bridge_data = (await get_bridges_without_tools(bridge_id, org_id= None)).get("bridges")
+    if bridge_data and 'total_tokens' in bridge_data:
+        total_tokens = bridge_data['total_tokens'] + total_tokens
+    else:
+        total_tokens = total_tokens
+    
+    # Fix: update_bridge expects update_fields as a dictionary parameter
+    await update_bridge(bridge_id=bridge_id, update_fields={'total_tokens': total_tokens})
+    del parsed_data['total_tokens']
 
-async def process_background_tasks(parsed_data, result, params):
+async def process_background_tasks(parsed_data, result, params, send_error_to_webhook):
     tasks = [
             sendResponse(parsed_data['response_format'], result["modelResponse"], success=True, variables=parsed_data.get('variables',{})),
-            metrics_service.create([parsed_data['usage']], result["historyParams"], parsed_data['version_id']),
-            validateResponse(final_response=result['modelResponse'], configration=parsed_data['configuration'], bridgeId=parsed_data['bridge_id'], message_id=parsed_data['message_id'], org_id=parsed_data['org_id'])
+            metrics_service.create([parsed_data['usage']], result["historyParams"], parsed_data['version_id'], send_error_to_webhook),
+            validateResponse(final_response=result['modelResponse'], configration=parsed_data['configuration'], bridgeId=parsed_data['bridge_id'], message_id=parsed_data['message_id'], org_id=parsed_data['org_id']),
+            total_token_calculation(parsed_data),
         ]
     if parsed_data['bridgeType']:
         tasks.append(chatbot_suggestions(parsed_data['response_format'], result["modelResponse"], parsed_data, params))

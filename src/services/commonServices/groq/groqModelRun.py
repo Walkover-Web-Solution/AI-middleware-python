@@ -51,3 +51,15 @@ async def groq_runmodel(configuration, apiKey, execution_time_logs, bridge_id, t
             'success': False,
             'error': str(e)
         }
+
+async def groq_test_model(configuration, api_key): 
+    groq_client = AsyncGroq(api_key = api_key)
+    try:
+        response = await groq_client.chat.completions.create(**configuration)
+        return {'success': True, 'response': response.to_dict()}
+    except Exception as error:
+        return {
+            'success': False,
+            'error': str(error),
+            'status_code': getattr(error, 'status_code', None)
+        }

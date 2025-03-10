@@ -8,7 +8,7 @@ async def send_error_to_webhook(bridge_id, org_id, error_log, error_type):
         bridge_id (str): Identifier for the bridge.
         org_id (str): Identifier for the organization.
         error_log (dict): Error log details.
-        error_type (str): Type of the error (e.g., 'Variable', 'Error').
+        error_type (str): Type of the error (e.g., 'Variable', 'Error', 'metrix_limit_reached').
 
     Returns:
         None
@@ -34,11 +34,14 @@ async def send_error_to_webhook(bridge_id, org_id, error_log, error_type):
         })
 
         # Generate the appropriate payload based on the error type
-        details_payload = (
-            create_missing_vars(error_log)
-            if error_type == 'Variable'
-            else create_error_payload(error_log)
-        )
+        
+        if error_type == 'Variable': 
+            details_payload = create_missing_vars(error_log)
+        elif error_type == 'metrix_limit_reached':
+            details_payload = metrix_limit_reached(error_log)
+        else:
+            details_payload = create_error_payload(error_log)
+        
 
         # Iterate through webhook configurations and send responses
         for entry in webhook_data:
@@ -46,6 +49,8 @@ async def send_error_to_webhook(bridge_id, org_id, error_log, error_type):
             bridges = entry.get('bridges', [])
 
             if error_type in entry.get('alertType', []) and (bridge_id in bridges or 'all' in bridges):
+                if(error_type == 'metrix_limit_reached' and entry.get('limit', 500) == error_log): 
+                    continue
                 webhook_url = webhook_config['url']
                 headers = webhook_config.get('headers', {})
 
@@ -67,6 +72,12 @@ def create_missing_vars(details):
     return {
         "alert" : "variables missing",
         "Variables" : details
+    }
+
+def metrix_limit_reached(details):
+    return {
+        "alert" : "limit_reached",
+        "Limit Size" : details
     }
 
 def create_error_payload(details):
