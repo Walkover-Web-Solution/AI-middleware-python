@@ -10,6 +10,7 @@ from src.services.commonServices.common import chat
 from ..services.utils.helper import Helper
 from ..services.utils.nlp import compute_cosine_similarity
 from ..services.utils.time import Timer
+from src.db_services.testcase_services import delete_current_testcase_history
 
 configurationModel = db["configurations"]
 version_model = db['configuration_versions']
@@ -163,6 +164,7 @@ async def publish(org_id, version_id):
                 "success": False,
                 "error": "Version data not found"
             }
+        
         parent_id = str(get_version_data.get('parent_id'))
         cache_key = f"{parent_id}"
         await delete_in_cache(cache_key)
@@ -179,17 +181,23 @@ async def publish(org_id, version_id):
                 "success": False,
                 "error": "Parent configuration not found"
             }
+        
         published_version_id = str(get_version_data['_id'])
         get_version_data.pop('_id', None)
         updated_configuration = {**parent_configuration, **get_version_data}
         updated_configuration['published_version_id'] = published_version_id
+        
         asyncio.create_task(makeQuestion(parent_id, updated_configuration.get("configuration",{}).get("prompt",""), updated_configuration.get('apiCalls'), save=True))
+        asyncio.create_task(delete_current_testcase_history(version_id))
+        
         if updated_configuration.get('function_ids'):
             updated_configuration['function_ids'] = [ObjectId(fid) for fid in updated_configuration['function_ids']]
+        
         await configurationModel.update_one(
             {'_id': ObjectId(parent_id)},
             {'$set': updated_configuration}
         )
+        
         await version_model.update_one({'_id': ObjectId(published_version_id)}, {'$set': {'is_drafted': False}})
         
         return {
