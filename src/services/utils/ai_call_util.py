@@ -14,7 +14,7 @@ async def call_ai_middleware(user, bridge_id, variables = None, configuration = 
             request_body["thread_id"] = thread_id
         
         response, rs_headers = await fetch(
-            f"https://proxy.viasocket.com/proxy/api/1258584/29gjrmh24/api/v2/model/chat/completion",
+            f"https://api.gtwy.ai/api/v2/model/chat/completion",
             "POST",
             {
                 "pauthkey": "1b13a7a038ce616635899a239771044c",
