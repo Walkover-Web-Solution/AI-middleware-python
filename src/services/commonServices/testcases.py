@@ -1,6 +1,6 @@
 from models.mongo_connection import db
 configurationModel = db["configurations"]
-from src.services.utils.testcase_utils import add_prompt_and_conversations, make_json_serializable
+from src.services.utils.testcase_utils import add_prompt_and_conversations, make_json_serializable, make_conversations_as_per_service
 from src.services.commonServices.openAI.runModel import openai_test_model
 from src.services.commonServices.anthrophic.antrophicModelRun import anthropic_test_model
 from src.services.commonServices.groq.groqModelRun import groq_test_model
@@ -19,6 +19,7 @@ from src.services.utils.helper import Helper
 from src.services.utils.nlp import compute_cosine_similarity
 import json
 from src.services.utils.ai_call_util import call_ai_middleware
+from src.services.utils.ai_middleware_format import Response_formatter
 
 
 
@@ -35,13 +36,10 @@ async def run_testcase_for_tools(testcase_data, parsed_data, function_names, giv
                 result = await groq_test_model(custom_config, apikey)  
             case 'anthropic' : 
                 result = await anthropic_test_model(custom_config, apikey)   
+                
+        return result['response']
 
-        if not validate_tool_call(model_output_config, parsed_data['service'], result['response']):
-            return None
-        
-        tool_call_response, function_list  = make_code_mapping_by_service(result['response'], parsed_data['service'])
-        tool_call_response = list(tool_call_response.values())
-        return tool_call_response
+
     except Exception as error:
         traceback.print_exc()
         return False
@@ -62,11 +60,12 @@ async def run_testcases(parsed_data, org_id, bridge_id, chat):
     
     tasks = [
         run_testcase_for_tools(testcase, parsed_data, function_names, custom_config, model_output_config)
-        if testcase['type'] == 'function'
-        else run_testcase_for_response(testcase, parsed_data, chat)
+        # if testcase['type'] == 'function'
+        # else run_testcase_for_response(testcase, parsed_data, chat)
         for testcase in testcases_data
     ]
     result = await asyncio.gather(*tasks)
+    expected_answers = [extract_tool_response(res, model_output_config, parsed_data['service']) if testcase['type'] == 'function' else await extract_response(res, parsed_data['service']) for res, testcase in zip(result, testcases_data )]
     data_to_insert = [{
             'bridge_id' : parsed_data['bridge_id'], 
             'version_id' : parsed_data['version_id'],
@@ -78,19 +77,34 @@ async def run_testcases(parsed_data, org_id, bridge_id, chat):
             }, 
             'model_output' : test_result, 
             'score' : await compare_result(testcase_data['expected']['response' if testcase_data['type'] == 'response' else 'tool_calls'], test_result, testcase_data['matching_type'], testcase_data['type'])
-    } for testcase_data, test_result in zip(testcases_data, result)]
-    
-    print("data to insert", "something", data_to_insert)
+    } for testcase_data, test_result in zip(testcases_data, expected_answers)]
     
     response = {str(testcase['_id']) : { **make_json_serializable(testcase), **{'result': testcase_result} } for testcase, testcase_result in zip(testcases_data, data_to_insert) }
     await create_testcases_history(data_to_insert)
     return response
 
 
+def extract_tool_response(response, model_output_config, service):
+    if not validate_tool_call(model_output_config, service, response):
+        return None
+        
+    tool_call_response, function_list  = make_code_mapping_by_service(response, service)
+    tool_call_response = list(tool_call_response.values())
+    return tool_call_response
+
+async def extract_response(response, service):
+    if not response : 
+        return ''
+    response = await Response_formatter(response = response, service = service)
+    # response = json.loads(response.__dict__[' body'].decode('utf-8'))['response']['data']['content']
+    
+    return response['data'].get('content', '')
+
 async def run_testcase_for_response(testcase_data, parsed_data, chat):
     timer = Timer()
     timer.start()
     parsed_data['configuration']['conversation'] = testcase_data['conversation'][:-1]
+    parsed_data['configuration']['conversation'] = make_conversations_as_per_service(testcase_data['conversation'][:-1], parsed_data['service'])
     result = await chat({'body': { **parsed_data, 'user' : testcase_data['conversation'][-1]['content']}, 'path_params': { 'bridge_id': parsed_data['version_id'] }, 'state': {'is_playground': True, 'timer' : timer.getTime() , 'version': 2}}) 
     response = json.loads(result.__dict__['body'].decode('utf-8'))['response']['data']['content']
     return response
