@@ -22,7 +22,7 @@ from src.services.commonServices.suggestion import chatbot_suggestions
 from src.services.cache_service import find_in_cache, store_in_cache
 from src.db_services.ConfigurationServices import get_bridges_without_tools
 from src.db_services.ConfigurationServices import update_bridge
-
+from src.configs.model_configuration import document
 
 def parse_request_body(request_body):
     body = request_body.get('body', {})
@@ -92,12 +92,11 @@ def initialize_timer(state: Dict[str, Any]) -> Timer:
     return timer_obj
 
 async def load_model_configuration(model, configuration):
-    modelname = model.replace("-", "_").replace(".", "_")
-    modelfunc = getattr(ModelsConfig, modelname, None)
-    if not modelfunc:
+    model_obj = document.get(model)
+    if not model_obj:
         raise ValueError(f"Model {model} not found in ModelsConfig.")
     
-    model_obj = modelfunc()
+    # model_obj = modelfunc()
     model_config = model_obj['configuration']
     model_output_config = model_obj['outputConfig']
     
