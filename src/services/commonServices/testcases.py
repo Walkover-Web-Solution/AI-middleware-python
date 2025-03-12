@@ -1,6 +1,6 @@
 from models.mongo_connection import db
 configurationModel = db["configurations"]
-from src.services.utils.testcase_utils import add_prompt_and_conversations, MakeConversationsAsPerService
+from src.services.utils.testcase_utils import add_prompt_and_conversations, make_json_serializable, make_conversations_as_per_service
 from src.services.commonServices.openAI.runModel import openai_test_model
 from src.services.commonServices.anthrophic.antrophicModelRun import anthropic_test_model
 from src.services.commonServices.groq.groqModelRun import groq_test_model
@@ -17,9 +17,9 @@ from itertools import chain
 from src.services.utils.time import Timer
 from src.services.utils.helper import Helper
 from src.services.utils.nlp import compute_cosine_similarity
-from src.services.utils.ai_call_util import call_ai_middleware
-# from ..utils.ai_middleware_format import Response_formatter
 import json
+from src.services.utils.ai_call_util import call_ai_middleware
+from src.services.utils.ai_middleware_format import Response_formatter
 
 
 
@@ -36,48 +36,13 @@ async def run_testcase_for_tools(testcase_data, parsed_data, function_names, giv
                 result = await groq_test_model(custom_config, apikey)  
             case 'anthropic' : 
                 result = await anthropic_test_model(custom_config, apikey)   
-        
-        # tool_call_response = extract_tool_call(parsed_data['service'], result['response'])
-        # if not result['response']['choices'][0]['message']['tool_calls']
-        testcase_result = {
-            tool['id']: {
-                'model_output' : tool['arguments'],    
-                'bridge_id' : parsed_data['bridge_id'], 
-                'version_id' : parsed_data['version_id'],
-                'created_at' : datetime.now().isoformat(), 
-                'testcase_id' : str(testcase_data['_id']),
-                'metadata' : {
-                    'system_prompt' : parsed_data['body']['configuration']['prompt'], 
-                    'model' : given_custom_config['model']
-                }, 
-            } 
-            for tool in testcase_data['expected']['tool_calls']
-        }
-        
-        if not validate_tool_call(model_output_config, parsed_data['service'], result['response']):
-            return testcase_result
-        tool_call_response, function_Calls_ignore = make_code_mapping_by_service(result['response'], parsed_data['service'])
-        tool_call_response = list(tool_call_response.values())
-        expected_tool_calls = { tool_call['id'] : tool_call['arguments'] for tool_call in testcase_data['expected']['tool_calls']} 
-        
-        total_score = 0
-        for tool_call in tool_call_response:
-                tool_id = function_names.get(tool_call['name'])
-                if not tool_id :
-                    continue
-                score = 1 if _.is_equal(tool_call['args'], expected_tool_calls[tool_id]) else 0
-                testcase_result[tool_id]['score'] = score if testcase_data['matching_type'] == 'exact' else await calculate_score(testcase_data['expected']['tool_calls'], tool_call_response, testcase_data['matching_type'], testcase_data['type'])
-                testcase_result[tool_id]['model_output'] = tool_call['args']
-                total_score += score
-        
-        # if testcase_data['matching_type'] != 'exact' : 
-        #     testcase_result['score'] =  await calculate_score(testcase_data['expected']['tool_calls'], tool_call_response, testcase_data['matching_type'], testcase_data['type'])
-        # else:     
-        #     testcase_result['score'] =  total_score / len(tool_call_response)
-        return testcase_result
+                
+        return result['response']
+
+
     except Exception as error:
         traceback.print_exc()
-        raise error
+        return False
 
 
 async def run_testcases(parsed_data, org_id, bridge_id, chat):
@@ -93,58 +58,72 @@ async def run_testcases(parsed_data, org_id, bridge_id, chat):
         model_config['configuration'], custom_config, parsed_data['service']
     )
     
-    tasks = [run_testcase_for_tools(testcase, parsed_data, function_names, custom_config, model_output_config) for testcase in testcases_data if testcase['type'] == 'function']         
-    tasks1 = [run_testcase_for_response(testcase, parsed_data, custom_config, model_output_config, chat) for testcase in testcases_data if testcase['type'] == 'response']         
-    result = await asyncio.gather(*tasks, *tasks1)
-    response = {str(testcase['_id']) : { 'result': testcase_result } for testcase, testcase_result in zip(testcases_data, result)}
-    to_insert = list(chain.from_iterable(item.values() for item in result))
-    print(to_insert)
-    await create_testcases_history(to_insert)
-    return response
-
-
-async def run_testcase_for_response(testcase_data, parsed_data, given_custom_config, model_output_config, chat):
-        
-    timer = Timer()
-    timer.start()
-    parsed_data['configuration']['conversation'] = MakeConversationsAsPerService(testcase_data['conversation'][:-1], parsed_data['service'])
-    result = await chat({'body': { **parsed_data, 'user' : testcase_data['conversation'][-1]['content']}, 'path_params': { 'bridge_id': parsed_data['version_id'] }, 'state': {'is_playground': True, 'timer' : timer.getTime() , 'version': 2}}) 
-    response = json.loads(result.__dict__['body'].decode('utf-8'))['response']['data']['content']
-    
-    testcase_result = {    
-        str(testcase_data['_id']): {
+    tasks = [
+        run_testcase_for_tools(testcase, parsed_data, function_names, custom_config, model_output_config)
+        # if testcase['type'] == 'function'
+        # else run_testcase_for_response(testcase, parsed_data, chat)
+        for testcase in testcases_data
+    ]
+    result = await asyncio.gather(*tasks)
+    expected_answers = [extract_tool_response(res, model_output_config, parsed_data['service']) if testcase['type'] == 'function' else await extract_response(res, parsed_data['service']) for res, testcase in zip(result, testcases_data )]
+    data_to_insert = [{
             'bridge_id' : parsed_data['bridge_id'], 
             'version_id' : parsed_data['version_id'],
             'created_at' : datetime.now().isoformat(), 
             'testcase_id' : str(testcase_data['_id']),
             'metadata' : {
                 'system_prompt' : parsed_data['body']['configuration']['prompt'], 
-                'model' : given_custom_config['model']
+                'model' : custom_config['model']
             }, 
-        }    
-    }
-
-
-    # testcase_result[str(testcase_data['_id'])]['score'] = compute_cosine_similarity(testcase_data['expected']['response'], response)
-    testcase_result[str(testcase_data['_id'])]['score'] = await calculate_score(testcase_data['expected']['response'], response, testcase_data['matching_type'], testcase_data['type'])
-    testcase_result[str(testcase_data['_id'])]['model_output'] = response
+            'model_output' : test_result, 
+            'score' : await compare_result(testcase_data['expected']['response' if testcase_data['type'] == 'response' else 'tool_calls'], test_result, testcase_data['matching_type'], testcase_data['type'])
+    } for testcase_data, test_result in zip(testcases_data, expected_answers)]
     
+    response = {str(testcase['_id']) : { **make_json_serializable(testcase), **{'result': testcase_result} } for testcase, testcase_result in zip(testcases_data, data_to_insert) }
+    await create_testcases_history(data_to_insert)
+    return response
+
+
+def extract_tool_response(response, model_output_config, service):
+    if not validate_tool_call(model_output_config, service, response):
+        return None
+        
+    tool_call_response, function_list  = make_code_mapping_by_service(response, service)
+    tool_call_response = list(tool_call_response.values())
+    return tool_call_response
+
+async def extract_response(response, service):
+    if not response : 
+        return ''
+    response = await Response_formatter(response = response, service = service)
+    # response = json.loads(response.__dict__[' body'].decode('utf-8'))['response']['data']['content']
     
-    return testcase_result
+    return response['data'].get('content', '')
+
+async def run_testcase_for_response(testcase_data, parsed_data, chat):
+    timer = Timer()
+    timer.start()
+    parsed_data['configuration']['conversation'] = testcase_data['conversation'][:-1]
+    parsed_data['configuration']['conversation'] = make_conversations_as_per_service(testcase_data['conversation'][:-1], parsed_data['service'])
+    result = await chat({'body': { **parsed_data, 'user' : testcase_data['conversation'][-1]['content']}, 'path_params': { 'bridge_id': parsed_data['version_id'] }, 'state': {'is_playground': True, 'timer' : timer.getTime() , 'version': 2}}) 
+    response = json.loads(result.__dict__['body'].decode('utf-8'))['response']['data']['content']
+    return response
 
 
-async def calculate_score(expected, actual, matching_type, response_type): 
-    match matching_type : 
-        case 'cosine': 
-            expected = json.dumps(expected) if isinstance(expected, dict) else str(expected)
-            actual = json.dumps(actual) if isinstance(actual, dict) else str(actual)
+async def compare_result(expected, actual, matching_type, response_type):
+    if(response_type == 'function'):
+        pass
+        
+        expected = {case['name'] : case['arguments'] for case in expected}
+        actual = {case['name'] : case['args'] for case in actual}
+    match matching_type: 
+        case 'cosine' : 
+            expected = str(expected)
+            actual = str(actual)
             return compute_cosine_similarity(expected, actual)
-        case 'exact' : 
-            return _.is_equal(actual, expected)
+        case 'exact': 
+                return 1 if _.is_equal(expected, actual) else 0
         case 'ai' : 
-            return await check_score_with_ai(expected, actual)
-    
-
-async def check_score_with_ai(expected, actual):
-    response = json.loads(await call_ai_middleware(actual, '67ce993c8407023ad4f7b277', variables = {'expected' : expected }))['score']
-    print(response)
+            response =  await call_ai_middleware(str(actual), '67ce993c8407023ad4f7b277', variables = ({'expected' : str(expected) }))
+            return json.loads(response)['score']
+        

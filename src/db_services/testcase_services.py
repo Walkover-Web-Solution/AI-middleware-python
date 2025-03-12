@@ -1,5 +1,6 @@
 from models.mongo_connection import db
 configurationModel = db["configurations"]
+import traceback
 
 testcases_model = db['testcases']
 testcases_history_model = db['testcases_history']
@@ -30,3 +31,28 @@ async def fetch_testcases_history(bridge_id):
     cursor = testcases_model.aggregate(pipeline)
     result = await cursor.to_list(length=None)
     return result
+
+async def delete_current_testcase_history(version_id):
+    try:
+        
+        pipeline = [
+            {"$match": {"version_id": version_id}},
+            {"$sort": {"testcase_id": 1, "created_at": -1}},
+            {
+                "$group": {
+                    "_id": "$testcase_id",
+                    "latest_id": {"$first": "$_id"}
+                }
+            },
+            {"$project": {"_id": 0, "latest_id": 1}}
+        ]
+
+        # Get IDs of latest entries
+        cursor = testcases_history_model.aggregate(pipeline)
+        latest_ids = [doc["latest_id"] async for doc in cursor]
+
+        # Delete all other entries for the given version_id
+        await testcases_history_model.delete_many({"version_id": version_id, "_id": {"$nin": latest_ids}})
+    except Exception as e: 
+        print("Error in deleting version testcase history", str(e))
+        traceback.print_exc()
