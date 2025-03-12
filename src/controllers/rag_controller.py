@@ -262,7 +262,7 @@ async def get_text_from_vectorsQuery(args):
         if not doc_data: 
             raise Exception("Invalid document id provided.")
         
-        if doc_data['source']['fileFormat'] == 'csv': 
+        if doc_data['source'].get('fileFormat') == 'csv': 
             to_search_for = await get_csv_query_type(doc_data, query)
             additional_query['chunkType'] = to_search_for
         
