@@ -44,10 +44,7 @@ async def lifespan(app: FastAPI):
     
     asyncio.create_task(repeat_function())
     file_path = "modelConfig.json"
-    documents = await get_model_configurations()  # Ensure this is async
-    with open(file_path, "w") as file:
-        json.dump(documents, file, default=str)
-    print(f"Data written to {file_path}.")
+    documents = await get_model_configurations()
     yield  # Startup logic is complete
     # Shutdown logic
     logger.info("Shutting down...")
