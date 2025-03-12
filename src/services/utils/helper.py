@@ -8,7 +8,7 @@ import traceback
 from functools import reduce
 import operator
 import re
-from src.configs.modelConfiguration import ModelsConfig as model_configuration
+from src.configs.model_configuration import model_config_document
 import jwt
 from ..commonServices.openAI.openaiCall import UnifiedOpenAICase
 from ..commonServices.openAI.openai_batch import OpenaiBatch
@@ -135,9 +135,9 @@ class Helper:
     def response_middleware_for_bridge(finalResponse):
         try:
             response = finalResponse['bridge']
-            model_name = response['configuration']['model'].replace("-", "_").replace(".", "_")
-            configuration = getattr(model_configuration,model_name,None)
-            configurations = configuration()['configuration']
+            model = response['configuration']['model']
+            modelObj = model_config_document[model]
+            configurations = modelObj['configuration']
             db_config = response['configuration']
             # if response.get('apikey'):
             #     decryptedApiKey = Helper.decrypt(response['apikey'])
@@ -186,11 +186,9 @@ class Helper:
         usage = {}
         token_cost = {}
         permillion = 1000000
-        modelname = model.replace("-", "_").replace(".", "_")
-        modelfunc = getattr(model_configuration, modelname, None)
-        if modelfunc is None:
-            raise AttributeError(f"Model function '{modelname}' not found in model_configuration.")
-        modelObj = modelfunc()
+        modelObj = model_config_document[model]
+        if modelObj is None:
+            raise AttributeError(f"Model function '{model}' not found in model_configuration.")
 
         if service in ['openai', 'groq']:
             token_cost['input_cost'] = modelObj['outputConfig']['usage'][0]['total_cost'].get('input_cost') or 0

@@ -14,6 +14,7 @@ from src.services.utils.getDefaultValue import get_default_values_controller
 from src.db_services.bridge_version_services import create_bridge_version
 from src.services.utils.apicallUtills import delete_all_version_and_bridge_ids_from_cache
 from src.db_services.conversationDbService import get_timescale_data
+from src.configs.model_configuration import model_config_document
 async def create_bridges_controller(request):
     try:
         bridges = await request.json()
@@ -24,9 +25,8 @@ async def create_bridges_controller(request):
         name = bridges.get('name')
         slugName = bridges.get('slugName')
         bridgeType = bridges.get('bridgeType')
-        modelname = model.replace("-", "_").replace(".", "_")
-        configuration = getattr(model_configuration,modelname,None)
-        configurations = configuration()['configuration']
+        modelObj = model_config_document[model]
+        configurations = modelObj['configuration']
         status = 1
         keys_to_update = [
         'model',

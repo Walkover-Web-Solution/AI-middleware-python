@@ -44,7 +44,6 @@ async def lifespan(app: FastAPI):
         consume_task = asyncio.create_task(consume_messages_in_executor())
     
     asyncio.create_task(repeat_function())
-    file_path = "modelConfig.json"
     yield  # Startup logic is complete
     # Shutdown logic
     logger.info("Shutting down...")
