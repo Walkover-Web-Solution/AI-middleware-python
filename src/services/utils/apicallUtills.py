@@ -73,11 +73,6 @@ async def save_api(desc, org_id, api_data=None, required_params=None, function_n
     
 def updateFields(oldFields, newFields, versionCheck):
     def update_recursive(old, new):
-        # First remove keys that exist in old but not in new at current level
-        for key in list(old.keys()):
-            if key not in new:
-                del old[key]
-                
         # Now update/merge remaining keys
         for key in new:
             if key in old:
@@ -97,7 +92,12 @@ def updateFields(oldFields, newFields, versionCheck):
         return old
 
     if versionCheck: 
-        return update_recursive(oldFields.copy(), newFields)
+        updated = oldFields.copy()
+        for key in list(updated.keys()):
+            if key not in newFields:
+                del updated[key]
+        update_recursive(updated, newFields)
+        return updated
     else:
         transformed_data = {item["variable_name"]: {"description": item["description"], "enum": item["enum"]} for item in oldFields}
         return update_recursive(transformed_data, newFields)
