@@ -92,7 +92,12 @@ def updateFields(oldFields, newFields, versionCheck):
         return old
 
     if versionCheck: 
-        return update_recursive(oldFields.copy(), newFields)
+        updated = oldFields.copy()
+        for key in list(updated.keys()):
+            if key not in newFields:
+                del updated[key]
+        update_recursive(updated, newFields)
+        return updated
     else:
         transformed_data = {item["variable_name"]: {"description": item["description"], "enum": item["enum"]} for item in oldFields}
         return update_recursive(transformed_data, newFields)
