@@ -77,7 +77,8 @@ def parse_request_body(request_body):
         "doc_ids":body.get('ddc_ids'),
         "rag_data": body.get('rag_data'),
         "name" : body.get('name'),
-        "org_name" : body.get('org_name')
+        "org_name" : body.get('org_name'),
+        "variables_state" : body.get('variables_state')
     }
 
 
@@ -314,3 +315,14 @@ async def updateVariablesWithTimeZone(variables, org_id):
         current_time = current_time + timedelta(hours=hour, minutes=minutes)
         variables['current_time_and_date'] = current_time.strftime("%Y-%m-%d") + ' ' + current_time.strftime("%H:%M:%S") + ' ' + current_time.strftime("%A")
     return variables, org_name
+
+def filter_missing_vars(missing_vars, variables_state):
+            # Iterate through keys in missing_vars
+            keys_to_remove = [key for key, value in variables_state.items() if value != 'required']
+            
+            # Remove the keys from missing_vars that are in the keys_to_remove list
+            for key in keys_to_remove:
+                if key in missing_vars:
+                    del missing_vars[key]
+            
+            return missing_vars
