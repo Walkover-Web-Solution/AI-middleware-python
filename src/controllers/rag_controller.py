@@ -20,6 +20,8 @@ rag_parent_model = db["rag_parent_datas"]
 pc = Pinecone(api_key=Config.PINECONE_APIKEY)
 
 pinecone_index = Config.PINECONE_INDEX
+index = pc.Index(pinecone_index)
+
 # if not pc.index_exists(index_name):
 #     try:
 #         pinecone_index = pc.create_index(
@@ -176,13 +178,11 @@ async def get_vectors_and_text(request):
         
         if query is None:
             raise HTTPException(status_code=400, detail="Query is required.")
-        
         text = await get_text_from_vectorsQuery({
             'Document_id': doc_id, 
             'query': query, 
             'org_id': org_id
         })
-        
         return JSONResponse(status_code=200, content={
             "success": True,
             "text": text['response']
@@ -254,22 +254,19 @@ async def get_text_from_vectorsQuery(args):
         if query is None:
             raise HTTPException(status_code=400, detail="Query is required.")
         
-        doc_data = (await rag_parent_model.find({
-            'org_id' : org_id, 
+        doc_data = await rag_parent_model.find_one({
             '_id' : ObjectId(doc_id)
-        }).to_list())[0]
+        })
         
         if not doc_data: 
             raise Exception("Invalid document id provided.")
         
-        if doc_data['source'].get('fileFormat') == 'csv': 
+        if doc_data['source']['fileFormat'] == 'csv': 
             to_search_for = await get_csv_query_type(doc_data, query)
             additional_query['chunkType'] = to_search_for
         
         embedding = OpenAIEmbeddings(api_key=Config.OPENAI_API_KEY).embed_documents([query])
         # Query Pinecone
-        index = pc.Index(pinecone_index)
-        
         query_response = index.query(
             vector=embedding[0] if isinstance(embedding, list) and len(embedding) == 1 else list(map(float, embedding)),
             namespace=org_id,
@@ -282,6 +279,7 @@ async def get_text_from_vectorsQuery(args):
         mongo_query = {"_id": {"$in": [ObjectId(id) for id in query_response_ids] }}
         cursor = rag_model.find(mongo_query)
         mongo_results = await cursor.to_list(length=None)
+        
         text = ""
         for result in mongo_results:
             text += result.get('data', '')
@@ -296,7 +294,7 @@ async def get_text_from_vectorsQuery(args):
         
     except Exception as error:
         print(f"Error in get_vectors_and_text: {error}")
-        raise {
+        raise { #This is not how an error is raised. 
             'response': str(error),
             'metadata': {
                 'flowHitId': ''
