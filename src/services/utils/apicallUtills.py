@@ -97,18 +97,10 @@ def updateFields(oldFields, newFields, versionCheck):
         return old
 
     if versionCheck: 
-        # For v2, remove root-level keys not in newFields first, then merge
-        updated = oldFields.copy()
-        # Remove root keys that aren't in newFields
-        for key in list(updated.keys()):
-            if key not in newFields:
-                del updated[key]
-        update_recursive(updated, newFields)
-        return updated
+        return update_recursive(oldFields.copy(), newFields)
     else:
         transformed_data = {item["variable_name"]: {"description": item["description"], "enum": item["enum"]} for item in oldFields}
-        updateField = update_recursive(transformed_data, newFields)
-    return updateField
+        return update_recursive(transformed_data, newFields)
 
 async def delete_api(function_name, org_id, status = 0):
     try:
