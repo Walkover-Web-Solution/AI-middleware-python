@@ -73,26 +73,38 @@ async def save_api(desc, org_id, api_data=None, required_params=None, function_n
     
 def updateFields(oldFields, newFields, versionCheck):
     def update_recursive(old, new):
+        # First remove keys that exist in old but not in new at current level
+        for key in list(old.keys()):
+            if key not in new:
+                del old[key]
+                
+        # Now update/merge remaining keys
         for key in new:
             if key in old:
                 new[key]['description'] = old[key].get('description') if not new[key].get('description') else new[key].get('description')
                 if(new[key].get("type") == 'string'): new[key]["type"] = old[key]["type"]
+                if old[key].get("type") == 'string' and new[key].get('type') == 'object': old[key]["type"] = new[key]["type"]
                 new[key]['enum'] = old[key].get('enum') if not new[key].get('enum') else new[key].get('enum')
-
                 if isinstance(old[key], dict) and isinstance(new[key], dict):
                     if old[key].get("type") == "object" and new[key].get('type') == 'object':
                         update_recursive(old[key].get('parameter', {}), new[key].get('parameter', {}))
-
                     elif old[key].get("type") == "array" and new[key].get('type') == 'array':
                         update_recursive(old[key].get('items', {}), new[key].get('items', {}))
-
             else:
+                old[key] = new[key]
                 if isinstance(new[key], dict):
-                    update_recursive({}, new[key])  # No update needed if old doesn't have the key
-        return new
+                    update_recursive({}, new[key])
+        return old
 
-    if(versionCheck): 
-        updateField = update_recursive(oldFields, newFields)
+    if versionCheck: 
+        # For v2, remove root-level keys not in newFields first, then merge
+        updated = oldFields.copy()
+        # Remove root keys that aren't in newFields
+        for key in list(updated.keys()):
+            if key not in newFields:
+                del updated[key]
+        update_recursive(updated, newFields)
+        return updated
     else:
         transformed_data = {item["variable_name"]: {"description": item["description"], "enum": item["enum"]} for item in oldFields}
         updateField = update_recursive(transformed_data, newFields)
