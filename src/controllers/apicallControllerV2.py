@@ -108,52 +108,141 @@ async def updates_api(request: Request, bridge_id: str):
         raise HTTPException(status_code=400, detail=str(error))
 
 
+# /**
+# * Recursively traverses a nested object structure to build a structured representation
+#  * of its fields, paths, and parameter requirements.
+#  * 
+#  * This function analyzes a hierarchical object and:
+#  * - Extracts paths to specific values (fields with "your_value_here")
+#  * - Builds a structured fields object that maintains the hierarchy with type information
+#  * - Tracks required parameters at each level of the hierarchy
+#  * 
+#  * @param {Object} body - The object to traverse
+#  * @param {Array} path - Current path in the traversal (internal tracking)
+#  * @param {Array} paths - Collects dot-notation paths to all "your_value_here" fields
+#  * @param {Object} fields - Builds a structured representation of the object hierarchy
+#  * @param {Array} required_params - Collects names of required parameters
+#  * @returns {Object} Object containing paths, fields structure, and required parameters
+#  * 
+#  * Example usage:
+#  * traverse_body({
+#  *   "r": {
+#  *     "demo": {
+#  *       "value": {
+#  *         "demo3": "your_value_here"
+#  *       }
+#  *     }
+#  *   },
+#  *   "r1": {
+#  *     "demo5": {
+#  *       "value2": "your_value_here"
+#  *     }
+#  *   },
+#  *   "nsr": {
+#  *     "demo": "your_value_here"
+#  *   }
+#  * })
+#  **/
 def traverse_body(body, path=None, paths=None, fields=None, required_params=None):
-    if path is None: # for understanding the path where [a,b]
+    # Initialize default parameters
+    if path is None:
         path = []
-    if paths is None: # final path to send [a.b.c , a.b.d]
+    if paths is None:
         paths = []
     if fields is None:
         fields = {}
     if required_params is None:
         required_params = []
-    if body:
-        for key, value in body.items():
-            current_path = path + [key]
-            if isinstance(value, dict):
-                # Build nested parameter path with .parameter. between levels
-                param_path = '.parameter.'.join(current_path)
-                _.objects.set_(fields, param_path, {"description": '', "type": "object", "enum": [], "required_params": [], "parameter": {}})
-                traverse_body(value, current_path, paths, fields, required_params)
-            elif value == "your_value_here":
-                # Handle leaf nodes with proper parent hierarchy
-                param_path = '.parameter.'.join(current_path)
-                paths.append(param_path)
-                required_params.append(key)
-                
-                # Set parameter in parent object
-                if path:
-                    parent_path = '.parameter.'.join(path)
-                    parent = _.get(fields, parent_path, {"required_params": []})
-                    if "required_params" not in parent:
-                        parent["required_params"] = []
-                    parent["required_params"].append(key)
-                    _.set_(fields, parent_path, parent)
-                
-                # Set current parameter definition
-                _.objects.set_(fields, param_path, { "description": '',  "type": "string", "enum": [], "required_params": [], "parameter": {}})
-
-            # Update all parent levels' required_params
+    
+    if not body:
+        return {
+            "paths": paths,
+            "fields": fields,
+            "required_params": required_params
+        }
+    
+    for key, value in body.items():
+        current_path = path + [key]
+        
+        # If we're at the root level, initialize the key in fields
+        if len(path) == 0:
+            if key not in fields:
+                fields[key] = {
+                    "description": "",
+                    "type": "object",
+                    "enum": [],
+                    "required_params": [],
+                    "parameter": {}
+                }
+        
+        # If the value is a dictionary, process as nested object
+        if isinstance(value, dict):
+            # Determine the parent path and update its fields
             if path:
-                for i in range(1, len(path) + 1):
-                    ancestor_path = '.parameter.'.join(path[:i])
-                    ancestor = _.get(fields, ancestor_path, {"required_params": []})
-                    if "required_params" not in ancestor:
-                        ancestor["required_params"] = []
-                    if key not in ancestor["required_params"]:
-                        ancestor["required_params"].append(key)
-                    _.set_(fields, ancestor_path, ancestor)
-
+                # Build parent path string
+                parent_path = path[0]
+                parent_obj = fields[parent_path]
+                
+                for i in range(1, len(path)):
+                    parent_obj = parent_obj["parameter"][path[i]]
+                
+                # Add current key to parent's required_params if not there
+                if key not in parent_obj["required_params"]:
+                    parent_obj["required_params"].append(key)
+                
+                # Ensure the key exists in the parent's parameter object
+                if key not in parent_obj["parameter"]:
+                    parent_obj["parameter"][key] = {
+                        "description": "",
+                        "type": "object",
+                        "enum": [],
+                        "required_params": [],
+                        "parameter": {}
+                    }
+            
+            # Recursively traverse the nested object
+            traverse_body(value, current_path, paths, fields, required_params)
+        
+        # If we found a placeholder value
+        elif value == "your_value_here":
+            # Add the path to paths
+            paths.append(".".join(current_path))
+            
+            # Add the key to required_params
+            if key not in required_params:
+                required_params.append(key)
+            
+            # Update the fields structure
+            if path:
+                # Navigate to the parent object
+                parent_path = path[0]
+                parent_obj = fields[parent_path]
+                
+                for i in range(1, len(path)):
+                    parent_obj = parent_obj["parameter"][path[i]]
+                
+                # Add current key to parent's required_params if not there
+                if key not in parent_obj["required_params"]:
+                    parent_obj["required_params"].append(key)
+                
+                # Add the key to the parent's parameter object
+                parent_obj["parameter"][key] = {
+                    "description": "",
+                    "type": "string",
+                    "enum": [],
+                    "required_params": [],
+                    "parameter": {}
+                }
+            else:
+                # We're at the root level
+                fields[key] = {
+                    "description": "",
+                    "type": "string",
+                    "enum": [],
+                    "required_params": [],
+                    "parameter": {}
+                }
+    
     return {
         "paths": paths,
         "fields": fields,
