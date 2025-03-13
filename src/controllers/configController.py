@@ -159,6 +159,7 @@ async def get_all_bridges(request):
         embed_token = Helper.generate_token({ "org_id": Config.ORG_ID, "project_id": Config.PROJECT_ID, "user_id": org_id },Config.Access_key )
         alerting_embed_token = Helper.generate_token({ "org_id": Config.ORG_ID, "project_id": Config.ALERTING_PROJECT_ID, "user_id": org_id },Config.Access_key )
         trigger_embed_token = Helper.generate_token({ "org_id": Config.ORG_ID, "project_id": Config.TRIGGER_PROJECT_ID, "user_id": org_id },Config.Access_key )
+        history_page_chatbot_token = Helper.generate_token({ "org_id": "11202", "chatbot_id": "67286d4083e482fd5b466b69", "user_id": org_id },Config.CHATBOT_ACCESS_KEY )
         metrics_data = await get_timescale_data(org_id)
         bridges = Helper.sort_bridges(bridges, metrics_data)
         return JSONResponse(status_code=200, content={
@@ -168,6 +169,7 @@ async def get_all_bridges(request):
                 "embed_token": embed_token,
                 "alerting_embed_token": alerting_embed_token,
                 "trigger_embed_token": trigger_embed_token,
+                "history_page_chatbot_token" : history_page_chatbot_token,
                 "org_id": org_id
             })
     except Exception as e:
