@@ -49,3 +49,4 @@ class Config:
     OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
     PINECONE_APIKEY = os.getenv('PINECONE_API_KEY')
     PINECONE_INDEX = os.getenv('PINECONE_INDEX')
+    TRIGGER_PROJECT_ID = os.getenv('TRIGGER_PROJECT_ID', '')
