@@ -31,6 +31,7 @@ class Conversation(Base):
     image_url = Column(Text, nullable=True)
     urls = Column(ARRAY(String), nullable=True)
     AiConfig = Column(JSON, nullable=True)
+    annotations = Column(ARRAY(JSON), nullable=True)
 
 class RawData(Base):
     __tablename__ = 'raw_data'

@@ -1814,6 +1814,17 @@ class ModelsConfig:
                 "default": True,
                 "level": 0,
                 "typeOf": "boolean"  
+            },
+            "specification" : {
+                "input_cost": 2.50,
+                "output_cost": 10.00,
+                "level": 0,
+                "description" : "GPT-4o model which is fast, Intelligent model for all purpose tasks. It accepts both text and image inputs, and produces text outputs.",
+                "knowledge_cutoff" : "Oct 01, 2023",
+                "usecase": [
+                    "Fast, Intelligent model suitable for all purpose tasks"
+                 ]
+
             }
         }
         outputConfig = {
@@ -1832,6 +1843,134 @@ class ModelsConfig:
             "tools": "choices[0].message.tool_calls",
             "assistant": "choices[0].message",
             "id": "id"
+        }
+        inputConfig = {
+            "system": {
+                "role": "system",
+                "content": "",
+                "contentKey": "content",
+                "type": "json"
+            },
+            "content_location": "prompt[0].content"
+        }
+        return {
+            "configuration": configuration,
+            "outputConfig": outputConfig,
+            "inputConfig": inputConfig
+        }
+    @staticmethod
+    def gpt_4o_search_preview():
+        configuration = {
+            "model": {
+                "field": "drop",
+                "default": "gpt-4o-search-preview",
+                "level": 1
+            },
+            "creativity_level": {
+                "field": "slider",
+                "min": 0,
+                "max": 2,
+                "step": 0.1,
+                "default": 0,
+                "level": 2
+            },
+            "max_tokens": {
+                "field": "slider",
+                "min": 256,
+                "max": 16384,
+                "step": 1,
+                "default": 256,
+                "level": 2
+            },
+            "probability_cutoff": {
+                "field": "slider",
+                "min": 0,
+                "max": 1,
+                "step": 0.1,
+                "default": 1,
+                "level": 2
+            },
+            "log_probability": {
+                "field": "boolean",
+                "default": False,
+                "level": 0,
+                "typeOf": "boolean"
+            },
+            "repetition_penalty": {
+                "field": "slider",
+                "min": 0,
+                "max": 2,
+                "step": 0.01,
+                "default": 0,
+                "level": 2
+            },
+            "novelty_penalty": {
+                "field": "slider",
+                "min": 0,
+                "max": 2,
+                "step": 0.01,
+                "default": 0,
+                "level": 2
+            },
+            "response_count": {
+                "field": "number",
+                "default": 1,
+                "typeOf": "number",
+                "level": 0
+            },
+            "stop": {
+                "field": "text",
+                "default": "",
+                "level": 0
+            },
+            "stream": {
+                "field": "boolean",
+                "default": False,
+                "level": 0,
+                "typeOf": "boolean"
+            },
+            "response_type": {
+                "field": "select",
+                "options" : [{"type" : "text"},{"type" : "json_object"},{"type" : "json_schema"}],
+                "default": {
+                "type" : "text",
+                },
+                "level": 0
+            },
+            "vision": {
+                "support": True,
+                 "level": 0,
+                 "default" : False
+            },
+            "specification" : {
+                "input_cost": 2.50,
+                "output_cost": 10.00,
+                "level": 0,
+                "description" : "GPT-4o search preview web search model which is fast, Intelligent model for all purpose tasks. It accepts both text and image inputs, and produces text outputs.",
+                "knowledge_cutoff" : "Oct 01, 2023",
+                "usecase": [
+                    "Fast, Intelligent model suitable for all purpose tasks"
+                 ]
+
+            }
+        }
+        outputConfig = {
+            "usage": [{
+                "prompt_tokens": "usage.prompt_tokens",
+                "completion_tokens": "usage.completion_tokens",
+                "total_tokens": "usage.total_tokens",
+                "cached_tokens": "usage.prompt_tokens_details.cached_tokens",
+                "total_cost": {
+                    "input_cost": 2.50,
+                    "output_cost": 10.00,
+                    "cached_cost": 1.25
+                }
+            }],
+            "message": "choices[0].message.content",
+            "tools": "choices[0].message.tool_calls",
+            "assistant": "choices[0].message",
+            "id": "id",
+            "annotations": "choices[0].message.annotations"
         }
         inputConfig = {
             "system": {
@@ -2379,6 +2518,137 @@ class ModelsConfig:
             "tools": "choices[0].message.tool_calls",
             "assistant": "choices[0].message",
             "id": "id"
+        }
+        inputConfig = {
+            "system": {
+                "default": {
+                    "role": "system",
+                    "content": ""
+                },
+                "contentKey": "content",
+                "type": "json"
+            },
+            "content_location": "prompt[0].content"
+        }
+        return {
+            "configuration": configuration,
+            "outputConfig": outputConfig,
+            "inputConfig": inputConfig
+        }
+
+    @staticmethod
+    def gpt_4o_mini_search_preview():
+        configuration = {
+            "model": {
+                "field": "dropdown",
+                "default": "gpt-4o-mini-search-preview",
+                "level": 1
+            },
+            "creativity_level": {
+                "field": "slider",
+                "min": 0,
+                "max": 2,
+                "step": 0.1,
+                "default": 0,
+                "level": 2
+            },
+            "max_tokens": {
+                "field": "slider",
+                "min": 256,
+                "max": 8192,
+                "step": 1,
+                "default": 256,
+                "level": 2
+            },
+            "probability_cutoff": {
+                "field": "slider",
+                "min": 0,
+                "max": 1,
+                "step": 0.1,
+                "default": 1,
+                "level": 2
+            },
+            "log_probability": {
+                "field": "boolean",
+                "default": False,
+                "level": 0
+            },
+            "repetition_penalty": {
+                "field": "slider",
+                "min": 0,
+                "max": 2,
+                "step": 0.01,
+                "default": 0,
+                "level": 2
+            },
+            "novelty_penalty": {
+                "field": "slider",
+                "min": 0,
+                "max": 2,
+                "step": 0.01,
+                "default": 0,
+                "level": 2
+            },
+            "response_count": {
+                "field": "number",
+                "default": 1,
+                "level": 0
+            },
+            "stop": {
+                "field": "text",
+                "default": "",
+                "level": 0
+            },
+            "stream": {
+                "field": "boolean",
+                "default": False,
+                "level": 0
+            },
+             "type" : {
+                "default" : ["chat"]
+            },
+            "response_type": {
+                "field": "select",
+                "options" : [{"type" : "text"},{"type" : "json_object"}],
+                "default": {
+                "type" : "text",
+                },
+                "level": 0
+            },
+            "vision": {
+                "support": True,
+                 "level": 0,
+                 "default" : False
+            },
+            "specification" : {
+                "input_cost": 0.150,
+                "output_cost": 0.600,
+                "level": 0,
+                "description" : "GPT-4o mini search preview web search model which is fast, affordable small model for focused tasks. It accepts both text and image inputs, and produces text outputs.",
+                "knowledge_cutoff" : "Oct 01, 2023",
+                "usecase": [
+                    "Fast, affordable small model for focused tasks with web search capability"
+                 ]
+
+            }
+        }
+        outputConfig = {
+            "usage": [{
+                "prompt_tokens": "usage.prompt_tokens",
+                "completion_tokens": "usage.completion_tokens",
+                "total_tokens": "usage.total_tokens",
+                "cached_tokens": "usage.prompt_tokens_details.cached_tokens",
+                "total_cost": {
+                    "input_cost": 0.150,
+                    "output_cost": 0.600,
+                    "cached_cost": 0.075
+                }
+            }],
+            "message": "choices[0].message.content",
+            "tools": "choices[0].message.tool_calls",
+            "assistant": "choices[0].message",
+            "id": "id",
+            "annotations": "choices[0].message.annotations"
         }
         inputConfig = {
             "system": {
