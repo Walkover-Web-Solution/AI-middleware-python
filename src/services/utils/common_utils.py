@@ -164,7 +164,7 @@ async def prepare_prompt(parsed_data, thread_info, model_config, custom_config):
     memory = None
     
     if configuration['type'] == 'chat' or configuration['type'] == 'reasoning':
-        id = f"{thread_info['thread_id']}_{parsed_data.get('version_id') or parsed_data.get('bridge_id')}"
+        id = f"{thread_info['thread_id']}_{thread_info['sub_thread_id']}_{parsed_data.get('version_id') or parsed_data.get('bridge_id')}"
         parsed_data['id'] = id
         if gpt_memory:
             response, _ = await fetch("https://flow.sokt.io/func/scriCJLHynCG", "POST", None, None, {"threadID": id})
@@ -270,7 +270,7 @@ async def process_background_tasks(parsed_data, result, params, send_error_to_we
     if parsed_data['bridgeType']:
         tasks.append(chatbot_suggestions(parsed_data['response_format'], result["modelResponse"], parsed_data, params))
     if parsed_data['gpt_memory'] and parsed_data['configuration']['type'] == 'chat':
-            tasks.append(handle_gpt_memory(parsed_data['id'], parsed_data['user'], result['modelResponse'], parsed_data['memory'], parsed_data['gpt_memory_context']))
+            tasks.append(handle_gpt_memory(parsed_data['id'], parsed_data['user'], result['historyParams'].get('AiConfig'), parsed_data['memory'], parsed_data['gpt_memory_context']))
     await asyncio.gather(*tasks, return_exceptions=True)
 
 def build_service_params_for_batch(parsed_data, custom_config, model_output_config):
