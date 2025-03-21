@@ -21,7 +21,8 @@ async def Response_formatter(response = {}, service = None, tools={}, type='chat
                 "role" : response.get("choices", [{}])[0].get("message", {}).get("role", None),
                 "finish_reason" : response.get("choices", [{}])[0].get("finish_reason", None),
                 "tools_data": tools_data or {},
-                "images" : images
+                "images" : images,
+                "annotations" : response.get("choices", [{}])[0].get("message", {}).get("annotations", None)
             },
             "usage" : {
                 "input_tokens" : response.get("usage", {}).get("prompt_tokens", None),
