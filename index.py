@@ -24,6 +24,7 @@ from src.routes.utility_routes import router as utility_routes
 from src.routes.rag_routes import router as rag_routes
 from src.routes.Internal_routes import router as Internal_routes
 from src.routes.testcase_routes import router as testcase_routes
+from models.Timescale.connections import init_async_dbservice
 
 async def consume_messages_in_executor():
     await queue_obj.consume_messages()
@@ -39,6 +40,9 @@ async def lifespan(app: FastAPI):
     consume_task = None
     if Config.CONSUMER_STATUS.lower() == "true":
         consume_task = asyncio.create_task(consume_messages_in_executor())
+    
+        
+    asyncio.create_task(init_async_dbservice()) if Config.ENV == 'local' else await init_async_dbservice()
     
     asyncio.create_task(repeat_function())
     yield  # Startup logic is complete
