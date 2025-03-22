@@ -68,7 +68,7 @@ async def chat(request_body):
         )
         # Step 8: Execute Service Handler
         params = build_service_params(
-            parsed_data, custom_config, model_output_config, thread_info, timer, memory
+            parsed_data, custom_config, model_output_config, thread_info, timer, memory, send_error_to_webhook
         )
 
         class_obj = await Helper.create_service_handler(params, parsed_data['service'])
@@ -152,7 +152,7 @@ async def chat(request_body):
                     'tools_call_data' : func_tool_call_data,
                     "message_id": parsed_data['message_id'],
                     "AiConfig": class_obj.aiconfig()
-                    }, parsed_data['version_id']),
+                    }, parsed_data['version_id'], send_error_to_webhook),
                 # Only send the second response if the type is not 'default'
                 sendResponse(parsed_data['response_format'], result.get("modelResponse", str(error)), variables=parsed_data['variables']) if parsed_data['response_format']['type'] != 'default' else None,
                 send_alert(data={"org_name" : parsed_data['org_name'], "bridge_name" : parsed_data['name'], "configuration": parsed_data['configuration'], "error": str(error), "message_id": parsed_data['message_id'], "bridge_id": parsed_data['bridge_id'], "message": "Exception for the code", "org_id": parsed_data['org_id']}),

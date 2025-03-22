@@ -56,6 +56,7 @@ class BaseService:
         self.webhook = params.get('webhook')
         self.name = params.get('name')
         self.org_name = params.get('org_name')
+        self.send_error_to_webhook = params.get('send_error_to_webhook')
 
 
     def aiconfig(self):
@@ -147,7 +148,7 @@ class BaseService:
                 'type': "error",
                 'actor': "user" if self.user else "tool",
                 'message_id' : self.message_id
-            }),
+            }, None, self.send_error_to_webhook),
             sendResponse(self.response_format, data=response.get('error')),
             return_exceptions=True
         )
