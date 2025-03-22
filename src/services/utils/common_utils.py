@@ -77,7 +77,8 @@ def parse_request_body(request_body):
         "doc_ids":body.get('ddc_ids'),
         "rag_data": body.get('rag_data'),
         "name" : body.get('name'),
-        "org_name" : body.get('org_name')
+        "org_name" : body.get('org_name'),
+        "variables_state" : body.get('variables_state')
     }
 
 
@@ -204,7 +205,7 @@ async def prepare_prompt(parsed_data, thread_info, model_config, custom_config):
 async def configure_custom_settings(model_configuration, custom_config, service):
     return await model_config_change(model_configuration, custom_config, service)
 
-def build_service_params(parsed_data, custom_config, model_output_config, thread_info, timer, memory):
+def build_service_params(parsed_data, custom_config, model_output_config, thread_info, timer, memory, send_error_to_webhook):
     token_calculator = {}
     if not parsed_data['is_playground']:
         token_calculator = TokenCalculator(parsed_data['service'], model_output_config)
@@ -242,7 +243,8 @@ def build_service_params(parsed_data, custom_config, model_output_config, thread
         "tool_call_count": parsed_data['tool_call_count'],
         "rag_data": parsed_data['rag_data'],
         "name" : parsed_data['name'],
-        "org_name" : parsed_data['org_name']
+        "org_name" : parsed_data['org_name'],
+        "send_error_to_webhook": send_error_to_webhook
 
     }
 async def total_token_calculation(parsed_data):
@@ -307,10 +309,23 @@ async def updateVariablesWithTimeZone(variables, org_id):
         data = await Helper.get_timezone_and_org_name(org_id)
         timezone = data.get('timezone') or "+5:30"
         hour, minutes = timezone.split(':')
-        return int(hour), int(minutes), data.get('name') or ""
+        return int(hour), int(minutes), data.get('name') or "", data.get('meta',{}).get('identifier') or ''
     if 'current_time_and_date' not in variables:
-        hour, minutes, org_name = await getTimezoneOfOrg()
+        hour, minutes, org_name, identifier = await getTimezoneOfOrg()
         current_time = datetime.now(timezone.utc)
         current_time = current_time + timedelta(hours=hour, minutes=minutes)
-        variables['current_time_and_date'] = current_time.strftime("%Y-%m-%d") + ' ' + current_time.strftime("%H:%M:%S") + ' ' + current_time.strftime("%A")
+        variables['current_time_date_and_current_identifier'] = current_time.strftime("%Y-%m-%d") + ' ' + current_time.strftime("%H:%M:%S") + ' ' + current_time.strftime("%A") + ' (' + identifier + ')'
     return variables, org_name
+
+
+def filter_missing_vars(missing_vars, variables_state):
+            # Iterate through keys in missing_vars
+            keys_to_remove = [key for key, value in variables_state.items() if value != 'required']
+            
+            # Remove the keys from missing_vars that are in the keys_to_remove list
+            for key in keys_to_remove:
+                if key in missing_vars:
+                    del missing_vars[key]
+            
+            return missing_vars
+       
