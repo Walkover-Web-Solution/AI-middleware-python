@@ -22,7 +22,6 @@ hks
 docs.zip
 archive.zip
 dump.rdb
-modelConfig.json
 # vim temporary files
 *~
 .*.sw?
