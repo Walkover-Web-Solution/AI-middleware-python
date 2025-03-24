@@ -1,6 +1,7 @@
 from src.configs.modelConfiguration import ModelsConfig as model_configuration
 from ...configs.constant import service_name
 from fastapi import HTTPException
+from src.configs.model_configuration import model_config_document
 
 async def get_default_values_controller(service, model, current_configuration, type):
     try:
@@ -26,20 +27,19 @@ async def get_default_values_controller(service, model, current_configuration, t
             
             return default_values
 
-        modelname = model.replace("-", "_").replace(".", "_")    
-        configuration = getattr(model_configuration, modelname, None)
+        modelObj = model_config_document[model]
 
-        if configuration is None:
+        if modelObj is None:
             raise HTTPException(status_code=400, detail=f"Invalid model: {model}")
 
         if service == service_name['openai']:
-            return get_default_values(configuration())
+            return get_default_values(modelObj)
             
         elif service == service_name['anthropic']:
-            return get_default_values(configuration())
+            return get_default_values(modelObj)
         
         elif service == service_name['groq']:
-            return get_default_values(configuration())
+            return get_default_values(modelObj)
         
         else:
             raise HTTPException(status_code=404, detail=f"Service '{service}' not found.")
