@@ -84,7 +84,7 @@ def parse_request_body(request_body):
 
 
 def add_default_template(prompt):
-    prompt += ' \n Additional Information if requied : For current date and time always refer: {{current_time_and_date}}'
+    prompt += ' \n Additional Information if requied : For current date and time always refer: {{current_time_date_and_current_identifier}}'
     return prompt
 
 def initialize_timer(state: Dict[str, Any]) -> Timer:
@@ -308,12 +308,18 @@ async def updateVariablesWithTimeZone(variables, org_id):
         data = await Helper.get_timezone_and_org_name(org_id)
         timezone = data.get('timezone') or "+5:30"
         hour, minutes = timezone.split(':')
-        return int(hour), int(minutes), data.get('name') or ""
+        return int(hour), int(minutes), data.get('name') or "", (data.get('meta') or {}).get('identifier', '')
     if 'current_time_and_date' not in variables:
-        hour, minutes, org_name = await getTimezoneOfOrg()
-        current_time = datetime.now(timezone.utc)
-        current_time = current_time + timedelta(hours=hour, minutes=minutes)
-        variables['current_time_date_and_current_identifier'] = current_time.strftime("%Y-%m-%d") + ' ' + current_time.strftime("%H:%M:%S") + ' ' + current_time.strftime("%A")
+        hour, minutes, org_name, identifier = await getTimezoneOfOrg()
+        if 'timezone' in variables:
+            current_time = Helper.get_current_time_with_timezone(variables['timezone'])
+            identifier = variables['timezone']
+        else:
+            current_time = datetime.now(timezone.utc)
+            current_time = current_time + timedelta(hours=hour, minutes=minutes)
+        if identifier == '' and 'timezone' not in variables:
+            identifier = 'Asia/Calcutta'
+        variables['current_time_date_and_current_identifier'] = current_time.strftime("%Y-%m-%d") + ' ' + current_time.strftime("%H:%M:%S") + ' ' + current_time.strftime("%A") + ' (' + identifier + ')'
     return variables, org_name
 
 

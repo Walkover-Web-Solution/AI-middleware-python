@@ -18,6 +18,8 @@ from ...configs.constant import service_name
 from ..commonServices.openAI.openai_embedding_call import OpenaiEmbedding
 from ..cache_service import find_in_cache, store_in_cache
 from ..utils.apiservice import fetch
+from datetime import datetime, timezone, timedelta
+import pytz
 class Helper:
     @staticmethod
     def encrypt(text):
@@ -284,3 +286,13 @@ class Helper:
         
         # Combine the lists, keeping not_present bridges in their original order at the end
         return present + not_present
+    
+
+
+    def get_current_time_with_timezone(tz_identifier):
+        try:
+            tz = pytz.timezone(tz_identifier)
+            local_time = datetime.now(timezone.utc).astimezone(tz)
+            return local_time
+        except Exception as e:
+            return f"Invalid timezone: {e}"
