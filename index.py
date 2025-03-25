@@ -4,6 +4,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 import asyncio
+import json
 from contextlib import asynccontextmanager
 import src.services.utils.batch_script
 from src.services.utils.batch_script import repeat_function
@@ -24,7 +25,7 @@ from src.routes.utility_routes import router as utility_routes
 from src.routes.rag_routes import router as rag_routes
 from src.routes.Internal_routes import router as Internal_routes
 from src.routes.testcase_routes import router as testcase_routes
-import json
+from models.Timescale.connections import init_async_dbservice
 from src.configs.model_configuration import init_model_configuration
 
 async def consume_messages_in_executor():
@@ -42,6 +43,9 @@ async def lifespan(app: FastAPI):
     consume_task = None
     if Config.CONSUMER_STATUS.lower() == "true":
         consume_task = asyncio.create_task(consume_messages_in_executor())
+    
+        
+    asyncio.create_task(init_async_dbservice()) if Config.ENV == 'local' else await init_async_dbservice()
     
     asyncio.create_task(repeat_function())
     yield  # Startup logic is complete
