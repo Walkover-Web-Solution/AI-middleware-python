@@ -67,7 +67,7 @@ async def find(org_id, thread_id, sub_thread_id, bridge_id):
             .limit(9)
             .all()
         )
-        # conversations.reverse()
+        conversations.reverse()
         return [conversation._asdict() for conversation in conversations]
     except Exception as e:
         print(f"An error occurred: {str(e)}")

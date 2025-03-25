@@ -110,57 +110,29 @@ async def savehistory(thread_id, sub_thread_id, userMessage, botMessage, org_id,
         return { 'success': False, 'message': str(error) }
 
 async def add_tool_call_data_in_history(chats):
-
-    final_array = [None] * 6
-    i = 5  # Start filling from the end
-    index = 0
-    length = len(chats)
-
-    def process_tool_call(next_chat, tools_call_chat):
-        tools_call_data = tools_call_chat.get('tools_call_data', [])
-        messages = []
-        for call_data in tools_call_data:
-            call_info = next(iter(call_data.values()))
-            name = call_info.get('name', '')
-            messages.append(f"{name}")
-        if messages:
-            combined_message = "tool_call has been done function name:- " + ', '.join(messages)
-            if next_chat['content']:
-                next_chat['content'] += '\n' + combined_message
-
-    # Add the first assistant at position 5
-    while index < length:
-        chat = chats[index]
-        if chat['role'] == 'assistant':
-            # Check tools_call next
-            if index + 1 < length and chats[index + 1]['role'] == 'tools_call':
-                process_tool_call(chat, chats[index + 1])
-                index += 1  # Skip tools_call
-            final_array[i] = chat
-            i -= 1
-            index += 1
-            break
-        index += 1
-
-    # Alternate user -> assistant -> user -> assistant (reverse fill)
-    expect_user = True
-    while index < length and i >= 0:
-        chat = chats[index]
-        if expect_user and chat['role'] == 'user':
-            final_array[i] = chat
-            i -= 1
-            expect_user = False
-        elif not expect_user and chat['role'] == 'assistant':
-            if index + 1 < length and chats[index + 1]['role'] == 'tools_call':
-                process_tool_call(chat, chats[index + 1])
-                index += 1  # Skip tools_call
-            final_array[i] = chat
-            i -= 1
-            expect_user = True
-        index += 1
-
-    return final_array
-
+        tools_call_indices = []
+    
+        for i in range(len(chats)):
+            current_chat = chats[i]
+            if current_chat['role'] == 'tools_call':
+                if i > 0 and (i + 1) < len(chats):
+                    prev_chat = chats[i - 1]
+                    next_chat = chats[i + 1]
+                    if prev_chat['role'] == 'user' and next_chat['role'] == 'assistant':
+                        tools_call_data = current_chat.get('tools_call_data', [])
+                        messages = []
+                        for call_data in tools_call_data:
+                            call_info = next(iter(call_data.values()))
+                            name = call_info.get('name', '')
+                            messages.append(f"{name}")
+                        if messages:
+                            combined_message = "tool_call has been done function name:-  " +  ', '.join(messages)
+                            if next_chat['content']:
+                                next_chat['content'] += '\n' + combined_message
+                        tools_call_indices.append(i)
+        
+        processed_chats = [chat for idx, chat in enumerate(chats) if idx not in tools_call_indices]
+        return processed_chats
 
 # Exporting the functions
 __all__ = ['getAllThreads', 'savehistory', 'getThread', 'getThreadHistory', 'getChatData']
