@@ -22,7 +22,7 @@ from src.services.commonServices.suggestion import chatbot_suggestions
 from src.services.cache_service import find_in_cache, store_in_cache
 from src.db_services.ConfigurationServices import get_bridges_without_tools
 from src.db_services.ConfigurationServices import update_bridge
-
+from src.configs.model_configuration import model_config_document
 
 def parse_request_body(request_body):
     body = request_body.get('body', {})
@@ -93,12 +93,11 @@ def initialize_timer(state: Dict[str, Any]) -> Timer:
     return timer_obj
 
 async def load_model_configuration(model, configuration):
-    modelname = model.replace("-", "_").replace(".", "_")
-    modelfunc = getattr(ModelsConfig, modelname, None)
-    if not modelfunc:
+    model_obj = model_config_document.get(model)
+    if not model_obj:
         raise ValueError(f"Model {model} not found in ModelsConfig.")
     
-    model_obj = modelfunc()
+    # model_obj = modelfunc()
     model_config = model_obj['configuration']
     model_output_config = model_obj['outputConfig']
     
@@ -205,7 +204,7 @@ async def prepare_prompt(parsed_data, thread_info, model_config, custom_config):
 async def configure_custom_settings(model_configuration, custom_config, service):
     return await model_config_change(model_configuration, custom_config, service)
 
-def build_service_params(parsed_data, custom_config, model_output_config, thread_info, timer, memory):
+def build_service_params(parsed_data, custom_config, model_output_config, thread_info, timer, memory, send_error_to_webhook):
     token_calculator = {}
     if not parsed_data['is_playground']:
         token_calculator = TokenCalculator(parsed_data['service'], model_output_config)
@@ -243,7 +242,8 @@ def build_service_params(parsed_data, custom_config, model_output_config, thread
         "tool_call_count": parsed_data['tool_call_count'],
         "rag_data": parsed_data['rag_data'],
         "name" : parsed_data['name'],
-        "org_name" : parsed_data['org_name']
+        "org_name" : parsed_data['org_name'],
+        "send_error_to_webhook": send_error_to_webhook
 
     }
 async def total_token_calculation(parsed_data):
@@ -308,12 +308,12 @@ async def updateVariablesWithTimeZone(variables, org_id):
         data = await Helper.get_timezone_and_org_name(org_id)
         timezone = data.get('timezone') or "+5:30"
         hour, minutes = timezone.split(':')
-        return int(hour), int(minutes), data.get('name') or "", data.get('meta',{}).get('identifier') or ''
+        return int(hour), int(minutes), data.get('name') or ""
     if 'current_time_and_date' not in variables:
-        hour, minutes, org_name, identifier = await getTimezoneOfOrg()
+        hour, minutes, org_name = await getTimezoneOfOrg()
         current_time = datetime.now(timezone.utc)
         current_time = current_time + timedelta(hours=hour, minutes=minutes)
-        variables['current_time_date_and_current_identifier'] = current_time.strftime("%Y-%m-%d") + ' ' + current_time.strftime("%H:%M:%S") + ' ' + current_time.strftime("%A") + ' (' + identifier + ')'
+        variables['current_time_date_and_current_identifier'] = current_time.strftime("%Y-%m-%d") + ' ' + current_time.strftime("%H:%M:%S") + ' ' + current_time.strftime("%A")
     return variables, org_name
 
 

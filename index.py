@@ -4,6 +4,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 import asyncio
+import json
 from contextlib import asynccontextmanager
 import src.services.utils.batch_script
 from src.services.utils.batch_script import repeat_function
@@ -25,6 +26,7 @@ from src.routes.rag_routes import router as rag_routes
 from src.routes.Internal_routes import router as Internal_routes
 from src.routes.testcase_routes import router as testcase_routes
 from models.Timescale.connections import init_async_dbservice
+from src.configs.model_configuration import init_model_configuration
 
 async def consume_messages_in_executor():
     await queue_obj.consume_messages()
@@ -33,6 +35,7 @@ async def consume_messages_in_executor():
 async def lifespan(app: FastAPI):
     """Handle startup and shutdown events."""
     logger.info("Starting up...")
+    await init_model_configuration()
     # Run the consumer in the background without blocking the main event loop
     await queue_obj.connect()
     await queue_obj.create_queue_if_not_exists()
