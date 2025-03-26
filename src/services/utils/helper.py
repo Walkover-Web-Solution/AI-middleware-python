@@ -292,7 +292,9 @@ class Helper:
     def get_current_time_with_timezone(tz_identifier):
         try:
             tz = pytz.timezone(tz_identifier)
-            local_time = datetime.now(timezone.utc).astimezone(tz)
-            return local_time
+            offset = datetime.now(tz).utcoffset()
+            hours, remainder = divmod(offset.total_seconds(), 3600)
+            minutes = remainder // 60
+            return int(hours), int(minutes)
         except Exception as e:
             return f"Invalid timezone: {e}"
