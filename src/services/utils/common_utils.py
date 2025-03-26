@@ -304,6 +304,7 @@ def build_service_params_for_batch(parsed_data, custom_config, model_output_conf
 
 
 async def updateVariablesWithTimeZone(variables, org_id):
+    org_name = ''
     async def getTimezoneOfOrg():
         data = await Helper.get_timezone_and_org_name(org_id)
         timezone = data.get('timezone') or "+5:30"
