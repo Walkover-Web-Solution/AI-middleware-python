@@ -1,11 +1,11 @@
 import logging
-
+import sys
 # logging.basicConfig(format='%(levelname)s - %(message)s')
 logging.basicConfig(
     level=logging.INFO,
     format="%(levelname)s - %(message)s",
     handlers=[
-        logging.StreamHandler(),           # Outputs to console
+        logging.StreamHandler(sys.stdout),           # Outputs to console
     ]
 )
 def get_logger() -> logging.Logger:
