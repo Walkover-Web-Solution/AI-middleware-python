@@ -27,6 +27,7 @@ from src.routes.Internal_routes import router as Internal_routes
 from src.routes.testcase_routes import router as testcase_routes
 from models.Timescale.connections import init_async_dbservice
 from src.configs.model_configuration import init_model_configuration
+import settings
 
 async def consume_messages_in_executor():
     await queue_obj.consume_messages()
@@ -135,4 +136,4 @@ app.include_router(testcase_routes, prefix='/testcases')
 
 if __name__ == "__main__":
     PORT = int(Config.PORT)
-    uvicorn.run(app, host="0.0.0.0", port=PORT)
+    uvicorn.run(app, host="0.0.0.0", port=PORT, log_config=settings.LOGGING_CONFIG)
