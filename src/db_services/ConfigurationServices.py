@@ -149,11 +149,11 @@ async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None)
         model = version_model if version_id else configurationModel
         id_to_use = ObjectId(version_id) if version_id else ObjectId(bridge_id)
         pipeline = [
-            # Match the specific bridge or version with the given org_id
+            # Stage 0: Match the specific bridge or version with the given org_id
             {
                 '$match': {'_id': ObjectId(id_to_use), "org_id": org_id}
             },
-            # Existing lookup to join with 'apicalls' collection
+            # Stage 1: Lookup to join with 'apicalls' collection
             {
                 '$lookup': {
                     'from': 'apicalls',
@@ -162,7 +162,7 @@ async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None)
                     'as': 'apiCalls'
                 }
             },
-            # Existing addFields to restructure fields
+            # Stage 2: Restructure fields for _id, function_ids and apiCalls
             {
                 '$addFields': {
                     '_id': {'$toString': '$_id'},
@@ -201,13 +201,13 @@ async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None)
                     }
                 }
             },
-            # New Stage 1: Convert 'apikey_object_id' to an array of key-value pairs
+            # Stage 3: Convert 'apikey_object_id' to an array of key-value pairs
             {
                 '$addFields': {
                     'apikeys_array': { '$objectToArray': '$apikey_object_id' }
                 }
             },
-            # New Stage 2: Lookup 'apikeycredentials' using the ObjectIds from 'apikeys_array.v'
+            # Stage 4: Lookup 'apikeycredentials' using the ObjectIds from 'apikeys_array.v'
             {
                 '$lookup': {
                     'from': 'apikeycredentials',
@@ -217,10 +217,11 @@ async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None)
                                 'input': '$apikeys_array.v', 
                                 'as': 'id', 
                                 'in': {
-                                    '$cond': {
-                                        'if': { '$eq': ['$$id', ''] },
-                                        'then': None,
-                                        'else': { '$toObjectId': '$$id' }
+                                    '$convert': {
+                                        'input': '$$id',
+                                        'to': 'objectId',
+                                        'onError': None,
+                                        'onNull': None
                                     }
                                 }
                             } 
@@ -239,7 +240,7 @@ async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None)
                     'as': 'apikeys_docs'
                 }
             },
-            # New Stage 3: Map each service to its corresponding apikey
+            # Stage 5: Map each service to its corresponding apikey
             {
                 '$addFields': {
                     'apikeys': {
@@ -260,8 +261,15 @@ async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None)
                                                             'cond': { 
                                                                 '$eq': [
                                                                     '$$doc._id', 
-                                                                    { '$toObjectId': '$$item.v' }
-                                                                ] 
+                                                                    {
+                                                                        '$convert': {
+                                                                            'input': '$$item.v',
+                                                                            'to': 'objectId',
+                                                                            'onError': None,
+                                                                            'onNull': None
+                                                                        }
+                                                                    }
+                                                                ]
                                                             }
                                                         }
                                                     },
@@ -278,7 +286,7 @@ async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None)
                     }
                 }
             },
-            # New Stage 4: Lookup 'rag_parent_data' using 'doc_ids'
+            # Stage 6: Lookup 'rag_parent_datas' using 'doc_ids'
             {
                 '$lookup': {
                     'from': 'rag_parent_datas',
@@ -306,12 +314,12 @@ async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None)
                     'as': 'rag_data'
                 }
             },
-            # New Stage 5: (Optional) Remove temporary fields to clean up the output
+            # Stage 7: (Optional) Remove temporary fields to clean up the output
             {
                 '$project': {
                     'apikeys_array': 0,
                     'apikeys_docs': 0,
-                    # Add other fields to exclude if necessary
+                    # Exclude additional temporary fields as needed
                 }
             }
         ]
