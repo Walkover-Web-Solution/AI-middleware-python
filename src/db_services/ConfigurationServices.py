@@ -496,10 +496,10 @@ async def get_bridge_by_slugname(org_id, slug_name):
         }
 
 async def update_bridge(bridge_id = None, update_fields = None, version_id = None):
+    model = version_model if version_id else configurationModel
+    id_to_use = ObjectId(version_id) if version_id else ObjectId(bridge_id)
+    cache_key = f"{version_id if version_id else bridge_id}"
     try:
-        model = version_model if version_id else configurationModel
-        id_to_use = ObjectId(version_id) if version_id else ObjectId(bridge_id)
-        cache_key = f"{version_id if version_id else bridge_id}"
         updated_bridge = await model.find_one_and_update(
             {'_id': ObjectId(id_to_use)},
             {'$set': update_fields},
@@ -508,14 +508,12 @@ async def update_bridge(bridge_id = None, update_fields = None, version_id = Non
         )
 
         if not updated_bridge:
-            return {
-                'success': False,
-                'error': 'No records updated or bridge not found'
-            }
-        if updated_bridge:
-            updated_bridge['_id'] = str(updated_bridge['_id'])  # Convert ObjectId to string
-            if 'function_ids' in updated_bridge and updated_bridge['function_ids'] is not None:
-                updated_bridge['function_ids'] = [str(fid) for fid in updated_bridge['function_ids']]  # Convert function_ids to string
+            raise Exception('No records updated or bridge not found')
+
+        updated_bridge['_id'] = str(updated_bridge['_id'])  # Convert ObjectId to string
+        if 'function_ids' in updated_bridge and updated_bridge['function_ids'] is not None:
+            updated_bridge['function_ids'] = [str(fid) for fid in updated_bridge['function_ids']]  # Convert function_ids to string
+
         await delete_in_cache(cache_key)
         return {
             'success': True,
@@ -524,10 +522,7 @@ async def update_bridge(bridge_id = None, update_fields = None, version_id = Non
 
     except Exception as error:
         print(error)
-        return {
-            'success': False,
-            'error': 'Something went wrong!'
-        }
+        raise  # Re-raise the exception to be handled by the caller
 
 async def update_tools_calls(bridge_id, org_id, configuration):
     try:

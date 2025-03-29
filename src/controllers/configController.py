@@ -451,5 +451,5 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
     except ValidationError as e:
         raise HTTPException(status_code=400, detail=f"Validation error: {e.json()}")
     except Exception as e:
-        print(e)
-        raise HTTPException(status_code=400, detail="Invalid request body!")
+        print(f"Unexpected error occurred: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
