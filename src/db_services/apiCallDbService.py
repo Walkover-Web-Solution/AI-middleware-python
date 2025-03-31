@@ -111,3 +111,26 @@ async def get_function_by_id(function_id):
     except Exception as e:
         print(f"Error retrieving function by id: {e}")
         return {"success": False, "message": f"Error retrieving function: {str(e)}"}
+
+async def delete_function_from_apicalls_db(org_id, endpoint_name):
+    try:
+        result = await apiCallModel.delete_one({
+            'org_id': org_id,
+            'endpoint_name': endpoint_name
+        })
+        
+        if result.deleted_count > 0:
+            return {
+                "success": True,
+                "message": "Function deleted successfully."
+            }
+        else:
+            return {
+                "success": False,
+                "message": "No matching function found to delete."
+            }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"Error deleting function: {str(e)}"
+        }
