@@ -8,6 +8,7 @@ apiCallModel = db['apicalls']
 templateModel = db['templates']
 apikeyCredentialsModel = db['apikeycredentials']
 version_model = db['configuration_versions']
+threadsModel = db['threads']
 
 async def get_bridges(bridge_id = None, org_id = None, version_id = None):
     try:
@@ -562,6 +563,32 @@ async def update_apikey_creds(version_id):
             {'_id': ObjectId(version_id)},
             {'$set': {'version_ids': [version_id]}}
         )
+    except Exception as error:
+        print(f"error: {error}")
+        return {
+            'success': False,
+            'error': "something went wrong!!"
+        }
+
+async def save_sub_thread_id(org_id, thread_id, sub_thread_id):
+    try:
+        existing_entry = await threadsModel.find_one({'org_id': org_id, 'sub_thread_id': sub_thread_id})
+        
+        if existing_entry:
+            return {
+                'success': True,
+                'message': "sub_thread_id already exists"
+            }
+        
+        # If not, insert the new sub_thread_id
+        if thread_id is None:
+            thread_id = sub_thread_id
+        await threadsModel.insert_one({'org_id': org_id, 'sub_thread_id': sub_thread_id, 'thread_id': thread_id})
+        
+        return {
+            'success': True,
+            'message': "sub_thread_id saved successfully"
+        }
     except Exception as error:
         print(f"error: {error}")
         return {
