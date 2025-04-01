@@ -6,6 +6,7 @@ from ..services.cache_service import delete_in_cache
 configurationModel = db["configurations"]
 apiCallModel = db['apicalls']
 templateModel = db['templates']
+versionModel = db['configuration_versions']
 
 # todo :: to make it more better
 async def get_all_api_calls_by_org_id(org_id):
@@ -112,11 +113,32 @@ async def get_function_by_id(function_id):
         print(f"Error retrieving function by id: {e}")
         return {"success": False, "message": f"Error retrieving function: {str(e)}"}
 
-async def delete_function_from_apicalls_db(org_id, endpoint_name):
+async def delete_function_from_apicalls_db(org_id, function_name):
     try:
+        bridge_data = await apiCallModel.find_one(
+            {'org_id': org_id, 'function_name': function_name},
+            {'bridge_ids': 1, '_id': 1}
+        )
+        
+        bridge_ids = bridge_data.get('bridge_ids') or []
+        function_id = bridge_data.get('_id')
+
+        if isinstance(function_id, str):
+            function_id = ObjectId(function_id)
+        
+        if bridge_ids:
+            for bridge_id in bridge_ids:
+                if isinstance(bridge_id, str):
+                    bridge_id = ObjectId(bridge_id)
+                
+                await versionModel.update_one(
+                    {'_id': bridge_id},
+                    {'$pull': {'function_ids': function_id}}
+                )
+        
         result = await apiCallModel.delete_one({
             'org_id': org_id,
-            'endpoint_name': endpoint_name
+            'function_name': function_name
         })
         
         if result.deleted_count > 0:

@@ -52,10 +52,10 @@ async def delete_function(request):
     try:
         org_id = request.state.profile['org']['id']
         body = await request.json()
-        endpoint_name = body.get('endpoint_name')
-        if not endpoint_name:
+        function_name = body.get('function_name')
+        if not function_name:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Missing endpoint_name")
-        return await delete_function_from_apicalls_db(org_id, endpoint_name)
+        return await delete_function_from_apicalls_db(org_id, function_name)
     
     except Exception as e:
         print(f"Error deleting function: {e}")
