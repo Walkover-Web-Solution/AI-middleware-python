@@ -117,10 +117,11 @@ async def delete_function_from_apicalls_db(org_id, function_name):
     try:
         bridge_data = await apiCallModel.find_one(
             {'org_id': org_id, 'function_name': function_name},
-            {'bridge_ids': 1, '_id': 1}
+            {'bridge_ids': 1,'version_ids' : 1, '_id': 1}
         )
         
         bridge_ids = bridge_data.get('bridge_ids') or []
+        version_ids = bridge_data.get('version_ids') or []
         function_id = bridge_data.get('_id')
 
         if isinstance(function_id, str):
@@ -131,8 +132,17 @@ async def delete_function_from_apicalls_db(org_id, function_name):
                 if isinstance(bridge_id, str):
                     bridge_id = ObjectId(bridge_id)
                 
-                await versionModel.update_one(
+                await configurationModel.update_one(
                     {'_id': bridge_id},
+                    {'$pull': {'function_ids': function_id}}
+                )
+        if version_ids:
+            for version_id in version_ids:
+                if isinstance(version_id, str):
+                    version_id = ObjectId(version_id)
+                
+                await versionModel.update_one(
+                    {'_id': version_id},
                     {'$pull': {'function_ids': function_id}}
                 )
         
