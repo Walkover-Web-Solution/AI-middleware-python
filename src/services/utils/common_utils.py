@@ -134,9 +134,7 @@ async def manage_threads(parsed_data):
     sub_thread_id = parsed_data['sub_thread_id']
     bridge_id = parsed_data['bridge_id']
     bridge_type = parsed_data['bridgeType']
-    org_id = parsed_data['org_id']
-    if sub_thread_id is not None:
-        asyncio.create_task(ConfigurationService.save_sub_thread_id(org_id, thread_id, sub_thread_id))    
+    org_id = parsed_data['org_id']      
     
     if thread_id:
         thread_id = thread_id.strip()
@@ -149,6 +147,7 @@ async def manage_threads(parsed_data):
         parsed_data['gpt_memory'] = False
         result = {"success": True}
     
+    asyncio.create_task(ConfigurationService.save_sub_thread_id(org_id, thread_id, sub_thread_id))    
     return {
         "thread_id": thread_id,
         "sub_thread_id": sub_thread_id,

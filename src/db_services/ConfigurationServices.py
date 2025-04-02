@@ -572,26 +572,19 @@ async def update_apikey_creds(version_id):
 
 async def save_sub_thread_id(org_id, thread_id, sub_thread_id):
     try:
-        existing_entry = await threadsModel.find_one({'org_id': org_id, 'sub_thread_id': sub_thread_id})
-        
-        if existing_entry:
-            return {
-                'success': True,
-                'message': "sub_thread_id already exists"
-            }
-        
-        # If not, insert the new sub_thread_id
-        if thread_id is None:
-            thread_id = sub_thread_id
-        await threadsModel.insert_one({'org_id': org_id, 'sub_thread_id': sub_thread_id, 'thread_id': thread_id})
-        
+        result = await threadsModel.find_one_and_update(
+            {'org_id': org_id, 'sub_thread_id': sub_thread_id},
+            {'$setOnInsert': {'thread_id': thread_id}},
+            upsert=True,
+            return_document=True
+        )
         return {
             'success': True,
-            'message': "sub_thread_id saved successfully"
+            'message': f"sub_thread_id saved successfully {result}"
         }
     except Exception as error:
         print(f"error: {error}")
         return {
             'success': False,
-            'error': "something went wrong!!"
+            'error': str(error)
         }
