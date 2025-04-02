@@ -238,7 +238,7 @@ class BaseService:
             new_config = {ServiceKeys[service].get(self.type, ServiceKeys[service]['default']).get(key, key): value for key, value in configuration.items()}
             if configuration.get('tools', '') :
                 if service == service_name['anthropic']:
-                    new_config['tool_choice'] =  {"type": "auto"}
+                    new_config['tool_choice'] =  configuration.get('tool_choice', {'type': 'auto'})
                 elif service == service_name['openai'] or service_name['groq']:
                     if configuration.get('tool_choice'):
                         if configuration['tool_choice'] not in ['auto', 'none', 'required', 'default']:
