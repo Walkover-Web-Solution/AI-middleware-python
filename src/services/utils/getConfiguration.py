@@ -20,6 +20,7 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
             'error': "bridge_id does not exist"
         }
     db_configuration = result.get('bridges', {}).get('configuration', {})
+    service = service or (result.get('bridges', {}).get('service', '').lower())
     if configuration:
         db_configuration.update(configuration)
     configuration = db_configuration
@@ -92,7 +93,6 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
             }
     configuration.pop('tools', None)
     configuration['tools'] = tools
-    service = service or (result.get('bridges', {}).get('service', '').lower())
     service = service.lower() if service else ""
     gpt_memory = result.get('bridges', {}).get('gpt_memory')
     db_apikeys = result.get('bridges', {}).get('apikeys')
