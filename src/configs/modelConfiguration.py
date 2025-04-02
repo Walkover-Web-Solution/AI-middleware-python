@@ -1866,14 +1866,6 @@ class ModelsConfig:
                 "default": "gpt-4o-search-preview",
                 "level": 1
             },
-            "creativity_level": {
-                "field": "slider",
-                "min": 0,
-                "max": 2,
-                "step": 0.1,
-                "default": 0,
-                "level": 2
-            },
             "max_tokens": {
                 "field": "slider",
                 "min": 256,
@@ -1881,53 +1873,6 @@ class ModelsConfig:
                 "step": 1,
                 "default": 256,
                 "level": 2
-            },
-            "probability_cutoff": {
-                "field": "slider",
-                "min": 0,
-                "max": 1,
-                "step": 0.1,
-                "default": 1,
-                "level": 2
-            },
-            "log_probability": {
-                "field": "boolean",
-                "default": False,
-                "level": 0,
-                "typeOf": "boolean"
-            },
-            "repetition_penalty": {
-                "field": "slider",
-                "min": 0,
-                "max": 2,
-                "step": 0.01,
-                "default": 0,
-                "level": 2
-            },
-            "novelty_penalty": {
-                "field": "slider",
-                "min": 0,
-                "max": 2,
-                "step": 0.01,
-                "default": 0,
-                "level": 2
-            },
-            "response_count": {
-                "field": "number",
-                "default": 1,
-                "typeOf": "number",
-                "level": 0
-            },
-            "stop": {
-                "field": "text",
-                "default": "",
-                "level": 0
-            },
-            "stream": {
-                "field": "boolean",
-                "default": False,
-                "level": 0,
-                "typeOf": "boolean"
             },
             "response_type": {
                 "field": "select",
@@ -2544,14 +2489,6 @@ class ModelsConfig:
                 "default": "gpt-4o-mini-search-preview",
                 "level": 1
             },
-            "creativity_level": {
-                "field": "slider",
-                "min": 0,
-                "max": 2,
-                "step": 0.1,
-                "default": 0,
-                "level": 2
-            },
             "max_tokens": {
                 "field": "slider",
                 "min": 256,
@@ -2559,50 +2496,6 @@ class ModelsConfig:
                 "step": 1,
                 "default": 256,
                 "level": 2
-            },
-            "probability_cutoff": {
-                "field": "slider",
-                "min": 0,
-                "max": 1,
-                "step": 0.1,
-                "default": 1,
-                "level": 2
-            },
-            "log_probability": {
-                "field": "boolean",
-                "default": False,
-                "level": 0
-            },
-            "repetition_penalty": {
-                "field": "slider",
-                "min": 0,
-                "max": 2,
-                "step": 0.01,
-                "default": 0,
-                "level": 2
-            },
-            "novelty_penalty": {
-                "field": "slider",
-                "min": 0,
-                "max": 2,
-                "step": 0.01,
-                "default": 0,
-                "level": 2
-            },
-            "response_count": {
-                "field": "number",
-                "default": 1,
-                "level": 0
-            },
-            "stop": {
-                "field": "text",
-                "default": "",
-                "level": 0
-            },
-            "stream": {
-                "field": "boolean",
-                "default": False,
-                "level": 0
             },
              "type" : {
                 "default" : ["chat"]
