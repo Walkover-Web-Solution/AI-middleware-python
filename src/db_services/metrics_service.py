@@ -96,13 +96,13 @@ async def create(dataset, history_params, version_id, send_error_to_webhook):
             }
             for data_object in dataset
         ]
+        await insertRawData(insert_ai_data_in_pg)
+        await timescale_metrics(metrics_data)
         cache_key = f"metrix_bridges{history_params['bridge_id']}"
         oldTotalToken = json.loads(await find_in_cache(cache_key) or '0')
         totaltoken = sum(data_object.get('totalTokens', 0) for data_object in dataset) + oldTotalToken
-        await store_in_cache(cache_key, float(totaltoken))
         await send_error_to_webhook(history_params['bridge_id'], history_params['org_id'],totaltoken , 'metrix_limit_reached')
-        await insertRawData(insert_ai_data_in_pg)
-        await timescale_metrics(metrics_data)
+        await store_in_cache(cache_key, float(totaltoken))
     except Exception as error:
         traceback.print_exc()
         print('Error during bulk insert of Ai middleware', error)
