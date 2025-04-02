@@ -132,7 +132,7 @@ async def delete_function_from_apicalls_db(org_id, function_name):
                 if isinstance(bridge_id, str):
                     bridge_id = ObjectId(bridge_id)
                 
-                await configurationModel.update_one(
+                await versionModel.update_one(
                     {'_id': bridge_id},
                     {'$pull': {'function_ids': function_id}}
                 )
@@ -146,10 +146,10 @@ async def delete_function_from_apicalls_db(org_id, function_name):
                     {'$pull': {'function_ids': function_id}}
                 )
         
-        result = await apiCallModel.delete_one({
-            'org_id': org_id,
-            'function_name': function_name
-        })
+        # result = await apiCallModel.delete_one({
+        #     'org_id': org_id,
+        #     'function_name': function_name
+        # })
         
         if result.deleted_count > 0:
             return {
