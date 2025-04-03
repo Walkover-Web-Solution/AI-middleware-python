@@ -50,5 +50,5 @@ class Config:
     PINECONE_APIKEY = os.getenv('PINECONE_API_KEY')
     PINECONE_INDEX = os.getenv('PINECONE_INDEX')
     TRIGGER_PROJECT_ID = os.getenv('TRIGGER_PROJECT_ID', '')
-    CHATBOT_ACCESS_KEY = os.getenv('Chatbot_Access_key')
+    CHATBOT_ACCESS_KEY = os.getenv('Chatbot_Access_key',"asdf")
     ENV = os.getenv('ENV', 'dev')
