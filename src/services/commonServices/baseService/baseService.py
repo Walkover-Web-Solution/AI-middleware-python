@@ -6,7 +6,7 @@ from config import Config
 from ....db_services import metrics_service
 from .utils import validate_tool_call, tool_call_formatter, sendResponse, make_code_mapping_by_service, process_data_and_run_tools
 from src.configs.serviceKeys import ServiceKeys
-from ..openAI.runModel import runModel
+from ..openAI.runModel import runModel, openai_response_model
 from ..anthrophic.antrophicModelRun import anthropic_runmodel
 from ....configs.constant import service_name
 from ..groq.groqModelRun import groq_runmodel
@@ -261,6 +261,8 @@ class BaseService:
             loop = asyncio.get_event_loop()
             if service == service_name['openai']:
                 response = await runModel(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer, self.message_id, self.org_id, self.name, self.org_name)
+            if service == service_name['openai_response']:
+                response = await openai_response_model(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer, self.message_id, self.org_id, self.name, self.org_name)
             elif service == service_name['anthropic']:
                 response = await loop.run_in_executor(executor, lambda: asyncio.run(anthropic_runmodel(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer, self.name, self.org_name)))
             elif service == service_name['groq']:
