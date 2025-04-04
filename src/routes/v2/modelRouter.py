@@ -8,6 +8,7 @@ from concurrent.futures import ThreadPoolExecutor
 from config import Config
 from src.services.commonServices.queueService.queueService import queue_obj
 from src.middlewares.ratelimitMiddleware import rate_limit
+from ...middlewares.requestDataValidation import validate_request_data
 
 
 router = APIRouter()
@@ -19,7 +20,7 @@ async def auth_and_rate_limit(request: Request):
     await rate_limit(request,key_path='body.bridge_id' , points=100)
     await rate_limit(request,key_path='body.thread_id', points=20)
 
-@router.post('/chat/completion', dependencies=[Depends(auth_and_rate_limit)])
+@router.post('/chat/completion', dependencies=[Depends(auth_and_rate_limit),Depends(validate_request_data)])
 async def chat_completion(request: Request, db_config: dict = Depends(add_configuration_data_to_body)):
     request.state.is_playground = False
     request.state.version = 2
