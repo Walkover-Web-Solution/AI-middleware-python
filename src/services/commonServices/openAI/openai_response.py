@@ -21,7 +21,7 @@ class OpenaiResponse(BaseService):
         else:
             self.customConfig["input"] = developer + conversation + user
         
-        self.customConfig = self.service_formatter(self.customConfig, service_name['openai'])
+        self.customConfig = self.service_formatter(self.customConfig, service_name['openai_response'])
         
         if 'tools' not in self.customConfig and 'parallel_tool_calls' in self.customConfig:
             del self.customConfig['parallel_tool_calls']
@@ -34,13 +34,13 @@ class OpenaiResponse(BaseService):
                 await self.handle_failure(openAIResponse)
             raise ValueError(openAIResponse.get('error'))
         
-        # if modelResponse.get('choices', [])[0].get('message', {}).get("tool_calls"):
-        #     functionCallRes = await self.function_call(self.customConfig, service_name['openai'], openAIResponse, 0, {})
-        #     if not functionCallRes.get('success'):
-        #         await self.handle_failure(functionCallRes)
-        #         raise ValueError(functionCallRes.get('error'))
-        #     self.update_model_response(modelResponse, functionCallRes)
-        #     tools = functionCallRes.get("tools", {})
+        if modelResponse.get('output', [])[0].get('type') == 'function_call':
+            functionCallRes = await self.function_call(self.customConfig, service_name['openai_response'], openAIResponse, 0, {})
+            if not functionCallRes.get('success'):
+                await self.handle_failure(functionCallRes)
+                raise ValueError(functionCallRes.get('error'))
+            self.update_model_response(modelResponse, functionCallRes)
+            tools = functionCallRes.get("tools", {})
         
         if not self.playground:
             usage = self.token_calculator.calculate_usage(modelResponse)

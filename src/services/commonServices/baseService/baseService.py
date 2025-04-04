@@ -79,11 +79,16 @@ class BaseService:
             tools[function_response['name']] = function_response['content']
         
             match service:
-                case 'openai' | 'groq' :
+                case 'openai' | 'groq':
                     assistant_tool_calls = response['choices'][0]['message']['tool_calls'][index]
                     configuration['messages'].append({'role': 'assistant', 'content': None, 'tool_calls': [assistant_tool_calls]})
                     tool_calls_id = assistant_tool_calls['id']
                     configuration['messages'].append(mapping_response_data[tool_calls_id])
+                case 'openai_response':
+                    assistant_tool_calls = response['output'][index]
+                    configuration['input'].append({'role': 'assistant', 'content': None, 'tool_calls': [assistant_tool_calls]})
+                    tool_calls_id = assistant_tool_calls['id']
+                    configuration['input'].append(mapping_response_data[tool_calls_id])
                 case 'anthropic':
                     ordered_json = {"type":"tool_result",  
                                                  "tool_use_id": function_response['tool_call_id'],
@@ -101,7 +106,7 @@ class BaseService:
         modelOutputConfig = modelObj['outputConfig']
         model_response = response.get('modelResponse', {})
         if configuration.get('tool_choice') is not None and configuration['tool_choice'] not in ['auto', 'none', 'required']:
-            if service == 'openai' or service == 'groq':
+            if service == 'openai' or service == 'groq' or service == 'openai':
                     configuration['tool_choice'] = 'auto'
             elif service == 'anthropic':
                 configuration['tool_choice'] = {'type': 'auto'}
@@ -245,6 +250,9 @@ class BaseService:
                             new_config['tool_choice'] = {"type": "function", "function": {"name": configuration['tool_choice']}}
                         else:
                             new_config['tool_choice'] = configuration['tool_choice']
+                elif service == service_name['openai_response']:
+                    new_config['tool_choice'] = {"type" : "function", "name" : configuration['tool_choice']}
+                    
                 new_config['tools'] = tool_call_formatter(configuration, service, self.variables, self.variables_path)
             elif 'tool_choice' in configuration:
                 del new_config['tool_choice']  
