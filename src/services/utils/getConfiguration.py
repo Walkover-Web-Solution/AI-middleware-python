@@ -97,6 +97,8 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
     gpt_memory = result.get('bridges', {}).get('gpt_memory')
     db_apikeys = result.get('bridges', {}).get('apikeys')
     db_api_key = db_apikeys.get(service)
+    if service == 'openai_response':
+        db_api_key = db_apikeys.get('openai')
     apikey_object_id = result.get('bridges', {}).get('apikey_object_id')
     if not (apikey or db_api_key): 
         raise Exception('Could not find api key')

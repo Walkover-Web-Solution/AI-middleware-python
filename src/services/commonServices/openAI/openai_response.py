@@ -6,7 +6,7 @@ from src.configs.constant import service_name
 class OpenaiResponse(BaseService):
     async def execute(self):
         historyParams, usage, tools = {}, {}, {}
-        conversation = ConversationService.createOpenAiConversation(self.configuration.get('conversation'), self.memory).get('messages', [])
+        conversation = ConversationService.createOpenAiResponseConversation(self.configuration.get('conversation'), self.memory).get('messages', [])
         
         user = [{"role": "user", "content": self.user}] if self.user else []
         developer = [{"role": "developer", "content": self.configuration['prompt']}] if not self.reasoning_model else []
@@ -14,10 +14,10 @@ class OpenaiResponse(BaseService):
         if self.image_data:
             self.customConfig["input"] = developer + conversation
             if self.user:
-                user = [{"type": "text", "text": self.user}]
+                user = [{"type": "input_text", "text": self.user}]
                 if isinstance(self.image_data, list):
-                    user.extend({"type": "image_url", "image_url": {"url": image_url}} for image_url in self.image_data)
-                self.customConfig["messages"].append({'role': 'user', 'content': user})
+                    user.extend({"type": "input_image", "image_url": image_url} for image_url in self.image_data)
+                self.customConfig["input"].append({'role': 'user', 'content': user})
         else:
             self.customConfig["input"] = developer + conversation + user
         
