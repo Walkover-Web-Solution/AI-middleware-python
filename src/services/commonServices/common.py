@@ -142,7 +142,7 @@ async def chat(request_body):
                     "thread_id": parsed_data['thread_id'],
                     "sub_thread_id": parsed_data['sub_thread_id'],
                     "user": parsed_data['user'],
-                    "message": "",
+                    "message": None,
                     "org_id": parsed_data['org_id'],
                     "bridge_id": parsed_data['bridge_id'],
                     "model": parsed_data['model'] or parsed_data['configuration'].get("model", None),
