@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Request
 from ..middlewares.middleware import jwt_middleware
 from validations.validation import Bridge_update as bridge_update_validation
-from ..controllers.configController import create_bridges_controller, get_bridge as get_bridge_controller,  get_all_bridges as get_all_bridges_controller
+from ..controllers.configController import create_bridges_controller, get_bridge as get_bridge_controller,  get_all_bridges as get_all_bridges_controller, create_bridges_using_ai_controller
 from ..controllers.configController import get_all_service_models_controller,update_bridge_controller
 from src.controllers.apicallControllerV2 import creates_api, updates_api
 router = APIRouter()
@@ -21,6 +21,10 @@ async def get_bridge(request: Request,bridge_id: str):
 @router.post('/create_bridge',dependencies=[Depends(jwt_middleware)])
 async def create_bridge(request: Request):
     return await create_bridges_controller(request)
+
+@router.post('/create_bridge_using_ai',dependencies=[Depends(jwt_middleware)])
+async def create_bridge(request: Request):
+    return await create_bridges_using_ai_controller(request)
 
 @router.post('/update_bridge/{bridge_id}',dependencies=[Depends(jwt_middleware)])
 async def update_bridge(request: Request,bridge_id: str):
