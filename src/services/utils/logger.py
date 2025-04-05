@@ -2,7 +2,6 @@ import logging
 import sys
 # logging.basicConfig(format='%(levelname)s - %(message)s')
 logging.basicConfig(
-    stream=sys.stdout,
     level=logging.INFO,
     format="%(levelname)s - %(message)s",
     handlers=[
