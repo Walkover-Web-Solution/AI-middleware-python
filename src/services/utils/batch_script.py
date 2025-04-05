@@ -8,7 +8,6 @@ from .ai_middleware_format import Response_formatter
 
 async def repeat_function():
     while True:
-        print("harsh this side before function call")
         await check_batch_status()
         await asyncio.sleep(900)
 

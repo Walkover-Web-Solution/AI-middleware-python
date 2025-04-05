@@ -277,7 +277,7 @@ def make_code_mapping_by_service(responses, service):
                 }
                 function_list.append(name)
         case 'anthropic':
-            for tool_call in responses['content'][1:]:  # Skip the first item
+            for tool_call in [item for item in responses['content'] if item['type'] == 'tool_use']:  # Skip the first item
                 name = tool_call['name']
                 args = tool_call['input']
                 codes_mapping[tool_call["id"]] = {

@@ -3569,12 +3569,12 @@ class ModelsConfig:
                 "default": [],
                 "typeOf": "array"
             },
-            # "tool_choice": {
-            #     "field": "text",
-            #     "default": "auto",
-            #     "level": 0,
-            #     "typeOf": "string"
-            # },
+            "tool_choice": {
+                "field": "dropdown",
+                "options" : ["auto", "none", "any"],
+                "default": "auto",
+                "level": 0
+            },
              "vision": {
                 "support": True,
                  "level": 0,
@@ -3670,12 +3670,12 @@ class ModelsConfig:
                 "default": [],
                 "typeOf": "array"
             },
-            # "tool_choice": {
-            #     "field": "text",
-            #     "default": "auto",
-            #     "level": 0,
-            #     "typeOf": "string"
-            # },
+            "tool_choice": {
+                "field": "dropdown",
+                "options" : ["auto", "none", "any"],
+                "default": "auto",
+                "level": 0
+            },
              "vision": {
                 "support": True,
                  "level": 0,
@@ -3759,12 +3759,12 @@ class ModelsConfig:
                 "default": [],
                 "typeOf": "array"
             },
-            # "tool_choice": {
-            #     "field": "text",
-            #     "default": "auto",
-            #     "level": 0,
-            #     "typeOf": "string"
-            # },
+            "tool_choice": {
+                "field": "dropdown",
+                "options" : ["auto", "none", "any"],
+                "default": "auto",
+                "level": 0
+            },
              "vision": {
                 "support": True,
                  "level": 0,
@@ -3860,12 +3860,12 @@ class ModelsConfig:
                 "default": [],
                 "typeOf": "array"
             },
-            # "tool_choice": {
-            #     "field": "text",
-            #     "default": "auto",
-            #     "level": 0,
-            #     "typeOf": "string"
-            # },
+            "tool_choice": {
+                "field": "dropdown",
+                "options" : ["auto", "none", "any"],
+                "default": "auto",
+                "level": 0
+            },
              "vision": {
                 "support": True,
                  "level": 0,
@@ -3960,12 +3960,12 @@ class ModelsConfig:
                 "default": [],
                 "typeOf": "array"
             },
-            # "tool_choice": {
-            #     "field": "text",
-            #     "default": "auto",
-            #     "level": 0,
-            #     "typeOf": "string"
-            # },
+            "tool_choice": {
+                "field": "dropdown",
+                "options" : ["auto", "none", "any"],
+                "default": "auto",
+                "level": 0
+            },
              "vision": {
                 "support": True,
                  "level": 0,
@@ -4058,12 +4058,12 @@ class ModelsConfig:
                 "default": [],
                 "typeOf": "array"
             },
-            # "tool_choice": {
-            #     "field": "text",
-            #     "default": "auto",
-            #     "level": 0,
-            #     "typeOf": "string"
-            # },
+            "tool_choice": {
+                "field": "dropdown",
+                "options" : ["auto", "none", "any"],
+                "default": "auto",
+                "level": 0
+            },
              "vision": {
                 "support": True,
                  "level": 0,
@@ -4155,12 +4155,12 @@ class ModelsConfig:
                 "default": [],
                 "typeOf": "array"
             },
-            # "tool_choice": {
-            #     "field": "text",
-            #     "default": "auto",
-            #     "level": 0,
-            #     "typeOf": "string"
-            # },
+            "tool_choice": {
+                "field": "dropdown",
+                "options" : ["auto", "none", "any"],
+                "default": "auto",
+                "level": 0
+            },
              "vision": {
                 "support": True,
                  "level": 0,
@@ -4255,12 +4255,12 @@ class ModelsConfig:
                 "default": [],
                 "typeOf": "array"
             },
-            # "tool_choice": {
-            #     "field": "text",
-            #     "default": "auto",
-            #     "level": 0,
-            #     "typeOf": "string"
-            # },
+            "tool_choice": {
+                "field": "dropdown",
+                "options" : ["auto", "none", "any"],
+                "default": "auto",
+                "level": 0
+            },
              "vision": {
                 "support": True,
                  "level": 0,
@@ -4353,12 +4353,12 @@ class ModelsConfig:
                 "default": [],
                 "typeOf": "array"
             },
-            # "tool_choice": {
-            #     "field": "text",
-            #     "default": "auto",
-            #     "level": 0,
-            #     "typeOf": "string"
-            # },
+            "tool_choice": {
+                "field": "dropdown",
+                "options" : ["auto", "none", "any"],
+                "default": "auto",
+                "level": 0
+            },
              "vision": {
                 "support": True,
                  "level": 0,

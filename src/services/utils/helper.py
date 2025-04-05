@@ -8,7 +8,7 @@ import traceback
 from functools import reduce
 import operator
 import re
-from src.configs.modelConfiguration import ModelsConfig as model_configuration
+from src.configs.model_configuration import model_config_document
 import jwt
 from ..commonServices.openAI.openaiCall import UnifiedOpenAICase
 from ..commonServices.openAI.openai_batch import OpenaiBatch
@@ -18,6 +18,8 @@ from ...configs.constant import service_name
 from ..commonServices.openAI.openai_embedding_call import OpenaiEmbedding
 from ..cache_service import find_in_cache, store_in_cache
 from ..utils.apiservice import fetch
+from datetime import datetime, timezone, timedelta
+import pytz
 class Helper:
     @staticmethod
     def encrypt(text):
@@ -135,9 +137,9 @@ class Helper:
     def response_middleware_for_bridge(finalResponse):
         try:
             response = finalResponse['bridge']
-            model_name = response['configuration']['model'].replace("-", "_").replace(".", "_")
-            configuration = getattr(model_configuration,model_name,None)
-            configurations = configuration()['configuration']
+            model = response['configuration']['model']
+            modelObj = model_config_document[model]
+            configurations = modelObj['configuration']
             db_config = response['configuration']
             # if response.get('apikey'):
             #     decryptedApiKey = Helper.decrypt(response['apikey'])
@@ -186,11 +188,9 @@ class Helper:
         usage = {}
         token_cost = {}
         permillion = 1000000
-        modelname = model.replace("-", "_").replace(".", "_")
-        modelfunc = getattr(model_configuration, modelname, None)
-        if modelfunc is None:
-            raise AttributeError(f"Model function '{modelname}' not found in model_configuration.")
-        modelObj = modelfunc()
+        modelObj = model_config_document[model]
+        if modelObj is None:
+            raise AttributeError(f"Model function '{model}' not found in model_configuration.")
 
         if service in ['openai', 'groq']:
             token_cost['input_cost'] = modelObj['outputConfig']['usage'][0]['total_cost'].get('input_cost') or 0
@@ -286,3 +286,15 @@ class Helper:
         
         # Combine the lists, keeping not_present bridges in their original order at the end
         return present + not_present
+    
+
+
+    def get_current_time_with_timezone(tz_identifier):
+        try:
+            tz = pytz.timezone(tz_identifier)
+            offset = datetime.now(tz).utcoffset()
+            hours, remainder = divmod(offset.total_seconds(), 3600)
+            minutes = remainder // 60
+            return int(hours), int(minutes)
+        except Exception as e:
+            return f"Invalid timezone: {e}"

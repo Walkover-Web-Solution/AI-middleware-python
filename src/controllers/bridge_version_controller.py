@@ -8,6 +8,8 @@ from bson import ObjectId
 from ..services.utils.apiservice import fetch
 from ..configs.models import services
 import traceback
+from src.configs.model_configuration import model_config_document
+
 
 with open('src/services/utils/model_features.json', 'r') as file: 
     model_features = json.load(file)
@@ -106,10 +108,22 @@ async def suggest_model(request, version_id):
         prompt = version_data['configuration']['prompt']
         tool_calls = [{call['endpoint_name'] : call['description']} for call in version_data['apiCalls'].values()]
 
-        response, headers = await fetch(url='https://proxy.viasocket.com/proxy/api/1258584/29gjrmh24/api/v2/model/chat/completion', method='POST', json_body={'user' : json.dumps({'prompt' : prompt, 'tool_calls' : tool_calls}), 'bridge_id': '67a75ab42d85a6d4f16a4c7e', 'variables' : {'available_models': str(available_models), 'unavailable_models': str(unavailable_models) }}, headers = {'pauthkey' : '1b13a7a038ce616635899a239771044c', 'Content-Type': 'application/json' })
+        ai_response, headers = await fetch(url='https://proxy.viasocket.com/proxy/api/1258584/29gjrmh24/api/v2/model/chat/completion', method='POST', json_body={'user' : json.dumps({'prompt' : prompt, 'tool_calls' : tool_calls}), 'bridge_id': '67a75ab42d85a6d4f16a4c7e', 'variables' : {'available_models': str(available_models), 'unavailable_models': str(unavailable_models) }}, headers = {'pauthkey' : '1b13a7a038ce616635899a239771044c', 'Content-Type': 'application/json' })
         
-        response = json.loads(response['response']['data']['content'])
-
+        ai_response = json.loads(ai_response['response']['data']['content'])
+        
+        response = {
+            'available': {
+                'model' : ai_response['best_model_from_available_model'], 
+                'service' : model_config_document.get(ai_response['best_model_from_available_model']).get('service')
+            }
+        }
+        if ai_response.get('best_model_from_unavailable_model'):
+            response['unavailable'] = {
+                'model' : ai_response['best_model_from_unavailable_model'], 
+               'service' : model_config_document.get(ai_response['best_model_from_unavailable_model']).get('service')
+            }
+        
         return JSONResponse({'success' : True, 'message': 'suggestion fetched successfully', 'data': response })
     except Exception as e: 
         traceback.print_exc()

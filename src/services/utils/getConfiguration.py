@@ -4,6 +4,7 @@ from bson import ObjectId
 from models.mongo_connection import db
 from src.services.utils.common_utils import updateVariablesWithTimeZone
 from src.services.commonServices.baseService.utils import makeFunctionName
+from src.services.utils.service_config_utils import tool_choice_function_name_formatter
 apiCallModel = db['apicalls']
 
 # from src.services.commonServices.generateToken import generateToken
@@ -19,6 +20,7 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
             'error': "bridge_id does not exist"
         }
     db_configuration = result.get('bridges', {}).get('configuration', {})
+    service = service or (result.get('bridges', {}).get('service', '').lower())
     if configuration:
         db_configuration.update(configuration)
     configuration = db_configuration
@@ -35,8 +37,7 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
         if choice in tool_choice_ids:
             found_choice = choice
             break
-            
-    configuration['tool_choice'] = found_choice if found_choice is not None else toolchoice
+    configuration['tool_choice'] = tool_choice_function_name_formatter(service, configuration, toolchoice, found_choice)
     bridge = result.get('bridges')
     variables_path_bridge = bridge.get('variables_path', {})
     # make tools data
@@ -92,7 +93,6 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
             }
     configuration.pop('tools', None)
     configuration['tools'] = tools
-    service = service or (result.get('bridges', {}).get('service', '').lower())
     service = service.lower() if service else ""
     gpt_memory = result.get('bridges', {}).get('gpt_memory')
     db_apikeys = result.get('bridges', {}).get('apikeys')

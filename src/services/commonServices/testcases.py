@@ -112,10 +112,8 @@ async def run_testcase_for_response(testcase_data, parsed_data, chat):
 
 async def compare_result(expected, actual, matching_type, response_type):
     if(response_type == 'function'):
-        pass
-        
-        expected = {case['name'] : case['arguments'] for case in expected}
-        actual = {case['name'] : case['args'] for case in actual}
+        expected = {case['name'] : case.get('arguments', {}) for case in expected}
+        actual = {case['name'] : case['args'] for case in actual or []}
     match matching_type: 
         case 'cosine' : 
             expected = str(expected)
