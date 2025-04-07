@@ -97,7 +97,7 @@ class BaseService:
         if not response.get('success'):
             return {'success': False, 'error': response.get('error')}
         
-        modelObj = model_config_document[self.model]
+        modelObj = model_config_document[self.service][self.model]
         modelOutputConfig = modelObj['outputConfig']
         model_response = response.get('modelResponse', {})
         if configuration.get('tool_choice') is not None and configuration['tool_choice'] not in ['auto', 'none', 'required']:

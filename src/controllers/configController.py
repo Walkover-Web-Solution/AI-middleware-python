@@ -25,7 +25,7 @@ async def create_bridges_controller(request):
         name = bridges.get('name')
         slugName = bridges.get('slugName')
         bridgeType = bridges.get('bridgeType')
-        modelObj = model_config_document[model]
+        modelObj = model_config_document[service][model]
         configurations = modelObj['configuration']
         status = 1
         keys_to_update = [
@@ -148,7 +148,7 @@ async def get_bridge(request, bridge_id: str):
                 path_variables.append(vars_dict)
         all_variables = variables + path_variables
         bridge.get('bridges')['all_varaibles'] = all_variables
-        return Helper.response_middleware_for_bridge({"succcess": True,"message": "bridge get successfully","bridge":bridge.get("bridges", {})})
+        return Helper.response_middleware_for_bridge(bridge.get('bridges')['service'], {"succcess": True,"message": "bridge get successfully","bridge":bridge.get("bridges", {})})
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e,)
 
@@ -442,7 +442,7 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
         await update_apikey_creds(version_id)
         
         if result.get("success"):
-            return Helper.response_middleware_for_bridge({
+            return Helper.response_middleware_for_bridge(bridge['service'],{
                 "success": True,
                 "message": "Bridge Updated successfully",
                 "bridge" : result.get('bridges')
