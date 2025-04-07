@@ -106,7 +106,7 @@ class BaseService:
         if not response.get('success'):
             return {'success': False, 'error': response.get('error')}
         
-        modelObj = model_config_document[self.model]
+        modelObj = model_config_document[self.service][self.model]
         modelOutputConfig = modelObj['outputConfig']
         model_response = response.get('modelResponse', {})
         if configuration.get('tool_choice') is not None and configuration['tool_choice'] not in ['auto', 'none', 'required']:
@@ -114,7 +114,7 @@ class BaseService:
                     configuration['tool_choice'] = 'auto'
             elif service == 'anthropic':
                 configuration['tool_choice'] = {'type': 'auto'}
-        if validate_tool_call(modelOutputConfig, service, model_response) and l <= self.tool_call_count:
+        if validate_tool_call(modelOutputConfig, service, model_response) and l <= int(self.tool_call_count):
             l += 1
             
             # Continue with the rest of the logic here

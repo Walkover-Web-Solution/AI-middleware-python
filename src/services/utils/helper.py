@@ -135,11 +135,11 @@ class Helper:
     def generate_token(payload, accesskey):
         return jwt.encode(payload, accesskey)
 
-    def response_middleware_for_bridge(finalResponse):
+    def response_middleware_for_bridge(service, finalResponse):
         try:
             response = finalResponse['bridge']
             model = response['configuration']['model']
-            modelObj = model_config_document[model]
+            modelObj = model_config_document[service][model]
             configurations = modelObj['configuration']
             db_config = response['configuration']
             # if response.get('apikey'):
@@ -191,7 +191,7 @@ class Helper:
         usage = {}
         token_cost = {}
         permillion = 1000000
-        modelObj = model_config_document[model]
+        modelObj = model_config_document[service][model]
         if modelObj is None:
             raise AttributeError(f"Model function '{model}' not found in model_configuration.")
 

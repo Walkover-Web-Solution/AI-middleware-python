@@ -39,7 +39,7 @@ async def chat(request_body):
         
         # Step 3: Load Model Configuration
         model_config, custom_config, model_output_config = await load_model_configuration(
-            parsed_data['model'], parsed_data['configuration']
+            parsed_data['model'], parsed_data['configuration'], parsed_data['service'],
         )
         # Step 3: Load Model Configuration
         await handle_fine_tune_model(parsed_data, custom_config)
@@ -142,7 +142,7 @@ async def chat(request_body):
                     "thread_id": parsed_data['thread_id'],
                     "sub_thread_id": parsed_data['sub_thread_id'],
                     "user": parsed_data['user'],
-                    "message": "",
+                    "message": None,
                     "org_id": parsed_data['org_id'],
                     "bridge_id": parsed_data['bridge_id'],
                     "model": parsed_data['model'] or parsed_data['configuration'].get("model", None),
@@ -171,7 +171,7 @@ async def embedding(request_body):
         text = body.get('text')
         model = configuration.get('model')
         service = body.get('service')
-        model_config, custom_config, model_output_config = await load_model_configuration(model, configuration)
+        model_config, custom_config, model_output_config = await load_model_configuration(model, configuration, service)
         chatbot = body.get('chatbot')
         if chatbot:
             raise ValueError("Error: Embedding not supported for chatbot")
@@ -214,7 +214,7 @@ async def batch(request_body):
         
         # Step 3: Load Model Configuration
         model_config, custom_config, model_output_config = await load_model_configuration(
-            parsed_data['model'], parsed_data['configuration']
+            parsed_data['model'], parsed_data['configuration'], parsed_data['service'],
         )
 
         # Step 4: Handle Pre-Tools Execution
