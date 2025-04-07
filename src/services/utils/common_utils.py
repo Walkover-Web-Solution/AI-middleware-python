@@ -333,4 +333,6 @@ def filter_missing_vars(missing_vars, variables_state):
                     del missing_vars[key]
             
             return missing_vars
-       
+
+def get_service_by_model(model): 
+    return next((s for s in model_config_document if model in model_config_document[s]), None)

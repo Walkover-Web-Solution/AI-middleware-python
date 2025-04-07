@@ -7,8 +7,8 @@ from ..db_services.ConfigurationServices import get_bridges_with_tools, update_b
 from bson import ObjectId
 from ..services.utils.apiservice import fetch
 from ..configs.models import services
+from src.services.utils.common_utils import get_service_by_model
 import traceback
-from src.configs.model_configuration import model_config_document
 
 
 with open('src/services/utils/model_features.json', 'r') as file: 
@@ -114,14 +114,14 @@ async def suggest_model(request, version_id):
         
         response = {
             'available': {
-                'model' : ai_response['best_model_from_available_model'], 
-                'service' : model_config_document.get(ai_response['best_model_from_available_model']).get('service')
+                'model' : ai_response['best_model_from_available_models'], 
+                'service' : get_service_by_model(ai_response['best_model_from_available_models'])
             }
         }
-        if ai_response.get('best_model_from_unavailable_model'):
+        if ai_response.get('best_model_from_unavailable_models'):
             response['unavailable'] = {
-                'model' : ai_response['best_model_from_unavailable_model'], 
-               'service' : model_config_document.get(ai_response['best_model_from_unavailable_model']).get('service')
+                'model' : ai_response['best_model_from_unavailable_models'], 
+                'service' : get_service_by_model(ai_response['best_model_from_unavailable_models'])
             }
         
         return JSONResponse({'success' : True, 'message': 'suggestion fetched successfully', 'data': response })
