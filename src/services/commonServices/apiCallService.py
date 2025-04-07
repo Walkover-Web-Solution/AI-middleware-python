@@ -95,7 +95,7 @@ async def updates_api(request: Request, bridge_id: str):
         result = await get_bridges_with_tools(bridge_id, org_id)
 
         if result.get("success"):
-            return Helper.response_middleware_for_bridge({
+            return Helper.response_middleware_for_bridge(result.get('bridges')['service'],{
                 "success": True,
                 "message": "Bridge Updated successfully",
                 "bridge" : result.get('bridges')

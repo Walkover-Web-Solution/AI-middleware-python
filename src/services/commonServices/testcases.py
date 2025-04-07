@@ -52,7 +52,7 @@ async def run_testcases(parsed_data, org_id, bridge_id, chat):
     testcases_data = await get_testcases(bridge_id)
     # version_data = (await get_bridges_with_tools_and_apikeys(None, parsed_data['org_id'], version_id))['bridges']
     model_config, custom_config, model_output_config = await load_model_configuration(
-        parsed_data['configuration']['model'], parsed_data['configuration']
+        parsed_data['configuration']['model'], parsed_data['configuration'], parsed_data['service'], 
     )
     custom_config = await configure_custom_settings(
         model_config['configuration'], custom_config, parsed_data['service']

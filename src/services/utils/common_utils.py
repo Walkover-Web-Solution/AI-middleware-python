@@ -92,8 +92,8 @@ def initialize_timer(state: Dict[str, Any]) -> Timer:
     timer_obj.defaultStart(state.get('timer', []))
     return timer_obj
 
-async def load_model_configuration(model, configuration):
-    model_obj = model_config_document.get(model)
+async def load_model_configuration(model, configuration, service):
+    model_obj = model_config_document[service][model]
     if not model_obj:
         raise ValueError(f"Model {model} not found in ModelsConfig.")
     
