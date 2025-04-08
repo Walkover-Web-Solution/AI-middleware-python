@@ -434,7 +434,8 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
         result = await get_bridges_with_tools(bridge_id, org_id, version_id)
         await add_bulk_user_entries(user_history)
         await update_apikey_creds(version_id)
-        
+        if service is not None:
+            bridge['service'] = service
         if result.get("success"):
             return Helper.response_middleware_for_bridge(bridge['service'],{
                 "success": True,
