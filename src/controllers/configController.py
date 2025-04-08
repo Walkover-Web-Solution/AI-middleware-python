@@ -93,16 +93,8 @@ async def create_bridges_using_ai_controller(request):
         bridge_type = body.get('bridgeType')
         result = []
         proxy_auth_token = request.headers.get("proxy_auth_token")
-        result = await fetch("https://flow.sokt.io/func/scri5dR8ePn9", "POST", None, None, {"proxy_auth_token": proxy_auth_token, "purpose": purpose, "bridgeType": bridge_type})
-        try:            
-            bridge = json.loads(result[0])
-        except json.JSONDecodeError as e:
-            print(f"Error decoding JSON response: {e}")
-            print(f"Raw response: {result[0]}")
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
-                detail="Error while creating bridge"
-            )
+        result = await fetch("https://flow.sokt.io/func/scri5dR8ePn9", "POST", None, None, {"proxy_auth_token": proxy_auth_token, "purpose": purpose, "bridgeType": bridge_type})        
+        bridge = json.loads(result[0])
         if bridge:
             return JSONResponse(status_code=200, content={
                 "success": True,
