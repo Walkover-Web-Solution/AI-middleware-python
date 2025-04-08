@@ -6,7 +6,6 @@ from config import Config
 from ....db_services import metrics_service
 from .utils import validate_tool_call, tool_call_formatter, sendResponse, make_code_mapping_by_service, process_data_and_run_tools
 from src.configs.serviceKeys import ServiceKeys
-from src.configs.modelConfiguration import ModelsConfig
 from ..openAI.runModel import runModel
 from ..anthrophic.antrophicModelRun import anthropic_runmodel
 from ....configs.constant import service_name
@@ -14,6 +13,7 @@ from ..groq.groqModelRun import groq_runmodel
 from ....configs.constant import service_name
 from ..openAI.image_model import OpenAIImageModel
 from concurrent.futures import ThreadPoolExecutor
+from src.configs.model_configuration import model_config_document
 
 
 executor = ThreadPoolExecutor(max_workers= int(Config.max_workers) or 10)
@@ -96,8 +96,8 @@ class BaseService:
     async def function_call(self, configuration, service, response, l=0, tools={}):
         if not response.get('success'):
             return {'success': False, 'error': response.get('error')}
-        modelfunc = getattr(ModelsConfig, self.model.replace('-',"_").replace('.',"_"), None)
-        modelObj = modelfunc()
+        
+        modelObj = model_config_document[self.model]
         modelOutputConfig = modelObj['outputConfig']
         model_response = response.get('modelResponse', {})
         if configuration.get('tool_choice') is not None and configuration['tool_choice'] not in ['auto', 'none', 'required']:
@@ -105,7 +105,7 @@ class BaseService:
                     configuration['tool_choice'] = 'auto'
             elif service == 'anthropic':
                 configuration['tool_choice'] = {'type': 'auto'}
-        if validate_tool_call(modelOutputConfig, service, model_response) and l <= self.tool_call_count:
+        if validate_tool_call(modelOutputConfig, service, model_response) and l <= int(self.tool_call_count):
             l += 1
             
             # Continue with the rest of the logic here
@@ -238,7 +238,7 @@ class BaseService:
             new_config = {ServiceKeys[service].get(self.type, ServiceKeys[service]['default']).get(key, key): value for key, value in configuration.items()}
             if configuration.get('tools', '') :
                 if service == service_name['anthropic']:
-                    new_config['tool_choice'] =  {"type": "auto"}
+                    new_config['tool_choice'] =  configuration.get('tool_choice', {'type': 'auto'})
                 elif service == service_name['openai'] or service_name['groq']:
                     if configuration.get('tool_choice'):
                         if configuration['tool_choice'] not in ['auto', 'none', 'required', 'default']:

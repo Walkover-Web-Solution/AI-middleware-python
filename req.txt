@@ -94,3 +94,4 @@ langchain>=0.3.18
 python-docx>=1.1.2
 pandas
 PyPDF2>=3.0.1
+asyncpg>=0.30.0

@@ -8,6 +8,7 @@ apiCallModel = db['apicalls']
 templateModel = db['templates']
 apikeyCredentialsModel = db['apikeycredentials']
 version_model = db['configuration_versions']
+threadsModel = db['threads']
 
 async def get_bridges(bridge_id = None, org_id = None, version_id = None):
     try:
@@ -149,11 +150,11 @@ async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None)
         model = version_model if version_id else configurationModel
         id_to_use = ObjectId(version_id) if version_id else ObjectId(bridge_id)
         pipeline = [
-            # Match the specific bridge or version with the given org_id
+            # Stage 0: Match the specific bridge or version with the given org_id
             {
                 '$match': {'_id': ObjectId(id_to_use), "org_id": org_id}
             },
-            # Existing lookup to join with 'apicalls' collection
+            # Stage 1: Lookup to join with 'apicalls' collection
             {
                 '$lookup': {
                     'from': 'apicalls',
@@ -162,7 +163,7 @@ async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None)
                     'as': 'apiCalls'
                 }
             },
-            # Existing addFields to restructure fields
+            # Stage 2: Restructure fields for _id, function_ids and apiCalls
             {
                 '$addFields': {
                     '_id': {'$toString': '$_id'},
@@ -201,13 +202,13 @@ async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None)
                     }
                 }
             },
-            # New Stage 1: Convert 'apikey_object_id' to an array of key-value pairs
+            # Stage 3: Convert 'apikey_object_id' to an array of key-value pairs
             {
                 '$addFields': {
                     'apikeys_array': { '$objectToArray': '$apikey_object_id' }
                 }
             },
-            # New Stage 2: Lookup 'apikeycredentials' using the ObjectIds from 'apikeys_array.v'
+            # Stage 4: Lookup 'apikeycredentials' using the ObjectIds from 'apikeys_array.v'
             {
                 '$lookup': {
                     'from': 'apikeycredentials',
@@ -217,10 +218,11 @@ async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None)
                                 'input': '$apikeys_array.v', 
                                 'as': 'id', 
                                 'in': {
-                                    '$cond': {
-                                        'if': { '$eq': ['$$id', ''] },
-                                        'then': None,
-                                        'else': { '$toObjectId': '$$id' }
+                                    '$convert': {
+                                        'input': '$$id',
+                                        'to': 'objectId',
+                                        'onError': None,
+                                        'onNull': None
                                     }
                                 }
                             } 
@@ -239,7 +241,7 @@ async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None)
                     'as': 'apikeys_docs'
                 }
             },
-            # New Stage 3: Map each service to its corresponding apikey
+            # Stage 5: Map each service to its corresponding apikey
             {
                 '$addFields': {
                     'apikeys': {
@@ -260,8 +262,15 @@ async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None)
                                                             'cond': { 
                                                                 '$eq': [
                                                                     '$$doc._id', 
-                                                                    { '$toObjectId': '$$item.v' }
-                                                                ] 
+                                                                    {
+                                                                        '$convert': {
+                                                                            'input': '$$item.v',
+                                                                            'to': 'objectId',
+                                                                            'onError': None,
+                                                                            'onNull': None
+                                                                        }
+                                                                    }
+                                                                ]
                                                             }
                                                         }
                                                     },
@@ -278,7 +287,7 @@ async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None)
                     }
                 }
             },
-            # New Stage 4: Lookup 'rag_parent_data' using 'doc_ids'
+            # Stage 6: Lookup 'rag_parent_datas' using 'doc_ids'
             {
                 '$lookup': {
                     'from': 'rag_parent_datas',
@@ -306,12 +315,12 @@ async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None)
                     'as': 'rag_data'
                 }
             },
-            # New Stage 5: (Optional) Remove temporary fields to clean up the output
+            # Stage 7: (Optional) Remove temporary fields to clean up the output
             {
                 '$project': {
                     'apikeys_array': 0,
                     'apikeys_docs': 0,
-                    # Add other fields to exclude if necessary
+                    # Exclude additional temporary fields as needed
                 }
             }
         ]
@@ -488,10 +497,10 @@ async def get_bridge_by_slugname(org_id, slug_name):
         }
 
 async def update_bridge(bridge_id = None, update_fields = None, version_id = None):
+    model = version_model if version_id else configurationModel
+    id_to_use = ObjectId(version_id) if version_id else ObjectId(bridge_id)
+    cache_key = f"{version_id if version_id else bridge_id}"
     try:
-        model = version_model if version_id else configurationModel
-        id_to_use = ObjectId(version_id) if version_id else ObjectId(bridge_id)
-        cache_key = f"{version_id if version_id else bridge_id}"
         updated_bridge = await model.find_one_and_update(
             {'_id': ObjectId(id_to_use)},
             {'$set': update_fields},
@@ -500,14 +509,12 @@ async def update_bridge(bridge_id = None, update_fields = None, version_id = Non
         )
 
         if not updated_bridge:
-            return {
-                'success': False,
-                'error': 'No records updated or bridge not found'
-            }
-        if updated_bridge:
-            updated_bridge['_id'] = str(updated_bridge['_id'])  # Convert ObjectId to string
-            if 'function_ids' in updated_bridge and updated_bridge['function_ids'] is not None:
-                updated_bridge['function_ids'] = [str(fid) for fid in updated_bridge['function_ids']]  # Convert function_ids to string
+            raise Exception('No records updated or bridge not found')
+
+        updated_bridge['_id'] = str(updated_bridge['_id'])  # Convert ObjectId to string
+        if 'function_ids' in updated_bridge and updated_bridge['function_ids'] is not None:
+            updated_bridge['function_ids'] = [str(fid) for fid in updated_bridge['function_ids']]  # Convert function_ids to string
+
         await delete_in_cache(cache_key)
         return {
             'success': True,
@@ -516,10 +523,7 @@ async def update_bridge(bridge_id = None, update_fields = None, version_id = Non
 
     except Exception as error:
         print(error)
-        return {
-            'success': False,
-            'error': 'Something went wrong!'
-        }
+        raise  # Re-raise the exception to be handled by the caller
 
 async def update_tools_calls(bridge_id, org_id, configuration):
     try:
@@ -564,4 +568,23 @@ async def update_apikey_creds(version_id):
         return {
             'success': False,
             'error': "something went wrong!!"
+        }
+
+async def save_sub_thread_id(org_id, thread_id, sub_thread_id):
+    try:
+        result = await threadsModel.find_one_and_update(
+            {'org_id': org_id, 'sub_thread_id': sub_thread_id},
+            {'$setOnInsert': {'thread_id': thread_id}},
+            upsert=True,
+            return_document=True
+        )
+        return {
+            'success': True,
+            'message': f"sub_thread_id saved successfully {result}"
+        }
+    except Exception as error:
+        print(f"error: {error}")
+        return {
+            'success': False,
+            'error': str(error)
         }

@@ -1,50 +1,37 @@
-import os
-import sqlalchemy as sa
-from sqlalchemy.orm import sessionmaker, declarative_base
+import asyncio
+import sqlalchemy.ext.asyncio as sa_async
+from sqlalchemy import text
+from sqlalchemy.ext.declarative import declarative_base
 from config import Config
+import traceback
 
 # Configuration
-DB_NAME = Config.DB_NAME
-DB_USER = Config.DB_USER
-DB_PASS = Config.DB_PASS
-DB_HOST = Config.DB_HOST
+DATABASE_URL = Config.TIMESCALE_SERVICE_URL.replace("postgresql://", "postgresql+asyncpg://")
 
-DATABASE_URL = Config.TIMESCALE_SERVICE_URL
-
-# Engine and session setup
-engine = sa.create_engine(DATABASE_URL, pool_pre_ping=True)
-Session = sessionmaker(bind=engine, autoflush=False)
+# Async Engine and session setup
+async_engine = sa_async.create_async_engine(DATABASE_URL, pool_pre_ping=True)
+AsyncSession = sa_async.async_sessionmaker(bind=async_engine, autoflush=False)
 
 Base = declarative_base()
 
-# Retry strategy
-retry_strategy = {
-    'max_retries': 100,
-    'pool_recycle': 300,
-}
-
-# Function to test database connection
-def init_dbservice():
+# Function to test async database connection
+async def init_async_dbservice():
     try:
-        with engine.connect() as connection:
-            connection.execute(sa.text("SELECT 1"))
+        async with async_engine.begin() as conn:
+            await conn.execute(text("SELECT 1"))
         print('Connected to the Timescale database.')
     except Exception as error:
+        traceback.print_exc()
         print('Unable to connect to the database:', error)
 
+# Example async function to fetch data
+async def fetch_data(query):
+    async with AsyncSession() as session:
+        result = await session.execute(query)
+        return result.fetchall()
+
 # Initialize database connection
-init_dbservice()
-
-# Metadata reflection for dynamic table access
-metadata = sa.MetaData()
-metadata.reflect(bind=engine)
-
-# Example: Accessing tables dynamically
 db = {
-    'engine': engine,
-    'session': Session,
+    'engine': async_engine,
+    'session': AsyncSession,
 }
-for table_name in metadata.tables:
-    db[table_name] = metadata.tables[table_name]
-
-# The `db` dictionary is now ready for use

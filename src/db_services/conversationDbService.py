@@ -188,7 +188,7 @@ async def get_timescale_data(org_id):
                 WHERE org_id = :org_id 
                 GROUP BY bridge_id
             """)
-            result = session.execute(query, {'org_id': org_id})
+            result = await session.execute(query, {'org_id': org_id})
             data = result.fetchall()
             await store_in_cache(cache_key, data, 86400)
             return data

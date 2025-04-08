@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Depends, Request
 from ..middlewares.middleware import jwt_middleware
-from ..controllers.apiCallController import get_all_apicalls_controller
-from ..controllers.apiCallController import update_apicalls_controller
+from ..controllers.apiCallController import get_all_apicalls_controller, delete_function, update_apicalls_controller
 from fastapi.responses import JSONResponse
 router = APIRouter()
 
@@ -21,3 +20,7 @@ async def get_all_apicalls(request: Request):
                 "org_id": request.state.profile['org']['id'],
                 "organization_name":  request.state.profile['org']['name']
             })
+
+@router.delete('/', dependencies=[Depends(jwt_middleware)])
+async def delete_function_from_db(request: Request):
+    return await delete_function(request)

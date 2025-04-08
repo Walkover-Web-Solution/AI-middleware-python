@@ -50,12 +50,14 @@ async def execute_with_retry(
 
             # Generate alternative configuration
             second_config = get_alternative_config(copy.deepcopy(configuration))
+            filter_model_keys(second_config)
             second_result = await api_call(second_config)
 
             execution_time_logs[len(execution_time_logs) + 1] = timer.stop("API chat completion")
             if second_result['success']:
                 print("Second API call completed successfully.")
                 second_result['response']['firstAttemptError'] = firstAttemptError
+                second_result['response']['fallback'] = True
                 return second_result
             else:
                 print("Second API call failed with error:", second_result['error'])
@@ -84,3 +86,10 @@ async def check_space_issue(response):
     if(parsed_data == '' and content):
         return True
     return False
+
+def filter_model_keys(config):
+    if config['model'] == 'o1':
+        keys_to_remove = ['temperature', 'top_p', 'frequency_penalty', 'presence_penalty', 'logprobs', 'echo', 'topK', 'n', 'stopSequences', 'best_of', 'suffix', 'parallel_tool_calls']
+        for key in keys_to_remove:
+            if key in config:
+                del config[key]

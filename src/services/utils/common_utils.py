@@ -22,7 +22,7 @@ from src.services.commonServices.suggestion import chatbot_suggestions
 from src.services.cache_service import find_in_cache, store_in_cache
 from src.db_services.ConfigurationServices import get_bridges_without_tools
 from src.db_services.ConfigurationServices import update_bridge
-
+from src.configs.model_configuration import model_config_document
 
 def parse_request_body(request_body):
     body = request_body.get('body', {})
@@ -84,7 +84,7 @@ def parse_request_body(request_body):
 
 
 def add_default_template(prompt):
-    prompt += ' \n Additional Information if requied : For current date and time always refer: {{current_time_and_date}}'
+    prompt += ' \n Additional Information if requied : For current date and time always refer: {{current_time_date_and_current_identifier}}'
     return prompt
 
 def initialize_timer(state: Dict[str, Any]) -> Timer:
@@ -93,12 +93,11 @@ def initialize_timer(state: Dict[str, Any]) -> Timer:
     return timer_obj
 
 async def load_model_configuration(model, configuration):
-    modelname = model.replace("-", "_").replace(".", "_")
-    modelfunc = getattr(ModelsConfig, modelname, None)
-    if not modelfunc:
+    model_obj = model_config_document.get(model)
+    if not model_obj:
         raise ValueError(f"Model {model} not found in ModelsConfig.")
     
-    model_obj = modelfunc()
+    # model_obj = modelfunc()
     model_config = model_obj['configuration']
     model_output_config = model_obj['outputConfig']
     
@@ -135,7 +134,7 @@ async def manage_threads(parsed_data):
     sub_thread_id = parsed_data['sub_thread_id']
     bridge_id = parsed_data['bridge_id']
     bridge_type = parsed_data['bridgeType']
-    org_id = parsed_data['org_id']
+    org_id = parsed_data['org_id']      
     
     if thread_id:
         thread_id = thread_id.strip()
@@ -148,6 +147,7 @@ async def manage_threads(parsed_data):
         parsed_data['gpt_memory'] = False
         result = {"success": True}
     
+    asyncio.create_task(ConfigurationService.save_sub_thread_id(org_id, thread_id, sub_thread_id))    
     return {
         "thread_id": thread_id,
         "sub_thread_id": sub_thread_id,
@@ -310,12 +310,16 @@ async def updateVariablesWithTimeZone(variables, org_id):
         data = await Helper.get_timezone_and_org_name(org_id)
         timezone = data.get('timezone') or "+5:30"
         hour, minutes = timezone.split(':')
-        return int(hour), int(minutes), data.get('name') or ""
-    if 'current_time_and_date' not in variables:
-        hour, minutes, org_name = await getTimezoneOfOrg()
-        current_time = datetime.now(timezone.utc)
-        current_time = current_time + timedelta(hours=hour, minutes=minutes)
-        variables['current_time_and_date'] = current_time.strftime("%Y-%m-%d") + ' ' + current_time.strftime("%H:%M:%S") + ' ' + current_time.strftime("%A")
+        return int(hour), int(minutes), data.get('name') or "", (data.get('meta') or {}).get('identifier', '')
+    hour, minutes, org_name, identifier = await getTimezoneOfOrg()
+    if 'timezone' in variables:
+        hour, minutes = Helper.get_current_time_with_timezone(variables['timezone'])
+        identifier = variables['timezone']
+    current_time = datetime.now(timezone.utc)
+    current_time = current_time + timedelta(hours=hour, minutes=minutes)
+    if identifier == '' and 'timezone' not in variables:
+        identifier = 'Asia/Calcutta'
+    variables['current_time_date_and_current_identifier'] = current_time.strftime("%Y-%m-%d") + ' ' + current_time.strftime("%H:%M:%S") + ' ' + current_time.strftime("%A") + ' (' + identifier + ')'
     return variables, org_name
 
 
