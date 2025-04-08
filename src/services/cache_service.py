@@ -12,7 +12,8 @@ DEFAULT_REDIS_TTL = 172800  # 2 days
 
 async def store_in_cache(identifier: str, data: dict, ttl: int = DEFAULT_REDIS_TTL) -> bool:
     try:
-        return await client.set(f"{REDIS_PREFIX}{identifier}", json.dumps(data), ex=int(ttl))
+        serialized_data = make_json_serializable(data)
+        return await client.set(f"{REDIS_PREFIX}{identifier}", json.dumps(serialized_data), ex=int(ttl))
     except Exception as e:
         print(f"Error storing in cache: {e}")
         return False
@@ -112,5 +113,17 @@ async def delete_in_cache_for_batch(identifiers: Union[str, List[str]]) -> bool:
     except Exception as error:
         print(f"Error during deletion: {error}")
         return False
+    
+def make_json_serializable(data):
+    """Recursively converts non-serializable values in a dictionary to strings."""
+    if isinstance(data, dict):
+        return {k: make_json_serializable(v) for k, v in data.items()}
+    elif isinstance(data, (list, tuple, set, frozenset)):
+        return [make_json_serializable(v) for v in data]
+    try:
+        json.dumps(data)  # Check if serializable
+        return data
+    except (TypeError, OverflowError):
+        return str(data)
 
 __all__ = ['delete_in_cache', 'store_in_cache', 'find_in_cache', 'verify_ttl', 'clear_cache','store_in_cache_for_batch', 'find_in_cache_for_batch', 'delete_in_cache_for_batch']

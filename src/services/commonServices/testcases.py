@@ -1,6 +1,7 @@
 from models.mongo_connection import db
 configurationModel = db["configurations"]
-from src.services.utils.testcase_utils import add_prompt_and_conversations, make_json_serializable, make_conversations_as_per_service
+from src.services.utils.testcase_utils import add_prompt_and_conversations, make_conversations_as_per_service
+from src.services.cache_service import make_json_serializable
 from src.services.commonServices.openAI.runModel import openai_test_model
 from src.services.commonServices.anthrophic.antrophicModelRun import anthropic_test_model
 from src.services.commonServices.groq.groqModelRun import groq_test_model

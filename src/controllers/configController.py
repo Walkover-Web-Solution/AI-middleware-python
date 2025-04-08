@@ -15,6 +15,7 @@ from src.db_services.bridge_version_services import create_bridge_version
 from src.services.utils.apicallUtills import delete_all_version_and_bridge_ids_from_cache
 from src.db_services.conversationDbService import get_timescale_data
 from src.configs.model_configuration import model_config_document
+
 async def create_bridges_controller(request):
     try:
         bridges = await request.json()
