@@ -1,6 +1,7 @@
 from models.mongo_connection import db
 configurationModel = db["configurations"]
-from src.services.utils.testcase_utils import add_prompt_and_conversations, make_json_serializable, make_conversations_as_per_service
+from src.services.utils.testcase_utils import add_prompt_and_conversations, make_conversations_as_per_service
+from src.services.cache_service import make_json_serializable
 from src.services.commonServices.openAI.runModel import openai_test_model
 from src.services.commonServices.anthrophic.antrophicModelRun import anthropic_test_model
 from src.services.commonServices.groq.groqModelRun import groq_test_model
@@ -52,7 +53,7 @@ async def run_testcases(parsed_data, org_id, bridge_id, chat):
     testcases_data = await get_testcases(bridge_id)
     # version_data = (await get_bridges_with_tools_and_apikeys(None, parsed_data['org_id'], version_id))['bridges']
     model_config, custom_config, model_output_config = await load_model_configuration(
-        parsed_data['configuration']['model'], parsed_data['configuration']
+        parsed_data['configuration']['model'], parsed_data['configuration'], parsed_data['service'], 
     )
     custom_config = await configure_custom_settings(
         model_config['configuration'], custom_config, parsed_data['service']
