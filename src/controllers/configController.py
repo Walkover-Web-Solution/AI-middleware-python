@@ -179,53 +179,65 @@ async def get_all_bridges(request):
 async def get_all_service_models_controller(service):
     try:
         service = service.lower()
+        def restructure_configuration(config):
+            model_field = config.get("configuration", {}).get("model", "")
+            additional_parameters = config.get("configuration", {})
+            outputConfig = config.get("outputConfig", {})
+            
+            return {
+                "configuration": {
+                    "model": model_field,
+                    "additional_parameters": additional_parameters,
+                    "outputConfig": outputConfig
+                }
+            }
         if service == service_name['openai']:
             return {
                 "chat": {
-                    "gpt-3.5-turbo": model_config_document[service]['gpt-3.5-turbo'],
-                    "gpt-4": model_config_document[service]['gpt-4'],
-                    "gpt-4-turbo": model_config_document[service]['gpt-4-turbo'],
-                    "gpt-4o": model_config_document[service]['gpt-4o'],
-                    "chatgpt-4o-latest": model_config_document[service]['chatgpt-4o-latest'],
-                    "gpt-4o-search-preview": model_config_document[service]['gpt-4o-search-preview'],
-                    "gpt-4o-mini-search-preview": model_config_document[service]['gpt-4o-mini-search-preview'],
+                    "gpt-3.5-turbo": restructure_configuration(model_config_document[service]['gpt-3.5-turbo']),
+                    "gpt-4": restructure_configuration(model_config_document[service]['gpt-4']),
+                    "gpt-4-turbo": restructure_configuration(model_config_document[service]['gpt-4-turbo']),
+                    "gpt-4o": restructure_configuration(model_config_document[service]['gpt-4o']),
+                    "chatgpt-4o-latest": restructure_configuration(model_config_document[service]['chatgpt-4o-latest']),
+                    "gpt-4o-search-preview": restructure_configuration(model_config_document[service]['gpt-4o-search-preview']),
+                    "gpt-4o-mini-search-preview": restructure_configuration(model_config_document[service]['gpt-4o-mini-search-preview']),
                 },
                 "fine-tune" : {
-                    "gpt-4-0613": model_config_document[service]['gpt-4-0613'],
-                    "gpt-4o-2024-08-06": model_config_document[service]['gpt-4o-2024-08-06'],
-                    "gpt-4o-mini-2024-07-18": model_config_document[service]['gpt-4o-mini-2024-07-18'],
+                    "gpt-4-0613": restructure_configuration(model_config_document[service]['gpt-4-0613']),
+                    "gpt-4o-2024-08-06": restructure_configuration(model_config_document[service]['gpt-4o-2024-08-06']),
+                    "gpt-4o-mini-2024-07-18": restructure_configuration(model_config_document[service]['gpt-4o-mini-2024-07-18']),
 
                 },
                 "reasoning" : {
-                    "o1-preview" : model_config_document[service]['o1-preview'],
-                    "o1-mini" : model_config_document[service]['o1-mini'],
-                    "o1" : model_config_document[service]['o1'],
-                    "o3-mini" : model_config_document[service]['o3-mini'],
+                    "o1-preview" : restructure_configuration(model_config_document[service]['o1-preview']),
+                    "o1-mini" : restructure_configuration(model_config_document[service]['o1-mini']),
+                    "o1" : restructure_configuration(model_config_document[service]['o1']),
+                    "o3-mini" : restructure_configuration(model_config_document[service]['o3-mini']),
                 },
                 "image" : {
-                    "dall-e-2" : model_config_document[service]['dall-e-2'],
-                    "dall-e-3" : model_config_document[service]['dall-e-3'],
+                    "dall-e-2" : restructure_configuration(model_config_document[service]['dall-e-2']),
+                    "dall-e-3" : restructure_configuration(model_config_document[service]['dall-e-3']),
                 },
                 "embedding": {
-                    "text-embedding-3-large": model_config_document[service]['text-embedding-3-large'],
-                    "text-embedding-3-small": model_config_document[service]['text-embedding-3-small'],
-                    "text-embedding-ada-002": model_config_document[service]['text-embedding-ada-002']
+                    "text-embedding-3-large": restructure_configuration(model_config_document[service]['text-embedding-3-large']),
+                    "text-embedding-3-small": restructure_configuration(model_config_document[service]['text-embedding-3-small']),
+                    "text-embedding-ada-002": restructure_configuration(model_config_document[service]['text-embedding-ada-002'])
                 }
             }
         elif service == service_name['openai_response']:
             return {
                 "chat": {
-                    "gpt-3.5-turbo": model_config_document[service]['gpt-3.5-turbo'],
-                    "gpt-4": model_config_document[service]['gpt-4'],
-                    "gpt-4-turbo": model_config_document[service]['gpt-4-turbo'],
-                    "gpt-4o": model_config_document[service]['gpt-4o'],
-                    "chatgpt-4o-latest": model_config_document[service]['chatgpt-4o-latest']
+                    "gpt-3.5-turbo": restructure_configuration(model_config_document[service]['gpt-3.5-turbo']),
+                    "gpt-4": restructure_configuration(model_config_document[service]['gpt-4']),
+                    "gpt-4-turbo": restructure_configuration(model_config_document[service]['gpt-4-turbo']),
+                    "gpt-4o": restructure_configuration(model_config_document[service]['gpt-4o']),
+                    "chatgpt-4o-latest": restructure_configuration(model_config_document[service]['chatgpt-4o-latest'])
                 },
                 "reasoning" : {
-                    "o1-preview" : model_config_document[service]['o1-preview'],
-                    "o1-mini" : model_config_document[service]['o1-mini'],
-                    "o1" : model_config_document[service]['o1'],
-                    "o3-mini" : model_config_document[service]['o3-mini'],
+                    "o1-preview" : restructure_configuration(model_config_document[service]['o1-preview']),
+                    "o1-mini" : restructure_configuration(model_config_document[service]['o1-mini']),
+                    "o1" : restructure_configuration(model_config_document[service]['o1']),
+                    "o3-mini" : restructure_configuration(model_config_document[service]['o3-mini']),
                 }
                 # "image" : {
                 #     "dall-e-2" : model_config_document[service]['dall-e-2'],
@@ -240,31 +252,31 @@ async def get_all_service_models_controller(service):
         elif service == service_name['anthropic']:
             return {
                 "chat" : {
-                    "claude-3-5-sonnet-20241022" :  model_config_document[service]['claude-3-5-sonnet-20241022'],
-                    "claude-3-5-sonnet-latest" :  model_config_document[service]['claude-3-5-sonnet-latest'],
-                    "claude-3-opus-20240229" :  model_config_document[service]['claude-3-opus-20240229'],
-                    "claude-3-opus-latest" :  model_config_document[service]['claude-3-opus-latest'],
-                    "claude-3-sonnet-20240229" :  model_config_document[service]['claude-3-sonnet-20240229'],
-                    "claude-3-haiku-20240307" :  model_config_document[service]['claude-3-haiku-20240307'],
-                    "claude-3-5-haiku-20241022" :  model_config_document[service]['claude-3-5-haiku-20241022'],
-                    "claude-3-7-sonnet-latest" :  model_config_document[service]['claude-3-7-sonnet-latest']
+                    "claude-3-5-sonnet-20241022" :  restructure_configuration(model_config_document[service]['claude-3-5-sonnet-20241022']),
+                    "claude-3-5-sonnet-latest" :  restructure_configuration(model_config_document[service]['claude-3-5-sonnet-latest']),
+                    "claude-3-opus-20240229" :  restructure_configuration(model_config_document[service]['claude-3-opus-20240229']),
+                    "claude-3-opus-latest" :  restructure_configuration(model_config_document[service]['claude-3-opus-latest']),
+                    "claude-3-sonnet-20240229" :  restructure_configuration(model_config_document[service]['claude-3-sonnet-20240229']),
+                    "claude-3-haiku-20240307" :  restructure_configuration(model_config_document[service]['claude-3-haiku-20240307']),
+                    "claude-3-5-haiku-20241022" :  restructure_configuration(model_config_document[service]['claude-3-5-haiku-20241022']),
+                    "claude-3-7-sonnet-latest" :  restructure_configuration(model_config_document[service]['claude-3-7-sonnet-latest'])
                 }
             }
         
         elif service == service_name['groq']:
             return {
                 "chat": {
-                    "llama-3.3-70b-versatile": model_config_document[service]['llama-3.3-70b-versatile'],
-                    "llama-3.1-8b-instant": model_config_document[service]['llama-3.1-8b-instant'],
-                    "llama3-70b-8192": model_config_document[service]['llama3-70b-8192'],
-                    "llama3-8b-8192": model_config_document[service]['llama3-8b-8192'],
-                    "mixtral-8x7b-32768": model_config_document[service]['mixtral-8x7b-32768'],
-                    "gemma2-9b-it": model_config_document[service]['gemma2-9b-it'],
-                    "llama-guard-3-8b": model_config_document[service]['llama-guard-3-8b'],
-                    "deepseek-r1-distill-llama-70b": model_config_document[service]['deepseek-r1-distill-llama-70b'],
-                    "deepseek-r1-distill-qwen-32b": model_config_document[service]['deepseek-r1-distill-qwen-32b'],
-                    "qwen-2.5-32b": model_config_document[service]['qwen-2.5-32b'],
-                    "qwen-2.5-coder-32b": model_config_document[service]['qwen-2.5-coder-32b']
+                    "llama-3.3-70b-versatile": restructure_configuration(model_config_document[service]['llama-3.3-70b-versatile']),
+                    "llama-3.1-8b-instant": restructure_configuration(model_config_document[service]['llama-3.1-8b-instant']),
+                    "llama3-70b-8192": restructure_configuration(model_config_document[service]['llama3-70b-8192']),
+                    "llama3-8b-8192": restructure_configuration(model_config_document[service]['llama3-8b-8192']),
+                    "mixtral-8x7b-32768": restructure_configuration(model_config_document[service]['mixtral-8x7b-32768']),
+                    "gemma2-9b-it": restructure_configuration(model_config_document[service]['gemma2-9b-it']),
+                    "llama-guard-3-8b": restructure_configuration(model_config_document[service]['llama-guard-3-8b']),
+                    "deepseek-r1-distill-llama-70b": restructure_configuration(model_config_document[service]['deepseek-r1-distill-llama-70b']),
+                    "deepseek-r1-distill-qwen-32b": restructure_configuration(model_config_document[service]['deepseek-r1-distill-qwen-32b']),
+                    "qwen-2.5-32b": restructure_configuration(model_config_document[service]['qwen-2.5-32b']),
+                    "qwen-2.5-coder-32b": restructure_configuration(model_config_document[service]['qwen-2.5-coder-32b'])
                 }
             }
         
