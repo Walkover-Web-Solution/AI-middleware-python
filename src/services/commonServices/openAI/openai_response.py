@@ -2,6 +2,7 @@ import pydash as _
 from ..baseService.baseService import BaseService
 from ..createConversations import ConversationService
 from src.configs.constant import service_name
+from src.configs.model_configuration import model_config_document
 
 class OpenaiResponse(BaseService):
     async def execute(self):
@@ -26,6 +27,12 @@ class OpenaiResponse(BaseService):
         if 'tools' not in self.customConfig and 'parallel_tool_calls' in self.customConfig:
             del self.customConfig['parallel_tool_calls']
         
+        if len(self.built_in_tools) > 0:
+            if 'web_search' in self.built_in_tools and 'tools' in model_config_document[self.service][self.model]['configuration']:
+                if 'tools' not in self.customConfig:
+                    self.customConfig['tools'] = []
+                self.customConfig['tools'].append({"type": "web_search_preview"})
+
         openAIResponse = await self.chats(self.customConfig, self.apikey, service_name['openai_response'])
         modelResponse = openAIResponse.get("modelResponse", {})
         

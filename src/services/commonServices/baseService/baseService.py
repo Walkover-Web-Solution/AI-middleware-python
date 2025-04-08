@@ -57,6 +57,7 @@ class BaseService:
         self.name = params.get('name')
         self.org_name = params.get('org_name')
         self.send_error_to_webhook = params.get('send_error_to_webhook')
+        self.built_in_tools = params.get('built_in_tools')
 
 
     def aiconfig(self):

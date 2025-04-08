@@ -78,7 +78,8 @@ def parse_request_body(request_body):
         "rag_data": body.get('rag_data'),
         "name" : body.get('name'),
         "org_name" : body.get('org_name'),
-        "variables_state" : body.get('variables_state')
+        "variables_state" : body.get('variables_state'),
+        "built_in_tools" : body.get('built_in_tools') or []
     }
 
 
@@ -244,7 +245,8 @@ def build_service_params(parsed_data, custom_config, model_output_config, thread
         "rag_data": parsed_data['rag_data'],
         "name" : parsed_data['name'],
         "org_name" : parsed_data['org_name'],
-        "send_error_to_webhook": send_error_to_webhook
+        "send_error_to_webhook": send_error_to_webhook,
+        "built_in_tools" : parsed_data['built_in_tools']
 
     }
 async def total_token_calculation(parsed_data):

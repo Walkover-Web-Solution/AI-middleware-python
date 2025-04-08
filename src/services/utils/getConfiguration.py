@@ -10,7 +10,7 @@ apiCallModel = db['apicalls']
 # from src.services.commonServices.generateToken import generateToken
 # from src.configs.modelConfiguration import ModelsConfig
 
-async def getConfiguration(configuration, service, bridge_id, apikey, template_id=None, variables = {}, org_id="", variables_path = None, version_id=None, extra_tools=[]):
+async def getConfiguration(configuration, service, bridge_id, apikey, template_id=None, variables = {}, org_id="", variables_path = None, version_id=None, extra_tools=[], built_in_tools = []):
     RTLayer = False
     bridge = None
     result = await ConfigurationService.get_bridges_with_tools_and_apikeys(bridge_id = bridge_id, org_id = org_id, version_id=version_id)
@@ -164,5 +164,6 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
         "name" : result.get("bridges", {}).get("name") or '',
         "org_name" : org_name,
         "bridge_id" : result['bridges'].get('parent_id', result['bridges'].get('_id')),
-        "variables_state" : result.get("bridges", {}).get("variables_state", {}) 
+        "variables_state" : result.get("bridges", {}).get("variables_state", {}),
+        "built_in_tools" :  built_in_tools or result.get("bridges", {}).get("built_in_tools"),
     }
