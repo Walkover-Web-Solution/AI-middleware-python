@@ -9,4 +9,4 @@ async def clear_redis_cache(request: Request):
 
 @router.get('/redis/{id}')
 async def get_redis_cache(request: Request,id:str):
-    return await find_in_cache(request,id)
+    return await find_in_cache(id)
