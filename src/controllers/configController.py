@@ -295,6 +295,12 @@ async def get_all_service_models_controller(service):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+async def get_all_service_controller():
+    return {
+        "success": True,
+        "message": "Get all service successfully",
+        "services": ['openai', 'openai_response', 'anthropic', 'groq']
+    }
 
 async def update_bridge_controller(request, bridge_id=None, version_id=None):
     try:
