@@ -471,7 +471,7 @@ async def get_all_in_built_tools_controller():
             {
                 "id": '1',
                 "name": 'Web Search',
-                "description": 'Web Search description',
+                "description": 'Allow models to search the web for the latest information before generating a response.',
                 "value": 'web_search'
             }
         ]
