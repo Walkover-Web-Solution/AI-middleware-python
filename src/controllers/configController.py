@@ -462,3 +462,17 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
     except Exception as e:
         print(f"Unexpected error occurred: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+    
+async def get_all_in_built_tools_controller():
+    return {
+        "success": True,
+        "message": "Get all inbuilt tools successfully",
+        "in_built_tools": [
+            {
+                "id": '1',
+                "name": 'Web Search',
+                "description": 'Web Search description',
+                "value": 'web_search'
+            }
+        ]
+    }
