@@ -32,7 +32,7 @@ async def execute_with_retry(
             print("First API call failed with error:", first_result['error'])
             traceback.print_exc()
             firstAttemptError = first_result['error']
-            if check_error_status_code(first_result.get('status_code')):
+            if check_error_status_code(first_result.get('status_code'), first_config.get('model')):
                 return first_result
 
             # Send alert if required
@@ -73,8 +73,10 @@ async def execute_with_retry(
             'error': str(e)
         }
     
-def check_error_status_code(error_code):
+def check_error_status_code(error_code, model = None):
     if error_code in [401,404,429]:
+        return True
+    elif error_code in [403] and model == 'o1':
         return True
     return False
 
