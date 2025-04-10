@@ -27,6 +27,7 @@ from src.routes.Internal_routes import router as Internal_routes
 from src.routes.testcase_routes import router as testcase_routes
 from models.Timescale.connections import init_async_dbservice
 from src.configs.model_configuration import init_model_configuration
+from globals import *
 
 async def consume_messages_in_executor():
     await queue_obj.consume_messages()
@@ -58,7 +59,7 @@ async def lifespan(app: FastAPI):
         if consume_task:
             await consume_task
     except asyncio.CancelledError:
-        print("Consumer task was cancelled during shutdown.")
+        logger.error("Consumer task was cancelled during shutdown.")
 
 # Initialize the FastAPI app
 app = FastAPI(debug=True, lifespan=lifespan)

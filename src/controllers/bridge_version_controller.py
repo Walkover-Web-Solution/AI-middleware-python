@@ -8,7 +8,7 @@ from bson import ObjectId
 from ..services.utils.apiservice import fetch
 from ..configs.models import services
 from src.services.utils.common_utils import get_service_by_model
-import traceback
+from globals import *
 
 
 with open('src/services/utils/model_features.json', 'r') as file: 
@@ -126,6 +126,6 @@ async def suggest_model(request, version_id):
         
         return JSONResponse({'success' : True, 'message': 'suggestion fetched successfully', 'data': response })
     except Exception as e: 
-        traceback.print_exc()
+        logger.error(f"Error in suggest_model: {str(e)}, {traceback.format_exc()}")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail= {'model' : None, 'error' : str(e) })
     

@@ -14,6 +14,7 @@ from ....configs.constant import service_name
 from ..openAI.image_model import OpenAIImageModel
 from concurrent.futures import ThreadPoolExecutor
 from src.configs.model_configuration import model_config_document
+from globals import *
 
 
 executor = ThreadPoolExecutor(max_workers= int(Config.max_workers) or 10)
@@ -252,7 +253,7 @@ class BaseService:
                 del new_config['tools'] 
             return new_config
         except Exception as e:
-            print(f"An error occurred: {e}")
+            logger.error(f"An error occurred: {str(e)}")
             raise ValueError(f"Service key error: {e.args[0]}")
         
     async def chats(self, configuration, apikey, service):
@@ -272,8 +273,7 @@ class BaseService:
                 'modelResponse': response['response']
             }
         except Exception as e:
-            traceback.print_exc()
-            print("chats error=>", e)
+            logger.error(f"chats error=>, {str(e)}, {traceback.format_exc()}")
             raise ValueError(f"error occurs from {self.service} api {e.args[0]}", *e.args[1:], self.func_tool_call_data)
 
     async def replace_variables_in_args(self, codes_mapping):
@@ -310,6 +310,5 @@ class BaseService:
                 'modelResponse': response['response']
             }
         except Exception as e:
-            traceback.print_exc()
-            print("chats error=>", e)
+            logger.error(f"chats error in image=>, {str(e)}, {traceback.format_exc()}")
             raise ValueError(f"error occurs from {self.service} api {e.args[0]}")

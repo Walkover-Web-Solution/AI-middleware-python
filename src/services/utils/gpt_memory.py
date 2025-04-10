@@ -1,4 +1,5 @@
 from .apiservice import fetch
+from globals import *
 
 async def handle_gpt_memory(id, user, assistant, purpose, gpt_memory_context):
     try:
@@ -25,5 +26,4 @@ async def handle_gpt_memory(id, user, assistant, purpose, gpt_memory_context):
             raise Exception(response.get('message', 'Unknown error'))
         return response.get('response', {}).get('data', {}).get('content', "")
     except Exception as err:
-        print("Error calling function=>", err)
-        return None
+        logger.error(f'Error calling function=>, {str(err)}')

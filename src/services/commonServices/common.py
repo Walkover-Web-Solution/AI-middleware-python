@@ -19,7 +19,7 @@ from src.services.utils.helper import Helper
 configurationModel = db["configurations"]
 import pydash as _
 from src.services.commonServices.testcases import run_testcases as run_bridge_testcases
-
+from globals import *
 
 
 
@@ -82,7 +82,6 @@ async def chat(request_body):
                 try:
                     await process_chatbot_response(result, params, parsed_data, model_config, model_output_config)
                 except Exception as e:
-                    print(f"error in chatbot : {e}")
                     raise RuntimeError(f"error in chatbot : {e}")
             
         if parsed_data['version'] == 2:
@@ -115,8 +114,9 @@ async def chat(request_body):
             asyncio.create_task(process_background_tasks(parsed_data, result, params, send_error_to_webhook))
         return JSONResponse(status_code=200, content={"success": True, "response": result["modelResponse"]})
     
-    except (Exception, ValueError) as error:
-        traceback.print_exc()
+    except (Exception, ValueError, BadRequestException) as error:
+        if not isinstance(error, BadRequestException):
+            logger.error(f'Error in chat service: %s, {str(error)}, {traceback.format_exc()}')
         if not parsed_data['is_playground']:
             latency = {
                 "over_all_time": timer.stop("Api total time") or "",
@@ -159,7 +159,7 @@ async def chat(request_body):
             ]
             # Filter out None values
             await asyncio.gather(*[task for task in tasks if task is not None], return_exceptions=True)
-            print("chat common error=>", error)
+   
         raise ValueError(error)
     
 
@@ -247,7 +247,6 @@ async def run_testcases(request_body):
         result = await run_bridge_testcases(parsed_data, org_id, parsed_data['body']['bridge_id'], chat)
         return JSONResponse(content={'success': True, 'response': {'testcases_result': dict(result)}})
     except Exception as error:
-        print('Error in running testcases')
-        traceback.print_exc()
+        logger.error(f'Error in running testcases, {str(error)}, {traceback.format_exc()}')
         return JSONResponse(status_code=400, content={'success': False, 'error': str(error)})
     

@@ -9,7 +9,7 @@ from src.services.utils.apiservice import fetch
 from fastapi import Request
 import datetime
 from src.controllers.rag_controller import get_text_from_vectorsQuery
-import traceback
+from globals import *
 
 def clean_json(data):
     """Recursively remove keys with empty string, empty list, or empty dictionary."""
@@ -146,7 +146,7 @@ async def send_request(url, data, method, headers):
     try:
         return await fetch(url,method,headers,None, data)
     except Exception as e:
-        print('Unexpected error:',url, e)
+        logger.error(f'Unexpected error:, {url}, {str(e)}')
         return {'error': 'Unexpected error', 'details': str(e)}
     
 async def send_message(cred, data ):
@@ -160,9 +160,9 @@ async def send_message(cred, data ):
         )
         return response
     except httpx.RequestError as error:
-        print('send message error=>', error)
+        logger.error(f'send message error=>, {str(error)}')
     except Exception as e:
-        print('Unexpected error=>', e)
+        logger.error(f'Unexpected send message error=>, {str(e)}')
 
 
 async def sendResponse(response_format, data, success = False, variables={}):
@@ -170,15 +170,12 @@ async def sendResponse(response_format, data, success = False, variables={}):
         'response' if success else 'error': data,
         'success': success
     }
-    try:
-        match response_format['type']:
-            case 'RTLayer' : 
-                return await send_message(cred = response_format['cred'], data=data_to_send)
-            case 'webhook':
-                data_to_send['variables'] = variables
-                return await send_request(**response_format['cred'], method='POST', data=data_to_send)
-    except Exception as e:
-        print("error sending request", e)
+    match response_format['type']:
+        case 'RTLayer' : 
+            return await send_message(cred = response_format['cred'], data=data_to_send)
+        case 'webhook':
+            data_to_send['variables'] = variables
+            return await send_request(**response_format['cred'], method='POST', data=data_to_send)
 
 async def process_data_and_run_tools(codes_mapping, tool_id_and_name_mapping, org_id):
     try:

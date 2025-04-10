@@ -3,6 +3,7 @@ from .baseService.utils import sendResponse
 from src.services.utils.apiservice import fetch
 from src.services.commonServices.createConversations import ConversationService
 import uuid
+from globals import *
 
 async def chatbot_suggestions(response_format, assistant, parsed_data, params):
     try:
@@ -34,5 +35,5 @@ async def chatbot_suggestions(response_format, assistant, parsed_data, params):
         await sendResponse(response_format, response.get('response'), success=True)
             
     except Exception as err:
-        print("Error calling function=>", err)
+        logger.error(f'Error calling function=>, {str(err)}')
     

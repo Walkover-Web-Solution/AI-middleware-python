@@ -1,6 +1,8 @@
 import traceback
 from fastapi import HTTPException
 from ..utils.apiservice import fetch_images_b64
+from globals import *
+
 class ConversationService:
     @staticmethod
     def createOpenAiConversation(conversation, memory):
@@ -31,7 +33,7 @@ class ConversationService:
             }
         except Exception as e:
             traceback.print_exc()
-            print("create conversation error=>", e)
+            logger.error(f"create conversation error=>, {str(e)}")
             raise ValueError(e.args[0])
 
     @staticmethod
@@ -59,7 +61,7 @@ class ConversationService:
                 'messages': threads
             }
         except Exception as e:
-            print("create conversation error=>", e)
+            logger.error(f"create conversation error=>, {str(e)}")
             return {
                 'success': False,
                 'error': str(e),
@@ -104,7 +106,7 @@ class ConversationService:
         except ValueError as e:
             raise HTTPException(status_code=400, detail=str(e))
         except Exception as e:
-            print("create conversation error=>", e)
+            logger.error(f"create conversation error=>, {str(e)}")
             raise HTTPException(status_code=500, detail="Internal Server Error")
 
     def createGroqConversation(conversation, memory):
@@ -135,9 +137,8 @@ class ConversationService:
             }
         
         except Exception as e:
-            traceback.print_exc()
-            print("create conversation error=>", e)
-            raise ValueError(f"Error while creating conversation: {e}")
+            logger.error(f"create conversation error=>, {str(e)}, {traceback.format_exc()}")
+            raise ValueError(f"Error while creating conversation: {str(e)}")
 
 
 
