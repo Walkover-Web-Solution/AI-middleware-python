@@ -34,6 +34,7 @@ class ConversationService:
             print("create conversation error=>", e)
             raise ValueError(e.args[0])
     
+    @staticmethod
     def createOpenAiResponseConversation(conversation, memory):
         try:
             threads = []
@@ -42,7 +43,11 @@ class ConversationService:
                 threads.append({'role': 'assistant', 'content': f'Summary of previous conversations :  {memory}' })
             for message in conversation or []:
                 if message['role'] != "tools_call" and message['role'] != "tool":
-                    content = [{"type": "input_text", "text": message['content']}]
+                    if message['role'] == "assistant":
+                        content = [{"type": "output_text", "text": message['content']}]
+                    else:
+                        content = [{"type": "input_text", "text": message['content']}]
+                    
                     if 'urls' in message and isinstance(message['urls'], list):
                         for url in message['urls']:
                             content.append({
