@@ -37,6 +37,8 @@ if Config.ENVIROMENT == 'prod':
         analytics_capture_outgoing=True,
         log_body='all'
     )
+
+    
 async def consume_messages_in_executor():
     await queue_obj.consume_messages()
     
