@@ -27,6 +27,7 @@ from src.routes.Internal_routes import router as Internal_routes
 from src.routes.testcase_routes import router as testcase_routes
 from models.Timescale.connections import init_async_dbservice
 from src.configs.model_configuration import init_model_configuration
+from src.routes.runagents_routes import router as runagents_routes
 
 async def consume_messages_in_executor():
     await queue_obj.consume_messages()
@@ -131,6 +132,7 @@ app.include_router(utility_routes,prefix="/utility")
 app.include_router(rag_routes,prefix="/rag")
 app.include_router(Internal_routes,prefix="/internal")
 app.include_router(testcase_routes, prefix='/testcases')
+app.include_router(runagents_routes, prefix='/public')
 
 
 if __name__ == "__main__":

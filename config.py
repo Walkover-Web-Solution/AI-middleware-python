@@ -52,3 +52,4 @@ class Config:
     TRIGGER_PROJECT_ID = os.getenv('TRIGGER_PROJECT_ID', '')
     CHATBOT_ACCESS_KEY = os.getenv('Chatbot_Access_key')
     ENV = os.getenv('ENV', 'dev')
+    PUBLIC_CHATBOT_TOKEN = os.getenv('public_chatbot_token')
