@@ -33,7 +33,7 @@ from src.configs.model_configuration import init_model_configuration
 atatus_client = atatus.get_client()
 if atatus_client is None and (Config.ENVIROMENT == 'PRODUCTION' or Config.ENVIROMENT == 'TESTING'):
     atatus_client = create_client({
-        'APP_NAME': f'Python - GTWY - Backend - {"PROD" if Config.ENVIROMENT == 'PRODUCTION' else "DEV"}',
+        'APP_NAME': f'Python - GTWY - Backend - {"PROD" if Config.ENVIROMENT == "PRODUCTION" else "DEV"}',
         'LICENSE_KEY': 'lic_apm_75107a1dd48345c0a46ceacba62c8c32',
         'ANALYTICS': True,
         'ANALYTICS_CAPTURE_OUTGOING': True,
