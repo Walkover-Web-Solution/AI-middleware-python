@@ -4,7 +4,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 import asyncio
-import json
+import atatus
 from contextlib import asynccontextmanager
 import src.services.utils.batch_script
 from src.services.utils.batch_script import repeat_function
@@ -28,6 +28,17 @@ from src.routes.testcase_routes import router as testcase_routes
 from models.Timescale.connections import init_async_dbservice
 from src.configs.model_configuration import init_model_configuration
 
+# Initialize Atatus before the FastAPI app
+if Config.ENVIROMENT == 'prod':
+    atatus.configure(
+        api_key='lic_apm_75107a1dd48345c0a46ceacba62c8c32',
+        app_name=f'Python - GTWY - Backend - {Config.ENVIROMENT.upper()}',
+        analytics=True,
+        analytics_capture_outgoing=True,
+        log_body='all'
+    )
+
+    
 async def consume_messages_in_executor():
     await queue_obj.consume_messages()
     

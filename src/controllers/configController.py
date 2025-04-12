@@ -14,7 +14,9 @@ from src.services.utils.getDefaultValue import get_default_values_controller
 from src.db_services.bridge_version_services import create_bridge_version
 from src.services.utils.apicallUtills import delete_all_version_and_bridge_ids_from_cache
 from src.db_services.conversationDbService import get_timescale_data
+from src.services.utils.apiservice import fetch
 from src.configs.model_configuration import model_config_document
+
 async def create_bridges_controller(request):
     try:
         bridges = await request.json()
@@ -25,7 +27,7 @@ async def create_bridges_controller(request):
         name = bridges.get('name')
         slugName = bridges.get('slugName')
         bridgeType = bridges.get('bridgeType')
-        modelObj = model_config_document[model]
+        modelObj = model_config_document[service][model]
         configurations = modelObj['configuration']
         status = 1
         keys_to_update = [
@@ -81,6 +83,29 @@ async def create_bridges_controller(request):
             return JSONResponse(status_code=400, content={
                 "success": False,
                 "message": json.loads(json.dumps(result.get('error'), default=str))
+            })
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e)   
+     
+async def create_bridges_using_ai_controller(request):
+    try:
+        body = await request.json()
+        purpose = body.get('purpose');
+        bridge_type = body.get('bridgeType')
+        result = []
+        proxy_auth_token = request.headers.get("proxy_auth_token")
+        result = await fetch("https://flow.sokt.io/func/scri5dR8ePn9", "POST", None, None, {"proxy_auth_token": proxy_auth_token, "purpose": purpose, "bridgeType": bridge_type})        
+        bridge = json.loads(result[0])
+        if bridge:
+            return JSONResponse(status_code=200, content={
+                "success": True,
+                "message": "Bridge created successfully",
+                "bridge" : bridge['bridge']
+            })
+        else:
+            return JSONResponse(status_code=400, content={
+                "success": False,
+                "message": json.loads(json.dumps(result[0].get('error'), default=str))
             })
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e)    
@@ -148,7 +173,7 @@ async def get_bridge(request, bridge_id: str):
                 path_variables.append(vars_dict)
         all_variables = variables + path_variables
         bridge.get('bridges')['all_varaibles'] = all_variables
-        return Helper.response_middleware_for_bridge({"succcess": True,"message": "bridge get successfully","bridge":bridge.get("bridges", {})})
+        return Helper.response_middleware_for_bridge(bridge.get('bridges')['service'], {"succcess": True,"message": "bridge get successfully","bridge":bridge.get("bridges", {})})
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e,)
 
@@ -174,6 +199,7 @@ async def get_all_bridges(request):
             })
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
 async def get_all_service_models_controller(service):
     try:
         service = service.lower()
@@ -189,112 +215,105 @@ async def get_all_service_models_controller(service):
                     "outputConfig": outputConfig
                 }
             }
-        
         if service == service_name['openai']:
             return {
-                # "completion": {
-                #     "gpt_3_5_turbo_instruct": restructure_configuration(model_configuration.gpt_3_5_turbo_instruct())
-                # },
                 "chat": {
-                    "gpt-3.5-turbo": restructure_configuration(model_configuration.gpt_3_5_turbo()),
-                    # "gpt-3.5-turbo-0613": restructure_configuration(model_configuration.gpt_3_5_turbo_0613()),
-                    # "gpt-3.5-turbo-0125": restructure_configuration(model_configuration.gpt_3_5_turbo_0125()),
-                    # "gpt-3.5-turbo_0301": restructure_configuration(model_configuration.gpt_3_5_turbo_0301()),
-                    # "gpt-3.5-turbo-1106": restructure_configuration(model_configuration.gpt_3_5_turbo_1106()),
-                    # "gpt-3.5-turbo-16k": restructure_configuration(model_configuration.gpt_3_5_turbo_16k()),
-                    # "gpt-3.5-turbo-16k-0613": restructure_configuration(model_configuration.gpt_3_5_turbo_16k_0613()),
-                    "gpt-4": restructure_configuration(model_configuration.gpt_4()),
-                    # "gpt-4-1106-preview": restructure_configuration(model_configuration.gpt_4_1106_preview()),
-                    # "gpt-4-turbo-preview": restructure_configuration(model_configuration.gpt_4_turbo_preview()),
-                    # "gpt-4-0125-preview": restructure_configuration(model_configuration.gpt_4_0125_preview()),
-                    # "gpt-4-turbo-2024-04-09": restructure_configuration(model_configuration.gpt_4_turbo_2024_04_09()),
-                    "gpt-4-turbo": restructure_configuration(model_configuration.gpt_4_turbo()),
-                    "gpt-4o": restructure_configuration(model_configuration.gpt_4o()),
-                    "chatgpt-4o-latest": restructure_configuration(model_configuration.chatgpt_4o_latest()),
-                    "gpt-4o-search-preview": restructure_configuration(model_configuration.gpt_4o_search_preview()),
-                    "gpt-4o-mini-search-preview": restructure_configuration(model_configuration.gpt_4o_mini_search_preview())
-                    # "gpt-4.5-preview": restructure_configuration(model_configuration.gpt_4_5_preview())
+                    "gpt-3.5-turbo": restructure_configuration(model_config_document[service]['gpt-3.5-turbo']),
+                    "gpt-4": restructure_configuration(model_config_document[service]['gpt-4']),
+                    "gpt-4-turbo": restructure_configuration(model_config_document[service]['gpt-4-turbo']),
+                    "gpt-4o": restructure_configuration(model_config_document[service]['gpt-4o']),
+                    "chatgpt-4o-latest": restructure_configuration(model_config_document[service]['chatgpt-4o-latest']),
+                    "gpt-4o-search-preview": restructure_configuration(model_config_document[service]['gpt-4o-search-preview']),
+                    "gpt-4o-mini-search-preview": restructure_configuration(model_config_document[service]['gpt-4o-mini-search-preview']),
                 },
                 "fine-tune" : {
-                     "gpt-4-0613": restructure_configuration(model_configuration.gpt_4_0613()),
-                     "gpt-4o-2024-08-06": restructure_configuration(model_configuration.gpt_4o_2024_08_06()),
-                     "gpt-4o-mini-2024-07-18": restructure_configuration(model_configuration.gpt_4o_mini_2024_07_18()),
+                    "gpt-4-0613": restructure_configuration(model_config_document[service]['gpt-4-0613']),
+                    "gpt-4o-2024-08-06": restructure_configuration(model_config_document[service]['gpt-4o-2024-08-06']),
+                    "gpt-4o-mini-2024-07-18": restructure_configuration(model_config_document[service]['gpt-4o-mini-2024-07-18']),
 
                 },
                 "reasoning" : {
-                    "o1-preview" : restructure_configuration(model_configuration.o1_preview()),
-                    "o1-mini" : restructure_configuration(model_configuration.o1_mini()),
-                    "o1" : restructure_configuration(model_configuration.o1()),
-                    "o3-mini" : restructure_configuration(model_configuration.o3_mini())
+                    "o1-preview" : restructure_configuration(model_config_document[service]['o1-preview']),
+                    "o1-mini" : restructure_configuration(model_config_document[service]['o1-mini']),
+                    "o1" : restructure_configuration(model_config_document[service]['o1']),
+                    "o3-mini" : restructure_configuration(model_config_document[service]['o3-mini']),
                 },
                 "image" : {
-                    "dall-e-2" : restructure_configuration(model_configuration.dall_e_2()),
-                    "dall-e-3" : restructure_configuration(model_configuration.dall_e_3())
+                    "dall-e-2" : restructure_configuration(model_config_document[service]['dall-e-2']),
+                    "dall-e-3" : restructure_configuration(model_config_document[service]['dall-e-3']),
                 },
                 "embedding": {
-                    "text-embedding-3-large": restructure_configuration(model_configuration.text_embedding_3_large()),
-                    "text-embedding-3-small": restructure_configuration(model_configuration.text_embedding_3_small()),
-                    "text-embedding-ada-002": restructure_configuration(model_configuration.text_embedding_ada_002()),
+                    "text-embedding-3-large": restructure_configuration(model_config_document[service]['text-embedding-3-large']),
+                    "text-embedding-3-small": restructure_configuration(model_config_document[service]['text-embedding-3-small']),
+                    "text-embedding-ada-002": restructure_configuration(model_config_document[service]['text-embedding-ada-002'])
                 }
             }
-        elif service == service_name['gemini']:
+        elif service == service_name['openai_response']:
             return {
-                # "completion": {
-                #     "gemini-1.5-pro": restructure_configuration(model_configuration.gemini_1_5_pro()),
-                #     "gemini-pro": restructure_configuration(model_configuration.gemini_pro()),
-                #     "gemini-1.5-Flash": restructure_configuration(model_configuration.gemini_1_5_Flash()),
-                #     "gemini-1.0-pro": restructure_configuration(model_configuration.gemini_1_0_pro()),
-                #     "gemini-1.0-pro-vision": restructure_configuration(model_configuration.gemini_1_0_pro_vision())
-                # },
                 "chat": {
-                    "gemini-1.5-pro": restructure_configuration(model_configuration.gemini_1_5_pro()),
-                    "gemini-pro": restructure_configuration(model_configuration.gemini_pro()),
-                    "gemini-1.5-Flash": restructure_configuration(model_configuration.gemini_1_5_Flash()),
-                    "gemini-1.0-pro": restructure_configuration(model_configuration.gemini_1_0_pro()),
-                    "gemini-1.0-pro-vision": restructure_configuration(model_configuration.gemini_1_0_pro_vision())
+                    "gpt-3.5-turbo": restructure_configuration(model_config_document[service]['gpt-3.5-turbo']),
+                    "gpt-4": restructure_configuration(model_config_document[service]['gpt-4']),
+                    "gpt-4-turbo": restructure_configuration(model_config_document[service]['gpt-4-turbo']),
+                    "gpt-4o": restructure_configuration(model_config_document[service]['gpt-4o']),
+                    "chatgpt-4o-latest": restructure_configuration(model_config_document[service]['chatgpt-4o-latest'])
+                },
+                "reasoning" : {
+                    "o1-preview" : restructure_configuration(model_config_document[service]['o1-preview']),
+                    "o1-mini" : restructure_configuration(model_config_document[service]['o1-mini']),
+                    "o1" : restructure_configuration(model_config_document[service]['o1']),
+                    "o3-mini" : restructure_configuration(model_config_document[service]['o3-mini']),
                 }
+                # "image" : {
+                #     "dall-e-2" : model_config_document[service]['dall-e-2'],
+                #     "dall-e-3" : model_config_document[service]['dall-e-3'],
+                # },
+                # "embedding": {
+                #     "text-embedding-3-large": model_config_document[service]['text-embedding-3-large'],
+                #     "text-embedding-3-small": model_config_document[service]['text-embedding-3-small'],
+                #     "text-embedding-ada-002": model_config_document[service]['text-embedding-ada-002']
+                # }
             }
-        
         elif service == service_name['anthropic']:
             return {
                 "chat" : {
-                    "claude-3-5-sonnet-20241022" : restructure_configuration(model_configuration.claude_3_5_sonnet_20241022()), 
-                    "claude-3-5-sonnet-latest" : restructure_configuration(model_configuration.claude_3_5_sonnet_latest()), 
-                    "claude-3-opus-20240229" : restructure_configuration(model_configuration.claude_3_opus_20240229()), 
-                    "claude-3-opus-latest" : restructure_configuration(model_configuration.claude_3_opus_latest()),  
-                    "claude-3-sonnet-20240229" : restructure_configuration(model_configuration.claude_3_sonnet_20240229()), 
-                    "claude-3-haiku-20240307" : restructure_configuration(model_configuration.claude_3_haiku_20240307()), 
-                    "claude-3-5-haiku-20241022" : restructure_configuration(model_configuration.claude_3_5_haiku_20241022()),
-                    "claude-3-7-sonnet-latest" : restructure_configuration(model_configuration.claude_3_7_sonnet_latest()) 
+                    "claude-3-5-sonnet-20241022" :  restructure_configuration(model_config_document[service]['claude-3-5-sonnet-20241022']),
+                    "claude-3-5-sonnet-latest" :  restructure_configuration(model_config_document[service]['claude-3-5-sonnet-latest']),
+                    "claude-3-opus-20240229" :  restructure_configuration(model_config_document[service]['claude-3-opus-20240229']),
+                    "claude-3-opus-latest" :  restructure_configuration(model_config_document[service]['claude-3-opus-latest']),
+                    "claude-3-sonnet-20240229" :  restructure_configuration(model_config_document[service]['claude-3-sonnet-20240229']),
+                    "claude-3-haiku-20240307" :  restructure_configuration(model_config_document[service]['claude-3-haiku-20240307']),
+                    "claude-3-5-haiku-20241022" :  restructure_configuration(model_config_document[service]['claude-3-5-haiku-20241022']),
+                    "claude-3-7-sonnet-latest" :  restructure_configuration(model_config_document[service]['claude-3-7-sonnet-latest'])
                 }
             }
         
         elif service == service_name['groq']:
             return {
-                "chat" : {
-                    # "llama-3.1-405b-reasoning" : restructure_configuration(model_configuration.llama_3_1_405b_reasoning()),
-                    "llama-3.3-70b-versatile" : restructure_configuration(model_configuration.llama_3_3_70b_versatile()),
-                    "llama-3.1-8b-instant" : restructure_configuration(model_configuration.llama_3_1_8b_instant()),
-                    # "llama3-groq-70b-8192-tool-use-preview" : restructure_configuration(model_configuration.llama3_groq_70b_8192_tool_use_preview()),
-                    # "llama3-groq-8b-8192-tool-use-preview" : restructure_configuration(model_configuration.llama3_groq_8b_8192_tool_use_preview()),
-                    "llama3-70b-8192" : restructure_configuration(model_configuration.llama3_70b_8192()),
-                    "llama3-8b-8192" : restructure_configuration(model_configuration.llama3_8b_8192()),
-                    "mixtral-8x7b-32768" : restructure_configuration(model_configuration.mixtral_8x7b_32768()),
-                    # "gemma-7b-it" : restructure_configuration(model_configuration.gemma_7b_it()),
-                    "gemma2-9b-it" : restructure_configuration(model_configuration.gemma2_9b_it()),
-                    "llama-guard-3-8b" : restructure_configuration(model_configuration.llama_guard_3_8b()),
-                    "deepseek-r1-distill-llama-70b" : restructure_configuration(model_configuration.deepseek_r1_distill_llama_70b()),
-                    # "deepseek-r1-distill-llama-70b-specdec" : restructure_configuration(model_configuration.deepseek_r1_distill_llama_70b_specdec()),
-                    "deepseek-r1-distill-qwen-32b" : restructure_configuration(model_configuration.deepseek_r1_distill_qwen_32b()),
-                    "qwen-2.5-32b" : restructure_configuration(model_configuration.qwen_2_5_32b()),
-                    "qwen-2.5-coder-32b" : restructure_configuration(model_configuration.qwen_2_5_coder_32b())
+                "chat": {
+                    "llama-3.3-70b-versatile": restructure_configuration(model_config_document[service]['llama-3.3-70b-versatile']),
+                    "llama-3.1-8b-instant": restructure_configuration(model_config_document[service]['llama-3.1-8b-instant']),
+                    "llama3-70b-8192": restructure_configuration(model_config_document[service]['llama3-70b-8192']),
+                    "llama3-8b-8192": restructure_configuration(model_config_document[service]['llama3-8b-8192']),
+                    "mixtral-8x7b-32768": restructure_configuration(model_config_document[service]['mixtral-8x7b-32768']),
+                    "gemma2-9b-it": restructure_configuration(model_config_document[service]['gemma2-9b-it']),
+                    "llama-guard-3-8b": restructure_configuration(model_config_document[service]['llama-guard-3-8b']),
+                    "deepseek-r1-distill-llama-70b": restructure_configuration(model_config_document[service]['deepseek-r1-distill-llama-70b']),
+                    "deepseek-r1-distill-qwen-32b": restructure_configuration(model_config_document[service]['deepseek-r1-distill-qwen-32b']),
+                    "qwen-2.5-32b": restructure_configuration(model_config_document[service]['qwen-2.5-32b']),
+                    "qwen-2.5-coder-32b": restructure_configuration(model_config_document[service]['qwen-2.5-coder-32b']),
+                    "meta-llama/llama-4-scout-17b-16e-instruct" : restructure_configuration(model_config_document[service]['meta-llama/llama-4-scout-17b-16e-instruct'])
                 }
             }
-
-
+        
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+async def get_all_service_controller():
+    return {
+        "success": True,
+        "message": "Get all service successfully",
+        "services": ['openai', 'openai_response', 'anthropic', 'groq']
+    }
 
 async def update_bridge_controller(request, bridge_id=None, version_id=None):
     try:
@@ -440,9 +459,10 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
         result = await get_bridges_with_tools(bridge_id, org_id, version_id)
         await add_bulk_user_entries(user_history)
         await update_apikey_creds(version_id)
-        
+        if service is not None:
+            bridge['service'] = service
         if result.get("success"):
-            return Helper.response_middleware_for_bridge({
+            return Helper.response_middleware_for_bridge(bridge['service'],{
                 "success": True,
                 "message": "Bridge Updated successfully",
                 "bridge" : result.get('bridges')
