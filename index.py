@@ -29,7 +29,7 @@ from models.Timescale.connections import init_async_dbservice
 from src.configs.model_configuration import init_model_configuration
 
 # Initialize Atatus before the FastAPI app
-if Config.ENVIROMENT == 'prod':
+if Config.ENVIROMENT == 'PRODUCTION':
     atatus.configure(
         api_key='lic_apm_75107a1dd48345c0a46ceacba62c8c32',
         app_name=f'Python - GTWY - Backend - {Config.ENVIROMENT.upper()}',
