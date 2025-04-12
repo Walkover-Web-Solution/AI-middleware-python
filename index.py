@@ -31,14 +31,14 @@ from atatus.contrib.flask import Atatus
 
 
 # Initialize Atatus before the FastAPI app
-if Config.ENVIROMENT == 'PRODUCTION':
-    atatus.configure(
-        api_key='lic_apm_75107a1dd48345c0a46ceacba62c8c32',
-        app_name=f'Python - GTWY - Backend - {Config.ENVIROMENT.upper()}',
-        analytics=True,
-        analytics_capture_outgoing=True,
-        log_body='all'
-    )
+# if Config.ENVIROMENT == 'PRODUCTION':
+#     atatus.configure(
+#         api_key='lic_apm_75107a1dd48345c0a46ceacba62c8c32',
+#         app_name=f'Python - GTWY - Backend - {Config.ENVIROMENT.upper()}',
+#         analytics=True,
+#         analytics_capture_outgoing=True,
+#         log_body='all'
+#     )
 
     
 async def consume_messages_in_executor():
