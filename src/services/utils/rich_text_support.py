@@ -1,14 +1,8 @@
 from typing import Any, Dict, Optional
-import src.db_services.ConfigurationServices as ConfigurationService
-from .helper import Helper
-from config import Config
-from src.services.utils.apiservice import fetch
 import pydash as _
-from copy import deepcopy
 import uuid
-from src.services.commonServices.baseService.utils import sendResponse
-import json
-
+from src.configs.constant import bridge_ids
+from .ai_call_util import call_ai_middleware
 
 async def process_chatbot_response(result, params, data, model_config, modelOutputConfig):
 
@@ -36,31 +30,13 @@ async def process_chatbot_response(result, params, data, model_config, modelOutp
 
         random_id = str(uuid.uuid4())
 
-        bridge_id = "67b30d46f8ab2d672f1682b4"
-        # abhi action nahi aa rhe hai
-        if data.get('actions'): 
-            bridge_id = "67b3157bdd16f681b71b06a4"
-        else: 
-            bridge_id = "67b30d46f8ab2d672f1682b4"
-
-        response, rs_headers = await fetch(
-            f"https://proxy.viasocket.com/proxy/api/1258584/29gjrmh24/api/v2/model/chat/completion",
-            "POST",
-            {
-                "pauthkey": "1b13a7a038ce616635899a239771044c",
-                "Content-Type": "application/json"
-            },
-            None,
-            {
-                "user": f"Generate UI. User message: {data.get('user')}, \n Answer: {_.get(result.get('modelResponse', {}), modelOutputConfig.get('message'))}",
-                "bridge_id": bridge_id,
-                "thread_id": f"{data.get('thread_id') or random_id}-{data.get('sub_thread_id') or random_id}",
-                "variables": { "actions" : data.get('actions') or {}, "user_reference": user_reference, "user_contains": user_contains, "function_calls": function_calls},
-            }
-        )
-
+        bridge_id = bridge_ids['chatbot_response_with_actions'] if data.get('actions') else bridge_ids['chatbot_response_without_actions']
+        user = f"Generate UI. User message: {data.get('user')}, \n Answer: {_.get(result.get('modelResponse', {}), modelOutputConfig.get('message'))}"
+        variables =  { "actions" : data.get('actions') or {}, "user_reference": user_reference, "user_contains": user_contains, "function_calls": function_calls}
+        thread_id =  f"{data.get('thread_id') or random_id}-{data.get('sub_thread_id') or random_id}",
+        response = await call_ai_middleware(user, bridge_id = bridge_id, varaibles = variables, thread_id = thread_id)
         response['response']['data'] = response.get('response',{}).get('data',{}).get('content',"")
-
+       
         _.set_(result['modelResponse'], modelOutputConfig.get('message'), response['response']['data'])
         result['historyParams']['chatbot_message'] = response['response']['data']
         return

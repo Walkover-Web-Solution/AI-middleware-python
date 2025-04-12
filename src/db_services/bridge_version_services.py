@@ -3,7 +3,6 @@ from bson import ObjectId
 import traceback
 import json
 import asyncio
-from src.services.utils.apiservice import fetch
 from src.services.cache_service import delete_in_cache
 from .ConfigurationServices import get_bridges_with_tools, get_bridges_with_tools_and_apikeys, get_bridges_without_tools
 from src.services.commonServices.common import chat
@@ -11,6 +10,8 @@ from ..services.utils.helper import Helper
 from ..services.utils.nlp import compute_cosine_similarity
 from ..services.utils.time import Timer
 from src.db_services.testcase_services import delete_current_testcase_history
+from src.configs.constant import bridge_ids
+from ..services.utils.ai_call_util import call_ai_middleware
 
 configurationModel = db["configurations"]
 version_model = db['configuration_versions']
@@ -220,12 +221,11 @@ async def makeQuestion(parent_id, prompt, functions, save = False):
         prompt += "\nFunctionalities available\n" + json.dumps(filtered_functions)
         
     
-    
-    response, headers = await fetch(url='https://proxy.viasocket.com/proxy/api/1258584/29gjrmh24/api/v2/model/chat/completion',method='POST',json_body= {"user": prompt,"bridge_id": "67459164ea7147ad4b75f92a"},headers = {'pauthkey': '1b13a7a038ce616635899a239771044c','Content-Type': 'application/json'})
-    # Update the document in the configurationModel
-    expected_questions = json.loads(response.get("response",{}).get("data",{}).get("content","{}")).get("questions",[])
+    response = await call_ai_middleware(prompt, bridge_id = bridge_ids['make_question'])
+    expected_questions = json.loads(response.get('response', {}).get('data', {}).get('content', ""))
     updated_configuration= {"starterQuestion": expected_questions}
     
+    # Update the document in the configurationModel
     if save: 
         configurationModel.update_one(  # this should be async
             {'_id': ObjectId(parent_id)},

@@ -3,8 +3,9 @@ import PyPDF2
 import docx
 import pandas as pd
 from fastapi import UploadFile, File
-from .apiservice import fetch
 import json
+from .ai_call_util import call_ai_middleware
+from src.configs.constant import bridge_ids
 
 async def extract_pdf_text(file: UploadFile) -> str:
     pdf_reader = PyPDF2.PdfReader(io.BytesIO(await file.read()))
@@ -36,18 +37,10 @@ async def get_csv_query_type(doc_data, query):
     if not {'rowWiseData', 'columnWiseData'}.issubset(content):
         return 'rowWiseData' if 'rowWiseData' in content else 'columnWiseData'
     
-    response, _ = await fetch(
-        url='https://api.gtwy.ai/api/v2/model/chat/completion', 
-        method='POST',
-        headers={'pauthkey': '1b13a7a038ce616635899a239771044c'},
-        json_body={
-            'user': 'Tell me the query type',
-            'variables': {'headers' : doc_data['content']['headers'], 'query' : query},
-            'bridge_id': '67c2f4b40ef03932ed9a2b40'
-        }
-    )
-    
-    query_type = json.loads(response['response']['data']['content'])['search']
+    user = 'Tell me the query type'
+    variables = {'headers' : doc_data['content']['headers'], 'query' : query}
+    response = await call_ai_middleware(user, bridge_id = bridge_ids['get_csv_query_type'], varaibles = variables)
+    query_type = json.loads(response.get('response', {}).get('data', {}).get('content', ""))['search']
     return 'columnWiseData' if query_type == 'column' else 'rowWiseData'
     
     
