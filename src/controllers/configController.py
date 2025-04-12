@@ -206,13 +206,11 @@ async def get_all_service_models_controller(service):
         def restructure_configuration(config):
             model_field = config.get("configuration", {}).get("model", "")
             additional_parameters = config.get("configuration", {})
-            outputConfig = config.get("outputConfig", {})
             
             return {
                 "configuration": {
                     "model": model_field,
-                    "additional_parameters": additional_parameters,
-                    "outputConfig": outputConfig
+                    "additional_parameters": additional_parameters
                 }
             }
         if service == service_name['openai']:
@@ -234,7 +232,7 @@ async def get_all_service_models_controller(service):
                 },
                 "reasoning" : {
                     "o1-preview" : restructure_configuration(model_config_document[service]['o1-preview']),
-                    "o1-mini" : restructure_configuration(model_config_document[service]['o1-mini']),
+                    # "o1-mini" : restructure_configuration(model_config_document[service]['o1-mini']),
                     "o1" : restructure_configuration(model_config_document[service]['o1']),
                     "o3-mini" : restructure_configuration(model_config_document[service]['o3-mini']),
                 },
@@ -259,7 +257,7 @@ async def get_all_service_models_controller(service):
                 },
                 "reasoning" : {
                     "o1-preview" : restructure_configuration(model_config_document[service]['o1-preview']),
-                    "o1-mini" : restructure_configuration(model_config_document[service]['o1-mini']),
+                    # "o1-mini" : restructure_configuration(model_config_document[service]['o1-mini']),
                     "o1" : restructure_configuration(model_config_document[service]['o1']),
                     "o3-mini" : restructure_configuration(model_config_document[service]['o3-mini']),
                 }
