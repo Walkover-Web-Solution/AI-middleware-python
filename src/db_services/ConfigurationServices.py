@@ -162,7 +162,7 @@ async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None)
         pipeline = [
             # Stage 0: Match the specific bridge or version with the given org_id
             {
-                '$match': {'_id': id_to_use, "org_id": org_id}
+                '$match': {'_id': ObjectId(id_to_use), "org_id": org_id}
             },
             {
                 '$project': {
