@@ -4,7 +4,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 import asyncio
-import atatus
+# import atatus
 from contextlib import asynccontextmanager
 import src.services.utils.batch_script
 from src.services.utils.batch_script import repeat_function
@@ -27,6 +27,8 @@ from src.routes.Internal_routes import router as Internal_routes
 from src.routes.testcase_routes import router as testcase_routes
 from models.Timescale.connections import init_async_dbservice
 from src.configs.model_configuration import init_model_configuration
+from atatus.contrib.flask import Atatus
+
 
 # Initialize Atatus before the FastAPI app
 if Config.ENVIROMENT == 'PRODUCTION':
