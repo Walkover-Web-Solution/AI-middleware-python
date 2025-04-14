@@ -14,8 +14,9 @@ from src.services.utils.getDefaultValue import get_default_values_controller
 from src.db_services.bridge_version_services import create_bridge_version
 from src.services.utils.apicallUtills import delete_all_version_and_bridge_ids_from_cache
 from src.db_services.conversationDbService import get_timescale_data
-from src.services.utils.apiservice import fetch
 from src.configs.model_configuration import model_config_document
+from src.configs.constant import bridge_ids
+from src.services.utils.ai_call_util import call_ai_middleware
 
 async def create_bridges_controller(request):
     try:
@@ -90,12 +91,12 @@ async def create_bridges_controller(request):
 async def create_bridges_using_ai_controller(request):
     try:
         body = await request.json()
-        purpose = body.get('purpose');
+        purpose = body.get('purpose')
         bridge_type = body.get('bridgeType')
         result = []
         proxy_auth_token = request.headers.get("proxy_auth_token")
-        result = await fetch("https://flow.sokt.io/func/scri5dR8ePn9", "POST", None, None, {"proxy_auth_token": proxy_auth_token, "purpose": purpose, "bridgeType": bridge_type})        
-        bridge = json.loads(result[0])
+        variables = {"proxy_auth_token": proxy_auth_token, "purpose": purpose, "bridgeType": bridge_type}
+        bridge = await call_ai_middleware(purpose, bridge_id = bridge_ids['create_bridge_using_ai'], variables = variables)
         if bridge:
             return JSONResponse(status_code=200, content={
                 "success": True,

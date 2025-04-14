@@ -21,7 +21,7 @@ from src.services.utils.nlp import compute_cosine_similarity
 import json
 from src.services.utils.ai_call_util import call_ai_middleware
 from src.services.utils.ai_middleware_format import Response_formatter
-
+from src.configs.constant import bridge_ids
 
 
 async def run_testcase_for_tools(testcase_data, parsed_data, function_names, given_custom_config, model_output_config):
@@ -123,6 +123,6 @@ async def compare_result(expected, actual, matching_type, response_type):
         case 'exact': 
                 return 1 if _.is_equal(expected, actual) else 0
         case 'ai' : 
-            response =  await call_ai_middleware(str(actual), '67ce993c8407023ad4f7b277', variables = ({'expected' : str(expected) }))
-            return json.loads(response)['score']
+            response =  await call_ai_middleware(str(actual), bridge_ids['compare_result'], variables = ({'expected' : str(expected) }))
+            return response['score']
         

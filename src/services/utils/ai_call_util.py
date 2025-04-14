@@ -1,14 +1,18 @@
 from .apiservice import fetch
+import json
 
-async def call_ai_middleware(user, bridge_id, variables = None, configuration = None, response_type = None, thread_id = None):
+async def call_ai_middleware(user, bridge_id, variables = {}, configuration = None, response_type = None, thread_id = None):
     try:
         request_body = {
-            "configuration": configuration,
             "user": user,
             "bridge_id": bridge_id,
-            "response_type": response_type,
             "variables": variables
         }
+        if response_type is not None:
+            request_body["response_type"] = response_type
+        
+        if configuration is not None:
+            request_body["configuration"] = configuration
         
         if thread_id is not None:
             request_body["thread_id"] = thread_id
@@ -25,7 +29,10 @@ async def call_ai_middleware(user, bridge_id, variables = None, configuration = 
         )
         if not response.get('success', True):
             raise Exception(response.get('message', 'Unknown error'))
-        return response.get('response', {}).get('data', {}).get('content', "")
+        result = response.get('response', {}).get('data', {}).get('content', "")
+        if response_type is None:
+            result = json.loads(result)
+        return result
     except Exception as err:
         print("Error calling function=>", err)
         raise err
