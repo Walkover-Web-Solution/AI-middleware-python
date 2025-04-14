@@ -5,10 +5,11 @@ from ..db_services.bridge_version_services import create_bridge_version, update_
 from src.services.utils.helper import Helper
 from ..db_services.ConfigurationServices import get_bridges_with_tools, update_bridge, get_bridges_without_tools
 from bson import ObjectId
-from ..services.utils.apiservice import fetch
 from ..configs.models import services
 from src.services.utils.common_utils import get_service_by_model
 from globals import *
+from ..configs.constant import bridge_ids
+from src.services.utils.ai_call_util import call_ai_middleware
 
 
 with open('src/services/utils/model_features.json', 'r') as file: 
@@ -107,11 +108,9 @@ async def suggest_model(request, version_id):
         
         prompt = version_data['configuration']['prompt']
         tool_calls = [{call['endpoint_name'] : call['description']} for call in version_data['apiCalls'].values()]
-
-        ai_response, headers = await fetch(url='https://proxy.viasocket.com/proxy/api/1258584/29gjrmh24/api/v2/model/chat/completion', method='POST', json_body={'user' : json.dumps({'prompt' : prompt, 'tool_calls' : tool_calls}), 'bridge_id': '67a75ab42d85a6d4f16a4c7e', 'variables' : {'available_models': str(available_models), 'unavailable_models': str(unavailable_models) }}, headers = {'pauthkey' : '1b13a7a038ce616635899a239771044c', 'Content-Type': 'application/json' })
-        
-        ai_response = json.loads(ai_response['response']['data']['content'])
-        
+        message = json.dumps({'prompt' : prompt, 'tool_calls' : tool_calls})
+        variables = {'available_models': str(available_models), 'unavailable_models': str(unavailable_models) }
+        ai_response = await call_ai_middleware(message, bridge_id = bridge_ids['suggest_model'], variables = variables)
         response = {
             'available': {
                 'model' : ai_response['best_model_from_available_models'], 

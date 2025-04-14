@@ -1,7 +1,7 @@
 from fastapi import HTTPException, status
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
-from src.db_services.ConfigurationServices import create_bridge, get_bridge_by_id, get_all_bridges_in_org, update_bridge, update_bridge_ids_in_api_calls, get_bridges_with_tools, get_apikey_creds, update_apikey_creds
+from src.db_services.ConfigurationServices import create_bridge, get_bridge_by_id, get_all_bridges_in_org, update_bridge, update_bridge_ids_in_api_calls, get_bridges_with_tools, get_apikey_creds, update_apikey_creds, update_built_in_tools
 from src.configs.modelConfiguration import ModelsConfig as model_configuration
 from src.services.utils.helper import Helper
 import json
@@ -14,9 +14,10 @@ from src.services.utils.getDefaultValue import get_default_values_controller
 from src.db_services.bridge_version_services import create_bridge_version
 from src.services.utils.apicallUtills import delete_all_version_and_bridge_ids_from_cache
 from src.db_services.conversationDbService import get_timescale_data
-from src.services.utils.apiservice import fetch
 from src.configs.model_configuration import model_config_document
 from globals import *
+from src.configs.constant import bridge_ids
+from src.services.utils.ai_call_util import call_ai_middleware
 
 async def create_bridges_controller(request):
     try:
@@ -91,12 +92,12 @@ async def create_bridges_controller(request):
 async def create_bridges_using_ai_controller(request):
     try:
         body = await request.json()
-        purpose = body.get('purpose');
+        purpose = body.get('purpose')
         bridge_type = body.get('bridgeType')
         result = []
         proxy_auth_token = request.headers.get("proxy_auth_token")
-        result = await fetch("https://flow.sokt.io/func/scri5dR8ePn9", "POST", None, None, {"proxy_auth_token": proxy_auth_token, "purpose": purpose, "bridgeType": bridge_type})        
-        bridge = json.loads(result[0])
+        variables = {"proxy_auth_token": proxy_auth_token, "purpose": purpose, "bridgeType": bridge_type}
+        bridge = await call_ai_middleware(purpose, bridge_id = bridge_ids['create_bridge_using_ai'], variables = variables)
         if bridge:
             return JSONResponse(status_code=200, content={
                 "success": True,
@@ -207,13 +208,11 @@ async def get_all_service_models_controller(service):
         def restructure_configuration(config):
             model_field = config.get("configuration", {}).get("model", "")
             additional_parameters = config.get("configuration", {})
-            outputConfig = config.get("outputConfig", {})
             
             return {
                 "configuration": {
                     "model": model_field,
-                    "additional_parameters": additional_parameters,
-                    "outputConfig": outputConfig
+                    "additional_parameters": additional_parameters
                 }
             }
         if service == service_name['openai']:
@@ -235,7 +234,7 @@ async def get_all_service_models_controller(service):
                 },
                 "reasoning" : {
                     "o1-preview" : restructure_configuration(model_config_document[service]['o1-preview']),
-                    "o1-mini" : restructure_configuration(model_config_document[service]['o1-mini']),
+                    # "o1-mini" : restructure_configuration(model_config_document[service]['o1-mini']),
                     "o1" : restructure_configuration(model_config_document[service]['o1']),
                     "o3-mini" : restructure_configuration(model_config_document[service]['o3-mini']),
                 },
@@ -260,7 +259,7 @@ async def get_all_service_models_controller(service):
                 },
                 "reasoning" : {
                     "o1-preview" : restructure_configuration(model_config_document[service]['o1-preview']),
-                    "o1-mini" : restructure_configuration(model_config_document[service]['o1-mini']),
+                    # "o1-mini" : restructure_configuration(model_config_document[service]['o1-mini']),
                     "o1" : restructure_configuration(model_config_document[service]['o1']),
                     "o3-mini" : restructure_configuration(model_config_document[service]['o3-mini']),
                 }
@@ -313,7 +312,7 @@ async def get_all_service_controller():
     return {
         "success": True,
         "message": "Get all service successfully",
-        "services": ['openai', 'anthropic', 'groq']
+        "services": ['openai', 'anthropic', 'groq', 'openai_response']
     }
 
 async def update_bridge_controller(request, bridge_id=None, version_id=None):
@@ -336,6 +335,7 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
         expected_qna = body.get('expected_qna', None)
         gpt_memory = body.get('gpt_memory')
         gpt_memory_context = body.get('gpt_memory_context')
+        bridge_status = body.get('bridge_status')
         doc_ids = body.get('doc_ids')
         user_id = request.state.profile['user']['id']
         version_description = body.get('version_description')
@@ -350,6 +350,8 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
         function_id = body.get('functionData', {}).get('function_id', None)
         function_operation = body.get('functionData', {}).get('function_operation')
         function_name = body.get('functionData', {}).get('function_name',None)
+        built_in_tools = body.get('built_in_tools_data', {}).get('built_in_tools', None)
+        built_in_tools_operation = body.get('built_in_tools_data', {}).get('built_in_tools_operation', None)
         bridge = await get_bridge_by_id(org_id, bridge_id, version_id)
         parent_id = bridge.get('parent_id')
         if new_configuration and 'type' in new_configuration and new_configuration.get('type') != 'fine-tune':
@@ -362,6 +364,8 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
         if prompt:
             result = await storeSystemPrompt(prompt, org_id, parent_id if parent_id is not None else version_id)
             new_configuration['system_prompt_version_id'] = result.get('id')
+        if bridge_status is not None and bridge_status in [0, 1]:
+            update_fields['bridge_status'] = bridge_status
         if bridge_summary is not None:
             update_fields['bridge_summary'] = bridge_summary
         if expected_qna is not None:
@@ -409,6 +413,12 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
                 if isinstance(value, list):
                     updated_variables_path[key] = {}
             update_fields['variables_path'] = updated_variables_path
+        if built_in_tools is not None:
+            if built_in_tools_operation is None:
+                await update_built_in_tools(version_id, built_in_tools, 0)
+            elif built_in_tools_operation == '1':
+                await update_built_in_tools(version_id, built_in_tools, 1)
+                
         if function_id is not None: 
             Id_to_delete = {
                 "bridge_ids": [],
@@ -474,3 +484,17 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
     except Exception as e:
         logger.error(f"Unexpected error occurred: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+    
+async def get_all_in_built_tools_controller():
+    return {
+        "success": True,
+        "message": "Get all inbuilt tools successfully",
+        "in_built_tools": [
+            {
+                "id": '1',
+                "name": 'Web Search',
+                "description": 'Allow models to search the web for the latest information before generating a response.',
+                "value": 'web_search'
+            }
+        ]
+    }

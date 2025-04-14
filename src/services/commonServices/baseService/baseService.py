@@ -6,7 +6,7 @@ from config import Config
 from ....db_services import metrics_service
 from .utils import validate_tool_call, tool_call_formatter, sendResponse, make_code_mapping_by_service, process_data_and_run_tools
 from src.configs.serviceKeys import ServiceKeys
-from ..openAI.runModel import runModel
+from ..openAI.runModel import runModel, openai_response_model
 from ..anthrophic.antrophicModelRun import anthropic_runmodel
 from ....configs.constant import service_name
 from ..groq.groqModelRun import groq_runmodel
@@ -58,6 +58,7 @@ class BaseService:
         self.name = params.get('name')
         self.org_name = params.get('org_name')
         self.send_error_to_webhook = params.get('send_error_to_webhook')
+        self.built_in_tools = params.get('built_in_tools')
 
 
     def aiconfig(self):
@@ -80,11 +81,20 @@ class BaseService:
             tools[function_response['name']] = function_response['content']
         
             match service:
-                case 'openai' | 'groq' :
+                case 'openai' | 'groq':
                     assistant_tool_calls = response['choices'][0]['message']['tool_calls'][index]
                     configuration['messages'].append({'role': 'assistant', 'content': None, 'tool_calls': [assistant_tool_calls]})
                     tool_calls_id = assistant_tool_calls['id']
                     configuration['messages'].append(mapping_response_data[tool_calls_id])
+                case 'openai_response':
+                    assistant_tool_calls = response['output'][index]
+                    configuration['input'].append(assistant_tool_calls)
+                    tool_calls_id = assistant_tool_calls['id']
+                    configuration['input'].append({                           
+                            "type": "function_call_output",
+                            "call_id": assistant_tool_calls['call_id'],
+                            "output":  mapping_response_data[tool_calls_id]['content']
+                        })
                 case 'anthropic':
                     ordered_json = {"type":"tool_result",  
                                                  "tool_use_id": function_response['tool_call_id'],
@@ -102,7 +112,7 @@ class BaseService:
         modelOutputConfig = modelObj['outputConfig']
         model_response = response.get('modelResponse', {})
         if configuration.get('tool_choice') is not None and configuration['tool_choice'] not in ['auto', 'none', 'required']:
-            if service == 'openai' or service == 'groq':
+            if service == 'openai' or service == 'groq' or service == 'openai_response':
                     configuration['tool_choice'] = 'auto'
             elif service == 'anthropic':
                 configuration['tool_choice'] = {'type': 'auto'}
@@ -159,38 +169,36 @@ class BaseService:
 # todo
     def update_model_response(self, model_response, functionCallRes={}):
         funcModelResponse = functionCallRes.get("modelResponse", {})
-        match self.service:
-            case 'openai' | 'groq' | 'anthropic':
-                usage_config = self.modelOutputConfig['usage'][0]
+        if self.service in ['openai', 'groq', 'anthropic', 'openai_response']:
+            usage_config = self.modelOutputConfig['usage'][0]
 
-                def get_combined_tokens(key, default=0):
-                    return (_.get(model_response, key, default) or 0) + (_.get(funcModelResponse, key, default) or 0)
+            def get_combined_tokens(key, default=0):
+                return (_.get(model_response, key, default) or 0) + (_.get(funcModelResponse, key, default) or 0)
 
+            if self.service != 'openai_response':
                 self.prompt_tokens = get_combined_tokens(usage_config['prompt_tokens'])
                 self.completion_tokens = get_combined_tokens(usage_config['completion_tokens'])
                 self.total_tokens = self.prompt_tokens + self.completion_tokens
 
-                if self.service in ['openai', 'groq']:
+            if self.service in ['openai', 'groq']:
                     cached_tokens_key = usage_config.get('cached_tokens', 0)
                     self.cached_tokens = get_combined_tokens(cached_tokens_key)
                     _.set_(model_response, cached_tokens_key, self.cached_tokens)
+        
+            if self.service == 'anthropic':
+                self.cache_creation_input_tokens = get_combined_tokens(usage_config.get('cache_creation_input_tokens', 0))
+                self.cache_read_input_tokens = get_combined_tokens(usage_config.get('cache_read_input_tokens', 0))
+                _.set_(model_response, usage_config.get('cache_creation_input_tokens', 0), self.cache_creation_input_tokens)
+                _.set_(model_response, usage_config.get('cache_read_input_tokens', 0), self.cache_read_input_tokens)
 
-                if self.service == 'anthropic':
-                    self.cache_creation_input_tokens = get_combined_tokens(usage_config.get('cache_creation_input_tokens', 0))
-                    self.cache_read_input_tokens = get_combined_tokens(usage_config.get('cache_read_input_tokens', 0))
-                    _.set_(model_response, usage_config.get('cache_creation_input_tokens', 0), self.cache_creation_input_tokens)
-                    _.set_(model_response, usage_config.get('cache_read_input_tokens', 0), self.cache_read_input_tokens)
-
-                if funcModelResponse:
-                    _.set_(model_response, self.modelOutputConfig['message'], _.get(funcModelResponse, self.modelOutputConfig['message']))
-                    if self.service in ['openai', 'groq']:
-                        _.set_(model_response, self.modelOutputConfig['tools'], _.get(funcModelResponse, self.modelOutputConfig['tools']))
-
-                # _.set_(model_response, usage_config['total_tokens'], self.total_tokens)
+            if self.service in ['openai', 'anthropic', 'groq']:
                 _.set_(model_response, usage_config['prompt_tokens'], self.prompt_tokens)
                 _.set_(model_response, usage_config['completion_tokens'], self.completion_tokens)
-            case _:
-                pass
+
+            if funcModelResponse:
+                _.set_(model_response, self.modelOutputConfig['message'], _.get(funcModelResponse, self.modelOutputConfig['message']))
+                if self.service in ['openai', 'groq', 'openai_response']:
+                    _.set_(model_response, self.modelOutputConfig['tools'], _.get(funcModelResponse, self.modelOutputConfig['tools']))
 
     def calculate_usage(self, model_response):
         match self.service:
@@ -246,6 +254,9 @@ class BaseService:
                             new_config['tool_choice'] = {"type": "function", "function": {"name": configuration['tool_choice']}}
                         else:
                             new_config['tool_choice'] = configuration['tool_choice']
+                elif service == service_name['openai_response']:
+                    new_config['tool_choice'] = {"type" : "function", "name" : configuration['tool_choice']}
+                    
                 new_config['tools'] = tool_call_formatter(configuration, service, self.variables, self.variables_path)
             elif 'tool_choice' in configuration:
                 del new_config['tool_choice']  
@@ -262,6 +273,8 @@ class BaseService:
             loop = asyncio.get_event_loop()
             if service == service_name['openai']:
                 response = await runModel(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer, self.message_id, self.org_id, self.name, self.org_name)
+            if service == service_name['openai_response']:
+                response = await openai_response_model(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer, self.message_id, self.org_id, self.name, self.org_name)
             elif service == service_name['anthropic']:
                 response = await loop.run_in_executor(executor, lambda: asyncio.run(anthropic_runmodel(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer, self.name, self.org_name)))
             elif service == service_name['groq']:

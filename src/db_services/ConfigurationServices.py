@@ -421,6 +421,31 @@ async def update_bridge_ids_in_api_calls(function_id, bridge_id, add=1):
             data['bridge_ids'] = [str(bid) for bid in data['bridge_ids']]  # Convert bridge_ids to string
     return data
 
+async def update_built_in_tools(version_id, tool, add=1):
+    to_update = {'$set': {'status': 1}}
+    if add == 1:
+        to_update['$addToSet'] = {'built_in_tools': tool}
+    else:
+        to_update['$pull'] = {'built_in_tools': tool}
+    
+    data = await version_model.find_one_and_update(
+        {'_id': ObjectId(version_id)},
+        to_update,
+        return_document=True,
+        upsert=True
+    )
+    
+    if not data:
+        return {
+            'success': False,
+            'error': 'No records updated or version not found'
+        }
+    
+    if 'built_in_tools' not in data:
+        data['built_in_tools'] = []
+    
+    return data
+
 async def get_template_by_id(template_id):
     try:
         template_content = await templateModel.find_one({'_id' : ObjectId(template_id)})
