@@ -1,7 +1,7 @@
 from fastapi import HTTPException, status
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
-from src.db_services.ConfigurationServices import create_bridge, get_bridge_by_id, get_all_bridges_in_org, update_bridge, update_bridge_ids_in_api_calls, get_bridges_with_tools, get_apikey_creds, update_apikey_creds
+from src.db_services.ConfigurationServices import create_bridge, get_bridge_by_id, get_all_bridges_in_org, update_bridge, update_bridge_ids_in_api_calls, get_bridges_with_tools, get_apikey_creds, update_apikey_creds, update_built_in_tools
 from src.configs.modelConfiguration import ModelsConfig as model_configuration
 from src.services.utils.helper import Helper
 import json
@@ -349,6 +349,8 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
         function_id = body.get('functionData', {}).get('function_id', None)
         function_operation = body.get('functionData', {}).get('function_operation')
         function_name = body.get('functionData', {}).get('function_name',None)
+        built_in_tools = body.get('built_in_tools_data', {}).get('built_in_tools', None)
+        built_in_tools_operation = body.get('built_in_tools_data', {}).get('built_in_tools_operation', None)
         bridge = await get_bridge_by_id(org_id, bridge_id, version_id)
         parent_id = bridge.get('parent_id')
         if new_configuration and 'type' in new_configuration and new_configuration.get('type') != 'fine-tune':
@@ -408,6 +410,12 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
                 if isinstance(value, list):
                     updated_variables_path[key] = {}
             update_fields['variables_path'] = updated_variables_path
+        if built_in_tools is not None:
+            if built_in_tools_operation is None:
+                await update_built_in_tools(version_id, built_in_tools, 0)
+            elif built_in_tools_operation == '1':
+                await update_built_in_tools(version_id, built_in_tools, 1)
+                
         if function_id is not None: 
             Id_to_delete = {
                 "bridge_ids": [],
@@ -473,3 +481,17 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
     except Exception as e:
         print(f"Unexpected error occurred: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+    
+async def get_all_in_built_tools_controller():
+    return {
+        "success": True,
+        "message": "Get all inbuilt tools successfully",
+        "in_built_tools": [
+            {
+                "id": '1',
+                "name": 'Web Search',
+                "description": 'Allow models to search the web for the latest information before generating a response.',
+                "value": 'web_search'
+            }
+        ]
+    }

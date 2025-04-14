@@ -24,6 +24,8 @@ def validate_tool_call(modelOutputConfig, service, response):
     match service: # TODO: Fix validation process.
         case 'openai' | 'groq':
             return len(response.get('choices', [])[0].get('message', {}).get("tool_calls", [])) > 0
+        case 'openai_response':
+            return response.get('output')[0]['type'] == 'function_call'
         case 'anthropic':
             return response.get('stop_reason') == 'tool_use'
         case _:
@@ -110,6 +112,22 @@ def tool_call_formatter(configuration: dict, service: str, variables: dict, vari
                         'required': transformed_tool.get('required'),
                         # "additionalProperties": False,
                     }
+                }
+            } for transformed_tool in configuration.get('tools', [])
+        ]
+        return data_to_send
+    elif service == service_name['openai_response']:
+        data_to_send =  [
+            {
+                'type': 'function',
+                'name': transformed_tool['name'],
+                # "strict": True,
+                'description': transformed_tool['description'],
+                'parameters': {
+                    'type': 'object',
+                    'properties': clean_json(transform_required_params_to_required(transformed_tool.get('properties', {}), variables=variables, variables_path=variables_path, function_name=transformed_tool['name'], parentValue={'required': transformed_tool.get('required', [])})),
+                    'required': transformed_tool.get('required'),
+                    # "additionalProperties": False,
                 }
             } for transformed_tool in configuration.get('tools', [])
         ]
@@ -268,6 +286,24 @@ def make_code_mapping_by_service(responses, service):
                 except json.JSONDecodeError:
                     args = {
                         "error": tool_call['function']['arguments']
+                    }
+                    error = True
+                codes_mapping[tool_call["id"]] = {
+                    'name': name,
+                    'args': args,
+                    "error": error
+                }
+                function_list.append(name)
+        case 'openai_response':
+
+            for tool_call in responses['output']:
+                name = tool_call['name']
+                error = False
+                try:
+                    args = json.loads(tool_call['arguments'])
+                except json.JSONDecodeError:
+                    args = {
+                        "error": tool_call['arguments']
                     }
                     error = True
                 codes_mapping[tool_call["id"]] = {
