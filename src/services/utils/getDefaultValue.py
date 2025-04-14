@@ -41,9 +41,6 @@ async def get_default_values_controller(service, model, current_configuration, t
         elif service == service_name['groq']:
             return get_default_values(modelObj)
         
-        elif service == service_name['openai_response']:
-            return get_default_values(modelObj)
-        
         else:
             raise HTTPException(status_code=404, detail=f"Service '{service}' not found.")
     
