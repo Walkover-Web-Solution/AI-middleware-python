@@ -21,11 +21,6 @@ class TokenCalculator:
                 usage["inputTokens"] = _.get(model_response, self.model_output_config['usage'][0]['prompt_tokens']) or 0 
                 usage["outputTokens"] = _.get(model_response, self.model_output_config['usage'][0]['completion_tokens']) or 0
                 usage["cachedTokens"] = _.get(model_response, self.model_output_config['usage'][0].get('cached_tokens')) or 0
-            
-            case 'openai_response':
-                usage["totalTokens"] = _.get(model_response, self.model_output_config['usage'][0]['total_tokens'])
-                usage["cachedTokens"] = _.get(model_response, self.model_output_config['usage'][0].get('cached_tokens')) or 0
-            
             case 'anthropic':
                 usage["inputTokens"] = _.get(model_response, self.model_output_config['usage'][0]['prompt_tokens']) or 0
                 usage["outputTokens"] = _.get(model_response, self.model_output_config['usage'][0]['completion_tokens']) or 0

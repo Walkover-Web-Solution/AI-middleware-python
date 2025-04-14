@@ -12,7 +12,6 @@ from src.configs.model_configuration import model_config_document
 import jwt
 from ..commonServices.openAI.openaiCall import UnifiedOpenAICase
 from ..commonServices.openAI.openai_batch import OpenaiBatch
-from ..commonServices.openAI.openai_response import OpenaiResponse
 from ..commonServices.groq.groqCall import Groq
 from ..commonServices.anthrophic.antrophicCall import Antrophic
 from ...configs.constant import service_name
@@ -181,8 +180,6 @@ class Helper:
             class_obj = Antrophic(params)
         elif service == service_name['groq']:
             class_obj = Groq(params)
-        elif service == service_name['openai_response']:
-            class_obj = OpenaiResponse(params)
             
         return class_obj
 
