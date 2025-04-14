@@ -4,7 +4,8 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 import asyncio
-import json
+import atatus
+from atatus.contrib.starlette import create_client, Atatus
 from contextlib import asynccontextmanager
 import src.services.utils.batch_script
 from src.services.utils.batch_script import repeat_function
@@ -29,6 +30,18 @@ from models.Timescale.connections import init_async_dbservice
 from src.configs.model_configuration import init_model_configuration
 from globals import *
 
+
+atatus_client = atatus.get_client()
+if atatus_client is None and (Config.ENVIROMENT == 'PRODUCTION' or Config.ENVIROMENT == 'TESTING'):
+    atatus_client = create_client({
+        'APP_NAME': f'Python - GTWY - Backend - {"PROD" if Config.ENVIROMENT == "PRODUCTION" else "DEV"}',
+        'LICENSE_KEY': 'lic_apm_75107a1dd48345c0a46ceacba62c8c32',
+        'ANALYTICS': True,
+        'ANALYTICS_CAPTURE_OUTGOING': True,
+        'LOG_BODY': 'all'
+    })
+
+    
 async def consume_messages_in_executor():
     await queue_obj.consume_messages()
     
@@ -63,6 +76,9 @@ async def lifespan(app: FastAPI):
 
 # Initialize the FastAPI app
 app = FastAPI(debug=True, lifespan=lifespan)
+
+app.add_middleware(Atatus, client=atatus_client)
+
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,

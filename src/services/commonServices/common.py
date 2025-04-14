@@ -12,7 +12,7 @@ from ..utils.send_error_webhook import send_error_to_webhook
 import json
 from src.handler.executionHandler import handle_exceptions
 from models.mongo_connection import db
-from src.services.utils.common_utils import parse_request_body, initialize_timer, load_model_configuration, handle_pre_tools, handle_fine_tune_model,manage_threads, prepare_prompt, configure_custom_settings, build_service_params, process_background_tasks, build_service_params_for_batch, add_default_template, filter_missing_vars
+from src.services.utils.common_utils import parse_request_body, initialize_timer, load_model_configuration, handle_pre_tools, handle_fine_tune_model,manage_threads, prepare_prompt, configure_custom_settings, build_service_params, process_background_tasks, build_service_params_for_batch, add_default_template, filter_missing_vars, send_error
 from src.services.utils.rich_text_support import process_chatbot_response
 app = FastAPI()
 from src.services.utils.helper import Helper
@@ -58,9 +58,7 @@ async def chat(request_body):
 
         # Handle missing variables
         if missing_vars:
-            await send_error_to_webhook(
-                parsed_data['bridge_id'], parsed_data['org_id'], missing_vars, error_type='Variable'
-            )
+            send_error(parsed_data['bridge_id'], parsed_data['org_id'], missing_vars, error_type='Variable')
         
         # Step 7: Configure Custom Settings
         custom_config = await configure_custom_settings(
@@ -76,6 +74,9 @@ async def chat(request_body):
             
         if not result["success"]:
             raise ValueError(result)
+        
+        if result['modelResponse'].get('firstAttemptError'):
+            send_error(parsed_data['bridge_id'], parsed_data['org_id'], result['modelResponse']['firstAttemptError'], error_type='retry_mechanism')
         
         if parsed_data['configuration']['type'] == 'chat':
             if parsed_data['is_rich_text'] and parsed_data['bridgeType'] and parsed_data['reasoning_model'] == False:

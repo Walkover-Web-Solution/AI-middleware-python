@@ -301,7 +301,8 @@ async def get_all_service_models_controller(service):
                     "deepseek-r1-distill-llama-70b": restructure_configuration(model_config_document[service]['deepseek-r1-distill-llama-70b']),
                     "deepseek-r1-distill-qwen-32b": restructure_configuration(model_config_document[service]['deepseek-r1-distill-qwen-32b']),
                     "qwen-2.5-32b": restructure_configuration(model_config_document[service]['qwen-2.5-32b']),
-                    "qwen-2.5-coder-32b": restructure_configuration(model_config_document[service]['qwen-2.5-coder-32b'])
+                    "qwen-2.5-coder-32b": restructure_configuration(model_config_document[service]['qwen-2.5-coder-32b']),
+                    "meta-llama/llama-4-scout-17b-16e-instruct" : restructure_configuration(model_config_document[service]['meta-llama/llama-4-scout-17b-16e-instruct'])
                 }
             }
         
@@ -312,7 +313,7 @@ async def get_all_service_controller():
     return {
         "success": True,
         "message": "Get all service successfully",
-        "services": ['openai', 'openai_response', 'anthropic', 'groq']
+        "services": ['openai', 'anthropic', 'groq']
     }
 
 async def update_bridge_controller(request, bridge_id=None, version_id=None):

@@ -20,6 +20,11 @@ async def get_bridges(bridge_id = None, org_id = None, version_id = None):
                 '$match': {'_id': ObjectId(id_to_use), 'org_id': org_id}
             },
             {
+                '$project': {
+                    'configuration.encoded_prompt': 0
+                }
+            },
+            {
                 '$addFields': {
                     '_id': {'$toString': '$_id'},
                     'function_ids': {
@@ -70,6 +75,11 @@ async def get_bridges_with_tools(bridge_id, org_id, version_id=None):
         pipeline = [
             {
                 '$match': {'_id': ObjectId(id_to_use), "org_id": org_id}
+            },
+            {
+                '$project': {
+                    'configuration.encoded_prompt': 0
+                }
             },
             {
                 '$lookup': {
@@ -154,6 +164,11 @@ async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None)
             # Stage 0: Match the specific bridge or version with the given org_id
             {
                 '$match': {'_id': ObjectId(id_to_use), "org_id": org_id}
+            },
+            {
+                '$project': {
+                    'configuration.encoded_prompt': 0
+                }
             },
             # Stage 1: Lookup to join with 'apicalls' collection
             {
