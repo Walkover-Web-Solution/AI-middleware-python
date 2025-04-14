@@ -221,8 +221,7 @@ async def makeQuestion(parent_id, prompt, functions, save = False):
         prompt += "\nFunctionalities available\n" + json.dumps(filtered_functions)
         
     
-    response = await call_ai_middleware(prompt, bridge_id = bridge_ids['make_question'])
-    expected_questions = json.loads(response.get('response', {}).get('data', {}).get('content', ""))
+    expected_questions = await call_ai_middleware(prompt, bridge_id = bridge_ids['make_question'])
     updated_configuration= {"starterQuestion": expected_questions}
     
     # Update the document in the configurationModel

@@ -20,7 +20,7 @@ async def chatbot_suggestions(response_format, assistant, parsed_data, params):
         variables = {'prompt_summary': final_prompt}
         thread_id = f"{parsed_data.get('thread_id') or random_id}-{parsed_data.get('sub_thread_id') or random_id}"
         response = await call_ai_middleware(message, bridge_id = bridge_ids['chatbot_suggestions'], varaibles = variables, thread_id = thread_id)
-        response['response']['data'] = json.loads(response.get('response',{}).get('data',{}).get('content',""))
+        response['response']['data'] = response
         await sendResponse(response_format, response.get('response'), success=True)
             
     except Exception as err:

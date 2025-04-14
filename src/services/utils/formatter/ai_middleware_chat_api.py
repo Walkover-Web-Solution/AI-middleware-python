@@ -8,7 +8,7 @@ async def structured_output_optimizer(request):
         variables = {'json_schema': body.get('json_schema')}
         user = 'create the json shcmea accroding to the dummy json explained in system prompt.'
         result = await call_ai_middleware(user, bridge_id = bridge_ids['structured_output_optimizer'], varaibles = variables)
-        return json.loads(result.get('response', {}).get('data', {}).get('content', ""))
+        return result
     except Exception as err:
         print("Error calling function=>", err)
         return None

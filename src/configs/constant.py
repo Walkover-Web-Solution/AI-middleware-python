@@ -18,7 +18,8 @@ bridge_ids = {
     'get_csv_query_type' : '67c2f4b40ef03932ed9a2b40',
     'chatbot_suggestions' : '674710c9141fcdaeb820aeb8',
     'generate_summary' : '67e4e7934e58b9c3b991a29c',
-    'function_agrs_using_ai' : '67c81a424f3136bfb0e81906'
+    'function_agrs_using_ai' : '67c81a424f3136bfb0e81906',
+    'compare_result' : '67ce993c8407023ad4f7b277'
 
 
 }

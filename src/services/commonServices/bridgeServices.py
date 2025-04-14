@@ -53,8 +53,7 @@ async def optimize_prompt_controller(request : Request, bridge_id: str):
         prompt = bridge.get('configuration',{}).get('prompt',"")
         bridgeName = bridge.get('name')
         result = ""
-        response = await call_ai_middleware(prompt, bridge_id = bridge_ids['optimze_prompt'], response_type='text', thread_id = bridgeName)
-        result = response.get('response', {}).get('data', {}).get('content', "")
+        result = await call_ai_middleware(prompt, bridge_id = bridge_ids['optimze_prompt'], response_type='text', thread_id = bridgeName)
         return JSONResponse(status_code=200, content={
             "success": True,
             "message": "Prompt optimized successfully",
@@ -82,9 +81,7 @@ async def generate_summary(request):
             system_prompt += f'Available tool calls :-  {tools}'
         variables = {'prompt' : system_prompt}
         user = "generate summary from the user message provided in system prompt"
-        response = await call_ai_middleware(user, bridge_id = bridge_ids['generate_summary'], variables = variables)
-        
-        summary = response.get('response',{}).get('data',{}).get('content',"")
+        summary = await call_ai_middleware(user, bridge_id = bridge_ids['generate_summary'],response_type='text', variables = variables)
         return JSONResponse(status_code=200, content={
             "success": True,
             "message": "Summary generated successfully",
@@ -98,8 +95,7 @@ async def function_agrs_using_ai(request):
         body = await request.json()
         data = body.get('example_json')
         user = f"geneate the json using the example json data : {data}"
-        response = await call_ai_middleware(user, bridge_id = bridge_ids['function_agrs_using_ai'])
-        json = response.get('response',{}).get('data',{}).get('content',"")
+        json = await call_ai_middleware(user, bridge_id = bridge_ids['function_agrs_using_ai'])
         return JSONResponse(status_code=200, content={
             "success": True,
             "message": "json generated successfully",

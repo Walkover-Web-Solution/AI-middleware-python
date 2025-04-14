@@ -96,8 +96,7 @@ async def create_bridges_using_ai_controller(request):
         result = []
         proxy_auth_token = request.headers.get("proxy_auth_token")
         variables = {"proxy_auth_token": proxy_auth_token, "purpose": purpose, "bridgeType": bridge_type}
-        result = await call_ai_middleware(purpose, bridge_id = bridge_ids['create_bridge_using_ai'], variables = variables)
-        bridge = json.loads(result.get('response', {}).get('data', {}).get('content', ""))
+        bridge = await call_ai_middleware(purpose, bridge_id = bridge_ids['create_bridge_using_ai'], variables = variables)
         if bridge:
             return JSONResponse(status_code=200, content={
                 "success": True,

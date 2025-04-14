@@ -1,4 +1,5 @@
 from .apiservice import fetch
+import json
 
 async def call_ai_middleware(user, bridge_id, variables = {}, configuration = None, response_type = None, thread_id = None):
     try:
@@ -28,7 +29,10 @@ async def call_ai_middleware(user, bridge_id, variables = {}, configuration = No
         )
         if not response.get('success', True):
             raise Exception(response.get('message', 'Unknown error'))
-        return response
+        result = response.get('response', {}).get('data', {}).get('content', "")
+        if response_type is None:
+            result = json.loads(result)
+        return result
     except Exception as err:
         print("Error calling function=>", err)
         raise err

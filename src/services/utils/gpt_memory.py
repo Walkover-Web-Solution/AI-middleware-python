@@ -10,7 +10,7 @@ async def handle_gpt_memory(id, user, assistant, purpose, gpt_memory_context):
         response = await call_ai_middleware(message, bridge_id = bridge_ids['gpt_memory'], variables = variables, configuration = configuration, response_type = "text")
         if not response.get('success', True):
             raise Exception(response.get('message', 'Unknown error'))
-        return response.get('response', {}).get('data', {}).get('content', "")
+        return response
     except Exception as err:
         print("Error calling function=>", err)
         return None

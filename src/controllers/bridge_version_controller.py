@@ -110,8 +110,7 @@ async def suggest_model(request, version_id):
         tool_calls = [{call['endpoint_name'] : call['description']} for call in version_data['apiCalls'].values()]
         message = json.dumps({'prompt' : prompt, 'tool_calls' : tool_calls})
         variables = {'available_models': str(available_models), 'unavailable_models': str(unavailable_models) }
-        response = await call_ai_middleware(message, bridge_id = bridge_ids['suggest_model'], variables = variables, response_type = 'text')
-        ai_response = json.loads(response.get('response', {}).get('data', {}).get('content', ""))
+        ai_response = await call_ai_middleware(message, bridge_id = bridge_ids['suggest_model'], variables = variables)
         response = {
             'available': {
                 'model' : ai_response['best_model_from_available_models'], 
