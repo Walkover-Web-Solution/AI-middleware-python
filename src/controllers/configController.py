@@ -362,7 +362,7 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
         if prompt:
             result = await storeSystemPrompt(prompt, org_id, parent_id if parent_id is not None else version_id)
             new_configuration['system_prompt_version_id'] = result.get('id')
-        if bridge_status is not None and bridge_status in ["paused", "resume"]:
+        if bridge_status is not None and bridge_status in [0, 1]:
             update_fields['bridge_status'] = bridge_status
         if bridge_summary is not None:
             update_fields['bridge_summary'] = bridge_summary
