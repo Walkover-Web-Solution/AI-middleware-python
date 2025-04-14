@@ -111,7 +111,7 @@ class BaseService:
         modelOutputConfig = modelObj['outputConfig']
         model_response = response.get('modelResponse', {})
         if configuration.get('tool_choice') is not None and configuration['tool_choice'] not in ['auto', 'none', 'required']:
-            if service == 'openai' or service == 'groq' or service == 'openai':
+            if service == 'openai' or service == 'groq' or service == 'openai_response':
                     configuration['tool_choice'] = 'auto'
             elif service == 'anthropic':
                 configuration['tool_choice'] = {'type': 'auto'}
@@ -179,6 +179,11 @@ class BaseService:
                 self.completion_tokens = get_combined_tokens(usage_config['completion_tokens'])
                 self.total_tokens = self.prompt_tokens + self.completion_tokens
 
+            if self.service in ['openai', 'groq']:
+                    cached_tokens_key = usage_config.get('cached_tokens', 0)
+                    self.cached_tokens = get_combined_tokens(cached_tokens_key)
+                    _.set_(model_response, cached_tokens_key, self.cached_tokens)
+        
             if self.service == 'anthropic':
                 self.cache_creation_input_tokens = get_combined_tokens(usage_config.get('cache_creation_input_tokens', 0))
                 self.cache_read_input_tokens = get_combined_tokens(usage_config.get('cache_read_input_tokens', 0))
