@@ -29,7 +29,7 @@ async def send_error_to_webhook(bridge_id, org_id, error_log, error_type):
                 "url": "https://flow.sokt.io/func/scriSmH2QaBH",
                 "headers": {}
             },
-            "alertType": ["Error", "Variable"],
+            "alertType": ["Error", "Variable", "retry_mechanism"],
             "bridges": ["all"]
         })
 
@@ -39,6 +39,8 @@ async def send_error_to_webhook(bridge_id, org_id, error_log, error_type):
             details_payload = create_missing_vars(error_log)
         elif error_type == 'metrix_limit_reached':
             details_payload = metrix_limit_reached(error_log)
+        elif error_type == 'retry_mechanism':
+            details_payload = create_retry_mechanism_payload(error_log)
         else:
             details_payload = create_error_payload(error_log)
         
@@ -84,6 +86,12 @@ def create_error_payload(details):
     return {
         "alert" : "Unexpected Error",
         "error_message" : details['error_message']
+    }
+
+def create_retry_mechanism_payload(details):
+    return {
+        "alert" : "Retry Mechanism Started due to error.",
+        "error_message" : details
     }
 
 def create_response_format(url, headers):

@@ -23,6 +23,7 @@ from src.services.cache_service import find_in_cache, store_in_cache
 from src.db_services.ConfigurationServices import get_bridges_without_tools
 from src.db_services.ConfigurationServices import update_bridge
 from src.configs.model_configuration import model_config_document
+from src.services.utils.send_error_webhook import send_error_to_webhook
 
 def parse_request_body(request_body):
     body = request_body.get('body', {})
@@ -336,3 +337,8 @@ def filter_missing_vars(missing_vars, variables_state):
 
 def get_service_by_model(model): 
     return next((s for s in model_config_document if model in model_config_document[s]), None)
+
+def send_error(bridge_id, org_id, error_message, error_type):
+    asyncio.create_task(send_error_to_webhook(
+        bridge_id, org_id, error_message, error_type=error_type
+    ))
