@@ -14,6 +14,11 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
     RTLayer = False
     bridge = None
     result = await ConfigurationService.get_bridges_with_tools_and_apikeys(bridge_id = bridge_id, org_id = org_id, version_id=version_id)
+    bridge_id = bridge_id or result.get('bridges', {}).get('parent_id')
+    bridge_data = await ConfigurationService.get_bridges(bridge_id = bridge_id, org_id = org_id)
+    bridge_status = bridge_data.get('bridges',{}).get('bridge_status')
+    if(bridge_status == "paused"):
+        raise Exception("Bridge is Currently Paused")
     if not result['success']:
         return {
             'success': False,
