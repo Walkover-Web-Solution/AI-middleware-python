@@ -254,7 +254,14 @@ class Helper:
     def add_doc_description_to_prompt(prompt, rag_data):
         prompt += '\n Available Knowledge Base :- Here are the available documents to get data when needed call the function get_knowledge_base_data: \n' +  '\n'.join([f"name : {data.get('name')}, description : {data.get('description')},  doc_id : {data.get('_id')} \n" for data in rag_data])    
         return prompt
-        
+    
+    def append_tone_and_response_style_prompts(prompt, tone, response_style):
+        if tone:
+            prompt += f"\n\nTone Prompt: {tone['prompt']}"
+        if response_style:
+            prompt += f"\n\nResponse Style Prompt: {response_style['prompt']}"
+        return prompt
+      
     async def get_timezone_and_org_name(org_id):
         cached_data = await find_in_cache(org_id)
         if cached_data:
