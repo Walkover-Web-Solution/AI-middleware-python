@@ -125,6 +125,12 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
             if param in variables :
                 args[param] = variables[param]
     rag_data = bridge.get('rag_data')
+
+    tone = configuration.get('tone' , {})
+    responseStyle = configuration.get('responseStyle' , {})
+
+    configuration['prompt'] = Helper.append_tone_and_response_style_prompts(configuration['prompt'], tone, responseStyle)
+
     if rag_data is not None and rag_data != []:
         tools.append({'type': 'function', 'name': 'get_knowledge_base_data', 'description': "When user want to take any data from the knowledge, Call this function to get the corresponding document using document id.", 'properties': {
                 "Document_id": {
