@@ -4,7 +4,8 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 import asyncio
-import json
+import atatus
+from atatus.contrib.starlette import create_client, Atatus
 from contextlib import asynccontextmanager
 import src.services.utils.batch_script
 from src.services.utils.batch_script import repeat_function
@@ -15,7 +16,6 @@ from src.routes.apiCall_routes import router as apiCall_router
 from src.routes.config_routes import router as config_router
 from src.controllers.bridgeController import router as bridge_router
 from src.routes.v2.modelRouter import router as v2_router
-from src.services.utils.apiservice import fetch
 from src.services.commonServices.queueService.queueService import queue_obj
 from src.services.utils.logger import logger
 from src.routes.bridge_version_routes import router as bridge_version
@@ -27,8 +27,20 @@ from src.routes.Internal_routes import router as Internal_routes
 from src.routes.testcase_routes import router as testcase_routes
 from models.Timescale.connections import init_async_dbservice
 from src.configs.model_configuration import init_model_configuration
-import settings
+from globals import *
 
+
+atatus_client = atatus.get_client()
+if atatus_client is None and (Config.ENVIROMENT == 'PRODUCTION' or Config.ENVIROMENT == 'TESTING'):
+    atatus_client = create_client({
+        'APP_NAME': f'Python - GTWY - Backend - {"PROD" if Config.ENVIROMENT == "PRODUCTION" else "DEV"}',
+        'LICENSE_KEY': 'lic_apm_75107a1dd48345c0a46ceacba62c8c32',
+        'ANALYTICS': True,
+        'ANALYTICS_CAPTURE_OUTGOING': True,
+        'LOG_BODY': 'all'
+    })
+
+    
 async def consume_messages_in_executor():
     await queue_obj.consume_messages()
     
@@ -59,10 +71,13 @@ async def lifespan(app: FastAPI):
         if consume_task:
             await consume_task
     except asyncio.CancelledError:
-        print("Consumer task was cancelled during shutdown.")
+        logger.error("Consumer task was cancelled during shutdown.")
 
 # Initialize the FastAPI app
 app = FastAPI(debug=True, lifespan=lifespan)
+
+app.add_middleware(Atatus, client=atatus_client)
+
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
@@ -136,4 +151,4 @@ app.include_router(testcase_routes, prefix='/testcases')
 
 if __name__ == "__main__":
     PORT = int(Config.PORT)
-    uvicorn.run(app, host="0.0.0.0", port=PORT, log_config=settings.LOGGING_CONFIG, log_level="info")
+    uvicorn.run(app, host="0.0.0.0", port=PORT)

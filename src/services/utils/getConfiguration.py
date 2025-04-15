@@ -4,21 +4,29 @@ from bson import ObjectId
 from models.mongo_connection import db
 from src.services.utils.common_utils import updateVariablesWithTimeZone
 from src.services.commonServices.baseService.utils import makeFunctionName
+from src.services.utils.service_config_utils import tool_choice_function_name_formatter
 apiCallModel = db['apicalls']
 
 # from src.services.commonServices.generateToken import generateToken
 # from src.configs.modelConfiguration import ModelsConfig
 
-async def getConfiguration(configuration, service, bridge_id, apikey, template_id=None, variables = {}, org_id="", variables_path = None, version_id=None, extra_tools=[]):
+async def getConfiguration(configuration, service, bridge_id, apikey, template_id=None, variables = {}, org_id="", variables_path = None, version_id=None, extra_tools=[], built_in_tools = []):
     RTLayer = False
     bridge = None
     result = await ConfigurationService.get_bridges_with_tools_and_apikeys(bridge_id = bridge_id, org_id = org_id, version_id=version_id)
+    bridge_id = bridge_id or result.get('bridges', {}).get('parent_id')
+    if version_id : bridge_data = await ConfigurationService.get_bridges(bridge_id = bridge_id, org_id = org_id)
+    else : bridge_data = result
+    bridge_status = bridge_data.get('bridges',{}).get('bridge_status')
+    if(bridge_status == 0):
+        raise Exception("Bridge is Currently Paused")
     if not result['success']:
         return {
             'success': False,
             'error': "bridge_id does not exist"
         }
     db_configuration = result.get('bridges', {}).get('configuration', {})
+    service = service or (result.get('bridges', {}).get('service', '').lower())
     if configuration:
         db_configuration.update(configuration)
     configuration = db_configuration
@@ -35,8 +43,7 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
         if choice in tool_choice_ids:
             found_choice = choice
             break
-            
-    configuration['tool_choice'] = found_choice if found_choice is not None else toolchoice
+    configuration['tool_choice'] = tool_choice_function_name_formatter(service, configuration, toolchoice, found_choice)
     bridge = result.get('bridges')
     variables_path_bridge = bridge.get('variables_path', {})
     # make tools data
@@ -92,11 +99,12 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
             }
     configuration.pop('tools', None)
     configuration['tools'] = tools
-    service = service or (result.get('bridges', {}).get('service', '').lower())
     service = service.lower() if service else ""
     gpt_memory = result.get('bridges', {}).get('gpt_memory')
     db_apikeys = result.get('bridges', {}).get('apikeys')
     db_api_key = db_apikeys.get(service)
+    if service == 'openai_response':
+        db_api_key = db_apikeys.get('openai')
     apikey_object_id = result.get('bridges', {}).get('apikey_object_id')
     if not (apikey or db_api_key): 
         raise Exception('Could not find api key')
@@ -117,6 +125,12 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
             if param in variables :
                 args[param] = variables[param]
     rag_data = bridge.get('rag_data')
+
+    tone = configuration.get('tone' , {})
+    responseStyle = configuration.get('responseStyle' , {})
+
+    configuration['prompt'] = Helper.append_tone_and_response_style_prompts(configuration['prompt'], tone, responseStyle)
+
     if rag_data is not None and rag_data != []:
         tools.append({'type': 'function', 'name': 'get_knowledge_base_data', 'description': "When user want to take any data from the knowledge, Call this function to get the corresponding document using document id.", 'properties': {
                 "Document_id": {
@@ -162,5 +176,6 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
         "name" : result.get("bridges", {}).get("name") or '',
         "org_name" : org_name,
         "bridge_id" : result['bridges'].get('parent_id', result['bridges'].get('_id')),
-        "variables_state" : result.get("bridges", {}).get("variables_state", {}) 
+        "variables_state" : result.get("bridges", {}).get("variables_state", {}),
+        "built_in_tools" :  built_in_tools or result.get("bridges", {}).get("built_in_tools"),
     }

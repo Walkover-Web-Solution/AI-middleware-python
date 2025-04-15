@@ -1,5 +1,7 @@
 from ...db_services.webhook_alert_Dbservice import get_webhook_data
 from ..commonServices.baseService.baseService import sendResponse
+from globals import *
+
 async def send_error_to_webhook(bridge_id, org_id, error_log, error_type):
     """
     Sends error logs to a webhook if the specified conditions are met.
@@ -17,7 +19,7 @@ async def send_error_to_webhook(bridge_id, org_id, error_log, error_type):
         # Fetch webhook data for the organization
         result = await get_webhook_data(org_id)
         if not result or 'webhook_data' not in result:
-            raise ValueError("Webhook data is missing in the response.")
+            raise BadRequestException("Webhook data is missing in the response.")
 
         webhook_data = result['webhook_data']
 
@@ -29,7 +31,7 @@ async def send_error_to_webhook(bridge_id, org_id, error_log, error_type):
                 "url": "https://flow.sokt.io/func/scriSmH2QaBH",
                 "headers": {}
             },
-            "alertType": ["Error", "Variable"],
+            "alertType": ["Error", "Variable", "retry_mechanism"],
             "bridges": ["all"]
         })
 
@@ -39,6 +41,8 @@ async def send_error_to_webhook(bridge_id, org_id, error_log, error_type):
             details_payload = create_missing_vars(error_log)
         elif error_type == 'metrix_limit_reached':
             details_payload = metrix_limit_reached(error_log)
+        elif error_type == 'retry_mechanism':
+            details_payload = create_retry_mechanism_payload(error_log)
         else:
             details_payload = create_error_payload(error_log)
         
@@ -66,7 +70,7 @@ async def send_error_to_webhook(bridge_id, org_id, error_log, error_type):
                 await sendResponse(response_format, data=payload)
 
     except Exception as error:
-        print(f"Error in send_error_to_webhook: {error}")
+        logger.error(f'Error in send_error_to_webhook: %s, {str(error)}')
 
 def create_missing_vars(details):
     return {
@@ -84,6 +88,12 @@ def create_error_payload(details):
     return {
         "alert" : "Unexpected Error",
         "error_message" : details['error_message']
+    }
+
+def create_retry_mechanism_payload(details):
+    return {
+        "alert" : "Retry Mechanism Started due to error.",
+        "error_message" : details
     }
 
 def create_response_format(url, headers):

@@ -4,6 +4,7 @@ from sqlalchemy.orm import declarative_base, sessionmaker
 import importlib.util
 import sys
 from config import Config
+from globals import *
 
 Base = declarative_base()
 db = {}
@@ -28,7 +29,7 @@ def init_dbservice():
         Base.metadata.create_all(engine)
         print('Connected to postgres')
     except Exception as error:
-        print('Unable to connect to the database:', error)
+        logger.error(f'Unable to connect to the database: {str(error)}')
 
 init_dbservice()
 

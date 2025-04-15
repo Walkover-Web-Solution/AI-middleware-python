@@ -23,6 +23,8 @@ from src.services.cache_service import find_in_cache, store_in_cache
 from src.db_services.ConfigurationServices import get_bridges_without_tools
 from src.db_services.ConfigurationServices import update_bridge
 from src.configs.model_configuration import model_config_document
+from globals import *
+from src.services.utils.send_error_webhook import send_error_to_webhook
 
 def parse_request_body(request_body):
     body = request_body.get('body', {})
@@ -78,7 +80,8 @@ def parse_request_body(request_body):
         "rag_data": body.get('rag_data'),
         "name" : body.get('name'),
         "org_name" : body.get('org_name'),
-        "variables_state" : body.get('variables_state')
+        "variables_state" : body.get('variables_state'),
+        "built_in_tools" : body.get('built_in_tools') or []
     }
 
 
@@ -92,10 +95,10 @@ def initialize_timer(state: Dict[str, Any]) -> Timer:
     timer_obj.defaultStart(state.get('timer', []))
     return timer_obj
 
-async def load_model_configuration(model, configuration):
-    model_obj = model_config_document.get(model)
+async def load_model_configuration(model, configuration, service):
+    model_obj = model_config_document[service][model]
     if not model_obj:
-        raise ValueError(f"Model {model} not found in ModelsConfig.")
+        raise BadRequestException(f"Model {model} not found in ModelsConfig.")
     
     # model_obj = modelfunc()
     model_config = model_obj['configuration']
@@ -134,7 +137,7 @@ async def manage_threads(parsed_data):
     sub_thread_id = parsed_data['sub_thread_id']
     bridge_id = parsed_data['bridge_id']
     bridge_type = parsed_data['bridgeType']
-    org_id = parsed_data['org_id']
+    org_id = parsed_data['org_id']      
     
     if thread_id:
         thread_id = thread_id.strip()
@@ -147,6 +150,7 @@ async def manage_threads(parsed_data):
         parsed_data['gpt_memory'] = False
         result = {"success": True}
     
+    asyncio.create_task(ConfigurationService.save_sub_thread_id(org_id, thread_id, sub_thread_id))    
     return {
         "thread_id": thread_id,
         "sub_thread_id": sub_thread_id,
@@ -243,7 +247,8 @@ def build_service_params(parsed_data, custom_config, model_output_config, thread
         "rag_data": parsed_data['rag_data'],
         "name" : parsed_data['name'],
         "org_name" : parsed_data['org_name'],
-        "send_error_to_webhook": send_error_to_webhook
+        "send_error_to_webhook": send_error_to_webhook,
+        "built_in_tools" : parsed_data['built_in_tools']
 
     }
 async def total_token_calculation(parsed_data):
@@ -332,4 +337,11 @@ def filter_missing_vars(missing_vars, variables_state):
                     del missing_vars[key]
             
             return missing_vars
-       
+
+def get_service_by_model(model): 
+    return next((s for s in model_config_document if model in model_config_document[s]), None)
+
+def send_error(bridge_id, org_id, error_message, error_type):
+    asyncio.create_task(send_error_to_webhook(
+        bridge_id, org_id, error_message, error_type=error_type
+    ))

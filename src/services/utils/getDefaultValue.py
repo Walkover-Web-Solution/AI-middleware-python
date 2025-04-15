@@ -27,7 +27,7 @@ async def get_default_values_controller(service, model, current_configuration, t
             
             return default_values
 
-        modelObj = model_config_document[model]
+        modelObj = model_config_document[service][model]
 
         if modelObj is None:
             raise HTTPException(status_code=400, detail=f"Invalid model: {model}")
@@ -39,6 +39,9 @@ async def get_default_values_controller(service, model, current_configuration, t
             return get_default_values(modelObj)
         
         elif service == service_name['groq']:
+            return get_default_values(modelObj)
+        
+        elif service == service_name['openai_response']:
             return get_default_values(modelObj)
         
         else:

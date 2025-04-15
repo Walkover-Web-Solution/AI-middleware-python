@@ -9,7 +9,7 @@ from src.services.utils.apiservice import fetch
 from fastapi import Request
 import datetime
 from src.controllers.rag_controller import get_text_from_vectorsQuery
-import traceback
+from globals import *
 
 def clean_json(data):
     """Recursively remove keys with empty string, empty list, or empty dictionary."""
@@ -24,6 +24,8 @@ def validate_tool_call(modelOutputConfig, service, response):
     match service: # TODO: Fix validation process.
         case 'openai' | 'groq':
             return len(response.get('choices', [])[0].get('message', {}).get("tool_calls", [])) > 0
+        case 'openai_response':
+            return response.get('output')[0]['type'] == 'function_call'
         case 'anthropic':
             return response.get('stop_reason') == 'tool_use'
         case _:
@@ -114,6 +116,22 @@ def tool_call_formatter(configuration: dict, service: str, variables: dict, vari
             } for transformed_tool in configuration.get('tools', [])
         ]
         return data_to_send
+    elif service == service_name['openai_response']:
+        data_to_send =  [
+            {
+                'type': 'function',
+                'name': transformed_tool['name'],
+                # "strict": True,
+                'description': transformed_tool['description'],
+                'parameters': {
+                    'type': 'object',
+                    'properties': clean_json(transform_required_params_to_required(transformed_tool.get('properties', {}), variables=variables, variables_path=variables_path, function_name=transformed_tool['name'], parentValue={'required': transformed_tool.get('required', [])})),
+                    'required': transformed_tool.get('required'),
+                    # "additionalProperties": False,
+                }
+            } for transformed_tool in configuration.get('tools', [])
+        ]
+        return data_to_send
     elif service == service_name['anthropic']:
         return  [
             {
@@ -146,7 +164,7 @@ async def send_request(url, data, method, headers):
     try:
         return await fetch(url,method,headers,None, data)
     except Exception as e:
-        print('Unexpected error:',url, e)
+        logger.error(f'Unexpected error:, {url}, {str(e)}')
         return {'error': 'Unexpected error', 'details': str(e)}
     
 async def send_message(cred, data ):
@@ -160,9 +178,9 @@ async def send_message(cred, data ):
         )
         return response
     except httpx.RequestError as error:
-        print('send message error=>', error)
+        logger.error(f'send message error=>, {str(error)}')
     except Exception as e:
-        print('Unexpected error=>', e)
+        logger.error(f'Unexpected send message error=>, {str(e)}')
 
 
 async def sendResponse(response_format, data, success = False, variables={}):
@@ -170,15 +188,12 @@ async def sendResponse(response_format, data, success = False, variables={}):
         'response' if success else 'error': data,
         'success': success
     }
-    try:
-        match response_format['type']:
-            case 'RTLayer' : 
-                return await send_message(cred = response_format['cred'], data=data_to_send)
-            case 'webhook':
-                data_to_send['variables'] = variables
-                return await send_request(**response_format['cred'], method='POST', data=data_to_send)
-    except Exception as e:
-        print("error sending request", e)
+    match response_format['type']:
+        case 'RTLayer' : 
+            return await send_message(cred = response_format['cred'], data=data_to_send)
+        case 'webhook':
+            data_to_send['variables'] = variables
+            return await send_request(**response_format['cred'], method='POST', data=data_to_send)
 
 async def process_data_and_run_tools(codes_mapping, tool_id_and_name_mapping, org_id):
     try:
@@ -276,8 +291,26 @@ def make_code_mapping_by_service(responses, service):
                     "error": error
                 }
                 function_list.append(name)
+        case 'openai_response':
+
+            for tool_call in responses['output']:
+                name = tool_call['name']
+                error = False
+                try:
+                    args = json.loads(tool_call['arguments'])
+                except json.JSONDecodeError:
+                    args = {
+                        "error": tool_call['arguments']
+                    }
+                    error = True
+                codes_mapping[tool_call["id"]] = {
+                    'name': name,
+                    'args': args,
+                    "error": error
+                }
+                function_list.append(name)
         case 'anthropic':
-            for tool_call in responses['content'][1:]:  # Skip the first item
+            for tool_call in [item for item in responses['content'] if item['type'] == 'tool_use']:  # Skip the first item
                 name = tool_call['name']
                 args = tool_call['input']
                 codes_mapping[tool_call["id"]] = {

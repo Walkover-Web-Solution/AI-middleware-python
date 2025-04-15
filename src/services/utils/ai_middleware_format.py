@@ -22,7 +22,8 @@ async def Response_formatter(response = {}, service = None, tools={}, type='chat
                 "finish_reason" : response.get("choices", [{}])[0].get("finish_reason", None),
                 "tools_data": tools_data or {},
                 "images" : images,
-                "annotations" : response.get("choices", [{}])[0].get("message", {}).get("annotations", None)
+                "annotations" : response.get("choices", [{}])[0].get("message", {}).get("annotations", None),
+                "fallback" : response.get('fallback') or False
             },
             "usage" : {
                 "input_tokens" : response.get("usage", {}).get("prompt_tokens", None),
@@ -55,7 +56,8 @@ async def Response_formatter(response = {}, service = None, tools={}, type='chat
                 "model" : response.get("model", None),
                 "role" : response.get("role", None),
                 "finish_reason" : response.get("stop_reason", None),
-                "tools_data": tools_data or {}
+                "tools_data": tools_data or {},
+                "fall_back" : response.get('fallback') or False
             },
             "usage" : {
                 "input_tokens" : response.get("usage", {}).get("input_tokens", None),
@@ -77,7 +79,8 @@ async def Response_formatter(response = {}, service = None, tools={}, type='chat
                 "model" : response.get("model", None),
                 "role" : response.get("choices", [{}])[0].get("message", {}).get("role", None),
                 "finish_reason" : response.get("choices", [{}])[0].get("finish_reason", None),
-                "tools_data": tools_data or {}
+                "tools_data": tools_data or {},
+                "fall_back" : response.get('fallback') or False
             },
             "usage" : {
                 "input_tokens" : response.get("usage", {}).get("prompt_tokens", None),
@@ -85,6 +88,40 @@ async def Response_formatter(response = {}, service = None, tools={}, type='chat
                 "total_tokens" : response.get("usage", {}).get("total_tokens", None)
             }
         }
+    if service == 'openai_response' and (type != 'image' and type != 'embedding'):
+        return {
+            "data": {
+                "id": response.get("id", None),
+                "content": next((item.get("content", [{}])[0].get("text", None) for item in response.get("output", []) if item.get("type") == "message"), None),
+                "model": response.get("model", None),
+                "role": next((item.get("role") for item in response.get("output", []) if item.get("type") == "message"), None),
+                "status": response.get("status", None),
+                "tools_data": tools_data or {},
+                "images": images,
+                "annotations": response.get("output", [{}])[0].get("content", [{}])[0].get("annotations", None)
+            },
+            "usage": {
+                "input_tokens": response.get("usage", {}).get("input_tokens", None),
+                "output_tokens": response.get("usage", {}).get("output_tokens", None),
+                "total_tokens": response.get("usage", {}).get("total_tokens", None),
+                "cached_tokens": response.get("usage", {}).get("input_tokens_details", {}).get('cached_tokens', None)
+            }
+        }
+    elif service == 'openai_response' and type == 'embedding':
+        return {
+            "data": {
+                "embedding": response.get('data')[0].get('embedding')
+            }
+        }
+    
+    elif service == 'openai_response':
+        return {
+            "data": {
+                "revised_prompt": response.get('data')[0].get('revised_prompt'),
+                "image_url": response.get('data')[0].get('url')
+            }
+        }
+    
 
 async def validateResponse(final_response,configration,bridgeId, message_id, org_id):
     content = final_response.get("data",{}).get("content","")

@@ -9,6 +9,7 @@ from config import Config
 from src.services.commonServices.queueService.queueService import queue_obj
 from src.middlewares.ratelimitMiddleware import rate_limit
 from ...middlewares.requestDataValidation import validate_request_data
+from globals import *
 
 
 router = APIRouter()
@@ -33,7 +34,7 @@ async def chat_completion(request: Request, db_config: dict = Depends(add_config
             return {"success": True, "message": "Your response will be sent through configured means."}
         except Exception as e:
             # Log the error and return a meaningful error response
-            print(f"Failed to publish message: {e}")
+            logger.error(f"Failed to publish message: {str(e)}")
             raise HTTPException(status_code=500, detail="Failed to publish message.")
     else:
         # Assuming chat is an async function that could be blocking

@@ -12,14 +12,14 @@ from ..utils.send_error_webhook import send_error_to_webhook
 import json
 from src.handler.executionHandler import handle_exceptions
 from models.mongo_connection import db
-from src.services.utils.common_utils import parse_request_body, initialize_timer, load_model_configuration, handle_pre_tools, handle_fine_tune_model,manage_threads, prepare_prompt, configure_custom_settings, build_service_params, process_background_tasks, build_service_params_for_batch, add_default_template, filter_missing_vars
+from src.services.utils.common_utils import parse_request_body, initialize_timer, load_model_configuration, handle_pre_tools, handle_fine_tune_model,manage_threads, prepare_prompt, configure_custom_settings, build_service_params, process_background_tasks, build_service_params_for_batch, add_default_template, filter_missing_vars, send_error
 from src.services.utils.rich_text_support import process_chatbot_response
 app = FastAPI()
 from src.services.utils.helper import Helper
 configurationModel = db["configurations"]
 import pydash as _
 from src.services.commonServices.testcases import run_testcases as run_bridge_testcases
-
+from globals import *
 
 
 
@@ -39,7 +39,7 @@ async def chat(request_body):
         
         # Step 3: Load Model Configuration
         model_config, custom_config, model_output_config = await load_model_configuration(
-            parsed_data['model'], parsed_data['configuration']
+            parsed_data['model'], parsed_data['configuration'], parsed_data['service'],
         )
         # Step 3: Load Model Configuration
         await handle_fine_tune_model(parsed_data, custom_config)
@@ -58,9 +58,7 @@ async def chat(request_body):
 
         # Handle missing variables
         if missing_vars:
-            await send_error_to_webhook(
-                parsed_data['bridge_id'], parsed_data['org_id'], missing_vars, error_type='Variable'
-            )
+            send_error(parsed_data['bridge_id'], parsed_data['org_id'], missing_vars, error_type='Variable')
         
         # Step 7: Configure Custom Settings
         custom_config = await configure_custom_settings(
@@ -77,12 +75,14 @@ async def chat(request_body):
         if not result["success"]:
             raise ValueError(result)
         
+        if result['modelResponse'].get('firstAttemptError'):
+            send_error(parsed_data['bridge_id'], parsed_data['org_id'], result['modelResponse']['firstAttemptError'], error_type='retry_mechanism')
+        
         if parsed_data['configuration']['type'] == 'chat':
             if parsed_data['is_rich_text'] and parsed_data['bridgeType'] and parsed_data['reasoning_model'] == False:
                 try:
                     await process_chatbot_response(result, params, parsed_data, model_config, model_output_config)
                 except Exception as e:
-                    print(f"error in chatbot : {e}")
                     raise RuntimeError(f"error in chatbot : {e}")
             
         if parsed_data['version'] == 2:
@@ -115,8 +115,9 @@ async def chat(request_body):
             asyncio.create_task(process_background_tasks(parsed_data, result, params, send_error_to_webhook))
         return JSONResponse(status_code=200, content={"success": True, "response": result["modelResponse"]})
     
-    except (Exception, ValueError) as error:
-        traceback.print_exc()
+    except (Exception, ValueError, BadRequestException) as error:
+        if not isinstance(error, BadRequestException):
+            logger.error(f'Error in chat service: %s, {str(error)}, {traceback.format_exc()}')
         if not parsed_data['is_playground']:
             latency = {
                 "over_all_time": timer.stop("Api total time") or "",
@@ -142,7 +143,7 @@ async def chat(request_body):
                     "thread_id": parsed_data['thread_id'],
                     "sub_thread_id": parsed_data['sub_thread_id'],
                     "user": parsed_data['user'],
-                    "message": "",
+                    "message": None,
                     "org_id": parsed_data['org_id'],
                     "bridge_id": parsed_data['bridge_id'],
                     "model": parsed_data['model'] or parsed_data['configuration'].get("model", None),
@@ -159,7 +160,7 @@ async def chat(request_body):
             ]
             # Filter out None values
             await asyncio.gather(*[task for task in tasks if task is not None], return_exceptions=True)
-            print("chat common error=>", error)
+   
         raise ValueError(error)
     
 
@@ -171,7 +172,7 @@ async def embedding(request_body):
         text = body.get('text')
         model = configuration.get('model')
         service = body.get('service')
-        model_config, custom_config, model_output_config = await load_model_configuration(model, configuration)
+        model_config, custom_config, model_output_config = await load_model_configuration(model, configuration, service)
         chatbot = body.get('chatbot')
         if chatbot:
             raise ValueError("Error: Embedding not supported for chatbot")
@@ -214,7 +215,7 @@ async def batch(request_body):
         
         # Step 3: Load Model Configuration
         model_config, custom_config, model_output_config = await load_model_configuration(
-            parsed_data['model'], parsed_data['configuration']
+            parsed_data['model'], parsed_data['configuration'], parsed_data['service'],
         )
 
         # Step 4: Handle Pre-Tools Execution
@@ -247,7 +248,6 @@ async def run_testcases(request_body):
         result = await run_bridge_testcases(parsed_data, org_id, parsed_data['body']['bridge_id'], chat)
         return JSONResponse(content={'success': True, 'response': {'testcases_result': dict(result)}})
     except Exception as error:
-        print('Error in running testcases')
-        traceback.print_exc()
+        logger.error(f'Error in running testcases, {str(error)}, {traceback.format_exc()}')
         return JSONResponse(status_code=400, content={'success': False, 'error': str(error)})
     

@@ -7,6 +7,7 @@ configurationModel = db["configurations"]
 apiCallModel = db['apicalls']
 templateModel = db['templates']
 versionModel = db['configuration_versions']
+from globals import *
 
 # todo :: to make it more better
 async def get_all_api_calls_by_org_id(org_id):
@@ -55,7 +56,7 @@ async def get_all_api_calls_by_org_id(org_id):
             api_calls[index]['fields'] = transformed_data
         return api_calls or []
     except Exception as error:
-        print(error)
+        logger.error(f'Error in getting api calls of a organization: {str(error)}')
         return {
             'success': False,
             'error': "Error in getting api calls of a organization!!"
@@ -67,14 +68,14 @@ async def update_api_call_by_function_id(org_id, function_id, data_to_update):
     try:      
         updated_document = await apiCallModel.find_one_and_update(
             {
-            '_id': ObjectId(function_id),  
-            'org_id': org_id  
+                '_id': ObjectId(function_id),  
+                'org_id': org_id  
             },
             {
-            '$set': data_to_update  
+                '$set': data_to_update  
             },
             return_document=ReturnDocument.AFTER 
-            )
+        )
         
         if updated_document:
             updated_document['_id'] = str(updated_document['_id'])
@@ -90,7 +91,7 @@ async def update_api_call_by_function_id(org_id, function_id, data_to_update):
                 "data": updated_document 
          }
         else:
-                return {
+            return {
                 "success": False,
                 "message": "Data not found or not modified."
             }
@@ -110,7 +111,7 @@ async def get_function_by_id(function_id):
         return {"success": True, "data": db_data}
     
     except Exception as e:
-        print(f"Error retrieving function by id: {e}")
+        logger.error(f"Error retrieving function by id: {e}")
         return {"success": False, "message": f"Error retrieving function: {str(e)}"}
 
 async def delete_function_from_apicalls_db(org_id, function_name):
@@ -132,7 +133,7 @@ async def delete_function_from_apicalls_db(org_id, function_name):
                 if isinstance(bridge_id, str):
                     bridge_id = ObjectId(bridge_id)
                 
-                await configurationModel.update_one(
+                await versionModel.update_one(
                     {'_id': bridge_id},
                     {'$pull': {'function_ids': function_id}}
                 )
@@ -146,10 +147,10 @@ async def delete_function_from_apicalls_db(org_id, function_name):
                     {'$pull': {'function_ids': function_id}}
                 )
         
-        result = await apiCallModel.delete_one({
-            'org_id': org_id,
-            'function_name': function_name
-        })
+        # result = await apiCallModel.delete_one({
+        #     'org_id': org_id,
+        #     'function_name': function_name
+        # })
         
         if result.deleted_count > 0:
             return {

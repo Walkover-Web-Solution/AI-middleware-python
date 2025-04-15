@@ -57,6 +57,7 @@ async def execute_with_retry(
             if second_result['success']:
                 print("Second API call completed successfully.")
                 second_result['response']['firstAttemptError'] = firstAttemptError
+                second_result['response']['fallback'] = True
                 return second_result
             else:
                 print("Second API call failed with error:", second_result['error'])

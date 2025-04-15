@@ -1,6 +1,7 @@
 from models.mongo_connection import db
 configurationModel = db["configurations"]
-from src.services.utils.testcase_utils import add_prompt_and_conversations, make_json_serializable, make_conversations_as_per_service
+from src.services.utils.testcase_utils import add_prompt_and_conversations, make_conversations_as_per_service
+from src.services.cache_service import make_json_serializable
 from src.services.commonServices.openAI.runModel import openai_test_model
 from src.services.commonServices.anthrophic.antrophicModelRun import anthropic_test_model
 from src.services.commonServices.groq.groqModelRun import groq_test_model
@@ -20,7 +21,7 @@ from src.services.utils.nlp import compute_cosine_similarity
 import json
 from src.services.utils.ai_call_util import call_ai_middleware
 from src.services.utils.ai_middleware_format import Response_formatter
-
+from src.configs.constant import bridge_ids
 
 
 async def run_testcase_for_tools(testcase_data, parsed_data, function_names, given_custom_config, model_output_config):
@@ -52,7 +53,7 @@ async def run_testcases(parsed_data, org_id, bridge_id, chat):
     testcases_data = await get_testcases(bridge_id)
     # version_data = (await get_bridges_with_tools_and_apikeys(None, parsed_data['org_id'], version_id))['bridges']
     model_config, custom_config, model_output_config = await load_model_configuration(
-        parsed_data['configuration']['model'], parsed_data['configuration']
+        parsed_data['configuration']['model'], parsed_data['configuration'], parsed_data['service'], 
     )
     custom_config = await configure_custom_settings(
         model_config['configuration'], custom_config, parsed_data['service']
@@ -122,6 +123,6 @@ async def compare_result(expected, actual, matching_type, response_type):
         case 'exact': 
                 return 1 if _.is_equal(expected, actual) else 0
         case 'ai' : 
-            response =  await call_ai_middleware(str(actual), '67ce993c8407023ad4f7b277', variables = ({'expected' : str(expected) }))
-            return json.loads(response)['score']
+            response =  await call_ai_middleware(str(actual), bridge_ids['compare_result'], variables = ({'expected' : str(expected) }))
+            return response['score']
         
