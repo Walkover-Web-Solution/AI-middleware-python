@@ -2,6 +2,7 @@ from models.mongo_connection import db
 from bson import ObjectId
 from ..services.cache_service import find_in_cache, store_in_cache, delete_in_cache
 import json
+from globals import *
 
 configurationModel = db["configurations"]
 apiCallModel = db['apicalls']
@@ -45,7 +46,7 @@ async def get_bridges(bridge_id = None, org_id = None, version_id = None):
             'bridges': bridges,
         }
     except Exception as error:
-        print(error)
+        logger.error(f'Error in get bridges : {str(error)}')
         return {
             'success': False,
             'error': "something went wrong!!"
@@ -61,7 +62,7 @@ async def get_bridges_without_tools(bridge_id = None, org_id = None, version_id 
             'bridges': bridge_data,
         }
     except Exception as error:
-        print(error)
+        logger.error(f'Error in get_bridges_without_tools : {str(error)}')
         return {
             'success': False,
             'error': "something went wrong!!"
@@ -141,7 +142,7 @@ async def get_bridges_with_tools(bridge_id, org_id, version_id=None):
             'bridges': result[0]
         }
     except Exception as error:
-        print(error)
+        logger.error(f'Error in get_bridges_with_tools:, {str(error)}')
         return {
             'success': False,
             'error': "something went wrong!!"
@@ -357,7 +358,7 @@ async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None)
         await store_in_cache(cache_key, response)
         return response
     except Exception as error:
-        print(error)
+        logger.error(f'Error in get_bridges_with_tools_and_apikeys: {str(error)}')
         return {
             'success': False,
             'error': "something went wrong!!"
@@ -389,7 +390,7 @@ async def update_api_call(id, update_fields):
         }
 
     except Exception as error:
-        print(error)
+        logger.error(f'Error in update_api_call: {str(error)}')
         return {
             'success': False,
             'error': 'Something went wrong!'
@@ -450,7 +451,7 @@ async def get_template_by_id(template_id):
         template_content = await templateModel.find_one({'_id' : ObjectId(template_id)})
         return template_content
     except Exception as error : 
-        print(f"template id error : {error}")
+        logger.error(f"Error in get_template_by_id: {str(error)}")
         return None
     
 async def create_bridge(data):
@@ -461,7 +462,7 @@ async def create_bridge(data):
             'bridge': {**data, '_id': result.inserted_id}
         }
     except Exception as error:
-        print("error:", error)
+        logger.error(f"Error in create_bridge: {str(error)}")
         return {
             'success': False,
             'error': error
@@ -530,7 +531,7 @@ async def get_bridge_by_slugname(org_id, slug_name):
             'bridges': bridge
         }
     except Exception as error:
-        print("error:", error)
+        logger.error(f'Error in get_bridge_by_slugname: {str(error)}')
         return {
             'success': False,
             'error': "something went wrong!!"
@@ -540,30 +541,26 @@ async def update_bridge(bridge_id = None, update_fields = None, version_id = Non
     model = version_model if version_id else configurationModel
     id_to_use = ObjectId(version_id) if version_id else ObjectId(bridge_id)
     cache_key = f"{version_id if version_id else bridge_id}"
-    try:
-        updated_bridge = await model.find_one_and_update(
-            {'_id': ObjectId(id_to_use)},
-            {'$set': update_fields},
-            return_document=True,
-            upsert=True
-        )
+    
+    updated_bridge = await model.find_one_and_update(
+        {'_id': ObjectId(id_to_use)},
+        {'$set': update_fields},
+        return_document=True,
+        upsert=True
+    )
 
-        if not updated_bridge:
-            raise Exception('No records updated or bridge not found')
+    if not updated_bridge:
+        raise ('No records updated or bridge not found')
 
-        updated_bridge['_id'] = str(updated_bridge['_id'])  # Convert ObjectId to string
-        if 'function_ids' in updated_bridge and updated_bridge['function_ids'] is not None:
-            updated_bridge['function_ids'] = [str(fid) for fid in updated_bridge['function_ids']]  # Convert function_ids to string
+    updated_bridge['_id'] = str(updated_bridge['_id'])  # Convert ObjectId to string
+    if 'function_ids' in updated_bridge and updated_bridge['function_ids'] is not None:
+        updated_bridge['function_ids'] = [str(fid) for fid in updated_bridge['function_ids']]  # Convert function_ids to string
 
-        await delete_in_cache(cache_key)
-        return {
-            'success': True,
-            'result': updated_bridge
-        }
-
-    except Exception as error:
-        print(error)
-        raise  # Re-raise the exception to be handled by the caller
+    await delete_in_cache(cache_key)
+    return {
+        'success': True,
+        'result': updated_bridge
+    }
 
 async def update_tools_calls(bridge_id, org_id, configuration):
     try:
@@ -579,7 +576,7 @@ async def update_tools_calls(bridge_id, org_id, configuration):
             'message': "bridge updated successfully"
         }
     except Exception as error:
-        print(f"error: {error}")
+        logger.error(f"Error in update_tools_calls: {str(error)}")
         return {
             'success': False,
             'error': "something went wrong!!"
@@ -591,7 +588,7 @@ async def get_apikey_creds(id):
             {'apikey' : 1}
         )
     except Exception as error:
-        print(f"error: {error}")
+        logger.error(f"Error in get_apikey_creds: {str(error)}")
         return {
             'success': False,
             'error': "something went wrong!!"
@@ -604,7 +601,7 @@ async def update_apikey_creds(version_id):
             {'$set': {'version_ids': [version_id]}}
         )
     except Exception as error:
-        print(f"error: {error}")
+        logger.error(f"Error in update_apikey_creds: {str(error)}")
         return {
             'success': False,
             'error': "something went wrong!!"
@@ -623,7 +620,7 @@ async def save_sub_thread_id(org_id, thread_id, sub_thread_id):
             'message': f"sub_thread_id saved successfully {result}"
         }
     except Exception as error:
-        print(f"error: {error}")
+        logger.error(f"Error in save_sub_thread_id: {error}")
         return {
             'success': False,
             'error': str(error)

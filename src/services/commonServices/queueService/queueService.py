@@ -161,7 +161,6 @@ class Queue:
                 while True:
                     await asyncio.sleep(1)  # Keeps the consumer running indefinitely, can do something work too if needed
         except Exception as e:
-            # print(f"Error while consuming messages: {e}")
             logger.error(f"Error while consuming messages: {e}")
 
 queue_obj = Queue()

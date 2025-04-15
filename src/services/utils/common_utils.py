@@ -23,6 +23,7 @@ from src.services.cache_service import find_in_cache, store_in_cache
 from src.db_services.ConfigurationServices import get_bridges_without_tools
 from src.db_services.ConfigurationServices import update_bridge
 from src.configs.model_configuration import model_config_document
+from globals import *
 from src.services.utils.send_error_webhook import send_error_to_webhook
 
 def parse_request_body(request_body):
@@ -97,7 +98,7 @@ def initialize_timer(state: Dict[str, Any]) -> Timer:
 async def load_model_configuration(model, configuration, service):
     model_obj = model_config_document[service][model]
     if not model_obj:
-        raise ValueError(f"Model {model} not found in ModelsConfig.")
+        raise BadRequestException(f"Model {model} not found in ModelsConfig.")
     
     # model_obj = modelfunc()
     model_config = model_obj['configuration']

@@ -4,6 +4,7 @@ from src.services.commonServices.createConversations import ConversationService
 import uuid
 from ..utils.ai_call_util import call_ai_middleware
 from src.configs.constant import bridge_ids
+from globals import *
 
 async def chatbot_suggestions(response_format, assistant, parsed_data, params):
     try:
@@ -24,5 +25,5 @@ async def chatbot_suggestions(response_format, assistant, parsed_data, params):
         await sendResponse(response_format, response.get('response'), success=True)
             
     except Exception as err:
-        print("Error calling function=>", err)
+        logger.error(f'Error calling function=>, {str(err)}')
     

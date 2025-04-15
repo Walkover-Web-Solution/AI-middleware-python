@@ -12,6 +12,7 @@ from ..services.utils.time import Timer
 from src.db_services.testcase_services import delete_current_testcase_history
 from src.configs.constant import bridge_ids
 from ..services.utils.ai_call_util import call_ai_middleware
+from globals import *
 
 configurationModel = db["configurations"]
 version_model = db['configuration_versions']
@@ -22,8 +23,7 @@ async def get_version(org_id, version_id):
         bridge = await version_model.find_one({'_id' : ObjectId(version_id), 'org_id' : org_id})
         return bridge
     except Exception as e:
-        print(f"An error occurred: {e}")
-        traceback.print_exc()
+        logger.error(f"An error occurred in get_version: {str(e)}, {traceback.format_exc()}")
         return None
 
 async def create_bridge_version(bridge_data, parent_id=None):
@@ -39,7 +39,7 @@ async def create_bridge_version(bridge_data, parent_id=None):
         await version_model.insert_one(bridge_version_data)
         return str(bridge_version_data['_id'])
     except Exception as e:
-        print("error:", e)
+        logger.error(f"Error in create_bridge_version:, {str(e)}")
         return {
            'success': False,
             'error': str(e)
@@ -78,7 +78,7 @@ async def update_bridges(bridge_id, update_fields):
         }
 
     except Exception as error:
-        print(error)
+        logger.error(f'Error in update_bridges: {str(error)}')
         return {
             'success': False,
             'error': 'Something went wrong!'
@@ -151,7 +151,7 @@ async def get_version_with_tools(bridge_id, org_id):
             'bridges': result[0]
         }
     except Exception as error:
-        print(error)
+        logger.error(f'Error in get_version_with_tools: {str(error)}')
         return {
             'success': False,
             'error': "something went wrong!!"
@@ -207,7 +207,7 @@ async def publish(org_id, version_id):
         }
     
     except Exception as e:
-        print(f"An error occurred: {e}")
+        logger.error(f"Error in publish: {str(e)}")
         traceback.print_exc()
         return {
             "success": False,

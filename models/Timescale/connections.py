@@ -3,7 +3,7 @@ import sqlalchemy.ext.asyncio as sa_async
 from sqlalchemy import text
 from sqlalchemy.ext.declarative import declarative_base
 from config import Config
-import traceback
+from globals import *
 
 # Configuration
 DATABASE_URL = Config.TIMESCALE_SERVICE_URL.replace("postgresql://", "postgresql+asyncpg://")
@@ -21,8 +21,7 @@ async def init_async_dbservice():
             await conn.execute(text("SELECT 1"))
         print('Connected to the Timescale database.')
     except Exception as error:
-        traceback.print_exc()
-        print('Unable to connect to the database:', error)
+        logger.error(f'Unable to connect to the database: {str(error)} {traceback.format_exc()}')
 
 # Example async function to fetch data
 async def fetch_data(query):

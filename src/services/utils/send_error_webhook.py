@@ -1,5 +1,7 @@
 from ...db_services.webhook_alert_Dbservice import get_webhook_data
 from ..commonServices.baseService.baseService import sendResponse
+from globals import *
+
 async def send_error_to_webhook(bridge_id, org_id, error_log, error_type):
     """
     Sends error logs to a webhook if the specified conditions are met.
@@ -17,7 +19,7 @@ async def send_error_to_webhook(bridge_id, org_id, error_log, error_type):
         # Fetch webhook data for the organization
         result = await get_webhook_data(org_id)
         if not result or 'webhook_data' not in result:
-            raise ValueError("Webhook data is missing in the response.")
+            raise BadRequestException("Webhook data is missing in the response.")
 
         webhook_data = result['webhook_data']
 
@@ -68,7 +70,7 @@ async def send_error_to_webhook(bridge_id, org_id, error_log, error_type):
                 await sendResponse(response_format, data=payload)
 
     except Exception as error:
-        print(f"Error in send_error_to_webhook: {error}")
+        logger.error(f'Error in send_error_to_webhook: %s, {str(error)}')
 
 def create_missing_vars(details):
     return {

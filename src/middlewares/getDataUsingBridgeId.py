@@ -3,8 +3,8 @@ from fastapi.responses import JSONResponse
 from ..services.utils.getConfiguration import getConfiguration
 from src.configs.models import services
 from src.services.commonServices.common import chat
-import asyncio
-import traceback
+from globals import *
+
 async def add_configuration_data_to_body(request: Request):
 
     try:
@@ -29,8 +29,7 @@ async def add_configuration_data_to_body(request: Request):
     except HTTPException as he:
          raise he
     except Exception as e:
-        print("Error in get_data: ", e)
-        traceback.print_exc()
+        logger.error(f"Error in get_data: {str(e)}, {traceback.format_exc()}")
         raise HTTPException(status_code=400, detail={"success": False, "error": "Error in getting data: "+ str(e)})
     
 

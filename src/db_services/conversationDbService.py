@@ -8,6 +8,7 @@ from datetime import datetime
 from models.postgres.pg_models import Conversation, RawData, system_prompt_versionings, user_bridge_config_history
 from models.Timescale.timescale_models import Metrics_model
 from sqlalchemy.sql import text
+from globals import *
 
 pg = models['pg']
 timescale = models['timescale']
@@ -21,7 +22,7 @@ def createBulk(conversations_data):
         session.commit()
         return [conversation.id for conversation in conversations]
     except Exception as err :
-        print("Error Inserting in conversations: ", err)
+        logger.error(f"Error in creating bulk conversations: {str(err)}")
         session.rollback()
     finally : 
         session.close()
@@ -70,7 +71,7 @@ async def find(org_id, thread_id, sub_thread_id, bridge_id):
         conversations.reverse()
         return [conversation._asdict() for conversation in conversations]
     except Exception as e:
-        print(f"An error occurred: {str(e)}")
+        logger.error(f"Error in finding conversations: {str(e)}")
         return []
     finally:
         session.close()
@@ -92,7 +93,7 @@ async def storeSystemPrompt(prompt, org_id, bridge_id):
             }
     except Exception as error:
         session.rollback()
-        print('Error storing system prompt:', error)
+        logger.error(f"Error in storing system prompt: {str(error)}")
         raise error
     finally:
         session.close()
@@ -152,7 +153,7 @@ async def add_bulk_user_entries(entries):
         session.commit()
     except Exception as e:
         session.rollback()
-        print(f"Error: {e}")
+        logger.error(f"Error in creating bulk user entries: {str(e)}")
     finally:
         session.close()
 

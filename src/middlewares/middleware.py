@@ -4,6 +4,7 @@ import traceback
 from config import Config
 from src.services.utils.apiservice import fetch
 from src.services.utils.time import Timer
+from globals import *
 
 async def make_data_if_proxy_token_given(req):
     headers = {
@@ -53,5 +54,5 @@ async def jwt_middleware(request: Request):
             raise HTTPException(status_code=404, detail="unauthorized user")        
         except Exception as err:
             traceback.print_exc()
-            print(f"middleware error => {err}")
+            logger.error(f"middleware error => {str(err)}")
             raise HTTPException(status_code=401, detail="unauthorized user")

@@ -7,7 +7,7 @@ from ..db_services.ConfigurationServices import get_bridges_with_tools, update_b
 from bson import ObjectId
 from ..configs.models import services
 from src.services.utils.common_utils import get_service_by_model
-import traceback
+from globals import *
 from ..configs.constant import bridge_ids
 from src.services.utils.ai_call_util import call_ai_middleware
 
@@ -125,6 +125,6 @@ async def suggest_model(request, version_id):
         
         return JSONResponse({'success' : True, 'message': 'suggestion fetched successfully', 'data': response })
     except Exception as e: 
-        traceback.print_exc()
+        logger.error(f"Error in suggest_model: {str(e)}, {traceback.format_exc()}")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail= {'model' : None, 'error' : str(e) })
     

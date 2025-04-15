@@ -2,6 +2,7 @@ import datetime
 from models.mongo_connection import db
 from src.services.cache_service import delete_in_cache
 apiCallModel = db['apicalls']
+from globals import *
 
 async def get_api_data(org_id, function_name):
     try:
@@ -9,7 +10,7 @@ async def get_api_data(org_id, function_name):
         api_call_data['__id'] = str(api_call_data.get('_id')) if api_call_data.get('_id') else None
         return api_call_data  if api_call_data.get('_id') else None
     except Exception as error:
-        print(f"error: {error}")
+        logger.error(f"Error in get_api_data: {str(error)}")
         return ""
 
 
@@ -64,7 +65,7 @@ async def save_api(desc, org_id, api_data=None, required_params=None, function_n
                 },
             }
     except Exception as error:
-        print(f"error: {error}")
+        logger.error(f"error: {str(error)}")
         return {
             "success": False,
             "error": str(error)
@@ -115,7 +116,7 @@ async def delete_api(function_name, org_id, status = 0):
                 data['updated_at'] = data['updated_at'].strftime('%Y-%m-%d %H:%M:%S')  
         return data
     except Exception as error:
-        print(f"Delete API error=> {error}")
+        logger.error(f"Delete API error=> {str(error)}")
         return {"success": False, "error": str(error)}
     
 

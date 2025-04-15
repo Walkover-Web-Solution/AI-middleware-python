@@ -15,6 +15,7 @@ from src.db_services.bridge_version_services import create_bridge_version
 from src.services.utils.apicallUtills import delete_all_version_and_bridge_ids_from_cache
 from src.db_services.conversationDbService import get_timescale_data
 from src.configs.model_configuration import model_config_document
+from globals import *
 from src.configs.constant import bridge_ids
 from src.services.utils.ai_call_util import call_ai_middleware
 
@@ -153,7 +154,7 @@ async def duplicate_create_bridges(bridges):
     except HTTPException as e:
         raise e
     except Exception as error:
-        print(f"common error=> {error}")
+        logger.error(f"common error=> {str(error)}, {traceback.format_exc()}")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="An unexpected error occurred while creating the bridge. Please try again later.")
 
 async def get_bridge(request, bridge_id: str):
@@ -487,7 +488,7 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
     except ValidationError as e:
         raise HTTPException(status_code=400, detail=f"Validation error: {e.json()}")
     except Exception as e:
-        print(f"Unexpected error occurred: {e}")
+        logger.error(f"Unexpected error occurred: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
     
 async def get_all_in_built_tools_controller():
