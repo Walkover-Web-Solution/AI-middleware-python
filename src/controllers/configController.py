@@ -337,6 +337,7 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
         bridge_status = body.get('bridge_status')
         doc_ids = body.get('doc_ids')
         user_id = request.state.profile['user']['id']
+        user_name = request.state.user_name
         version_description = body.get('version_description')
         tool_call_count = body.get('tool_call_count')
         update_fields = {}
@@ -448,7 +449,8 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
                             'org_id': org_id,
                             'bridge_id': parent_id or '',
                             'type': configuration,
-                            'version_id' : version_id
+                            'version_id' : version_id,
+                            'user_name' : user_name
                         }
                     )
             else:
@@ -458,7 +460,8 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
                         'org_id': org_id,
                         'bridge_id':  parent_id or '',
                         'type': key,
-                        'version_id' : version_id
+                        'version_id' : version_id,
+                        'user_name' : user_name,
                     }
                 )
         if version_id is not None and version_description is None:
