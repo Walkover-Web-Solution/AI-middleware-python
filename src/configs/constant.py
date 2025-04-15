@@ -8,7 +8,7 @@ service_name = {
 
 bridge_ids = {
     'gpt_memory': '6752d9fc232e8659b2b65f0d',
-    'suggest_model': '6752d9fc232e8659b2b65f0d',
+    'suggest_model': '67a75ab42d85a6d4f16a4c7e',
     'make_question': '6752d9fc232e8659b2b65f0d',
     'optimze_prompt' : '67384c4b44c79501aa8e62d9',
     'create_bridge_using_ai': '67e4e7934e58b9c3b991a29c',
@@ -20,7 +20,6 @@ bridge_ids = {
     'generate_summary' : '67e4e7934e58b9c3b991a29c',
     'function_agrs_using_ai' : '67c81a424f3136bfb0e81906',
     'compare_result' : '67ce993c8407023ad4f7b277'
-
-
 }
+
 __all__ = ['service_name', 'bridge_ids']
