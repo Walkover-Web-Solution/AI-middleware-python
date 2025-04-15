@@ -225,6 +225,9 @@ async def get_all_service_models_controller(service):
                     "chatgpt-4o-latest": restructure_configuration(model_config_document[service]['chatgpt-4o-latest']),
                     "gpt-4o-search-preview": restructure_configuration(model_config_document[service]['gpt-4o-search-preview']),
                     "gpt-4o-mini-search-preview": restructure_configuration(model_config_document[service]['gpt-4o-mini-search-preview']),
+                    "gpt-4.1": restructure_configuration(model_config_document[service]['gpt-4.1']),
+                    "gpt-4.1-mini": restructure_configuration(model_config_document[service]['gpt-4.1-mini']),
+                    "gpt-4.1-nano": restructure_configuration(model_config_document[service]['gpt-4.1-nano']),
                 },
                 "fine-tune" : {
                     "gpt-4-0613": restructure_configuration(model_config_document[service]['gpt-4-0613']),
@@ -255,7 +258,10 @@ async def get_all_service_models_controller(service):
                     "gpt-4": restructure_configuration(model_config_document[service]['gpt-4']),
                     "gpt-4-turbo": restructure_configuration(model_config_document[service]['gpt-4-turbo']),
                     "gpt-4o": restructure_configuration(model_config_document[service]['gpt-4o']),
-                    "chatgpt-4o-latest": restructure_configuration(model_config_document[service]['chatgpt-4o-latest'])
+                    "chatgpt-4o-latest": restructure_configuration(model_config_document[service]['chatgpt-4o-latest']),
+                    "gpt-4.1": restructure_configuration(model_config_document[service]['gpt-4.1']),
+                    "gpt-4.1-mini": restructure_configuration(model_config_document[service]['gpt-4.1-mini']),
+                    "gpt-4.1-nano": restructure_configuration(model_config_document[service]['gpt-4.1-nano']),
                 },
                 "reasoning" : {
                     "o1-preview" : restructure_configuration(model_config_document[service]['o1-preview']),
