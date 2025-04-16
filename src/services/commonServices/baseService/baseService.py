@@ -261,7 +261,10 @@ class BaseService:
             elif 'tool_choice' in configuration:
                 del new_config['tool_choice']  
             if 'tools' in new_config and len(new_config['tools']) == 0:
-                del new_config['tools'] 
+                del new_config['tools']
+            if service == service_name['openai_response'] and 'text' in new_config:
+                data = new_config['text']
+                new_config['text'] = { "format": data }
             return new_config
         except Exception as e:
             logger.error(f"An error occurred: {str(e)}")

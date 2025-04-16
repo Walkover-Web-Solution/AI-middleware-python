@@ -33,7 +33,7 @@ ServiceKeys = {
             "additional_stop_sequences": "stopSequences",
             "best_response_count": "best_of",
             "response_suffix": "suffix",
-            "response_type": "response_format", 
+            "response_type": "text", 
             "max_tokens" : "max_output_tokens"
         },
 
