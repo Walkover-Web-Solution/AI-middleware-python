@@ -16,7 +16,7 @@ async def send_data_middleware(request: Request, botId: str):
         body = await request.json()
         org_id = request.state.profile['org']['id']
         slugName = body.get("slugName")
-        threadId = body.get("threadId")
+        threadId = str(body.get("threadId")) if body.get("threadId") is not None else None
         profile = request.state.profile
         message = body.get("message")
         userId = profile['user']['id']
