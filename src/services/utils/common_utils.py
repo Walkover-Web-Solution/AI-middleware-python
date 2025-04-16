@@ -25,7 +25,7 @@ from src.db_services.ConfigurationServices import update_bridge
 from src.configs.model_configuration import model_config_document
 from globals import *
 from src.services.utils.send_error_webhook import send_error_to_webhook
-
+from src.services.commonServices.bridge_avg_response_time import get_bridge_avg_response_time
 def parse_request_body(request_body):
     body = request_body.get('body', {})
     state = request_body.get('state', {})
@@ -271,6 +271,7 @@ async def process_background_tasks(parsed_data, result, params, send_error_to_we
             metrics_service.create([parsed_data['usage']], result["historyParams"], parsed_data['version_id'], send_error_to_webhook),
             validateResponse(final_response=result['modelResponse'], configration=parsed_data['configuration'], bridgeId=parsed_data['bridge_id'], message_id=parsed_data['message_id'], org_id=parsed_data['org_id']),
             total_token_calculation(parsed_data),
+            get_bridge_avg_response_time(parsed_data['org_id'], parsed_data['bridge_id'])
         ]
     if parsed_data['bridgeType']:
         tasks.append(chatbot_suggestions(parsed_data['response_format'], result["modelResponse"], parsed_data, params))

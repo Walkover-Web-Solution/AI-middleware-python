@@ -9,6 +9,7 @@ from models.postgres.pg_models import Conversation, RawData, system_prompt_versi
 from models.Timescale.timescale_models import Metrics_model
 from sqlalchemy.sql import text
 from globals import *
+from datetime import timedelta
 
 pg = models['pg']
 timescale = models['timescale']
@@ -73,6 +74,46 @@ async def find(org_id, thread_id, sub_thread_id, bridge_id):
     except Exception as e:
         logger.error(f"Error in finding conversations: {str(e)}")
         return []
+    finally:
+        session.close()
+async def calculate_average_response_time(org_id, bridge_id):
+    try:
+        session = pg['session']()
+        # Get current date and yesterday's date
+        today = datetime.now().date()
+        yesterday = today - timedelta(days=1)
+        yesterday_start = datetime.combine(yesterday, datetime.min.time())
+        yesterday_end = datetime.combine(yesterday, datetime.max.time())
+        
+        query = (
+            session.query(
+                func.avg(
+                    func.cast(
+                        # Use the proper JSONB extraction for PostgreSQL
+                        func.jsonb_extract_path_text(RawData.latency, 'over_all_time'),
+                        sa.Float
+                    )
+                ).label('avg_response_time')
+            )
+            .select_from(Conversation)
+            .join(RawData, Conversation.id == RawData.chat_id)
+            .filter(
+                and_(
+                    Conversation.org_id == org_id,
+                    Conversation.bridge_id == bridge_id,
+                    Conversation.message_by == 'user',
+                    or_(RawData.error == '', RawData.error.is_(None)),
+                    RawData.created_at >= yesterday_start,
+                    RawData.created_at <= yesterday_end
+                )
+            )
+            .scalar()
+        )
+        
+        return query or 0 
+    except Exception as e:
+        logger.error(f"Error in calculating average response time: {str(e)}")
+        return 0
     finally:
         session.close()
 
