@@ -18,6 +18,7 @@ from src.configs.model_configuration import model_config_document
 from globals import *
 from src.configs.constant import bridge_ids
 from src.services.utils.ai_call_util import call_ai_middleware
+from src.services.cache_service import find_in_cache
 
 async def create_bridges_controller(request):
     try:
@@ -189,6 +190,11 @@ async def get_all_bridges(request):
         history_page_chatbot_token = Helper.generate_token({ "org_id": "11202", "chatbot_id": "67286d4083e482fd5b466b69", "user_id": org_id },Config.CHATBOT_ACCESS_KEY )
         metrics_data = await get_timescale_data(org_id)
         bridges = Helper.sort_bridges(bridges, metrics_data)
+        avg_response_time = {}
+        for bridge in bridges:
+            bridge_id = bridge.get('_id')
+            avg_response_time_data = await find_in_cache(f"AVG_{org_id}_{bridge_id}")
+            avg_response_time[bridge_id] = round(float(avg_response_time_data), 2) if avg_response_time_data else 0
         return JSONResponse(status_code=200, content={
                 "success": True,
                 "message": "Get all bridges successfully",
@@ -197,7 +203,8 @@ async def get_all_bridges(request):
                 "alerting_embed_token": alerting_embed_token,
                 "trigger_embed_token": trigger_embed_token,
                 "history_page_chatbot_token" : history_page_chatbot_token,
-                "org_id": org_id
+                "org_id": org_id,
+                "avg_response_time": avg_response_time
             })
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
