@@ -6,7 +6,7 @@ from src.configs.modelConfiguration import ModelsConfig
 from src.services.commonServices.baseService.utils import axios_work
 from src.services.utils.apiservice import fetch
 from src.configs.serviceKeys import model_config_change
-from ...controllers.conversationController import getThread
+from ...controllers.conversationController import getThread, save_sub_thread_id_and_name
 from src.services.utils.token_calculation import TokenCalculator
 import src.db_services.ConfigurationServices as ConfigurationService
 from .helper import Helper
@@ -20,8 +20,7 @@ from ..utils.gpt_memory import handle_gpt_memory
 from datetime import datetime, timedelta, timezone
 from src.services.commonServices.suggestion import chatbot_suggestions
 from src.services.cache_service import find_in_cache, store_in_cache
-from src.db_services.ConfigurationServices import get_bridges_without_tools
-from src.db_services.ConfigurationServices import update_bridge
+from src.db_services.ConfigurationServices import get_bridges_without_tools, update_bridge
 from src.configs.model_configuration import model_config_document
 from globals import *
 from src.services.utils.send_error_webhook import send_error_to_webhook
@@ -81,7 +80,8 @@ def parse_request_body(request_body):
         "name" : body.get('name'),
         "org_name" : body.get('org_name'),
         "variables_state" : body.get('variables_state'),
-        "built_in_tools" : body.get('built_in_tools') or []
+        "built_in_tools" : body.get('built_in_tools') or [],
+        "thread_flag" : body.get('thread_flag') or True
     }
 
 
@@ -137,7 +137,10 @@ async def manage_threads(parsed_data):
     sub_thread_id = parsed_data['sub_thread_id']
     bridge_id = parsed_data['bridge_id']
     bridge_type = parsed_data['bridgeType']
-    org_id = parsed_data['org_id']      
+    org_id = parsed_data['org_id']    
+    thread_flag = parsed_data['thread_flag']
+    response_format = parsed_data['response_format']
+
     
     if thread_id:
         thread_id = thread_id.strip()
@@ -150,7 +153,7 @@ async def manage_threads(parsed_data):
         parsed_data['gpt_memory'] = False
         result = {"success": True}
     
-    asyncio.create_task(ConfigurationService.save_sub_thread_id(org_id, thread_id, sub_thread_id))    
+    asyncio.create_task(save_sub_thread_id_and_name(thread_id, sub_thread_id, org_id, thread_flag, response_format))    
     return {
         "thread_id": thread_id,
         "sub_thread_id": sub_thread_id,
