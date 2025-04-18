@@ -51,6 +51,52 @@ async def get_bridges(bridge_id = None, org_id = None, version_id = None):
             'success': False,
             'error': "something went wrong!!"
         }
+
+async def get_bridges_with_redis(bridge_id = None, org_id = None, version_id = None):
+    try:
+        cache_key = f"get_{version_id or bridge_id}"
+        cached_data = await find_in_cache(cache_key)
+        if cached_data:
+            cached_result = json.loads(cached_data)
+            return cached_result[0] if cached_result else {}
+        model = version_model if version_id else configurationModel
+        id_to_use = ObjectId(version_id) if version_id else ObjectId(bridge_id)
+        pipeline = [
+            {
+                '$match': {'_id': ObjectId(id_to_use), 'org_id': org_id}
+            },
+            {
+                '$project': {
+                    'configuration.encoded_prompt': 0
+                }
+            },
+            {
+                '$addFields': {
+                    '_id': {'$toString': '$_id'},
+                    'function_ids': {
+                        '$map': {
+                            'input': '$function_ids',
+                            'as': 'fid',
+                            'in': {'$toString': '$$fid'}
+                        }
+                    }
+                }
+            }
+        ]
+        
+        result = await model.aggregate(pipeline).to_list(length=None)
+        bridges = result[0] if result else {}
+        await store_in_cache(cache_key, result)
+        return {
+            'success': True,
+            'bridges': bridges,
+        }
+    except Exception as error:
+        logger.error(f'Error in get bridges : {str(error)}')
+        return {
+            'success': False,
+            'error': "something went wrong!!"
+        }
 # todo
 async def get_bridges_without_tools(bridge_id = None, org_id = None, version_id = None):
     try:
