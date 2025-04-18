@@ -25,6 +25,9 @@ async def get_default_values_controller(service, model, current_configuration, t
                         default_values[key] = 'default'
                 else:
                     if key in config_items:
+                        if key == 'model':
+                            default_values[key] = value.get('default', None)
+                            continue
                         min_value = value.get('min')
                         max_value = value.get('max')
                         if min_value is not None and max_value is not None:
