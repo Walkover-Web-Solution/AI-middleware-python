@@ -225,7 +225,7 @@ async def get_all_service_models_controller(service):
         if service == service_name['openai']:
             return {
                 "chat": {
-                    "gpt-3.5-turbo": restructure_configuration(model_config_document[service]['gpt-3.5-turbo']),
+                    # "gpt-3.5-turbo": restructure_configuration(model_config_document[service]['gpt-3.5-turbo']),
                     "gpt-4": restructure_configuration(model_config_document[service]['gpt-4']),
                     "gpt-4-turbo": restructure_configuration(model_config_document[service]['gpt-4-turbo']),
                     "gpt-4o": restructure_configuration(model_config_document[service]['gpt-4o']),
@@ -262,7 +262,7 @@ async def get_all_service_models_controller(service):
         elif service == service_name['openai_response']:
             return {
                 "chat": {
-                    "gpt-3.5-turbo": restructure_configuration(model_config_document[service]['gpt-3.5-turbo']),
+                    # "gpt-3.5-turbo": restructure_configuration(model_config_document[service]['gpt-3.5-turbo']),
                     "gpt-4": restructure_configuration(model_config_document[service]['gpt-4']),
                     "gpt-4-turbo": restructure_configuration(model_config_document[service]['gpt-4-turbo']),
                     "gpt-4o": restructure_configuration(model_config_document[service]['gpt-4o']),
