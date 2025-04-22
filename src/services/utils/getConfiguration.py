@@ -114,8 +114,7 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
     pre_tools = bridge.get('pre_tools', [])
     gpt_memory_context = bridge.get('gpt_memory_context')
     if len(pre_tools)>0:
-        api_data = await apiCallModel.find_one({"_id": ObjectId( pre_tools[0]), "org_id": org_id})
-
+        api_data = result.get('bridges', {}).get('pre_tools_data', [{}])[0]
         if api_data is None: 
             raise Exception("Didn't find the pre_function")
         name = api_data.get('function_name',api_data.get('endpoint_name',""))

@@ -161,185 +161,215 @@ async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None)
         model = version_model if version_id else configurationModel
         id_to_use = ObjectId(version_id) if version_id else ObjectId(bridge_id)
         pipeline = [
-            # Stage 0: Match the specific bridge or version with the given org_id
-            {
-                '$match': {'_id': ObjectId(id_to_use), "org_id": org_id}
-            },
-            {
-                '$project': {
-                    'configuration.encoded_prompt': 0
+    # Stage 0: Match the specific bridge or version with the given org_id
+    {
+        '$match': {'_id': ObjectId(id_to_use), "org_id": org_id}
+    },
+    {
+        '$project': {
+            'configuration.encoded_prompt': 0
+        }
+    },
+    # Stage 1: Lookup to join with 'apicalls' collection
+    {
+        '$lookup': {
+            'from': 'apicalls',
+            'localField': 'function_ids',
+            'foreignField': '_id',
+            'as': 'apiCalls'
+        }
+    },
+    # Stage 2: Restructure fields for _id, function_ids and apiCalls
+    {
+        '$addFields': {
+            '_id': {'$toString': '$_id'},
+            'function_ids': {
+                '$map': {
+                    'input': '$function_ids',
+                    'as': 'fid',
+                    'in': {'$toString': '$$fid'}
                 }
             },
-            # Stage 1: Lookup to join with 'apicalls' collection
-            {
-                '$lookup': {
-                    'from': 'apicalls',
-                    'localField': 'function_ids', 
-                    'foreignField': '_id',
-                    'as': 'apiCalls'
-                }
-            },
-            # Stage 2: Restructure fields for _id, function_ids and apiCalls
-            {
-                '$addFields': {
-                    '_id': {'$toString': '$_id'},
-                    'function_ids': {
-                        '$map': {
-                            'input': '$function_ids',
-                            'as': 'fid',
-                            'in': {'$toString': '$$fid'}
-                        }
-                    },
-                    'apiCalls': {
-                        '$arrayToObject': {
-                            '$map': {
-                                'input': '$apiCalls',
-                                'as': 'api_call',
-                                'in': {
-                                    'k': {'$toString': '$$api_call._id'},
-                                    'v': {
-                                        '$mergeObjects': [
-                                            '$$api_call',
-                                            {
-                                                '_id': {'$toString': '$$api_call._id'},
-                                                'bridge_ids': {
-                                                    '$map': {
-                                                        'input': '$$api_call.bridge_ids',
-                                                        'as': 'bid',
-                                                        'in': {'$toString': '$$bid'}
-                                                    }
-                                                }
-                                            }
-                                        ]
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            },
-            # Stage 3: Convert 'apikey_object_id' to an array of key-value pairs
-            {
-                '$addFields': {
-                    'apikeys_array': { '$objectToArray': '$apikey_object_id' }
-                }
-            },
-            # Stage 4: Lookup 'apikeycredentials' using the ObjectIds from 'apikeys_array.v'
-            {
-                '$lookup': {
-                    'from': 'apikeycredentials',
-                    'let': { 
-                        'apikey_ids_object': { 
-                            '$map': { 
-                                'input': '$apikeys_array.v', 
-                                'as': 'id', 
-                                'in': {
-                                    '$convert': {
-                                        'input': '$$id',
-                                        'to': 'objectId',
-                                        'onError': None,
-                                        'onNull': None
-                                    }
-                                }
-                            } 
-                        } 
-                    },
-                    'pipeline': [
-                        {
-                            '$match': {
-                                '$expr': { '$in': ['$_id', '$$apikey_ids_object'] }
-                            }
-                        },
-                        {
-                            '$project': { 'service': 1, 'apikey': 1 }
-                        }
-                    ],
-                    'as': 'apikeys_docs'
-                }
-            },
-            # Stage 5: Map each service to its corresponding apikey
-            {
-                '$addFields': {
-                    'apikeys': {
-                        '$arrayToObject': {
-                            '$map': {
-                                'input': '$apikeys_array',
-                                'as': 'item',
-                                'in': [
-                                    '$$item.k',  # Service name as the key
+            'apiCalls': {
+                '$arrayToObject': {
+                    '$map': {
+                        'input': '$apiCalls',
+                        'as': 'api_call',
+                        'in': {
+                            'k': {'$toString': '$$api_call._id'},
+                            'v': {
+                                '$mergeObjects': [
+                                    '$$api_call',
                                     {
-                                        '$arrayElemAt': [
-                                            {
-                                                '$map': {
-                                                    'input': {
-                                                        '$filter': {
-                                                            'input': '$apikeys_docs',
-                                                            'as': 'doc',
-                                                            'cond': { 
-                                                                '$eq': [
-                                                                    '$$doc._id', 
-                                                                    {
-                                                                        '$convert': {
-                                                                            'input': '$$item.v',
-                                                                            'to': 'objectId',
-                                                                            'onError': None,
-                                                                            'onNull': None
-                                                                        }
-                                                                    }
-                                                                ]
-                                                            }
-                                                        }
-                                                    },
-                                                    'as': 'matched_doc',
-                                                    'in': '$$matched_doc.apikey'
-                                                }
-                                            },
-                                            0  # Get the first matched apikey
-                                        ]
+                                        '_id': {'$toString': '$$api_call._id'},
+                                        'bridge_ids': {
+                                            '$map': {
+                                                'input': '$$api_call.bridge_ids',
+                                                'as': 'bid',
+                                                'in': {'$toString': '$$bid'}
+                                            }
+                                        }
                                     }
                                 ]
                             }
                         }
                     }
                 }
+            }
+        }
+    },
+    # Stage 3: Convert 'apikey_object_id' to an array of key-value pairs
+    {
+        '$addFields': {
+            'apikeys_array': { '$objectToArray': '$apikey_object_id' }
+        }
+    },
+    # Stage 4: Lookup 'apikeycredentials' using the ObjectIds from 'apikeys_array.v'
+    {
+        '$lookup': {
+            'from': 'apikeycredentials',
+            'let': { 
+                'apikey_ids_object': { 
+                    '$map': { 
+                        'input': '$apikeys_array.v', 
+                        'as': 'id', 
+                        'in': {
+                            '$convert': {
+                                'input': '$$id',
+                                'to': 'objectId',
+                                'onError': None,
+                                'onNull': None
+                            }
+                        } 
+                    } 
+                } 
             },
-            # Stage 6: Lookup 'rag_parent_datas' using 'doc_ids'
-            {
-                '$lookup': {
-                    'from': 'rag_parent_datas',
-                    'let': { 
-                        'doc_ids': { 
-                            '$map': {
-                                'input': { '$ifNull': ['$doc_ids', []] },
-                                'as': 'doc_id',
-                                'in': { '$toObjectId': '$$doc_id' }
-                            }
-                        }
-                    },
-                    'pipeline': [
-                        {
-                            '$match': {
-                                '$expr': { '$in': ['$_id', '$$doc_ids'] }
-                            }
-                        },
-                        {
-                            '$addFields': {
-                                '_id': { '$toString': '$_id' }
-                            }
-                        }
-                    ],
-                    'as': 'rag_data'
+            'pipeline': [
+                {
+                    '$match': {
+                        '$expr': { '$in': ['$_id', '$$apikey_ids_object'] }
+                    }
+                },
+                {
+                    '$project': { 'service': 1, 'apikey': 1 }
                 }
-            },
-            # Stage 7: (Optional) Remove temporary fields to clean up the output
-            {
-                '$project': {
-                    'apikeys_array': 0,
-                    'apikeys_docs': 0,
-                    # Exclude additional temporary fields as needed
+            ],
+            'as': 'apikeys_docs'
+        }
+    },
+    # Stage 5: Map each service to its corresponding apikey
+    {
+        '$addFields': {
+            'apikeys': {
+                '$arrayToObject': {
+                    '$map': {
+                        'input': '$apikeys_array',
+                        'as': 'item',
+                        'in': [
+                            '$$item.k',  # Service name as the key
+                            {
+                                '$arrayElemAt': [
+                                    {
+                                        '$map': {
+                                            'input': {
+                                                '$filter': {
+                                                    'input': '$apikeys_docs',
+                                                    'as': 'doc',
+                                                    'cond': { 
+                                                        '$eq': [
+                                                            '$$doc._id', 
+                                                            {
+                                                                '$convert': {
+                                                                    'input': '$$item.v',
+                                                                    'to': 'objectId',
+                                                                    'onError': None,
+                                                                    'onNull': None
+                                                                }
+                                                            }
+                                                        ]
+                                                    }
+                                                }
+                                            },
+                                            'as': 'matched_doc',
+                                            'in': '$$matched_doc.apikey'
+                                        }
+                                    },
+                                    0  # Get the first matched apikey
+                                ]
+                            }
+                        ]
+                    }
                 }
             }
-        ]
+        }
+    },
+    # Stage 6: Lookup 'rag_parent_datas' using 'doc_ids'
+    {
+        '$lookup': {
+            'from': 'rag_parent_datas',
+            'let': { 
+                'doc_ids': { 
+                    '$map': {
+                        'input': { '$ifNull': ['$doc_ids', []] },
+                        'as': 'doc_id',
+                        'in': { '$toObjectId': '$$doc_id' }
+                    }
+                }
+            },
+            'pipeline': [
+                {
+                    '$match': {
+                        '$expr': { '$in': ['$_id', '$$doc_ids'] }
+                    }
+                },
+                {
+                    '$addFields': {
+                        '_id': { '$toString': '$_id' }
+                    }
+                }
+            ],
+            'as': 'rag_data'
+        }
+    },
+    # Stage 7: Lookup 'pre_tools' data from 'apicalls' collection using the ObjectIds in 'pre_tools'
+    {
+        '$lookup': {
+            'from': 'apicalls',
+            'let': { 
+                'pre_tools_ids': { 
+                    '$map': {
+                        'input': '$pre_tools',
+                        'as': 'id',
+                        'in': {
+                            '$convert': {
+                                'input': '$$id',
+                                'to': 'objectId',
+                                'onError': None,
+                                'onNull': None
+                            }
+                        }
+                    }
+                }
+            },
+            'pipeline': [
+                {
+                    '$match': {
+                        '$expr': { '$in': ['$_id', '$$pre_tools_ids'] }
+                    }
+                }
+            ],
+            'as': 'pre_tools_data'
+        }
+    },
+    # Stage 8: (Optional) Remove temporary fields to clean up the output
+    {
+        '$project': {
+            'apikeys_array': 0,
+            'apikeys_docs': 0,
+            # Exclude additional temporary fields as needed
+        }
+    }
+]
         
         # Execute the aggregation pipeline
         result = await model.aggregate(pipeline).to_list(length=None)
