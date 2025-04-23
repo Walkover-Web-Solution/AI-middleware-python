@@ -448,7 +448,14 @@ async def update_built_in_tools(version_id, tool, add=1):
 
 async def get_template_by_id(template_id):
     try:
+        cache_key = f"template_{template_id}"
+        template_content = await find_in_cache(cache_key)
+        if template_content:
+            template_content = json.loads(template_content)
+            return template_content
+        
         template_content = await templateModel.find_one({'_id' : ObjectId(template_id)})
+        await store_in_cache(cache_key, template_content)
         return template_content
     except Exception as error : 
         logger.error(f"Error in get_template_by_id: {str(error)}")
