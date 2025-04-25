@@ -81,7 +81,8 @@ def parse_request_body(request_body):
         "name" : body.get('name'),
         "org_name" : body.get('org_name'),
         "variables_state" : body.get('variables_state'),
-        "built_in_tools" : body.get('built_in_tools') or []
+        "built_in_tools" : body.get('built_in_tools') or [],
+        "files" : body.get('files') or []
     }
 
 
@@ -248,7 +249,8 @@ def build_service_params(parsed_data, custom_config, model_output_config, thread
         "name" : parsed_data['name'],
         "org_name" : parsed_data['org_name'],
         "send_error_to_webhook": send_error_to_webhook,
-        "built_in_tools" : parsed_data['built_in_tools']
+        "built_in_tools" : parsed_data['built_in_tools'],
+        "files" : parsed_data['files']
 
     }
 async def total_token_calculation(parsed_data):
