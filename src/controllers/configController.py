@@ -103,7 +103,7 @@ async def create_bridges_using_ai_controller(request):
             return JSONResponse(status_code=200, content={
                 "success": True,
                 "message": "Bridge created successfully",
-                "bridge" : bridge['bridge']
+                "bridge" : bridge
             })
         else:
             return JSONResponse(status_code=400, content={
