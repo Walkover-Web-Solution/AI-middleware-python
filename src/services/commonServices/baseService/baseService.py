@@ -111,7 +111,7 @@ class BaseService:
         modelObj = model_config_document[self.service][self.model]
         modelOutputConfig = modelObj['outputConfig']
         model_response = response.get('modelResponse', {})
-        if configuration.get('tool_choice') is not None and configuration['tool_choice'] not in ['auto', 'none', 'required']:
+        if configuration.get('tool_choice') is not None and configuration['tool_choice'] not in ['auto', 'none']:
             if service == 'openai' or service == 'groq' or service == 'openai_response':
                     configuration['tool_choice'] = 'auto'
             elif service == 'anthropic':
