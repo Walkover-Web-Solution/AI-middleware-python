@@ -92,7 +92,16 @@ async def Response_formatter(response = {}, service = None, tools={}, type='chat
         return {
             "data": {
                 "id": response.get("id", None),
-                "content": next((item.get("content", [{}])[0].get("text", None) for item in response.get("output", []) if item.get("type") == "message"), None),
+                "content": (
+                    response.get("output", [{}])[0].get("content", [{}])[0].get("text", None)
+                    if response.get("output", [{}])[0].get("type") == "function_call"
+                    else next(
+                        (item.get("content", [{}])[0].get("text", None)
+                         for item in response.get("output", [])
+                         if item.get("type") == "message"),
+                        None
+                    )
+                ),
                 "model": response.get("model", None),
                 "role": next((item.get("role") for item in response.get("output", []) if item.get("type") == "message"), None),
                 "status": response.get("status", None),
