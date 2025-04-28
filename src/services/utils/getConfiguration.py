@@ -39,7 +39,7 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
             break
             
     found_choice = None
-    for choice in ['auto', 'none', 'required', 'default']:
+    for choice in ['auto', 'none', 'required', 'default', 'any']:
         if choice in tool_choice_ids:
             found_choice = choice
             break
