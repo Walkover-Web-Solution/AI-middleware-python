@@ -39,10 +39,10 @@ async def chat_completion(request: Request, db_config: dict = Depends(add_config
         type = data_to_send.get("body",{}).get('configuration',{}).get('type')
         if type == 'embedding':
             loop = asyncio.get_event_loop()
-            result = await loop.run_in_executor(executor, lambda: asyncio.run( await embedding(data_to_send)))
+            result = await loop.run_in_executor(executor, lambda: asyncio.run(embedding(data_to_send)))
             return result
         loop = asyncio.get_event_loop()
-        result = await loop.run_in_executor(executor, lambda: asyncio.run( await chat(data_to_send)))
+        result = await loop.run_in_executor(executor, lambda: asyncio.run(chat(data_to_send)))
         return result
 
 
@@ -56,7 +56,7 @@ async def playground_chat_completion(request: Request, db_config: dict = Depends
             result =  await embedding(data_to_send)
             return result
     loop = asyncio.get_event_loop()
-    result = await loop.run_in_executor(executor, lambda: asyncio.run( await chat(data_to_send)))
+    result = await loop.run_in_executor(executor, lambda: asyncio.run(chat(data_to_send)))
     return result
 
 @router.post('/batch/chat/completion', dependencies=[Depends(auth_and_rate_limit)])
