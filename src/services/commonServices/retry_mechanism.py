@@ -2,6 +2,7 @@
 import copy
 import traceback
 from ..utils.ai_middleware_format import send_alert
+import re
 
 async def execute_with_retry(
     configuration,
@@ -82,8 +83,9 @@ async def check_space_issue(response):
     content = response.get("choices", [{}])[0].get("message", {}).get("content", None)
     if content is None:
         return False
-    parsed_data = content.replace(" ", "").replace("\n", "")
-    if(parsed_data == '' and content):
+    cleaned_content = re.sub(r'(\n\s*){2,}', '\n...\n', content)
+    parsed_data = cleaned_content.replace(" ", "").replace("\n", "")
+    if parsed_data == '' and cleaned_content:
         return True
     return False
 
