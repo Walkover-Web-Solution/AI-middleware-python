@@ -23,12 +23,28 @@ from src.services.cache_service import find_in_cache
 async def create_bridges_controller(request):
     try:
         bridges = await request.json()
-        type = bridges.get('type')
+        purpose = bridges.get('purpose')
         org_id = request.state.profile['org']['id']
-        service = bridges.get('service')
-        model = bridges.get('model')
-        name = bridges.get('name')
-        slugName = bridges.get('slugName')
+        prompt = None
+        if purpose is not None:
+            variables = {
+                "purpose": purpose,
+            }
+            user = "Generate Bridge Configuration accroding to the given user purpose."
+            bridge_data =  await call_ai_middleware(user, bridge_id = bridge_ids['create_bridge_using_ai'], variables = variables)
+            model = bridge_data.get('model')
+            service = bridge_data.get('service')
+            name = bridge_data.get('name')
+            prompt = bridge_data.get('system_prompt')
+            slugName = bridge_data.get('name')
+            type = bridge_data.get('type')
+
+        else:
+            service = bridges.get('service')
+            model = bridges.get('model')
+            name = bridges.get('name')
+            type = bridges.get('type')
+            slugName = bridges.get('slugName')
         bridgeType = bridges.get('bridgeType')
         modelObj = model_config_document[service][model]
         configurations = modelObj['configuration']
@@ -62,6 +78,8 @@ async def create_bridges_controller(request):
         "cred": {}
         } 
         model_data["is_rich_text"]= True
+        if prompt is not None:
+            model_data['prompt'] = prompt
         result = await create_bridge({
             "configuration": model_data,
             "name": name,
