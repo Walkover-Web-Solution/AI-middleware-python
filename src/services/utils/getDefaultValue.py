@@ -39,7 +39,10 @@ async def get_default_values_controller(service, model, current_configuration, t
                                 else:
                                     default_values[key] = current_value
                         else:
-                            default_values[key] = current_value
+                            if current_value is None:
+                                default_values[key] = 'default'
+                            else:
+                                default_values[key] = current_value
                     else:
                         default_values[key] = value.get('default', None) if key == 'model' or type == 'embedding' else 'default'
             
