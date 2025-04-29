@@ -311,13 +311,13 @@ async def get_all_service_models_controller(service):
                     "llama-3.1-8b-instant": restructure_configuration(model_config_document[service]['llama-3.1-8b-instant']),
                     "llama3-70b-8192": restructure_configuration(model_config_document[service]['llama3-70b-8192']),
                     "llama3-8b-8192": restructure_configuration(model_config_document[service]['llama3-8b-8192']),
-                    "mixtral-8x7b-32768": restructure_configuration(model_config_document[service]['mixtral-8x7b-32768']),
+                    # "mixtral-8x7b-32768": restructure_configuration(model_config_document[service]['mixtral-8x7b-32768']),
                     "gemma2-9b-it": restructure_configuration(model_config_document[service]['gemma2-9b-it']),
-                    "llama-guard-3-8b": restructure_configuration(model_config_document[service]['llama-guard-3-8b']),
+                    # "llama-guard-3-8b": restructure_configuration(model_config_document[service]['llama-guard-3-8b']),
                     "deepseek-r1-distill-llama-70b": restructure_configuration(model_config_document[service]['deepseek-r1-distill-llama-70b']),
-                    "deepseek-r1-distill-qwen-32b": restructure_configuration(model_config_document[service]['deepseek-r1-distill-qwen-32b']),
-                    "qwen-2.5-32b": restructure_configuration(model_config_document[service]['qwen-2.5-32b']),
-                    "qwen-2.5-coder-32b": restructure_configuration(model_config_document[service]['qwen-2.5-coder-32b']),
+                    # "deepseek-r1-distill-qwen-32b": restructure_configuration(model_config_document[service]['deepseek-r1-distill-qwen-32b']),
+                    # "qwen-2.5-32b": restructure_configuration(model_config_document[service]['qwen-2.5-32b']),
+                    # "qwen-2.5-coder-32b": restructure_configuration(model_config_document[service]['qwen-2.5-coder-32b']),
                     "meta-llama/llama-4-scout-17b-16e-instruct" : restructure_configuration(model_config_document[service]['meta-llama/llama-4-scout-17b-16e-instruct'])
                 }
             }
