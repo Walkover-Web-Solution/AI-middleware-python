@@ -266,7 +266,6 @@ async def total_token_calculation(parsed_data):
     del parsed_data['total_tokens']
 
 async def process_background_tasks(parsed_data, result, params, send_error_to_webhook):
-    await sendResponse(parsed_data['response_format'], result["modelResponse"], success=True, variables=parsed_data.get('variables',{}))
     await metrics_service.create([parsed_data['usage']], result["historyParams"], parsed_data['version_id'], send_error_to_webhook)
     await validateResponse(final_response=result['modelResponse'], configration=parsed_data['configuration'], bridgeId=parsed_data['bridge_id'], message_id=parsed_data['message_id'], org_id=parsed_data['org_id'])
     await total_token_calculation(parsed_data)

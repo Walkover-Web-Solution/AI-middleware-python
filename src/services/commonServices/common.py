@@ -98,6 +98,7 @@ async def chat(request_body):
         }
         
         if not parsed_data['is_playground']:
+            await sendResponse(parsed_data['response_format'], result["modelResponse"], success=True, variables=parsed_data.get('variables',{}))
             parsed_data['usage'].update({
                 **result.get("usage", {}),
                 "service": parsed_data['service'],
