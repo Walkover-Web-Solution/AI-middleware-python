@@ -128,9 +128,7 @@ class Queue:
 
     async def process_messages(self, messages):
         """Implement your batch processing logic here."""
-        loop = asyncio.get_event_loop()
-        await loop.run_in_executor(executor, lambda: asyncio.run(chat(messages)))
-        # return result
+        await chat(messages)
 
     async def consume_messages(self):
         try:
