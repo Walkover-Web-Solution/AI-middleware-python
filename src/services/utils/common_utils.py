@@ -262,17 +262,14 @@ async def total_token_calculation(parsed_data):
     del parsed_data['total_tokens']
 
 async def process_background_tasks(parsed_data, result, params, send_error_to_webhook):
-    tasks = [
-            sendResponse(parsed_data['response_format'], result["modelResponse"], success=True, variables=parsed_data.get('variables',{})),
-            metrics_service.create([parsed_data['usage']], result["historyParams"], parsed_data['version_id'], send_error_to_webhook),
-            validateResponse(final_response=result['modelResponse'], configration=parsed_data['configuration'], bridgeId=parsed_data['bridge_id'], message_id=parsed_data['message_id'], org_id=parsed_data['org_id']),
-            total_token_calculation(parsed_data),
-        ]
+    await metrics_service.create([parsed_data['usage']], result["historyParams"], parsed_data['version_id'], send_error_to_webhook)
+    await validateResponse(final_response=result['modelResponse'], configration=parsed_data['configuration'], bridgeId=parsed_data['bridge_id'], message_id=parsed_data['message_id'], org_id=parsed_data['org_id'])
+    await total_token_calculation(parsed_data)
+
     if parsed_data['bridgeType']:
-        tasks.append(chatbot_suggestions(parsed_data['response_format'], result["modelResponse"], parsed_data, params))
+        await chatbot_suggestions(parsed_data['response_format'], result["modelResponse"], parsed_data, params)
     if parsed_data['gpt_memory'] and parsed_data['configuration']['type'] == 'chat':
-            tasks.append(handle_gpt_memory(parsed_data['id'], parsed_data['user'], result['modelResponse'], parsed_data['memory'], parsed_data['gpt_memory_context']))
-    await asyncio.gather(*tasks, return_exceptions=True)
+        await handle_gpt_memory(parsed_data['id'], parsed_data['user'], result['modelResponse'], parsed_data['memory'], parsed_data['gpt_memory_context'])
 
 def build_service_params_for_batch(parsed_data, custom_config, model_output_config):
     
