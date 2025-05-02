@@ -2,7 +2,6 @@ import json
 import uuid
 from typing import Any, Dict
 from src.services.utils.time import Timer
-from src.configs.modelConfiguration import ModelsConfig
 from src.services.commonServices.baseService.utils import axios_work
 from src.services.utils.apiservice import fetch
 from src.configs.serviceKeys import model_config_change
@@ -13,19 +12,14 @@ from .helper import Helper
 from config import Config
 import pydash as _
 import asyncio
-from ..commonServices.baseService.utils import sendResponse
-from ...db_services import metrics_service as metrics_service
-from ..utils.ai_middleware_format import validateResponse
-from ..utils.gpt_memory import handle_gpt_memory
 from datetime import datetime, timedelta, timezone
-from src.services.commonServices.suggestion import chatbot_suggestions
-from src.services.cache_service import find_in_cache, store_in_cache
-from src.db_services.ConfigurationServices import get_bridges_without_tools
-from src.db_services.ConfigurationServices import update_bridge
+from src.services.cache_service import make_json_serializable
 from src.configs.model_configuration import model_config_document
 from globals import *
 from src.services.utils.send_error_webhook import send_error_to_webhook
-from src.services.commonServices.bridge_avg_response_time import get_bridge_avg_response_time
+from src.services.commonServices.queueService.queueLogService import sub_queue_obj
+from src.services.commonServices.baseService.utils import make_request_data_and_publish_sub_queue
+
 def parse_request_body(request_body):
     body = request_body.get('body', {})
     state = request_body.get('state', {})
@@ -150,7 +144,6 @@ async def manage_threads(parsed_data):
         parsed_data['gpt_memory'] = False
         result = {"success": True}
     
-    asyncio.create_task(ConfigurationService.save_sub_thread_id(org_id, thread_id, sub_thread_id))    
     return {
         "thread_id": thread_id,
         "sub_thread_id": sub_thread_id,
@@ -251,30 +244,12 @@ def build_service_params(parsed_data, custom_config, model_output_config, thread
         "built_in_tools" : parsed_data['built_in_tools']
 
     }
-async def total_token_calculation(parsed_data):
-    total_tokens = parsed_data['tokens'].get('inputTokens', 0) + parsed_data['tokens'].get('outputTokens', 0)
-    parsed_data['total_tokens'] = total_tokens
-    bridge_id = parsed_data['bridge_id']
-    bridge_data = (await get_bridges_without_tools(bridge_id, org_id= None)).get("bridges")
-    if bridge_data and 'total_tokens' in bridge_data:
-        total_tokens = bridge_data['total_tokens'] + total_tokens
-    else:
-        total_tokens = total_tokens
-    
-    # Fix: update_bridge expects update_fields as a dictionary parameter
-    await update_bridge(bridge_id=bridge_id, update_fields={'total_tokens': total_tokens})
-    del parsed_data['total_tokens']
 
-async def process_background_tasks(parsed_data, result, params, send_error_to_webhook):
-    await metrics_service.create([parsed_data['usage']], result["historyParams"], parsed_data['version_id'], send_error_to_webhook)
-    await validateResponse(final_response=result['modelResponse'], configration=parsed_data['configuration'], bridgeId=parsed_data['bridge_id'], message_id=parsed_data['message_id'], org_id=parsed_data['org_id'])
-    await total_token_calculation(parsed_data)
-    await get_bridge_avg_response_time(parsed_data['org_id'], parsed_data['bridge_id'])
+async def process_background_tasks(parsed_data, result, params, thread_info):
+    data = await make_request_data_and_publish_sub_queue(parsed_data, result, params, thread_info)
+    data = make_json_serializable(data)
+    await sub_queue_obj.publish_message(data)
 
-    if parsed_data['bridgeType']:
-        await chatbot_suggestions(parsed_data['response_format'], result["modelResponse"], parsed_data, params)
-    if parsed_data['gpt_memory'] and parsed_data['configuration']['type'] == 'chat':
-        await handle_gpt_memory(parsed_data['id'], parsed_data['user'], result['modelResponse'], parsed_data['memory'], parsed_data['gpt_memory_context'])
 
 def build_service_params_for_batch(parsed_data, custom_config, model_output_config):
     

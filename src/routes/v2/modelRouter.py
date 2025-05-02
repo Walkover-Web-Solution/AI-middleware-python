@@ -43,7 +43,7 @@ async def chat_completion(request: Request, db_config: dict = Depends(add_config
             result = await loop.run_in_executor(executor, lambda: asyncio.run(embedding(data_to_send)))
             return result
         loop = asyncio.get_event_loop()
-        result = await loop.run_in_executor(executor, lambda: asyncio.run(chat(data_to_send)))
+        result = await chat(data_to_send)
         return result
 
 
