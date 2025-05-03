@@ -139,6 +139,7 @@ async def chat(request_body):
             })
             func_tool_call_data = error.args[1] if len(error.args) > 1 else None
             # Combine the tasks into a single asyncio.gather call
+            await sendResponse(parsed_data['response_format'], result.get("modelResponse", str(error)), variables=parsed_data['variables']) if parsed_data['response_format']['type'] != 'default' else None
             tasks = [
                 metrics_service.create([parsed_data['usage']], {
                     "thread_id": parsed_data['thread_id'],
@@ -156,7 +157,6 @@ async def chat(request_body):
                     "AiConfig": class_obj.aiconfig()
                     }, parsed_data['version_id'], send_error_to_webhook),
                 # Only send the second response if the type is not 'default'
-                sendResponse(parsed_data['response_format'], result.get("modelResponse", str(error)), variables=parsed_data['variables']) if parsed_data['response_format']['type'] != 'default' else None,
                 send_alert(data={"org_name" : parsed_data['org_name'], "bridge_name" : parsed_data['name'], "configuration": parsed_data['configuration'], "error": str(error), "message_id": parsed_data['message_id'], "bridge_id": parsed_data['bridge_id'], "message": "Exception for the code", "org_id": parsed_data['org_id']}),
             ]
             # Filter out None values
