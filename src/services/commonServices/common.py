@@ -137,11 +137,7 @@ async def chat(request_body):
                 "expectedCost" : parsed_data['tokens'].get('expectedCost',0),
                 "variables" : parsed_data.get('variables') or {}
             })
-            func_tool_call_data = error.args[1] if len(error.args) > 1 else None
-            # Combine the tasks into a single asyncio.gather call
-            await sendResponse(parsed_data['response_format'], result.get("modelResponse", str(error)), variables=parsed_data['variables']) if parsed_data['response_format']['type'] != 'default' else None
-            tasks = [
-                metrics_service.create([parsed_data['usage']], {
+            parsed_data['historyParams'] = {
                     "thread_id": parsed_data['thread_id'],
                     "sub_thread_id": parsed_data['sub_thread_id'],
                     "user": parsed_data['user'],
@@ -152,16 +148,18 @@ async def chat(request_body):
                     "channel": 'chat',
                     "type": "error",
                     "actor": "user",
-                    'tools_call_data' : func_tool_call_data,
+                    'tools_call_data' : error.args[1] if len(error.args) > 1 else None,
                     "message_id": parsed_data['message_id'],
                     "AiConfig": class_obj.aiconfig()
-                    }, parsed_data['version_id'], send_error_to_webhook),
-                # Only send the second response if the type is not 'default'
+                    }
+            await sendResponse(parsed_data['response_format'], result.get("modelResponse", str(error)), variables=parsed_data['variables']) if parsed_data['response_format']['type'] != 'default' else None
+            # Combine the tasks into a single asyncio.gather call
+            tasks = [
                 send_alert(data={"org_name" : parsed_data['org_name'], "bridge_name" : parsed_data['name'], "configuration": parsed_data['configuration'], "error": str(error), "message_id": parsed_data['message_id'], "bridge_id": parsed_data['bridge_id'], "message": "Exception for the code", "org_id": parsed_data['org_id']}),
+                metrics_service.create([parsed_data['usage']],parsed_data['historyParams'] , parsed_data['version_id']),
             ]
             # Filter out None values
             await asyncio.gather(*[task for task in tasks if task is not None], return_exceptions=True)
-   
         raise ValueError(error)
     
 
