@@ -152,7 +152,7 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
         tool_id_and_name_mapping['get_knowledge_base_data'] = {
                 "type": "RAG"
             }
-    if service == 'anthropic' and configuration.get('response_type').get('json_schema'):
+    if service == 'anthropic' and isinstance(configuration.get('response_type'), dict) and configuration['response_type'].get('json_schema'):
         required = configuration.get('response_type').get('json_schema').get('required') or []
         if configuration['response_type']['json_schema'].get('required') is not None:
             del configuration['response_type']['json_schema']['required']
