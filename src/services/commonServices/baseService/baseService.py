@@ -116,7 +116,7 @@ class BaseService:
                     configuration['tool_choice'] = 'auto'
             elif service == 'anthropic':
                 configuration['tool_choice'] = {'type': 'auto'}
-        if validate_tool_call(modelOutputConfig, service, model_response) and l <= int(self.tool_call_count):
+        if validate_tool_call(service, model_response) and l <= int(self.tool_call_count):
             l += 1
             
             # Continue with the rest of the logic here
