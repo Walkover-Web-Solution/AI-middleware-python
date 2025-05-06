@@ -1,7 +1,7 @@
 from fastapi import HTTPException, status
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
-from src.db_services.ConfigurationServices import create_bridge, get_bridge_by_id, get_all_bridges_in_org, update_bridge, update_bridge_ids_in_api_calls, get_bridges_with_tools, get_apikey_creds, update_apikey_creds
+from src.db_services.ConfigurationServices import create_bridge, get_bridge_by_id, get_all_bridges_in_org, update_bridge, update_bridge_ids_in_api_calls, get_bridges_with_tools, get_apikey_creds, update_apikey_creds, update_built_in_tools
 from src.configs.modelConfiguration import ModelsConfig as model_configuration
 from src.services.utils.helper import Helper
 import json
@@ -14,18 +14,37 @@ from src.services.utils.getDefaultValue import get_default_values_controller
 from src.db_services.bridge_version_services import create_bridge_version
 from src.services.utils.apicallUtills import delete_all_version_and_bridge_ids_from_cache
 from src.db_services.conversationDbService import get_timescale_data
-from src.services.utils.apiservice import fetch
 from src.configs.model_configuration import model_config_document
+from globals import *
+from src.configs.constant import bridge_ids
+from src.services.utils.ai_call_util import call_ai_middleware
+from src.services.cache_service import find_in_cache
 
 async def create_bridges_controller(request):
     try:
         bridges = await request.json()
-        type = bridges.get('type')
+        purpose = bridges.get('purpose')
         org_id = request.state.profile['org']['id']
-        service = bridges.get('service')
-        model = bridges.get('model')
-        name = bridges.get('name')
-        slugName = bridges.get('slugName')
+        prompt = None
+        if purpose is not None:
+            variables = {
+                "purpose": purpose,
+            }
+            user = "Generate Bridge Configuration accroding to the given user purpose."
+            bridge_data =  await call_ai_middleware(user, bridge_id = bridge_ids['create_bridge_using_ai'], variables = variables)
+            model = bridge_data.get('model')
+            service = bridge_data.get('service')
+            name = bridge_data.get('name')
+            prompt = bridge_data.get('system_prompt')
+            slugName = bridge_data.get('name')
+            type = bridge_data.get('type')
+
+        else:
+            service = bridges.get('service')
+            model = bridges.get('model')
+            name = bridges.get('name')
+            type = bridges.get('type')
+            slugName = bridges.get('slugName')
         bridgeType = bridges.get('bridgeType')
         modelObj = model_config_document[service][model]
         configurations = modelObj['configuration']
@@ -59,6 +78,8 @@ async def create_bridges_controller(request):
         "cred": {}
         } 
         model_data["is_rich_text"]= True
+        if prompt is not None:
+            model_data['prompt'] = prompt
         result = await create_bridge({
             "configuration": model_data,
             "name": name,
@@ -90,12 +111,12 @@ async def create_bridges_controller(request):
 async def create_bridges_using_ai_controller(request):
     try:
         body = await request.json()
-        purpose = body.get('purpose');
+        purpose = body.get('purpose')
         bridge_type = body.get('bridgeType')
         result = []
         proxy_auth_token = request.headers.get("proxy_auth_token")
-        result = await fetch("https://flow.sokt.io/func/scri5dR8ePn9", "POST", None, None, {"proxy_auth_token": proxy_auth_token, "purpose": purpose, "bridgeType": bridge_type})        
-        bridge = json.loads(result[0])
+        variables = {"proxy_auth_token": proxy_auth_token, "purpose": purpose, "bridgeType": bridge_type}
+        bridge = await call_ai_middleware(purpose, bridge_id = bridge_ids['create_bridge_using_ai'], variables = variables)
         if bridge:
             return JSONResponse(status_code=200, content={
                 "success": True,
@@ -152,7 +173,7 @@ async def duplicate_create_bridges(bridges):
     except HTTPException as e:
         raise e
     except Exception as error:
-        print(f"common error=> {error}")
+        logger.error(f"common error=> {str(error)}, {traceback.format_exc()}")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="An unexpected error occurred while creating the bridge. Please try again later.")
 
 async def get_bridge(request, bridge_id: str):
@@ -185,8 +206,13 @@ async def get_all_bridges(request):
         alerting_embed_token = Helper.generate_token({ "org_id": Config.ORG_ID, "project_id": Config.ALERTING_PROJECT_ID, "user_id": org_id },Config.Access_key )
         trigger_embed_token = Helper.generate_token({ "org_id": Config.ORG_ID, "project_id": Config.TRIGGER_PROJECT_ID, "user_id": org_id },Config.Access_key )
         history_page_chatbot_token = Helper.generate_token({ "org_id": "11202", "chatbot_id": "67286d4083e482fd5b466b69", "user_id": org_id },Config.CHATBOT_ACCESS_KEY )
-        metrics_data = await get_timescale_data(org_id)
-        bridges = Helper.sort_bridges(bridges, metrics_data)
+        # metrics_data = await get_timescale_data(org_id)
+        # bridges = Helper.sort_bridges(bridges, metrics_data)
+        avg_response_time = {}
+        for bridge in bridges:
+            bridge_id = bridge.get('_id')
+            avg_response_time_data = await find_in_cache(f"AVG_{org_id}_{bridge_id}")
+            avg_response_time[bridge_id] = round(float(avg_response_time_data), 2) if avg_response_time_data else 0
         return JSONResponse(status_code=200, content={
                 "success": True,
                 "message": "Get all bridges successfully",
@@ -195,7 +221,8 @@ async def get_all_bridges(request):
                 "alerting_embed_token": alerting_embed_token,
                 "trigger_embed_token": trigger_embed_token,
                 "history_page_chatbot_token" : history_page_chatbot_token,
-                "org_id": org_id
+                "org_id": org_id,
+                "avg_response_time": avg_response_time
             })
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -206,22 +233,21 @@ async def get_all_service_models_controller(service):
         def restructure_configuration(config):
             model_field = config.get("configuration", {}).get("model", "")
             additional_parameters = config.get("configuration", {})
-            outputConfig = config.get("outputConfig", {})
             
             return {
                 "configuration": {
                     "model": model_field,
-                    "additional_parameters": additional_parameters,
-                    "outputConfig": outputConfig
+                    "additional_parameters": additional_parameters
                 }
             }
         if service == service_name['openai']:
             return {
                 "chat": {
-                    "gpt-3.5-turbo": restructure_configuration(model_config_document[service]['gpt-3.5-turbo']),
+                    # "gpt-3.5-turbo": restructure_configuration(model_config_document[service]['gpt-3.5-turbo']),
                     "gpt-4": restructure_configuration(model_config_document[service]['gpt-4']),
                     "gpt-4-turbo": restructure_configuration(model_config_document[service]['gpt-4-turbo']),
                     "gpt-4o": restructure_configuration(model_config_document[service]['gpt-4o']),
+                    "gpt-4o-mini": restructure_configuration(model_config_document[service]['gpt-4o-mini']),
                     "chatgpt-4o-latest": restructure_configuration(model_config_document[service]['chatgpt-4o-latest']),
                     "gpt-4o-search-preview": restructure_configuration(model_config_document[service]['gpt-4o-search-preview']),
                     "gpt-4o-mini-search-preview": restructure_configuration(model_config_document[service]['gpt-4o-mini-search-preview']),
@@ -237,9 +263,10 @@ async def get_all_service_models_controller(service):
                 },
                 "reasoning" : {
                     "o1-preview" : restructure_configuration(model_config_document[service]['o1-preview']),
-                    "o1-mini" : restructure_configuration(model_config_document[service]['o1-mini']),
+                    # "o1-mini" : restructure_configuration(model_config_document[service]['o1-mini']),
                     "o1" : restructure_configuration(model_config_document[service]['o1']),
                     "o3-mini" : restructure_configuration(model_config_document[service]['o3-mini']),
+                    "o4-mini" : restructure_configuration(model_config_document[service]['o4-mini']),
                 },
                 "image" : {
                     "dall-e-2" : restructure_configuration(model_config_document[service]['dall-e-2']),
@@ -254,10 +281,11 @@ async def get_all_service_models_controller(service):
         elif service == service_name['openai_response']:
             return {
                 "chat": {
-                    "gpt-3.5-turbo": restructure_configuration(model_config_document[service]['gpt-3.5-turbo']),
+                    # "gpt-3.5-turbo": restructure_configuration(model_config_document[service]['gpt-3.5-turbo']),
                     "gpt-4": restructure_configuration(model_config_document[service]['gpt-4']),
                     "gpt-4-turbo": restructure_configuration(model_config_document[service]['gpt-4-turbo']),
                     "gpt-4o": restructure_configuration(model_config_document[service]['gpt-4o']),
+                    "gpt-4o-mini": restructure_configuration(model_config_document[service]['gpt-4o-mini']),
                     "chatgpt-4o-latest": restructure_configuration(model_config_document[service]['chatgpt-4o-latest']),
                     "gpt-4.1": restructure_configuration(model_config_document[service]['gpt-4.1']),
                     "gpt-4.1-mini": restructure_configuration(model_config_document[service]['gpt-4.1-mini']),
@@ -265,9 +293,10 @@ async def get_all_service_models_controller(service):
                 },
                 "reasoning" : {
                     "o1-preview" : restructure_configuration(model_config_document[service]['o1-preview']),
-                    "o1-mini" : restructure_configuration(model_config_document[service]['o1-mini']),
+                    # "o1-mini" : restructure_configuration(model_config_document[service]['o1-mini']),
                     "o1" : restructure_configuration(model_config_document[service]['o1']),
                     "o3-mini" : restructure_configuration(model_config_document[service]['o3-mini']),
+                    "o4-mini" : restructure_configuration(model_config_document[service]['o4-mini']),
                 }
                 # "image" : {
                 #     "dall-e-2" : model_config_document[service]['dall-e-2'],
@@ -300,13 +329,13 @@ async def get_all_service_models_controller(service):
                     "llama-3.1-8b-instant": restructure_configuration(model_config_document[service]['llama-3.1-8b-instant']),
                     "llama3-70b-8192": restructure_configuration(model_config_document[service]['llama3-70b-8192']),
                     "llama3-8b-8192": restructure_configuration(model_config_document[service]['llama3-8b-8192']),
-                    "mixtral-8x7b-32768": restructure_configuration(model_config_document[service]['mixtral-8x7b-32768']),
+                    # "mixtral-8x7b-32768": restructure_configuration(model_config_document[service]['mixtral-8x7b-32768']),
                     "gemma2-9b-it": restructure_configuration(model_config_document[service]['gemma2-9b-it']),
-                    "llama-guard-3-8b": restructure_configuration(model_config_document[service]['llama-guard-3-8b']),
+                    # "llama-guard-3-8b": restructure_configuration(model_config_document[service]['llama-guard-3-8b']),
                     "deepseek-r1-distill-llama-70b": restructure_configuration(model_config_document[service]['deepseek-r1-distill-llama-70b']),
-                    "deepseek-r1-distill-qwen-32b": restructure_configuration(model_config_document[service]['deepseek-r1-distill-qwen-32b']),
-                    "qwen-2.5-32b": restructure_configuration(model_config_document[service]['qwen-2.5-32b']),
-                    "qwen-2.5-coder-32b": restructure_configuration(model_config_document[service]['qwen-2.5-coder-32b']),
+                    # "deepseek-r1-distill-qwen-32b": restructure_configuration(model_config_document[service]['deepseek-r1-distill-qwen-32b']),
+                    # "qwen-2.5-32b": restructure_configuration(model_config_document[service]['qwen-2.5-32b']),
+                    # "qwen-2.5-coder-32b": restructure_configuration(model_config_document[service]['qwen-2.5-coder-32b']),
                     "meta-llama/llama-4-scout-17b-16e-instruct" : restructure_configuration(model_config_document[service]['meta-llama/llama-4-scout-17b-16e-instruct'])
                 }
             }
@@ -318,7 +347,7 @@ async def get_all_service_controller():
     return {
         "success": True,
         "message": "Get all service successfully",
-        "services": ['openai', 'anthropic', 'groq']
+        "services": ['openai', 'anthropic', 'groq', 'openai_response']
     }
 
 async def update_bridge_controller(request, bridge_id=None, version_id=None):
@@ -341,6 +370,7 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
         expected_qna = body.get('expected_qna', None)
         gpt_memory = body.get('gpt_memory')
         gpt_memory_context = body.get('gpt_memory_context')
+        bridge_status = body.get('bridge_status')
         doc_ids = body.get('doc_ids')
         user_id = request.state.profile['user']['id']
         version_description = body.get('version_description')
@@ -355,6 +385,8 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
         function_id = body.get('functionData', {}).get('function_id', None)
         function_operation = body.get('functionData', {}).get('function_operation')
         function_name = body.get('functionData', {}).get('function_name',None)
+        built_in_tools = body.get('built_in_tools_data', {}).get('built_in_tools', None)
+        built_in_tools_operation = body.get('built_in_tools_data', {}).get('built_in_tools_operation', None)
         bridge = await get_bridge_by_id(org_id, bridge_id, version_id)
         parent_id = bridge.get('parent_id')
         if new_configuration and 'type' in new_configuration and new_configuration.get('type') != 'fine-tune':
@@ -367,6 +399,8 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
         if prompt:
             result = await storeSystemPrompt(prompt, org_id, parent_id if parent_id is not None else version_id)
             new_configuration['system_prompt_version_id'] = result.get('id')
+        if bridge_status is not None and bridge_status in [0, 1]:
+            update_fields['bridge_status'] = bridge_status
         if bridge_summary is not None:
             update_fields['bridge_summary'] = bridge_summary
         if expected_qna is not None:
@@ -414,6 +448,12 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
                 if isinstance(value, list):
                     updated_variables_path[key] = {}
             update_fields['variables_path'] = updated_variables_path
+        if built_in_tools is not None:
+            if built_in_tools_operation is None:
+                await update_built_in_tools(version_id, built_in_tools, 0)
+            elif built_in_tools_operation == '1':
+                await update_built_in_tools(version_id, built_in_tools, 1)
+                
         if function_id is not None: 
             Id_to_delete = {
                 "bridge_ids": [],
@@ -477,5 +517,19 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
     except ValidationError as e:
         raise HTTPException(status_code=400, detail=f"Validation error: {e.json()}")
     except Exception as e:
-        print(f"Unexpected error occurred: {e}")
+        logger.error(f"Unexpected error occurred: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+    
+async def get_all_in_built_tools_controller():
+    return {
+        "success": True,
+        "message": "Get all inbuilt tools successfully",
+        "in_built_tools": [
+            {
+                "id": '1',
+                "name": 'Web Search',
+                "description": 'Allow models to search the web for the latest information before generating a response.',
+                "value": 'web_search'
+            }
+        ]
+    }

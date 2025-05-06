@@ -2,7 +2,6 @@ import json
 import uuid
 from typing import Any, Dict
 from src.services.utils.time import Timer
-from src.configs.modelConfiguration import ModelsConfig
 from src.services.commonServices.baseService.utils import axios_work
 from src.services.utils.apiservice import fetch
 from src.configs.serviceKeys import model_config_change
@@ -13,16 +12,13 @@ from .helper import Helper
 from config import Config
 import pydash as _
 import asyncio
-from ..commonServices.baseService.utils import sendResponse
-from ...db_services import metrics_service as metrics_service
-from ..utils.ai_middleware_format import validateResponse
-from ..utils.gpt_memory import handle_gpt_memory
 from datetime import datetime, timedelta, timezone
-from src.services.commonServices.suggestion import chatbot_suggestions
-from src.services.cache_service import find_in_cache, store_in_cache
-from src.db_services.ConfigurationServices import get_bridges_without_tools
-from src.db_services.ConfigurationServices import update_bridge
+from src.services.cache_service import make_json_serializable
 from src.configs.model_configuration import model_config_document
+from globals import *
+from src.services.utils.send_error_webhook import send_error_to_webhook
+from src.services.commonServices.queueService.queueLogService import sub_queue_obj
+from src.services.commonServices.baseService.utils import make_request_data_and_publish_sub_queue
 
 def parse_request_body(request_body):
     body = request_body.get('body', {})
@@ -78,7 +74,8 @@ def parse_request_body(request_body):
         "rag_data": body.get('rag_data'),
         "name" : body.get('name'),
         "org_name" : body.get('org_name'),
-        "variables_state" : body.get('variables_state')
+        "variables_state" : body.get('variables_state'),
+        "built_in_tools" : body.get('built_in_tools') or []
     }
 
 
@@ -95,7 +92,7 @@ def initialize_timer(state: Dict[str, Any]) -> Timer:
 async def load_model_configuration(model, configuration, service):
     model_obj = model_config_document[service][model]
     if not model_obj:
-        raise ValueError(f"Model {model} not found in ModelsConfig.")
+        raise BadRequestException(f"Model {model} not found in ModelsConfig.")
     
     # model_obj = modelfunc()
     model_config = model_obj['configuration']
@@ -147,7 +144,6 @@ async def manage_threads(parsed_data):
         parsed_data['gpt_memory'] = False
         result = {"success": True}
     
-    asyncio.create_task(ConfigurationService.save_sub_thread_id(org_id, thread_id, sub_thread_id))    
     return {
         "thread_id": thread_id,
         "sub_thread_id": sub_thread_id,
@@ -244,35 +240,16 @@ def build_service_params(parsed_data, custom_config, model_output_config, thread
         "rag_data": parsed_data['rag_data'],
         "name" : parsed_data['name'],
         "org_name" : parsed_data['org_name'],
-        "send_error_to_webhook": send_error_to_webhook
+        "send_error_to_webhook": send_error_to_webhook,
+        "built_in_tools" : parsed_data['built_in_tools']
 
     }
-async def total_token_calculation(parsed_data):
-    total_tokens = parsed_data['tokens'].get('inputTokens', 0) + parsed_data['tokens'].get('outputTokens', 0)
-    parsed_data['total_tokens'] = total_tokens
-    bridge_id = parsed_data['bridge_id']
-    bridge_data = (await get_bridges_without_tools(bridge_id, org_id= None)).get("bridges")
-    if bridge_data and 'total_tokens' in bridge_data:
-        total_tokens = bridge_data['total_tokens'] + total_tokens
-    else:
-        total_tokens = total_tokens
-    
-    # Fix: update_bridge expects update_fields as a dictionary parameter
-    await update_bridge(bridge_id=bridge_id, update_fields={'total_tokens': total_tokens})
-    del parsed_data['total_tokens']
 
-async def process_background_tasks(parsed_data, result, params, send_error_to_webhook):
-    tasks = [
-            sendResponse(parsed_data['response_format'], result["modelResponse"], success=True, variables=parsed_data.get('variables',{})),
-            metrics_service.create([parsed_data['usage']], result["historyParams"], parsed_data['version_id'], send_error_to_webhook),
-            validateResponse(final_response=result['modelResponse'], configration=parsed_data['configuration'], bridgeId=parsed_data['bridge_id'], message_id=parsed_data['message_id'], org_id=parsed_data['org_id']),
-            total_token_calculation(parsed_data),
-        ]
-    if parsed_data['bridgeType']:
-        tasks.append(chatbot_suggestions(parsed_data['response_format'], result["modelResponse"], parsed_data, params))
-    if parsed_data['gpt_memory'] and parsed_data['configuration']['type'] == 'chat':
-            tasks.append(handle_gpt_memory(parsed_data['id'], parsed_data['user'], result['modelResponse'], parsed_data['memory'], parsed_data['gpt_memory_context']))
-    await asyncio.gather(*tasks, return_exceptions=True)
+async def process_background_tasks(parsed_data, result, params, thread_info):
+    data = await make_request_data_and_publish_sub_queue(parsed_data, result, params, thread_info)
+    data = make_json_serializable(data)
+    await sub_queue_obj.publish_message(data)
+
 
 def build_service_params_for_batch(parsed_data, custom_config, model_output_config):
     
@@ -336,3 +313,8 @@ def filter_missing_vars(missing_vars, variables_state):
 
 def get_service_by_model(model): 
     return next((s for s in model_config_document if model in model_config_document[s]), None)
+
+def send_error(bridge_id, org_id, error_message, error_type):
+    asyncio.create_task(send_error_to_webhook(
+        bridge_id, org_id, error_message, error_type=error_type
+    ))

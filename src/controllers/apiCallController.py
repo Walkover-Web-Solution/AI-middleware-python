@@ -1,6 +1,7 @@
 from fastapi import HTTPException, status
 from fastapi.responses import JSONResponse
 from src.db_services.apiCallDbService import get_all_api_calls_by_org_id, update_api_call_by_function_id, get_function_by_id, delete_function_from_apicalls_db
+from globals import *
 
 async def get_all_apicalls_controller(request):
     try:
@@ -45,7 +46,7 @@ async def update_apicalls_controller(request, function_id):
         })
     
     except Exception as e:
-        print(f"Error updating function: {e}")
+        logger.error(f"Error updating function: {str(e)}")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 async def delete_function(request):
@@ -58,5 +59,5 @@ async def delete_function(request):
         return await delete_function_from_apicalls_db(org_id, function_name)
     
     except Exception as e:
-        print(f"Error deleting function: {e}")
+        logger.error(f"Error deleting function: {str(e)}")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))

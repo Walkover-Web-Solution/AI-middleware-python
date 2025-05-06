@@ -9,7 +9,8 @@ from src.services.utils.apiservice import fetch
 from fastapi import Request
 import datetime
 from src.controllers.rag_controller import get_text_from_vectorsQuery
-import traceback
+from globals import *
+from src.db_services.ConfigurationServices import get_bridges_without_tools, update_bridge
 
 def clean_json(data):
     """Recursively remove keys with empty string, empty list, or empty dictionary."""
@@ -24,6 +25,8 @@ def validate_tool_call(modelOutputConfig, service, response):
     match service: # TODO: Fix validation process.
         case 'openai' | 'groq':
             return len(response.get('choices', [])[0].get('message', {}).get("tool_calls", [])) > 0
+        case 'openai_response':
+            return response.get('output')[0]['type'] == 'function_call'
         case 'anthropic':
             return response.get('stop_reason') == 'tool_use'
         case _:
@@ -114,6 +117,22 @@ def tool_call_formatter(configuration: dict, service: str, variables: dict, vari
             } for transformed_tool in configuration.get('tools', [])
         ]
         return data_to_send
+    elif service == service_name['openai_response']:
+        data_to_send =  [
+            {
+                'type': 'function',
+                'name': transformed_tool['name'],
+                # "strict": True,
+                'description': transformed_tool['description'],
+                'parameters': {
+                    'type': 'object',
+                    'properties': clean_json(transform_required_params_to_required(transformed_tool.get('properties', {}), variables=variables, variables_path=variables_path, function_name=transformed_tool['name'], parentValue={'required': transformed_tool.get('required', [])})),
+                    'required': transformed_tool.get('required'),
+                    # "additionalProperties": False,
+                }
+            } for transformed_tool in configuration.get('tools', [])
+        ]
+        return data_to_send
     elif service == service_name['anthropic']:
         return  [
             {
@@ -146,7 +165,7 @@ async def send_request(url, data, method, headers):
     try:
         return await fetch(url,method,headers,None, data)
     except Exception as e:
-        print('Unexpected error:',url, e)
+        logger.error(f'Unexpected error:, {url}, {str(e)}')
         return {'error': 'Unexpected error', 'details': str(e)}
     
 async def send_message(cred, data ):
@@ -160,9 +179,9 @@ async def send_message(cred, data ):
         )
         return response
     except httpx.RequestError as error:
-        print('send message error=>', error)
+        logger.error(f'send message error=>, {str(error)}')
     except Exception as e:
-        print('Unexpected error=>', e)
+        logger.error(f'Unexpected send message error=>, {str(e)}')
 
 
 async def sendResponse(response_format, data, success = False, variables={}):
@@ -170,15 +189,12 @@ async def sendResponse(response_format, data, success = False, variables={}):
         'response' if success else 'error': data,
         'success': success
     }
-    try:
-        match response_format['type']:
-            case 'RTLayer' : 
-                return await send_message(cred = response_format['cred'], data=data_to_send)
-            case 'webhook':
-                data_to_send['variables'] = variables
-                return await send_request(**response_format['cred'], method='POST', data=data_to_send)
-    except Exception as e:
-        print("error sending request", e)
+    match response_format['type']:
+        case 'RTLayer' : 
+            return await send_message(cred = response_format['cred'], data=data_to_send)
+        case 'webhook':
+            data_to_send['variables'] = variables
+            return await send_request(**response_format['cred'], method='POST', data=data_to_send)
 
 async def process_data_and_run_tools(codes_mapping, tool_id_and_name_mapping, org_id):
     try:
@@ -276,6 +292,24 @@ def make_code_mapping_by_service(responses, service):
                     "error": error
                 }
                 function_list.append(name)
+        case 'openai_response':
+
+            for tool_call in responses['output']:
+                name = tool_call['name']
+                error = False
+                try:
+                    args = json.loads(tool_call['arguments'])
+                except json.JSONDecodeError:
+                    args = {
+                        "error": tool_call['arguments']
+                    }
+                    error = True
+                codes_mapping[tool_call["id"]] = {
+                    'name': name,
+                    'args': args,
+                    "error": error
+                }
+                function_list.append(name)
         case 'anthropic':
             for tool_call in [item for item in responses['content'] if item['type'] == 'tool_use']:  # Skip the first item
                 name = tool_call['name']
@@ -327,5 +361,69 @@ async def make_request_data(request: Request):
     }
     return result
 
+async def make_request_data_and_publish_sub_queue(parsed_data, result, params, thread_info):
+    data = {
+        "save_sub_thread_id" : {
+            "org_id" : parsed_data['org_id'],
+            "thread_id" : thread_info['thread_id'],
+            "sub_thread_id" : thread_info['sub_thread_id']
+        },
+        "metrics_service": {
+            "dataset": [parsed_data['usage']],
+            "history_params": result["historyParams"],
+            "version_id": parsed_data['version_id']
+        },
+        "validateResponse": {
+            "final_response": result['modelResponse'],
+            "configration": parsed_data['configuration'],
+            "bridgeId": parsed_data['bridge_id'],
+            "message_id": parsed_data['message_id'],
+            "org_id": parsed_data['org_id']
+        },
+        "total_token_calculation": {
+            "tokens": parsed_data['tokens'],
+            "bridge_id": parsed_data['bridge_id']
+        },
+        "get_bridge_avg_response_time": {
+            "org_id": parsed_data['org_id'],
+            "bridge_id": parsed_data['bridge_id']
+        },
+        "chatbot_suggestions" : {
+            "org_id": parsed_data['org_id'],
+            "bridge_id": parsed_data['bridge_id'],
+            "thread_id": parsed_data['thread_id'],
+            "sub_thread_id": parsed_data['sub_thread_id'],
+            "configuration": params['configuration']
+        },
+        "handle_gpt_memory" : {
+            "id" : parsed_data['id'],
+            "user" :  parsed_data['user'],
+            "modelResponse" :  result['modelResponse'],
+            "memory" :  parsed_data['memory'],
+            "gpt_memory_context" :  parsed_data['gpt_memory_context']
+        },
+        "check_handle_gpt_memory" : {
+            "gpt_memory" :  parsed_data['gpt_memory'],
+            "type" :  parsed_data['configuration']['type']
+        },
+        "check_chatbot_suggestions" : {
+            "bridgeType" :  parsed_data['bridgeType'],
+            }
+    }
+
+    return data
+
+
 def makeFunctionName(name):
     return re.sub(r'[^a-zA-Z0-9_-]', '', name)
+
+async def total_token_calculation(tokens, bridge_id):
+    total_tokens = tokens.get('inputTokens', 0) + tokens.get('outputTokens', 0)
+    bridge_data = (await get_bridges_without_tools(bridge_id, org_id=None)).get("bridges")
+    if bridge_data and 'total_tokens' in bridge_data:
+        total_tokens = bridge_data['total_tokens'] + total_tokens
+    else:
+        total_tokens = total_tokens
+    
+    # Fix: update_bridge expects update_fields as a dictionary parameter
+    await update_bridge(bridge_id=bridge_id, update_fields={'total_tokens': total_tokens})

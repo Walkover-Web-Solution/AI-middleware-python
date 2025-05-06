@@ -5,6 +5,7 @@ from ..commonServices.baseService.baseService import sendResponse
 import asyncio
 import json
 from .ai_middleware_format import Response_formatter
+from globals import *
 
 async def repeat_function():
     while True:
@@ -45,7 +46,7 @@ async def check_batch_status():
                     await sendResponse(response_format, data=file_content, success = True)
                 await delete_in_cache_for_batch(f'AIMIDDLEWARE_{batch_id}')
     except Exception as error:
-        print(f"An error occurred while checking the batch status: {error}")
+        logger.error(f"An error occurred while checking the batch status: {str(error)}")
         
     
     
