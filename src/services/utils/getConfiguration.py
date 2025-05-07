@@ -148,6 +148,7 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
         "input_schema": configuration.get('response_type').get('json_schema').get('schema')
       })
         configuration['response_type'] = 'default'
+        configuration['prompt'] += '\n Always return the response in JSON SChema by calling the function JSON_Schema_Response_Format and if no values available then return json with dummy or default vaules'
 
     configuration['prompt'] = Helper.add_doc_description_to_prompt(configuration['prompt'], rag_data)
     variables, org_name = await updateVariablesWithTimeZone(variables,org_id)
