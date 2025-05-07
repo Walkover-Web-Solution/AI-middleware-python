@@ -21,13 +21,17 @@ def clean_json(data):
     else:
         return data
 
-def validate_tool_call(modelOutputConfig, service, response):
+def validate_tool_call(service, response):
     match service: # TODO: Fix validation process.
         case 'openai' | 'groq':
             return len(response.get('choices', [])[0].get('message', {}).get("tool_calls", [])) > 0
         case 'openai_response':
             return response.get('output')[0]['type'] == 'function_call'
         case 'anthropic':
+            for item in response.get('content', []):
+                if item.get('name') == 'JSON_Schema_Response_Format':
+                    response['content'][0]['text'] = json.dumps(item.get('input'))
+                    return False
             return response.get('stop_reason') == 'tool_use'
         case _:
             return False
@@ -134,8 +138,8 @@ def tool_call_formatter(configuration: dict, service: str, variables: dict, vari
         ]
         return data_to_send
     elif service == service_name['anthropic']:
-        return  [
-            {
+        return [
+            transformed_tool if transformed_tool['name'] == 'JSON_Schema_Response_Format' else {
                 'name': transformed_tool['name'],
                 'description': transformed_tool['description'],
                 'input_schema': {
