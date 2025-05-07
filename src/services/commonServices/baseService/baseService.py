@@ -248,14 +248,12 @@ class BaseService:
             if configuration.get('tools', '') :
                 if service == service_name['anthropic']:
                     new_config['tool_choice'] =  configuration.get('tool_choice', {'type': 'auto'})
-                elif service == service_name['openai'] or service_name['groq']:
+                elif service == service_name['openai'] or service == service_name['groq']:
                     if configuration.get('tool_choice'):
                         if configuration['tool_choice'] not in ['auto', 'none', 'required', 'default']:
                             new_config['tool_choice'] = {"type": "function", "function": {"name": configuration['tool_choice']}}
                         else:
                             new_config['tool_choice'] = configuration['tool_choice']
-                elif service == service_name['openai_response']:
-                    new_config['tool_choice'] = {"type" : "function", "name" : configuration['tool_choice']}
                     
                 new_config['tools'] = tool_call_formatter(configuration, service, self.variables, self.variables_path)
             elif 'tool_choice' in configuration:
