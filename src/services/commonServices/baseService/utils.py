@@ -30,7 +30,7 @@ def validate_tool_call(service, response):
         case 'anthropic':
             for item in response.get('content', []):
                 if item.get('name') == 'JSON_Schema_Response_Format':
-                    response['content'][0]['text'] = item.get('input')
+                    response['content'][0]['text'] = json.dumps(item.get('input'))
                     return False
             return response.get('stop_reason') == 'tool_use'
         case _:

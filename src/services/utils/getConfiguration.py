@@ -152,7 +152,7 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
         tool_id_and_name_mapping['get_knowledge_base_data'] = {
                 "type": "RAG"
             }
-    if service == 'anthropic' and configuration.get('response_type').get('json_schema'):
+    if service == 'anthropic' and isinstance(configuration.get('response_type'), dict) and configuration['response_type'].get('json_schema'):
         required = configuration.get('response_type').get('json_schema').get('required') or []
         if configuration['response_type']['json_schema'].get('required') is not None:
             del configuration['response_type']['json_schema']['required']
@@ -162,6 +162,7 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
         "input_schema": configuration.get('response_type').get('json_schema').get('schema')
       })
         configuration['response_type'] = 'default'
+        configuration['prompt'] += '\n Always return the response in JSON SChema by calling the function JSON_Schema_Response_Format and if no values available then return json with dummy or default vaules'
 
     configuration['prompt'] = Helper.add_doc_description_to_prompt(configuration['prompt'], rag_data)
     variables, org_name = await updateVariablesWithTimeZone(variables,org_id)
