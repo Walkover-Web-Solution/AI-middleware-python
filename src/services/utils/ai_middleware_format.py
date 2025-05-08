@@ -103,7 +103,7 @@ async def Response_formatter(response = {}, service = None, tools={}, type='chat
                     )
                 ),
                 "model": response.get("model", None),
-                "role": next((item.get("role") for item in response.get("output", []) if item.get("type") == "message"), None),
+                "role": 'assistant',
                 "status": response.get("status", None),
                 "tools_data": tools_data or {},
                 "images": images,
