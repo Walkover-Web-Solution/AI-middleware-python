@@ -42,14 +42,16 @@ async def chat(request_body, initTime):
         model_config, custom_config, model_output_config = await load_model_configuration(
             parsed_data['model'], parsed_data['configuration'], parsed_data['service'],
         )
-        
-        # Run these operations concurrently and store their results
-        _, _, thread_info = await asyncio.gather(
-            handle_fine_tune_model(parsed_data, custom_config),
-            handle_pre_tools(parsed_data),
-            manage_threads(parsed_data)
-        )
-        
+
+        # Step 3: Load Model Configuration
+        await handle_fine_tune_model(parsed_data, custom_config)
+
+        # Step 4: Handle Pre-Tools Execution
+        await handle_pre_tools(parsed_data)
+
+        # Step 5: Manage Threads
+        thread_info = await manage_threads(parsed_data)
+
 
         # Step 6: Prepare Prompt, Variables and Memory
         memory, missing_vars = await prepare_prompt(parsed_data, thread_info, model_config, custom_config)
