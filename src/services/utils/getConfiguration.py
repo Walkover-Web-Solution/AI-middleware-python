@@ -11,7 +11,7 @@ apiCallModel = db['apicalls']
 # from src.services.commonServices.generateToken import generateToken
 # from src.configs.modelConfiguration import ModelsConfig
 
-async def getConfiguration(configuration, service, bridge_id, apikey, template_id=None, variables = {}, org_id="", variables_path = None, version_id=None, extra_tools=[], built_in_tools = [], initGetConfig):
+async def getConfiguration(configuration, service, bridge_id, apikey, template_id=None, variables = {}, org_id="", variables_path = None, version_id=None, extra_tools=[], built_in_tools = [], initGetConfig={}):
     RTLayer = False
     bridge = None
     initGetConfig['startGetConfig'] = time.time()
