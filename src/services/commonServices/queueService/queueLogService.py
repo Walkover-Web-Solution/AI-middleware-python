@@ -27,7 +27,7 @@ class Queue2:
     def __init__(self):
         if not hasattr(self, 'initialized'):  # Ensure initialization happens only once
             print("Queue2 Service Initialized")
-            self.queue_name = Config.LOG_QUEUE_NAME or "AI-MIDDLEARE-DATA-QUEUE"
+            self.queue_name = Config.LOG_QUEUE_NAME or f"AI-MIDDLEARE-DATA-QUEUE-{Config.ENVIROMENT}"
             self.failed_queue_name = f"{self.queue_name}-Failed"
             # self.failed_exchange_name = f"{self.failed_queue_name}-exchange"
             self.binding_key = None
