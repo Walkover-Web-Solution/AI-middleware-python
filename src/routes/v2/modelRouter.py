@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, Request, HTTPException
 from fastapi.responses import JSONResponse
 import asyncio
+import time
 from src.services.commonServices.common import chat, embedding, batch, run_testcases
 from src.services.commonServices.baseService.utils import make_request_data
 from ...middlewares.middleware import jwt_middleware
@@ -43,10 +44,14 @@ async def chat_completion(request: Request, db_config: dict = Depends(add_config
             loop = asyncio.get_event_loop()
             result = await loop.run_in_executor(executor, lambda: asyncio.run(embedding(data_to_send)))
             return result
+        initTime = {
+            "start":time.time()
+        }
         loop = asyncio.get_event_loop()
-        parsed_data, result, params, thread_info = await loop.run_in_executor(executor, lambda: asyncio.run(chat(data_to_send)))
+        parsed_data, result, params, thread_info = await loop.run_in_executor(executor, lambda: asyncio.run(chat(data_to_send, initTime)))
+        initTime['end'] = time.time()
         await process_background_tasks(parsed_data, result, params, thread_info)
-        return JSONResponse(status_code=200, content={"success": True, "response": result["modelResponse"]})
+        return JSONResponse(status_code=200, content={"success": True, "response": result["modelResponse"], "response_time": {"initTime":initTime,"inoutTime":inoutTime }})
 
 
 @router.post('/playground/chat/completion/{bridge_id}', dependencies=[Depends(auth_and_rate_limit)])
