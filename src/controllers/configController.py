@@ -386,6 +386,7 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
         function_operation = body.get('functionData', {}).get('function_operation')
         function_name = body.get('functionData', {}).get('function_name',None)
         built_in_tools = body.get('built_in_tools_data', {}).get('built_in_tools', None)
+        connected_agents = body.get('connected_agents', None)
         built_in_tools_operation = body.get('built_in_tools_data', {}).get('built_in_tools_operation', None)
         bridge = await get_bridge_by_id(org_id, bridge_id, version_id)
         parent_id = bridge.get('parent_id')
@@ -453,7 +454,9 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
                 await update_built_in_tools(version_id, built_in_tools, 0)
             elif built_in_tools_operation == '1':
                 await update_built_in_tools(version_id, built_in_tools, 1)
-                
+        # if connected_agents is not None:
+        #     if connected_agents.get('status') == 1"
+        #         await 
         if function_id is not None: 
             Id_to_delete = {
                 "bridge_ids": [],
