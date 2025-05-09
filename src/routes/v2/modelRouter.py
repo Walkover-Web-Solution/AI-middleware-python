@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, Request, HTTPException
+from fastapi.responses import JSONResponse
 import asyncio
 from src.services.commonServices.common import chat, embedding, batch, run_testcases
 from src.services.commonServices.baseService.utils import make_request_data
@@ -9,7 +10,7 @@ from config import Config
 from src.services.commonServices.queueService.queueService import queue_obj
 from src.middlewares.ratelimitMiddleware import rate_limit
 from globals import *
-
+from src.services.utils.common_utils import process_background_tasks
 
 router = APIRouter()
 
@@ -43,8 +44,9 @@ async def chat_completion(request: Request, db_config: dict = Depends(add_config
             result = await loop.run_in_executor(executor, lambda: asyncio.run(embedding(data_to_send)))
             return result
         loop = asyncio.get_event_loop()
-        result = await chat(data_to_send)
-        return result
+        parsed_data, result, params, thread_info = await loop.run_in_executor(executor, lambda: asyncio.run(chat(data_to_send)))
+        await process_background_tasks(parsed_data, result, params, thread_info)
+        return JSONResponse(status_code=200, content={"success": True, "response": result["modelResponse"]})
 
 
 @router.post('/playground/chat/completion/{bridge_id}', dependencies=[Depends(auth_and_rate_limit)])
@@ -57,8 +59,9 @@ async def playground_chat_completion(request: Request, db_config: dict = Depends
             result =  await embedding(data_to_send)
             return result
     loop = asyncio.get_event_loop()
-    result = await loop.run_in_executor(executor, lambda: asyncio.run(chat(data_to_send)))
-    return result
+    parsed_data, result, params, thread_info = await loop.run_in_executor(executor, lambda: asyncio.run(chat(data_to_send)))
+    await process_background_tasks(parsed_data, result, params, thread_info)
+    return JSONResponse(status_code=200, content={"success": True, "response": result["modelResponse"]})
 
 @router.post('/batch/chat/completion', dependencies=[Depends(auth_and_rate_limit)])
 async def batch_chat_completion(request: Request, db_config: dict = Depends(add_configuration_data_to_body)):
