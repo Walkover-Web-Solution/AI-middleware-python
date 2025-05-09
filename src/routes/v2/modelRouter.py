@@ -51,7 +51,7 @@ async def chat_completion(request: Request, db_config: dict = Depends(add_config
         parsed_data, result, params, thread_info = await loop.run_in_executor(executor, lambda: asyncio.run(chat(data_to_send, initTime)))
         initTime['end'] = time.time()
         await process_background_tasks(parsed_data, result, params, thread_info)
-        return JSONResponse(status_code=200, content={"success": True, "response": result["modelResponse"], "response_time": {"initTime":initTime,"inoutTime":inoutTime }})
+        return JSONResponse(status_code=200, content={"success": True, "response": result["modelResponse"], "response_time":initTime})
 
 
 @router.post('/playground/chat/completion/{bridge_id}', dependencies=[Depends(auth_and_rate_limit)])
