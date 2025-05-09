@@ -45,6 +45,7 @@ async def chat_completion(request: Request, db_config: dict = Depends(add_config
             result = await loop.run_in_executor(executor, lambda: asyncio.run(embedding(data_to_send)))
             return result
         initTime = {
+            **data_to_send.body.initGetConfig,
             "start":time.time()
         }
         loop = asyncio.get_event_loop()

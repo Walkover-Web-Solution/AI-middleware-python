@@ -4,10 +4,14 @@ from ..services.utils.getConfiguration import getConfiguration
 from src.configs.models import services
 from src.services.commonServices.common import chat
 from globals import *
+import time
 
 async def add_configuration_data_to_body(request: Request):
 
     try:
+        initGetConfig = {
+             "configStart": time.time()
+        }
         body = await request.json()
         chatbotData = getattr(request.state, "chatbot", None)
         if chatbotData:
@@ -16,9 +20,12 @@ async def add_configuration_data_to_body(request: Request):
         if chatbotData:
             del request.state.chatbot
         version_id = body.get('version_id') or request.path_params.get('version_id')
-        db_config = await getConfiguration(body.get('configuration'), body.get('service'), bridge_id, body.get('apikey'), body.get('template_id'), body.get('variables', {}), request.state.profile.get("org",{}).get("id",""), body.get('variables_path'), version_id = version_id, extra_tools = body.get('extra_tools',[]), built_in_tools = body.get('built_in_tools'))
+        initGetConfig['beforeDB'] = time.time()
+        db_config = await getConfiguration(body.get('configuration'), body.get('service'), bridge_id, body.get('apikey'), body.get('template_id'), body.get('variables', {}), request.state.profile.get("org",{}).get("id",""), body.get('variables_path'), version_id = version_id, extra_tools = body.get('extra_tools',[]), built_in_tools = body.get('built_in_tools'), initGetConfig= initGetConfig)
         if not db_config.get("success"):
                 raise HTTPException(status_code=400, detail={"success": False, "error": db_config["error"]}) 
+        initGetConfig['afterDB'] = time.time()
+        db_config['initGetConfig'] = initGetConfig
         body.update(db_config)
         # request.state.body = body
         service = body.get("service")
