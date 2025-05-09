@@ -65,7 +65,7 @@ async def lifespan(app: FastAPI):
         consume_sub_task = asyncio.create_task(consume_sub_messages_in_executor())
     
         
-    asyncio.create_task(init_async_dbservice()) if Config.ENV == 'local' else await init_async_dbservice()
+    asyncio.create_task(init_async_dbservice()) if Config.ENVIROMENT == 'LOCAL' else await init_async_dbservice()
     
     asyncio.create_task(repeat_function())
     yield  # Startup logic is complete
