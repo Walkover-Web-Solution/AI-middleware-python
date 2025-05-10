@@ -14,7 +14,6 @@ apiCallModel = db['apicalls']
 async def getConfiguration(configuration, service, bridge_id, apikey, template_id=None, variables = {}, org_id="", variables_path = None, version_id=None, extra_tools=[], built_in_tools = [], initGetConfig={}):
     RTLayer = False
     bridge = None
-    initGetConfig['startGetConfig'] = time.time()
     initGetConfig["beforeconfigAndTool"] = time.time()
     result = await ConfigurationService.get_bridges_with_tools_and_apikeys(bridge_id = bridge_id, org_id = org_id, version_id=version_id)
     initGetConfig["afterconfigAndTool"] = time.time()
@@ -39,7 +38,6 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
     
     tool_choice_ids = configuration.get('tool_choice', [])
     toolchoice = None
-    initGetConfig["beforetoolcofig"] = time.time()
     for key, api_data in result.get('bridges', {}).get('apiCalls', {}).items():
         if api_data['_id'] in tool_choice_ids:
             toolchoice = makeFunctionName(api_data['endpoint_name'] or api_data['function_name'])
@@ -56,7 +54,6 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
     # make tools data
     tools = []
     tool_id_and_name_mapping = {}
-    initGetConfig["aftertoolconfig"] = time.time()
     for key, api_data in result.get('bridges', {}).get('apiCalls', {}).items():
         # if status is paused then only don't include it in tools
         name_of_function = makeFunctionName(api_data.get('endpoint_name') or  api_data.get("function_name"))
@@ -119,12 +116,9 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
         raise Exception('Could not find api key')
     apikey = apikey if apikey else Helper.decrypt(db_api_key)
     RTLayer = True if configuration and 'RTLayer' in configuration else False 
-    initGetConfig["beforeGetTemplate"] = time.time()
     template_content = await ConfigurationService.get_template_by_id(template_id) if template_id else None
-    initGetConfig["afterGetTemplate"] = time.time()
     pre_tools = bridge.get('pre_tools', [])
     gpt_memory_context = bridge.get('gpt_memory_context')
-    initGetConfig["beforepretooldb"] = time.time()
 
     if len(pre_tools)>0:
         api_data = await apiCallModel.find_one({"_id": ObjectId( pre_tools[0]), "org_id": org_id})
@@ -138,7 +132,6 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
             if param in variables :
                 args[param] = variables[param]
     rag_data = bridge.get('rag_data')
-    initGetConfig["afterpretooldb"] = time.time()
     tone = configuration.get('tone' , {})
     responseStyle = configuration.get('responseStyle' , {})
 
@@ -179,7 +172,6 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
 
     configuration['prompt'] = Helper.add_doc_description_to_prompt(configuration['prompt'], rag_data)
     variables, org_name = await updateVariablesWithTimeZone(variables,org_id)
-    initGetConfig["endGetconfig"] = time.time()
     return {
         'success': True,
         'configuration': configuration,

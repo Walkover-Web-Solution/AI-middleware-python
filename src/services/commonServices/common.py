@@ -42,20 +42,25 @@ async def chat(request_body, initTime):
         model_config, custom_config, model_output_config = await load_model_configuration(
             parsed_data['model'], parsed_data['configuration'], parsed_data['service'],
         )
-
+        initTime['beforefinetune'] = time.time()
         # Step 3: Load Model Configuration
         await handle_fine_tune_model(parsed_data, custom_config)
+        initTime['afterfinetune'] = time.time()
 
+        initTime['beforepretool'] = time.time()
         # Step 4: Handle Pre-Tools Execution
         await handle_pre_tools(parsed_data)
-
+        initTime['afterpretool'] = time.time()
+        
+        initTime['beforemanageThread'] = time.time()
         # Step 5: Manage Threads
         thread_info = await manage_threads(parsed_data)
+        initTime['aftermanageThread'] = time.time()
 
-
+        initTime['beforeprompt'] = time.time()
         # Step 6: Prepare Prompt, Variables and Memory
         memory, missing_vars = await prepare_prompt(parsed_data, thread_info, model_config, custom_config)
-        
+        initTime['afterprompt'] = time.time()
 
         missing_vars = filter_missing_vars(missing_vars, parsed_data['variables_state'])
 
@@ -63,10 +68,13 @@ async def chat(request_body, initTime):
         if missing_vars:
             send_error(parsed_data['bridge_id'], parsed_data['org_id'], missing_vars, error_type='Variable')
         
+        initTime['beforecustomsetting'] = time.time()
         # Step 7: Configure Custom Settings
         custom_config = await configure_custom_settings(
             model_config['configuration'], custom_config, parsed_data['service']
         )
+        initTime['aftercustomsetting'] = time.time()
+
         # Step 8: Execute Service Handler
         params = build_service_params(
             parsed_data, custom_config, model_output_config, thread_info, timer, memory, send_error_to_webhook
