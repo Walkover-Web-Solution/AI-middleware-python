@@ -15,7 +15,7 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
     RTLayer = False
     bridge = None
     initGetConfig["beforeconfigAndTool"] = time.time()
-    result = await ConfigurationService.get_bridges_with_tools_and_apikeys(bridge_id = bridge_id, org_id = org_id, version_id=version_id)
+    result = await ConfigurationService.get_bridges_with_tools_and_apikeys(bridge_id = bridge_id, org_id = org_id, version_id=version_id, initGetConfig=initGetConfig)
     initGetConfig["afterconfigAndTool"] = time.time()
     bridge_id = bridge_id or result.get('bridges', {}).get('parent_id')
     initGetConfig["beforebridgecheck"] = time.time()
