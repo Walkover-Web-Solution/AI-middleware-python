@@ -2,6 +2,7 @@ from models.mongo_connection import db
 from bson import ObjectId
 from ..services.cache_service import find_in_cache, store_in_cache, delete_in_cache
 import json
+import time
 from globals import *
 
 configurationModel = db["configurations"]
@@ -194,7 +195,7 @@ async def get_bridges_with_tools(bridge_id, org_id, version_id=None):
             'error': "something went wrong!!"
         }     
 
-async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None):
+async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None, initGetConfig={}):
     try:
         cache_key = f"{version_id or bridge_id}"
         
@@ -202,6 +203,7 @@ async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None)
         cached_data = await find_in_cache(cache_key)
         if cached_data:
             # Deserialize the cached JSON data
+            initGetConfig['incache'] = time.time()
             cached_result = json.loads(cached_data)
             return cached_result  # Return the cached response directly
         model = version_model if version_id else configurationModel
