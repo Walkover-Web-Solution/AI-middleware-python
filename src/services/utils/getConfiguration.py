@@ -6,16 +6,21 @@ from src.services.utils.common_utils import updateVariablesWithTimeZone
 from src.services.commonServices.baseService.utils import makeFunctionName
 from src.services.utils.service_config_utils import tool_choice_function_name_formatter
 import time
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
+from config import Config
 apiCallModel = db['apicalls']
 
 # from src.services.commonServices.generateToken import generateToken
 # from src.configs.modelConfiguration import ModelsConfig
 
+executor = ThreadPoolExecutor(max_workers= int(Config.max_workers) or 10)
 async def getConfiguration(configuration, service, bridge_id, apikey, template_id=None, variables = {}, org_id="", variables_path = None, version_id=None, extra_tools=[], built_in_tools = [], initGetConfig={}):
     RTLayer = False
     bridge = None
     initGetConfig["beforeconfigAndTool"] = time.time()
-    result = await ConfigurationService.get_bridges_with_tools_and_apikeys(bridge_id = bridge_id, org_id = org_id, version_id=version_id, initGetConfig=initGetConfig)
+    loop = asyncio.get_event_loop()
+    result = await loop.run_in_executor(executor, lambda: asyncio.run( ConfigurationService.get_bridges_with_tools_and_apikeys(bridge_id = bridge_id, org_id = org_id, version_id=version_id, initGetConfig=initGetConfig)))
     initGetConfig["afterconfigAndTool"] = time.time()
     bridge_id = bridge_id or result.get('bridges', {}).get('parent_id')
     initGetConfig["beforebridgecheck"] = time.time()
