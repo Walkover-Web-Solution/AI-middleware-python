@@ -64,11 +64,13 @@ async def publish_version(request, version_id):
     try:
         org_id = request.state.profile['org']['id']
         result = await publish(org_id, version_id)
-        if result['success']:
+        if result['success'] == False:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail={'success' : False, 'score': None, 'error' : str(result['error']) })
+        if result['success'] == True :
             return JSONResponse({"success": True, "message": "version published successfully", "version_id": version_id })
         return result
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail={'success' : False, 'score': None, 'error' : str(e) })
     
 async def check_testcases(request, version_id):
     try:
