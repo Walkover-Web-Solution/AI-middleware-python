@@ -33,8 +33,8 @@ async def process_chatbot_response(result, params, data, model_config, modelOutp
         bridge_id = bridge_ids['chatbot_response_with_actions'] if data.get('actions') else bridge_ids['chatbot_response_without_actions']
         user = f"Generate UI. User message: {data.get('user')}, \n Answer: {_.get(result.get('modelResponse', {}), modelOutputConfig.get('message'))}"
         variables =  { "actions" : data.get('actions') or {}, "user_reference": user_reference, "user_contains": user_contains, "function_calls": function_calls}
-        thread_id =  f"{data.get('thread_id') or random_id}-{data.get('sub_thread_id') or random_id}",
-        response = await call_ai_middleware(user, bridge_id = bridge_id, varaibles = variables, thread_id = thread_id)
+        thread_id =  f"{data.get('thread_id') or random_id}-{data.get('sub_thread_id') or random_id}"
+        response = await call_ai_middleware(user, bridge_id = bridge_id, variables = variables, thread_id = thread_id)
         response['response']['data'] = response
        
         _.set_(result['modelResponse'], modelOutputConfig.get('message'), response['response']['data'])
