@@ -161,10 +161,7 @@ async def publish(org_id, version_id):
     try:
         get_version_data = (await get_bridges_with_tools_and_apikeys(None, org_id, version_id)).get("bridges")
         if not get_version_data:
-            return {
-                "success": False,
-                "error": "Version data not found"
-            }
+            raise Exception("Version data not found")
         
         parent_id = str(get_version_data.get('parent_id'))
         cache_key = f"{parent_id}"
@@ -209,10 +206,7 @@ async def publish(org_id, version_id):
     except Exception as e:
         logger.error(f"Error in publish: {str(e)}")
         traceback.print_exc()
-        return {
-            "success": False,
-            "error": str(e)
-        }
+        raise   
 async def makeQuestion(parent_id, prompt, functions, save = False):
     if functions: 
         filtered_functions = {
