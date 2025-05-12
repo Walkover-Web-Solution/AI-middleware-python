@@ -495,9 +495,9 @@ async def update_built_in_tools(version_id, tool, add=1):
 async def update_agents(version_id, agents, add=1):
     to_update = {'$set': {'status': 1}}
     if add == 1:
-        to_update['$addToSet'] = {'connected_agents': agents}
+        to_update['$set']['connected_agents'] = agents
     else:
-        to_update['$pull'] = {'connected_agents': agents}
+        to_update['$unset'] = {f'connected_agents.{agent_name}': "" for agent_name in agents.keys()}
     
     data = await version_model.find_one_and_update(
         {'_id': ObjectId(version_id)},
