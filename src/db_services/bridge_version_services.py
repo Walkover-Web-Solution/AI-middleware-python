@@ -168,17 +168,13 @@ async def publish(org_id, version_id):
         await delete_in_cache(cache_key)
 
         if not parent_id:
-            return {
-                "success": False,
-                "error": "Parent ID not found in version data"
-            }
+            raise Exception("Parent ID not found in version data")
+            
         parent_configuration = await configurationModel.find_one({'_id': ObjectId(parent_id)})
         
         if not parent_configuration:
-            return {
-                "success": False,
-                "error": "Parent configuration not found"
-            }
+            raise Exception("Parent configuration not found")
+            
         
         published_version_id = str(get_version_data['_id'])
         get_version_data.pop('_id', None)
