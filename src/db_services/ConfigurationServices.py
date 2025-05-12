@@ -513,7 +513,7 @@ async def update_agents(version_id, agents, add=1):
         }
     
     if 'connected_agents' not in data:
-        data['connected_agents'] = []
+        data['connected_agents'] = {}
     
     return data
 
