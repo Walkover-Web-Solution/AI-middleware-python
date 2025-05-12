@@ -23,12 +23,28 @@ from src.services.cache_service import find_in_cache
 async def create_bridges_controller(request):
     try:
         bridges = await request.json()
-        type = bridges.get('type')
+        purpose = bridges.get('purpose')
         org_id = request.state.profile['org']['id']
-        service = bridges.get('service')
-        model = bridges.get('model')
-        name = bridges.get('name')
-        slugName = bridges.get('slugName')
+        prompt = None
+        if purpose is not None:
+            variables = {
+                "purpose": purpose,
+            }
+            user = "Generate Bridge Configuration accroding to the given user purpose."
+            bridge_data =  await call_ai_middleware(user, bridge_id = bridge_ids['create_bridge_using_ai'], variables = variables)
+            model = bridge_data.get('model')
+            service = bridge_data.get('service')
+            name = bridge_data.get('name')
+            prompt = bridge_data.get('system_prompt')
+            slugName = bridge_data.get('name')
+            type = bridge_data.get('type')
+
+        else:
+            service = bridges.get('service')
+            model = bridges.get('model')
+            name = bridges.get('name')
+            type = bridges.get('type')
+            slugName = bridges.get('slugName')
         bridgeType = bridges.get('bridgeType')
         modelObj = model_config_document[service][model]
         configurations = modelObj['configuration']
@@ -62,6 +78,8 @@ async def create_bridges_controller(request):
         "cred": {}
         } 
         model_data["is_rich_text"]= True
+        if prompt is not None:
+            model_data['prompt'] = prompt
         result = await create_bridge({
             "configuration": model_data,
             "name": name,
@@ -188,8 +206,8 @@ async def get_all_bridges(request):
         alerting_embed_token = Helper.generate_token({ "org_id": Config.ORG_ID, "project_id": Config.ALERTING_PROJECT_ID, "user_id": org_id },Config.Access_key )
         trigger_embed_token = Helper.generate_token({ "org_id": Config.ORG_ID, "project_id": Config.TRIGGER_PROJECT_ID, "user_id": org_id },Config.Access_key )
         history_page_chatbot_token = Helper.generate_token({ "org_id": "11202", "chatbot_id": "67286d4083e482fd5b466b69", "user_id": org_id },Config.CHATBOT_ACCESS_KEY )
-        metrics_data = await get_timescale_data(org_id)
-        bridges = Helper.sort_bridges(bridges, metrics_data)
+        # metrics_data = await get_timescale_data(org_id)
+        # bridges = Helper.sort_bridges(bridges, metrics_data)
         avg_response_time = {}
         for bridge in bridges:
             bridge_id = bridge.get('_id')
@@ -225,10 +243,11 @@ async def get_all_service_models_controller(service):
         if service == service_name['openai']:
             return {
                 "chat": {
-                    "gpt-3.5-turbo": restructure_configuration(model_config_document[service]['gpt-3.5-turbo']),
+                    # "gpt-3.5-turbo": restructure_configuration(model_config_document[service]['gpt-3.5-turbo']),
                     "gpt-4": restructure_configuration(model_config_document[service]['gpt-4']),
                     "gpt-4-turbo": restructure_configuration(model_config_document[service]['gpt-4-turbo']),
                     "gpt-4o": restructure_configuration(model_config_document[service]['gpt-4o']),
+                    "gpt-4o-mini": restructure_configuration(model_config_document[service]['gpt-4o-mini']),
                     "chatgpt-4o-latest": restructure_configuration(model_config_document[service]['chatgpt-4o-latest']),
                     "gpt-4o-search-preview": restructure_configuration(model_config_document[service]['gpt-4o-search-preview']),
                     "gpt-4o-mini-search-preview": restructure_configuration(model_config_document[service]['gpt-4o-mini-search-preview']),
@@ -262,10 +281,11 @@ async def get_all_service_models_controller(service):
         elif service == service_name['openai_response']:
             return {
                 "chat": {
-                    "gpt-3.5-turbo": restructure_configuration(model_config_document[service]['gpt-3.5-turbo']),
+                    # "gpt-3.5-turbo": restructure_configuration(model_config_document[service]['gpt-3.5-turbo']),
                     "gpt-4": restructure_configuration(model_config_document[service]['gpt-4']),
                     "gpt-4-turbo": restructure_configuration(model_config_document[service]['gpt-4-turbo']),
                     "gpt-4o": restructure_configuration(model_config_document[service]['gpt-4o']),
+                    "gpt-4o-mini": restructure_configuration(model_config_document[service]['gpt-4o-mini']),
                     "chatgpt-4o-latest": restructure_configuration(model_config_document[service]['chatgpt-4o-latest']),
                     "gpt-4.1": restructure_configuration(model_config_document[service]['gpt-4.1']),
                     "gpt-4.1-mini": restructure_configuration(model_config_document[service]['gpt-4.1-mini']),
@@ -309,13 +329,13 @@ async def get_all_service_models_controller(service):
                     "llama-3.1-8b-instant": restructure_configuration(model_config_document[service]['llama-3.1-8b-instant']),
                     "llama3-70b-8192": restructure_configuration(model_config_document[service]['llama3-70b-8192']),
                     "llama3-8b-8192": restructure_configuration(model_config_document[service]['llama3-8b-8192']),
-                    "mixtral-8x7b-32768": restructure_configuration(model_config_document[service]['mixtral-8x7b-32768']),
+                    # "mixtral-8x7b-32768": restructure_configuration(model_config_document[service]['mixtral-8x7b-32768']),
                     "gemma2-9b-it": restructure_configuration(model_config_document[service]['gemma2-9b-it']),
-                    "llama-guard-3-8b": restructure_configuration(model_config_document[service]['llama-guard-3-8b']),
+                    # "llama-guard-3-8b": restructure_configuration(model_config_document[service]['llama-guard-3-8b']),
                     "deepseek-r1-distill-llama-70b": restructure_configuration(model_config_document[service]['deepseek-r1-distill-llama-70b']),
-                    "deepseek-r1-distill-qwen-32b": restructure_configuration(model_config_document[service]['deepseek-r1-distill-qwen-32b']),
-                    "qwen-2.5-32b": restructure_configuration(model_config_document[service]['qwen-2.5-32b']),
-                    "qwen-2.5-coder-32b": restructure_configuration(model_config_document[service]['qwen-2.5-coder-32b']),
+                    # "deepseek-r1-distill-qwen-32b": restructure_configuration(model_config_document[service]['deepseek-r1-distill-qwen-32b']),
+                    # "qwen-2.5-32b": restructure_configuration(model_config_document[service]['qwen-2.5-32b']),
+                    # "qwen-2.5-coder-32b": restructure_configuration(model_config_document[service]['qwen-2.5-coder-32b']),
                     "meta-llama/llama-4-scout-17b-16e-instruct" : restructure_configuration(model_config_document[service]['meta-llama/llama-4-scout-17b-16e-instruct'])
                 }
             }

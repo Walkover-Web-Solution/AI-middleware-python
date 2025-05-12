@@ -1,4 +1,5 @@
 import json
+import time
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 import traceback
@@ -25,7 +26,7 @@ from globals import *
 
 @app.post("/chat/{bridge_id}")
 @handle_exceptions
-async def chat(request_body): 
+async def chat(request_body, initTime): 
     result ={}
     class_obj= {}
     try:
@@ -41,18 +42,25 @@ async def chat(request_body):
         model_config, custom_config, model_output_config = await load_model_configuration(
             parsed_data['model'], parsed_data['configuration'], parsed_data['service'],
         )
+        initTime['beforefinetune'] = time.time()
         # Step 3: Load Model Configuration
         await handle_fine_tune_model(parsed_data, custom_config)
+        initTime['afterfinetune'] = time.time()
 
+        initTime['beforepretool'] = time.time()
         # Step 4: Handle Pre-Tools Execution
         await handle_pre_tools(parsed_data)
-
+        initTime['afterpretool'] = time.time()
+        
+        initTime['beforemanageThread'] = time.time()
         # Step 5: Manage Threads
         thread_info = await manage_threads(parsed_data)
+        initTime['aftermanageThread'] = time.time()
 
+        initTime['beforeprompt'] = time.time()
         # Step 6: Prepare Prompt, Variables and Memory
         memory, missing_vars = await prepare_prompt(parsed_data, thread_info, model_config, custom_config)
-        
+        initTime['afterprompt'] = time.time()
 
         missing_vars = filter_missing_vars(missing_vars, parsed_data['variables_state'])
 
@@ -60,10 +68,13 @@ async def chat(request_body):
         if missing_vars:
             send_error(parsed_data['bridge_id'], parsed_data['org_id'], missing_vars, error_type='Variable')
         
+        initTime['beforecustomsetting'] = time.time()
         # Step 7: Configure Custom Settings
         custom_config = await configure_custom_settings(
             model_config['configuration'], custom_config, parsed_data['service']
         )
+        initTime['aftercustomsetting'] = time.time()
+
         # Step 8: Execute Service Handler
         params = build_service_params(
             parsed_data, custom_config, model_output_config, thread_info, timer, memory, send_error_to_webhook
@@ -72,10 +83,10 @@ async def chat(request_body):
         # Step 9 : json_schema service conversion
         if 'response_type' in custom_config and custom_config['response_type'].get('type') == 'json_schema':
             custom_config['response_type'] = restructure_json_schema(custom_config['response_type'], parsed_data['service'])
-
+        initTime['beforeopenai'] = time.time()
         class_obj = await Helper.create_service_handler(params, parsed_data['service'])
         result = await class_obj.execute()
-            
+        initTime['afteropenai'] = time.time()
         if not result["success"]:
             raise ValueError(result)
         
@@ -102,6 +113,7 @@ async def chat(request_body):
         }
         
         if not parsed_data['is_playground']:
+            await sendResponse(parsed_data['response_format'], result["modelResponse"], success=True, variables=parsed_data.get('variables',{}))
             parsed_data['usage'].update({
                 **result.get("usage", {}),
                 "service": parsed_data['service'],
@@ -116,8 +128,7 @@ async def chat(request_body):
             })
             if result.get('modelResponse') and result['modelResponse'].get('data'):
                 result['modelResponse']['data']['message_id'] = parsed_data['message_id']
-            asyncio.create_task(process_background_tasks(parsed_data, result, params, send_error_to_webhook))
-        return JSONResponse(status_code=200, content={"success": True, "response": result["modelResponse"]})
+        return parsed_data, result, params, thread_info
     
     except (Exception, ValueError, BadRequestException) as error:
         if not isinstance(error, BadRequestException):
@@ -140,10 +151,7 @@ async def chat(request_body):
                 "expectedCost" : parsed_data['tokens'].get('expectedCost',0),
                 "variables" : parsed_data.get('variables') or {}
             })
-            func_tool_call_data = error.args[1] if len(error.args) > 1 else None
-            # Combine the tasks into a single asyncio.gather call
-            tasks = [
-                metrics_service.create([parsed_data['usage']], {
+            parsed_data['historyParams'] = {
                     "thread_id": parsed_data['thread_id'],
                     "sub_thread_id": parsed_data['sub_thread_id'],
                     "user": parsed_data['user'],
@@ -154,17 +162,18 @@ async def chat(request_body):
                     "channel": 'chat',
                     "type": "error",
                     "actor": "user",
-                    'tools_call_data' : func_tool_call_data,
+                    'tools_call_data' : error.args[1] if len(error.args) > 1 else None,
                     "message_id": parsed_data['message_id'],
                     "AiConfig": class_obj.aiconfig()
-                    }, parsed_data['version_id'], send_error_to_webhook),
-                # Only send the second response if the type is not 'default'
-                sendResponse(parsed_data['response_format'], result.get("modelResponse", str(error)), variables=parsed_data['variables']) if parsed_data['response_format']['type'] != 'default' else None,
+                    }
+            await sendResponse(parsed_data['response_format'], result.get("modelResponse", str(error)), variables=parsed_data['variables']) if parsed_data['response_format']['type'] != 'default' else None
+            # Combine the tasks into a single asyncio.gather call
+            tasks = [
                 send_alert(data={"org_name" : parsed_data['org_name'], "bridge_name" : parsed_data['name'], "configuration": parsed_data['configuration'], "error": str(error), "message_id": parsed_data['message_id'], "bridge_id": parsed_data['bridge_id'], "message": "Exception for the code", "org_id": parsed_data['org_id']}),
+                metrics_service.create([parsed_data['usage']],parsed_data['historyParams'] , parsed_data['version_id']),
             ]
             # Filter out None values
             await asyncio.gather(*[task for task in tasks if task is not None], return_exceptions=True)
-   
         raise ValueError(error)
     
 

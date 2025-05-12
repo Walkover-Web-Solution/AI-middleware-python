@@ -2,6 +2,7 @@ from models.mongo_connection import db
 from bson import ObjectId
 from ..services.cache_service import find_in_cache, store_in_cache, delete_in_cache
 import json
+import time
 from globals import *
 
 configurationModel = db["configurations"]
@@ -41,6 +42,52 @@ async def get_bridges(bridge_id = None, org_id = None, version_id = None):
         result = await model.aggregate(pipeline).to_list(length=None)
         bridges = result[0] if result else {}
 
+        return {
+            'success': True,
+            'bridges': bridges,
+        }
+    except Exception as error:
+        logger.error(f'Error in get bridges : {str(error)}')
+        return {
+            'success': False,
+            'error': "something went wrong!!"
+        }
+
+async def get_bridges_with_redis(bridge_id = None, org_id = None, version_id = None):
+    try:
+        cache_key = f"get_{version_id or bridge_id}"
+        cached_data = await find_in_cache(cache_key)
+        if cached_data:
+            cached_result = json.loads(cached_data)
+            return cached_result[0] if cached_result else {}
+        model = version_model if version_id else configurationModel
+        id_to_use = ObjectId(version_id) if version_id else ObjectId(bridge_id)
+        pipeline = [
+            {
+                '$match': {'_id': ObjectId(id_to_use), 'org_id': org_id}
+            },
+            {
+                '$project': {
+                    'configuration.encoded_prompt': 0
+                }
+            },
+            {
+                '$addFields': {
+                    '_id': {'$toString': '$_id'},
+                    'function_ids': {
+                        '$map': {
+                            'input': '$function_ids',
+                            'as': 'fid',
+                            'in': {'$toString': '$$fid'}
+                        }
+                    }
+                }
+            }
+        ]
+        
+        result = await model.aggregate(pipeline).to_list(length=None)
+        bridges = result[0] if result else {}
+        await store_in_cache(cache_key, result)
         return {
             'success': True,
             'bridges': bridges,
@@ -148,7 +195,7 @@ async def get_bridges_with_tools(bridge_id, org_id, version_id=None):
             'error': "something went wrong!!"
         }     
 
-async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None):
+async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None, initGetConfig={}):
     try:
         cache_key = f"{version_id or bridge_id}"
         
@@ -156,6 +203,7 @@ async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None)
         cached_data = await find_in_cache(cache_key)
         if cached_data:
             # Deserialize the cached JSON data
+            initGetConfig['incache'] = time.time()
             cached_result = json.loads(cached_data)
             return cached_result  # Return the cached response directly
         model = version_model if version_id else configurationModel
@@ -448,7 +496,14 @@ async def update_built_in_tools(version_id, tool, add=1):
 
 async def get_template_by_id(template_id):
     try:
+        cache_key = f"template_{template_id}"
+        template_content = await find_in_cache(cache_key)
+        if template_content:
+            template_content = json.loads(template_content)
+            return template_content
+        
         template_content = await templateModel.find_one({'_id' : ObjectId(template_id)})
+        await store_in_cache(cache_key, template_content)
         return template_content
     except Exception as error : 
         logger.error(f"Error in get_template_by_id: {str(error)}")

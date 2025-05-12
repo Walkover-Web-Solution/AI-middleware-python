@@ -111,12 +111,12 @@ class BaseService:
         modelObj = model_config_document[self.service][self.model]
         modelOutputConfig = modelObj['outputConfig']
         model_response = response.get('modelResponse', {})
-        if configuration.get('tool_choice') is not None and configuration['tool_choice'] not in ['auto', 'none', 'required']:
+        if configuration.get('tool_choice') is not None and configuration['tool_choice'] not in ['auto', 'none']:
             if service == 'openai' or service == 'groq' or service == 'openai_response':
                     configuration['tool_choice'] = 'auto'
             elif service == 'anthropic':
                 configuration['tool_choice'] = {'type': 'auto'}
-        if validate_tool_call(modelOutputConfig, service, model_response) and l <= int(self.tool_call_count):
+        if validate_tool_call(service, model_response) and l <= int(self.tool_call_count):
             l += 1
             
             # Continue with the rest of the logic here
@@ -248,14 +248,12 @@ class BaseService:
             if configuration.get('tools', '') :
                 if service == service_name['anthropic']:
                     new_config['tool_choice'] =  configuration.get('tool_choice', {'type': 'auto'})
-                elif service == service_name['openai'] or service_name['groq']:
+                elif service == service_name['openai'] or service == service_name['groq']:
                     if configuration.get('tool_choice'):
                         if configuration['tool_choice'] not in ['auto', 'none', 'required', 'default']:
                             new_config['tool_choice'] = {"type": "function", "function": {"name": configuration['tool_choice']}}
                         else:
                             new_config['tool_choice'] = configuration['tool_choice']
-                elif service == service_name['openai_response']:
-                    new_config['tool_choice'] = {"type" : "function", "name" : configuration['tool_choice']}
                     
                 new_config['tools'] = tool_call_formatter(configuration, service, self.variables, self.variables_path)
             elif 'tool_choice' in configuration:

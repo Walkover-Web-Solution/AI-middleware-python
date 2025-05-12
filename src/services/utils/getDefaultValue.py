@@ -12,18 +12,39 @@ async def get_default_values_controller(service, model, current_configuration, t
             config_items = config.get('configuration', {})
             
             for key, value in config_items.items():
-            
-                if current_configuration.get(key) == "min":
-                    default_values[key] = 'min' 
-                elif current_configuration.get(key) == "max":
+                current_value = current_configuration.get(key)
+                
+                if current_value == "min":
+                    default_values[key] = 'min'
+                elif current_value == "max":
                     default_values[key] = 'max'
-                elif current_configuration.get(key) == 'default':
+                elif current_value == 'default':
                     if type == 'embedding':
                         default_values[key] = config_items[key]['default']
                     else:
                         default_values[key] = 'default'
                 else:
-                    default_values[key] = value.get('default', None) if key == 'model' or type == 'embedding' else 'default'
+                    if key in config_items:
+                        if key == 'model':
+                            default_values[key] = value.get('default', None)
+                            continue
+                        min_value = value.get('min')
+                        max_value = value.get('max')
+                        if min_value is not None and max_value is not None:
+                            if current_value is not None and not (min_value <= current_value <= max_value):
+                                default_values[key] = value.get('default', None)
+                            else:
+                                if current_value is None:
+                                    default_values[key] = 'default'
+                                else:
+                                    default_values[key] = current_value
+                        else:
+                            if current_value is None:
+                                default_values[key] = 'default'
+                            else:
+                                default_values[key] = current_value
+                    else:
+                        default_values[key] = value.get('default', None) if key == 'model' or type == 'embedding' else 'default'
             
             return default_values
 
