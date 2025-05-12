@@ -8,6 +8,7 @@ from concurrent.futures import ThreadPoolExecutor
 from config import Config
 from src.services.commonServices.queueService.queueService import queue_obj
 from src.middlewares.ratelimitMiddleware import rate_limit
+from globals import *
 
 
 router = APIRouter()
@@ -32,14 +33,16 @@ async def chat_completion(request: Request, db_config: dict = Depends(add_config
             return {"success": True, "message": "Your response will be sent through configured means."}
         except Exception as e:
             # Log the error and return a meaningful error response
-            print(f"Failed to publish message: {e}")
+            logger.error(f"Failed to publish message: {str(e)}")
             raise HTTPException(status_code=500, detail="Failed to publish message.")
     else:
         # Assuming chat is an async function that could be blocking
         type = data_to_send.get("body",{}).get('configuration',{}).get('type')
         if type == 'embedding':
-            result =  await embedding(data_to_send)
+            loop = asyncio.get_event_loop()
+            result = await loop.run_in_executor(executor, lambda: asyncio.run(embedding(data_to_send)))
             return result
+        loop = asyncio.get_event_loop()
         result = await chat(data_to_send)
         return result
 
@@ -53,7 +56,8 @@ async def playground_chat_completion(request: Request, db_config: dict = Depends
     if type == 'embedding':
             result =  await embedding(data_to_send)
             return result
-    result = await chat(data_to_send)
+    loop = asyncio.get_event_loop()
+    result = await loop.run_in_executor(executor, lambda: asyncio.run(chat(data_to_send)))
     return result
 
 @router.post('/batch/chat/completion', dependencies=[Depends(auth_and_rate_limit)])

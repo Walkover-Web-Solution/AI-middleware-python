@@ -8,6 +8,8 @@ from sqlalchemy import and_
 from ..controllers.conversationController import savehistory
 from .conversationDbService import insertRawData, timescale_metrics
 from ..services.cache_service import find_in_cache, store_in_cache
+from globals import *
+# from src.services.utils.send_error_webhook import send_error_to_webhook
 
 postgres = combined_models['pg']
 timescale = combined_models['timescale']
@@ -41,7 +43,7 @@ async def find_one_pg(id):
     model = postgres.raw_data
     return await model.find_by_pk(id)
 
-async def create(dataset, history_params, version_id, send_error_to_webhook):
+async def create(dataset, history_params, version_id):
     try:
         result = await savehistory(
             history_params['thread_id'], history_params['sub_thread_id'], history_params['user'], history_params['message'],
@@ -101,11 +103,10 @@ async def create(dataset, history_params, version_id, send_error_to_webhook):
         cache_key = f"metrix_bridges{history_params['bridge_id']}"
         oldTotalToken = json.loads(await find_in_cache(cache_key) or '0')
         totaltoken = sum(data_object.get('totalTokens', 0) for data_object in dataset) + oldTotalToken
-        await send_error_to_webhook(history_params['bridge_id'], history_params['org_id'],totaltoken , 'metrix_limit_reached')
+        # await send_error_to_webhook(history_params['bridge_id'], history_params['org_id'],totaltoken , 'metrix_limit_reached')
         await store_in_cache(cache_key, float(totaltoken))
     except Exception as error:
-        traceback.print_exc()
-        print('Error during bulk insert of Ai middleware', error)
+        logger.error(f'Error during bulk insert of Ai middleware, {str(error)}')
 
 # Exporting functions
 __all__ = ["find", "create", "find_one", "find_one_pg"]

@@ -1,6 +1,7 @@
 from motor.motor_asyncio import AsyncIOMotorClient
 from config import Config
 import certifi
+from globals import *
 
 try:
     client = AsyncIOMotorClient(
@@ -11,4 +12,4 @@ try:
     db = client[Config.MONGODB_DATABASE_NAME]
     print('connected to Mongo...')
 except errors.ConnectionFailure as e:  # Use 'ConnectionFailure' instead of 'ConnectionError'
-    print(f"Could not connect to MongoDB: {e}")
+    logger.error(f"Could not connect to MongoDB: {str(e)}")

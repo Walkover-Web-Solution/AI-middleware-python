@@ -16,8 +16,8 @@ from src.routes.apiCall_routes import router as apiCall_router
 from src.routes.config_routes import router as config_router
 from src.controllers.bridgeController import router as bridge_router
 from src.routes.v2.modelRouter import router as v2_router
-from src.services.utils.apiservice import fetch
 from src.services.commonServices.queueService.queueService import queue_obj
+from src.services.commonServices.queueService.queueLogService import sub_queue_obj
 from src.services.utils.logger import logger
 from src.routes.bridge_version_routes import router as bridge_version
 from src.routes.image_process_routes import router as image_process_routes
@@ -28,7 +28,7 @@ from src.routes.Internal_routes import router as Internal_routes
 from src.routes.testcase_routes import router as testcase_routes
 from models.Timescale.connections import init_async_dbservice
 from src.configs.model_configuration import init_model_configuration
-
+from globals import *
 
 atatus_client = atatus.get_client()
 if atatus_client is None and (Config.ENVIROMENT == 'PRODUCTION' or Config.ENVIROMENT == 'TESTING'):
@@ -43,6 +43,9 @@ if atatus_client is None and (Config.ENVIROMENT == 'PRODUCTION' or Config.ENVIRO
     
 async def consume_messages_in_executor():
     await queue_obj.consume_messages()
+
+async def consume_sub_messages_in_executor():
+    await sub_queue_obj.consume_messages()
     
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -52,13 +55,17 @@ async def lifespan(app: FastAPI):
     # Run the consumer in the background without blocking the main event loop
     await queue_obj.connect()
     await queue_obj.create_queue_if_not_exists()
+    await sub_queue_obj.connect()
+    await sub_queue_obj.create_queue_if_not_exists()
     
     consume_task = None
+    consume_sub_task = None
     if Config.CONSUMER_STATUS.lower() == "true":
         consume_task = asyncio.create_task(consume_messages_in_executor())
+        consume_sub_task = asyncio.create_task(consume_sub_messages_in_executor())
     
         
-    asyncio.create_task(init_async_dbservice()) if Config.ENV == 'local' else await init_async_dbservice()
+    asyncio.create_task(init_async_dbservice()) if Config.ENVIROMENT == 'LOCAL' else await init_async_dbservice()
     
     asyncio.create_task(repeat_function())
     yield  # Startup logic is complete
@@ -66,12 +73,17 @@ async def lifespan(app: FastAPI):
     logger.info("Shutting down...")
     if consume_task:
         consume_task.cancel()
+    if consume_sub_task:
+        consume_sub_task.cancel()
     await queue_obj.disconnect()
+    await sub_queue_obj.disconnect()
     try:
         if consume_task:
             await consume_task
+        if consume_sub_task:
+            await consume_sub_task
     except asyncio.CancelledError:
-        print("Consumer task was cancelled during shutdown.")
+        logger.error("Consumer task was cancelled during shutdown.")
 
 # Initialize the FastAPI app
 app = FastAPI(debug=True, lifespan=lifespan)

@@ -3,6 +3,7 @@ from typing import Union, List
 from config import Config
 from redis.asyncio import Redis
 from fastapi.responses import JSONResponse
+from globals import *
 
 # Initialize the Redis client
 client = Redis.from_url(Config.REDIS_URI)  # Adjust these parameters as needed
@@ -15,14 +16,14 @@ async def store_in_cache(identifier: str, data: dict, ttl: int = DEFAULT_REDIS_T
         serialized_data = make_json_serializable(data)
         return await client.set(f"{REDIS_PREFIX}{identifier}", json.dumps(serialized_data), ex=int(ttl))
     except Exception as e:
-        print(f"Error storing in cache: {e}")
+        logger.error(f"Error storing in cache: {str(e)}")
         return False
 
 async def find_in_cache(identifier: str) -> Union[str, None]:
     try:
         return await client.get(f"{REDIS_PREFIX}{identifier}")
     except Exception as e:
-        print(f"Error finding in cache: {e}")
+        logger.error(f"Error finding in cache: {str(e)}")
         return None
 
 async def delete_in_cache(identifiers: Union[str, List[str]]) -> bool:
@@ -39,7 +40,7 @@ async def delete_in_cache(identifiers: Union[str, List[str]]) -> bool:
         print(f"Deleted {delete_count} items from cache")
         return True
     except Exception as error:
-        print(f"Error during deletion: {error}")
+        logger.error(f"Error during deletion: {str(error)}")
         return False
 
 async def verify_ttl(identifier: str) -> int:
@@ -53,7 +54,7 @@ async def verify_ttl(identifier: str) -> int:
             print("Redis client is not ready")
             return -2  # Indicating error
     except Exception as error:
-        print(f"Error retrieving TTL from cache: {error}")
+        logger.error(f"Error retrieving TTL from cache: {str(error)}")
         return -1  # Indicating error
 
 async def clear_cache(request) -> JSONResponse:
@@ -73,17 +74,17 @@ async def clear_cache(request) -> JSONResponse:
             print("Cleared all items with prefix from cache")
             return JSONResponse(status_code=200, content={"message": "Redis cleared successfully"})
         else:
-            print("Redis client is not ready")
+            logger.warning("Redis client is not ready")
             return JSONResponse(status_code=500, content={"message": "Redis client is not ready"})
     except Exception as error:
-        print(f"Error clearing cache: {error}")
+        logger.error(f"Error clearing cache: {str(error)}")
         return JSONResponse(status_code=500, content={"message": f"Error clearing cache: {error}"})
 
 async def store_in_cache_for_batch(identifier: str, data: dict, ttl: int = DEFAULT_REDIS_TTL) -> bool:
     try:
         return await client.set(f"{identifier}", json.dumps(data), ex=int(ttl))
     except Exception as e:
-        print(f"Error storing in cache: {e}")
+        logger.error(f"Error storing in cache: {str(e)}")
         return False
 
 async def find_in_cache_with_prefix(prefix: str) -> Union[List[str], None]:
@@ -94,7 +95,7 @@ async def find_in_cache_with_prefix(prefix: str) -> Union[List[str], None]:
         return values
     
     except Exception as e:
-        print(f"Error finding in cache: {e}")
+        logger.error(f"Error finding in cache: {str(e)}")
         return None
 
 async def delete_in_cache_for_batch(identifiers: Union[str, List[str]]) -> bool:
@@ -111,7 +112,7 @@ async def delete_in_cache_for_batch(identifiers: Union[str, List[str]]) -> bool:
         print(f"Deleted {delete_count} items from cache")
         return True
     except Exception as error:
-        print(f"Error during deletion: {error}")
+        logger.error(f"Error during deletion: {str(error)}")
         return False
     
 def make_json_serializable(data):

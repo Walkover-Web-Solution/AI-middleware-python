@@ -1,4 +1,5 @@
 from models.mongo_connection import db
+from globals import *
 
 modelConfigModel = db["modelconfigurations"]
 
@@ -18,5 +19,5 @@ async def get_model_configurations():
 
         return config_dict
     except Exception as error:
-        print(f"Error fetching model configurations: {error}")
+        logger.error(f"Error fetching model configurations:, {error}")
         return {}

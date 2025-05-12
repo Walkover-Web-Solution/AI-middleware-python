@@ -1,6 +1,6 @@
 from models.mongo_connection import db
 configurationModel = db["configurations"]
-import traceback
+from globals import *
 
 testcases_model = db['testcases']
 testcases_history_model = db['testcases_history']
@@ -54,5 +54,5 @@ async def delete_current_testcase_history(version_id):
         # Delete all other entries for the given version_id
         await testcases_history_model.delete_many({"version_id": version_id, "_id": {"$nin": latest_ids}})
     except Exception as e: 
-        print("Error in deleting version testcase history", str(e))
+        logger.error(f"Error in deleting current testcase history: {str(e)}")
         traceback.print_exc()
