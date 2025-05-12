@@ -166,42 +166,38 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
 
     configuration['prompt'] = Helper.add_doc_description_to_prompt(configuration['prompt'], rag_data)
     variables, org_name = await updateVariablesWithTimeZone(variables,org_id)
-    connected_agents = {
-		"MAPS" : {
-		   "brigde_id" : '67ece02349c6b14d4620864e', 
-		   "description" : "MAPS is used to find the distance and the best route from one city to another city",
-		  }
-		 }#result.get('bridges', {}).get('connected_agents', {})
-    for bridge_name, bridge_info in connected_agents.items():
-        id = bridge_info.get('brigde_id', '')
-        description = bridge_info.get('description', '')
-        name = makeFunctionName(bridge_name)
-        tools.append({
-            "type": "function",
-            "name": name,
-            "description": f"bridge_id: '{id}' - {description}",
-            "properties": {
-                "user": {
-                    "description": "this is the query for the agent to process the request",
-                    "type": "string",
-                    "enum": [],
-                    "required_params": [],
-                    "parameter": {}
+    connected_agents = result.get('bridges', {}).get('connected_agents', {})
+    if connected_agents:
+        for bridge_name, bridge_info in connected_agents.items():
+            id = bridge_info.get('brigde_id', '')
+            description = bridge_info.get('description', '')
+            name = makeFunctionName(bridge_name)
+            tools.append({
+                "type": "function",
+                "name": name,
+                "description": f"bridge_id: '{id}' - {description}",
+                "properties": {
+                    "user": {
+                        "description": "this is the query for the agent to process the request",
+                        "type": "string",
+                        "enum": [],
+                        "required_params": [],
+                        "parameter": {}
+                    },
+                    "bridge_id": {
+                        "description": "Always send this id to call the AGENT the ID is present in the start of description",
+                        "type": "string",
+                        "enum": [],
+                        "required_params": [],
+                        "parameter": {}
+                    }
                 },
-                "bridge_id": {
-                    "description": "Always send this id to call the AGENT the ID is present in the start of description",
-                    "type": "string",
-                    "enum": [],
-                    "required_params": [],
-                    "parameter": {}
+                "required": ["user", "bridge_id"]
+            })
+            tool_id_and_name_mapping[name] = {
+                    "type": "AGENT"
                 }
-            },
-            "required": ["user", "bridge_id"]
-        })
-        tool_id_and_name_mapping[name] = {
-                "type": "AGENT"
-            }
-        configuration['prompt'] += "\n AGENTS are available with their capabilites. IF you want you can call the agent by sending the query and bridge_id (make sure this 2 keys are always necessary to communicate with the agent) "
+            configuration['prompt'] += "\n AGENTS are available with their capabilites. IF you want you can call the agent by sending the query and bridge_id (make sure this 2 keys are always necessary to communicate with the agent) "
 
 
     return {

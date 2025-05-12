@@ -492,6 +492,31 @@ async def update_built_in_tools(version_id, tool, add=1):
     
     return data
 
+async def update_agents(version_id, agents, add=1):
+    to_update = {'$set': {'status': 1}}
+    if add == 1:
+        to_update['$addToSet'] = {'connected_agents': agents}
+    else:
+        to_update['$pull'] = {'connected_agents': agents}
+    
+    data = await version_model.find_one_and_update(
+        {'_id': ObjectId(version_id)},
+        to_update,
+        return_document=True,
+        upsert=True
+    )
+    
+    if not data:
+        return {
+            'success': False,
+            'error': 'No records updated or version not found'
+        }
+    
+    if 'connected_agents' not in data:
+        data['connected_agents'] = []
+    
+    return data
+
 async def get_template_by_id(template_id):
     try:
         cache_key = f"template_{template_id}"

@@ -43,12 +43,12 @@ async def call_gtwy_agent(args):
         request_body = {
             "user": args.get('user'),
             "bridge_id": args.get('bridge_id'),
-            "variables": args.get('variables') or {}
+            "variables": args.get('variables') or {},
+            "response_type": 'json_object'
         }
         
         org_id = args.get('org_id')
         token = generate_token({"org":{'id': str(org_id)},"user":{ 'id' : str(org_id)} }, Config.SecretKey)
-        # await jwt_middleware(token)
         response, rs_headers = await fetch(
             f"https://{Config.URL}/api/v2/model/chat/completion",
             "POST",
@@ -62,29 +62,6 @@ async def call_gtwy_agent(args):
         if not response.get('success', True):
             raise Exception(response.get('message', 'Unknown error'))
         result = response.get('response', {}).get('data', {}).get('content', "")
-        result = json.loads(result)
-        return result
+        return json.loads(result)
     except Exception as e:
         raise Exception(f"Error in call_gtwy_agent: {str(e)}")
-
-
-from fastapi import HTTPException
-
-async def jwt_middleware(token):
-    try:
-        check_token = jwt.decode(token, Config.SecretKey, algorithms=["HS256"])
-
-        if check_token:
-            check_token['org']['id'] = str(check_token['org']['id'])
-            check_token['org']['id'] = str(check_token['org']['id'])
-            data = check_token
-            data2 = str(check_token.get('org', {}).get('id'))
-            if isinstance(check_token['user'].get('meta'), str):
-                data = False
-            else:
-                data = check_token['user'].get('meta', {}).get('type', False) == 'embed'
-            return data
-        
-        raise HTTPException(status_code=404, detail="unauthorized user")        
-    except Exception as err:
-        raise HTTPException(status_code=401, detail="unauthorized user")
