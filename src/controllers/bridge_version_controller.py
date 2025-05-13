@@ -68,7 +68,7 @@ async def publish_version(request, version_id):
             return JSONResponse({"success": True, "message": "version published successfully", "version_id": version_id })
         return result
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     
 async def check_testcases(request, version_id):
     try:
