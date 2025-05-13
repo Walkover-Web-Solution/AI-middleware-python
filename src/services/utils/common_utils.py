@@ -318,3 +318,15 @@ def send_error(bridge_id, org_id, error_message, error_type):
     asyncio.create_task(send_error_to_webhook(
         bridge_id, org_id, error_message, error_type=error_type
     ))
+
+def restructure_json_schema(response_type, service):
+    match service:
+        case 'openai_response':
+            schema = response_type.get('json_schema', {})
+            del response_type['json_schema']
+            for key, value in schema.items():
+                response_type[key] = value
+            return response_type
+        case _:
+            return response_type
+        
