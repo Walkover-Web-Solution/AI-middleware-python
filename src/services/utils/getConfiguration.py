@@ -175,7 +175,7 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
             tools.append({
                 "type": "function",
                 "name": name,
-                "description": f"bridge_id: '{id}' - {description}",
+                "description": description,
                 "properties": {
                     "user": {
                         "description": "this is the query for the agent to process the request",
@@ -183,22 +183,15 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
                         "enum": [],
                         "required_params": [],
                         "parameter": {}
-                    },
-                    "bridge_id": {
-                        "description": "Always send this id to call the AGENT the ID is present in the start of description",
-                        "type": "string",
-                        "enum": [],
-                        "required_params": [],
-                        "parameter": {}
                     }
                 },
-                "required": ["user", "bridge_id"]
+                "required": ["user"]
             })
             tool_id_and_name_mapping[name] = {
-                    "type": "AGENT"
+                    "type": "AGENT",
+                    "bridge_id" : id
                 }
-            configuration['prompt'] += "\n AGENTS are available with their capabilites. IF you want you can call the agent by sending the query and bridge_id (make sure this 2 keys are always necessary to communicate with the agent) "
-
+            # configuration['prompt'] += "\n AGENTS are available with their capabilites. IF you want you can call the agent by sending the query and bridge_id (make sure this 2 keys are always necessary to communicate with the agent) "
 
     return {
         'success': True,

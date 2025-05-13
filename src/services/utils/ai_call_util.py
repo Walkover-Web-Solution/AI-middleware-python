@@ -43,8 +43,7 @@ async def call_gtwy_agent(args):
         request_body = {
             "user": args.get('user'),
             "bridge_id": args.get('bridge_id'),
-            "variables": args.get('variables') or {},
-            "response_type": 'json_object'
+            "variables": args.get('variables') or {}
         }
         
         org_id = args.get('org_id')
@@ -62,6 +61,9 @@ async def call_gtwy_agent(args):
         if not response.get('success', True):
             raise Exception(response.get('message', 'Unknown error'))
         result = response.get('response', {}).get('data', {}).get('content', "")
-        return json.loads(result)
+        try:
+            return json.loads(result)
+        except json.JSONDecodeError:
+            return { "data" : result }
     except Exception as e:
         raise Exception(f"Error in call_gtwy_agent: {str(e)}")
