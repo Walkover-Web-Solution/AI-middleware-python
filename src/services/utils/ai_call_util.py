@@ -1,5 +1,10 @@
 from .apiservice import fetch
 import json
+from config import Config
+import jwt
+
+def generate_token(payload, accesskey):
+        return jwt.encode(payload, accesskey)
 
 async def call_ai_middleware(user, bridge_id, variables = {}, configuration = None, response_type = None, thread_id = None):
     request_body = {
@@ -32,3 +37,33 @@ async def call_ai_middleware(user, bridge_id, variables = {}, configuration = No
     if response_type is None:
         result = json.loads(result)
     return result
+
+async def call_gtwy_agent(args):
+    try:
+        request_body = {
+            "user": args.get('user'),
+            "bridge_id": args.get('bridge_id'),
+            "variables": args.get('variables') or {}
+        }
+        
+        org_id = args.get('org_id')
+        token = generate_token({"org":{'id': str(org_id)},"user":{ 'id' : str(org_id)} }, Config.SecretKey)
+        response, rs_headers = await fetch(
+            f"https://{Config.URL}/api/v2/model/chat/completion",
+            "POST",
+            {
+                "Content-Type": "application/json",
+                "Authorization": token
+            },
+            None,
+            request_body
+        )
+        if not response.get('success', True):
+            raise Exception(response.get('message', 'Unknown error'))
+        result = response.get('response', {}).get('data', {}).get('content', "")
+        try:
+            return json.loads(result)
+        except json.JSONDecodeError:
+            return { "data" : result }
+    except Exception as e:
+        raise Exception(f"Error in call_gtwy_agent: {str(e)}")

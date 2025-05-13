@@ -1,7 +1,7 @@
 from fastapi import HTTPException, status
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
-from src.db_services.ConfigurationServices import create_bridge, get_bridge_by_id, get_all_bridges_in_org, update_bridge, update_bridge_ids_in_api_calls, get_bridges_with_tools, get_apikey_creds, update_apikey_creds, update_built_in_tools
+from src.db_services.ConfigurationServices import create_bridge, get_bridge_by_id, get_all_bridges_in_org, update_bridge, update_bridge_ids_in_api_calls, get_bridges_with_tools, get_apikey_creds, update_apikey_creds, update_built_in_tools, update_agents
 from src.configs.modelConfiguration import ModelsConfig as model_configuration
 from src.services.utils.helper import Helper
 import json
@@ -386,6 +386,10 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
         function_operation = body.get('functionData', {}).get('function_operation')
         function_name = body.get('functionData', {}).get('function_name',None)
         built_in_tools = body.get('built_in_tools_data', {}).get('built_in_tools', None)
+        agents =  body.get('agents', None)
+        if agents is not None:
+            connected_agents = agents.get('connected_agents', None)
+            agent_status = agents.get('agent_status', None)
         built_in_tools_operation = body.get('built_in_tools_data', {}).get('built_in_tools_operation', None)
         bridge = await get_bridge_by_id(org_id, bridge_id, version_id)
         parent_id = bridge.get('parent_id')
@@ -453,7 +457,11 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
                 await update_built_in_tools(version_id, built_in_tools, 0)
             elif built_in_tools_operation == '1':
                 await update_built_in_tools(version_id, built_in_tools, 1)
-                
+        if agents is not None and connected_agents is not None:
+            if agent_status is None:
+                await update_agents(version_id, connected_agents, 0)
+            elif str(agent_status) == '1':
+                await update_agents(version_id, connected_agents, 1)
         if function_id is not None: 
             Id_to_delete = {
                 "bridge_ids": [],

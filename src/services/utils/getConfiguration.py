@@ -166,6 +166,33 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
 
     configuration['prompt'] = Helper.add_doc_description_to_prompt(configuration['prompt'], rag_data)
     variables, org_name = await updateVariablesWithTimeZone(variables,org_id)
+    connected_agents = result.get('bridges', {}).get('connected_agents', {})
+    if connected_agents:
+        for bridge_name, bridge_info in connected_agents.items():
+            id = bridge_info.get('bridge_id', '')
+            description = bridge_info.get('description', '')
+            name = makeFunctionName(bridge_name)
+            tools.append({
+                "type": "function",
+                "name": name,
+                "description": description,
+                "properties": {
+                    "user": {
+                        "description": "this is the query for the agent to process the request",
+                        "type": "string",
+                        "enum": [],
+                        "required_params": [],
+                        "parameter": {}
+                    }
+                },
+                "required": ["user"]
+            })
+            tool_id_and_name_mapping[name] = {
+                    "type": "AGENT",
+                    "bridge_id" : id
+                }
+            # configuration['prompt'] += "\n AGENTS are available with their capabilites. IF you want you can call the agent by sending the query and bridge_id (make sure this 2 keys are always necessary to communicate with the agent) "
+
     return {
         'success': True,
         'configuration': configuration,

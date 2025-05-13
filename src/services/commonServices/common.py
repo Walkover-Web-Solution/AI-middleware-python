@@ -12,7 +12,7 @@ from ..utils.send_error_webhook import send_error_to_webhook
 import json
 from src.handler.executionHandler import handle_exceptions
 from models.mongo_connection import db
-from src.services.utils.common_utils import parse_request_body, initialize_timer, load_model_configuration, handle_pre_tools, handle_fine_tune_model,manage_threads, prepare_prompt, configure_custom_settings, build_service_params, process_background_tasks, build_service_params_for_batch, add_default_template, filter_missing_vars, send_error, restructure_json_schema
+from src.services.utils.common_utils import parse_request_body, initialize_timer, load_model_configuration, handle_pre_tools, handle_fine_tune_model,manage_threads, prepare_prompt, configure_custom_settings, build_service_params, build_service_params_for_batch, add_default_template, filter_missing_vars, send_error, restructure_json_schema
 from src.services.utils.rich_text_support import process_chatbot_response
 app = FastAPI()
 from src.services.utils.helper import Helper
@@ -117,8 +117,7 @@ async def chat(request_body):
             })
             if result.get('modelResponse') and result['modelResponse'].get('data'):
                 result['modelResponse']['data']['message_id'] = parsed_data['message_id']
-            await process_background_tasks(parsed_data, result, params, thread_info)
-        return JSONResponse(status_code=200, content={"success": True, "response": result["modelResponse"]})
+        return parsed_data, result, params, thread_info
     
     except (Exception, ValueError, BadRequestException) as error:
         if not isinstance(error, BadRequestException):
