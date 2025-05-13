@@ -17,7 +17,7 @@ from src.services.cache_service import make_json_serializable
 from src.configs.model_configuration import model_config_document
 from globals import *
 from src.services.utils.send_error_webhook import send_error_to_webhook
-from src.services.commonServices.queueService.queueLogService import sub_queue_obj
+from src.services.commonServices.queueService.Queue2 import sub_queue_obj
 from src.services.commonServices.baseService.utils import make_request_data_and_publish_sub_queue
 
 def parse_request_body(request_body):
