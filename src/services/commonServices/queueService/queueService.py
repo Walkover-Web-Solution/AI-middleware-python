@@ -129,7 +129,7 @@ class Queue:
     async def process_messages(self, messages):
         """Implement your batch processing logic here."""
         loop = asyncio.get_event_loop()
-        parsed_data, result, params, thread_info = chat(messages)
+        parsed_data, result, params, thread_info = await chat(messages)
         await process_background_tasks(parsed_data, result, params, thread_info)
         # return result
 
