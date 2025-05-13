@@ -169,7 +169,7 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
     connected_agents = result.get('bridges', {}).get('connected_agents', {})
     if connected_agents:
         for bridge_name, bridge_info in connected_agents.items():
-            id = bridge_info.get('brigde_id', '')
+            id = bridge_info.get('bridge_id', '')
             description = bridge_info.get('description', '')
             name = makeFunctionName(bridge_name)
             tools.append({
