@@ -371,10 +371,13 @@ async def make_request_data(request: Request):
 
 async def make_request_data_and_publish_sub_queue(parsed_data, result, params, thread_info):
     data = {
-        "save_sub_thread_id" : {
+        "save_sub_thread_id_and_name" : {
             "org_id" : parsed_data['org_id'],
             "thread_id" : thread_info['thread_id'],
-            "sub_thread_id" : thread_info['sub_thread_id']
+            "sub_thread_id" : thread_info['sub_thread_id'],
+            "thread_flag" : parsed_data['thread_flag'],
+            "response_format" : parsed_data['response_format'],
+
         },
         "metrics_service": {
             "dataset": [parsed_data['usage']],

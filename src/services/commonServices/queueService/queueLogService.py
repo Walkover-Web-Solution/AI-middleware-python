@@ -5,13 +5,13 @@ from config import Config
 from concurrent.futures import ThreadPoolExecutor
 from aio_pika.abc import AbstractIncomingMessage
 from src.services.utils.logger import logger
-from src.db_services.ConfigurationServices import save_sub_thread_id
 from src.db_services.metrics_service import create
 from src.services.utils.ai_middleware_format import validateResponse
 from src.services.commonServices.bridge_avg_response_time import get_bridge_avg_response_time
 from src.services.utils.gpt_memory import handle_gpt_memory
 from src.services.commonServices.suggestion import chatbot_suggestions
 from src.services.commonServices.baseService.utils import total_token_calculation
+from src.controllers.conversationController import save_sub_thread_id_and_name
 
 executor = ThreadPoolExecutor(max_workers= int(Config.max_workers) or 10)
 
@@ -132,7 +132,7 @@ class Queue2:
 
     async def process_messages(self, messages):
         """Implement your batch processing logic here."""
-        await save_sub_thread_id(**messages['save_sub_thread_id'])
+        await save_sub_thread_id_and_name(**messages['save_sub_thread_id'])
         await create(**messages['metrics_service'])
         await validateResponse(**messages['validateResponse'])
         await total_token_calculation(**messages['total_token_calculation'])

@@ -19,7 +19,8 @@ bridge_ids = {
     'chatbot_suggestions' : '674710c9141fcdaeb820aeb8',
     'generate_summary' : '67e4e7934e58b9c3b991a29c',
     'function_agrs_using_ai' : '67c81a424f3136bfb0e81906',
-    'compare_result' : '67ce993c8407023ad4f7b277'
+    'compare_result' : '67ce993c8407023ad4f7b277',
+    'generate_description' : '6800d48f7dfc8ddcc495f918'
 }
 
 __all__ = ['service_name', 'bridge_ids']
