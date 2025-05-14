@@ -687,11 +687,15 @@ async def update_apikey_creds(version_id):
             'error': "something went wrong!!"
         }
 
-async def save_sub_thread_id(org_id, thread_id, sub_thread_id):
+async def save_sub_thread_id(org_id, thread_id, sub_thread_id, name):
     try:
+        update_data = {'$setOnInsert': {'thread_id': thread_id}}
+        if name is not None and isinstance(name, str):
+            update_data['$set'] = {'name': name}
+        
         result = await threadsModel.find_one_and_update(
             {'org_id': org_id, 'sub_thread_id': sub_thread_id},
-            {'$setOnInsert': {'thread_id': thread_id}},
+            update_data,
             upsert=True,
             return_document=True
         )
