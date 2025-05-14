@@ -2,6 +2,7 @@
 import copy
 import traceback
 from ..utils.ai_middleware_format import send_alert
+import re
 
 async def execute_with_retry(
     configuration,
@@ -29,6 +30,8 @@ async def execute_with_retry(
             execution_time_logs[len(execution_time_logs) + 1] = timer.stop("API chat completion")
             return first_result
         else:
+            raw_error = str(first_result['error'])
+            first_result['error'] = re.sub(r'(\n\s*){3,}', '\n..\n', raw_error)
             print("First API call failed with error:", first_result['error'])
             traceback.print_exc()
             firstAttemptError = first_result['error']
