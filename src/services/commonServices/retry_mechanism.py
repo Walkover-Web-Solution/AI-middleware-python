@@ -31,7 +31,10 @@ async def execute_with_retry(
             return first_result
         else:
             raw_error = str(first_result['error'])
-            first_result['error'] = re.sub(r'(\n\s*){3,}', '\n..\n', raw_error)
+            if re.match(r'^[\n\s]*$', raw_error):
+                first_result['error'] = '\n..\n'
+            else:
+                first_result['error'] = raw_error
             print("First API call failed with error:", first_result['error'])
             traceback.print_exc()
             firstAttemptError = first_result['error']
