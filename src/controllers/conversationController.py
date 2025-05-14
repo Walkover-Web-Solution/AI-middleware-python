@@ -138,7 +138,7 @@ async def add_tool_call_data_in_history(chats):
         processed_chats = [chat for idx, chat in enumerate(chats) if idx not in tools_call_indices]
         return processed_chats
 
-async def save_sub_thread_id_and_name(thread_id, sub_thread_id, org_id, thread_flag, response_format):
+async def save_sub_thread_id_and_name(thread_id, sub_thread_id, org_id, thread_flag, response_format, bridge_id):
     try:
         name = None
         if thread_flag:
@@ -147,7 +147,10 @@ async def save_sub_thread_id_and_name(thread_id, sub_thread_id, org_id, thread_f
         await save_sub_thread_id(org_id, thread_id, sub_thread_id, name)
         if name is not None:
             data = {
-                'displayName' : name
+                'displayName' : name,
+                'sub_thread_id' : sub_thread_id,
+                'thread_id' : thread_id,
+                'bridge_id' : bridge_id
             }
             await sendResponse(response_format, data, True)
 
