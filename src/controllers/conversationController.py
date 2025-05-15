@@ -138,12 +138,15 @@ async def add_tool_call_data_in_history(chats):
         processed_chats = [chat for idx, chat in enumerate(chats) if idx not in tools_call_indices]
         return processed_chats
 
-async def save_sub_thread_id_and_name(thread_id, sub_thread_id, org_id, thread_flag, response_format, bridge_id):
+async def save_sub_thread_id_and_name(thread_id, sub_thread_id, org_id, thread_flag, response_format, bridge_id, user):
     try:
         name = None
+        variables = {
+            'user' : user
+        }
         if thread_flag:
-            user  = 'generate description'
-            name = await call_ai_middleware(user, bridge_ids['generate_description'], response_type='text')
+            message  = 'generate description'
+            name = await call_ai_middleware(message, bridge_ids['generate_description'], response_type='text', variables=variables)
         await save_sub_thread_id(org_id, thread_id, sub_thread_id, name)
         if name is not None:
             data = {
