@@ -140,7 +140,7 @@ async def validateResponse(final_response,configration,bridgeId, message_id, org
     content = final_response.get("data",{}).get("content","")
     parsed_data = content.replace(" ", "").replace("\n", "")
     if(parsed_data == '' and content):
-        await send_alert(data={"response":content,"configration":configration,"message_id":message_id,"bridge_id":bridgeId, "org_id": org_id, "message": "\n issue occurs"})
+        await send_alert(data={"response":"\n..\n","configration":configration,"message_id":message_id,"bridge_id":bridgeId, "org_id": org_id, "message": "\n issue occurs"})
 
 async def send_alert(data):
     dataTosend = {**data, "ENVIROMENT":Config.ENVIROMENT} if Config.ENVIROMENT else data
