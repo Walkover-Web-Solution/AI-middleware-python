@@ -1,7 +1,7 @@
 import json
 from config import Config
 from src.services.utils.apiservice import fetch
-
+import re
 async def Response_formatter(response = {}, service = None, tools={}, type='chat', images = None):
     tools_data = tools
     if isinstance(tools_data, dict):
@@ -134,7 +134,11 @@ async def Response_formatter(response = {}, service = None, tools={}, type='chat
 
 async def validateResponse(final_response,configration,bridgeId, message_id, org_id):
     content = final_response.get("data",{}).get("content","")
-    parsed_data = content.replace(" ", "").replace("\n", "")
+
+    if re.fullmatch(r'[\n\s]*', content):
+        content = "\n..\n"
+
+    parsed_data = re.sub(r'\s+', '', content)
     if(parsed_data == '' and content):
         await send_alert(data={"response":content,"configration":configration,"message_id":message_id,"bridge_id":bridgeId, "org_id": org_id, "message": "\n issue occurs"})
 
