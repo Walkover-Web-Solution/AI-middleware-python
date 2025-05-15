@@ -132,7 +132,7 @@ class Queue2:
 
     async def process_messages(self, messages):
         """Implement your batch processing logic here."""
-        await save_sub_thread_id_and_name(**messages['save_sub_thread_id'])
+        await save_sub_thread_id_and_name(**messages['save_sub_thread_id_and_name'])
         await create(**messages['metrics_service'])
         await validateResponse(**messages['validateResponse'])
         await total_token_calculation(**messages['total_token_calculation'])
