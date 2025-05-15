@@ -134,13 +134,10 @@ async def Response_formatter(response = {}, service = None, tools={}, type='chat
 
 async def validateResponse(final_response,configration,bridgeId, message_id, org_id):
     content = final_response.get("data",{}).get("content","")
-
     if re.fullmatch(r'[\n\s]*', content):
-        content = "\n..\n"
-
-    parsed_data = re.sub(r'\s+', '', content)
-    if(parsed_data == '' and content):
-        await send_alert(data={"response":content,"configration":configration,"message_id":message_id,"bridge_id":bridgeId, "org_id": org_id, "message": "\n issue occurs"})
+        alert_content = "\n..\n"
+        await send_alert(data={
+            "response": alert_content,"configration":configration,"message_id":message_id,"bridge_id":bridgeId, "org_id": org_id, "message": "\n issue occurs"})
 
 async def send_alert(data):
     dataTosend = {**data, "ENVIROMENT":Config.ENVIROMENT} if Config.ENVIROMENT else data
