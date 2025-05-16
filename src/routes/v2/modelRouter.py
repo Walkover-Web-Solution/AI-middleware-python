@@ -7,7 +7,7 @@ from ...middlewares.middleware import jwt_middleware
 from ...middlewares.getDataUsingBridgeId import add_configuration_data_to_body
 from concurrent.futures import ThreadPoolExecutor
 from config import Config
-from src.services.commonServices.queueService.queueService import queue_obj
+from src.services.commonServices.queueService.Queue1 import queue_obj
 from src.middlewares.ratelimitMiddleware import rate_limit
 from globals import *
 from src.services.utils.common_utils import process_background_tasks

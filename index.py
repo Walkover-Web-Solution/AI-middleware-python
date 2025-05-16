@@ -16,8 +16,8 @@ from src.routes.apiCall_routes import router as apiCall_router
 from src.routes.config_routes import router as config_router
 from src.controllers.bridgeController import router as bridge_router
 from src.routes.v2.modelRouter import router as v2_router
-from src.services.commonServices.queueService.queueService import queue_obj
-from src.services.commonServices.queueService.queueLogService import sub_queue_obj
+from src.services.commonServices.queueService.Queue1 import queue_obj
+from src.services.commonServices.queueService.Queue2 import sub_queue_obj
 from src.services.utils.logger import logger
 from src.routes.bridge_version_routes import router as bridge_version
 from src.routes.image_process_routes import router as image_process_routes

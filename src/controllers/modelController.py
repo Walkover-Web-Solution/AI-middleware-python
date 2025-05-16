@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Request, HTTPException
 from fastapi.responses import JSONResponse
 from src.services.commonServices.common import chat
 from src.services.commonServices.baseService.utils import make_request_data
-from src.services.commonServices.queueService.queueService import queue_obj
+from src.services.commonServices.queueService.Queue1 import queue_obj
 from ..middlewares.middleware import jwt_middleware
 from ..middlewares.getDataUsingBridgeId import add_configuration_data_to_body
 import traceback
