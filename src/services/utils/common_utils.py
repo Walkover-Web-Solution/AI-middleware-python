@@ -76,7 +76,7 @@ def parse_request_body(request_body):
         "org_name" : body.get('org_name'),
         "variables_state" : body.get('variables_state'),
         "built_in_tools" : body.get('built_in_tools') or [],
-        "thread_flag" : body.get('thread_flag') or True
+        "thread_flag" : body.get('thread_flag') or False
     }
 
 

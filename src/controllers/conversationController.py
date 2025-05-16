@@ -140,22 +140,24 @@ async def add_tool_call_data_in_history(chats):
 
 async def save_sub_thread_id_and_name(thread_id, sub_thread_id, org_id, thread_flag, response_format, bridge_id, user):
     try:
-        name = None
+        display_name = None
         variables = {
             'user' : user
         }
         if thread_flag:
             message  = 'generate description'
-            name = await call_ai_middleware(message, bridge_ids['generate_description'], response_type='text', variables=variables)
-        await save_sub_thread_id(org_id, thread_id, sub_thread_id, name)
-        if name is not None:
-            data = {
-                'displayName' : name,
-                'sub_thread_id' : sub_thread_id,
-                'thread_id' : thread_id,
-                'bridge_id' : bridge_id
+            display_name = await call_ai_middleware(message, bridge_ids['generate_description'], response_type='text', variables=variables)
+            await save_sub_thread_id(org_id, thread_id, sub_thread_id, display_name)
+        if display_name is not None:
+            response = {
+                'data': {
+                    'display_name': display_name,
+                    'sub_thread_id': sub_thread_id,
+                    'thread_id': thread_id,
+                    'bridge_id': bridge_id
+                }
             }
-            await sendResponse(response_format, data, True)
+            await sendResponse(response_format, response, True)
 
     except Exception as err:
         logger.error(f"Error in saving sub thread id and name:, {str(err)}")
