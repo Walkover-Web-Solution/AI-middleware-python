@@ -89,8 +89,8 @@ async def calculate_average_response_time(org_id, bridge_id):
             session.query(
                 func.avg(
                     func.cast(
-                        # Use the proper JSONB extraction for PostgreSQL
-                        func.jsonb_extract_path_text(RawData.latency, 'over_all_time'),
+                        func.jsonb_extract_path_text(RawData.latency, 'over_all_time').cast(sa.Float) - 
+                        func.jsonb_extract_path_text(RawData.latency, 'model_execution_time').cast(sa.Float),
                         sa.Float
                     )
                 ).label('avg_response_time')
