@@ -393,8 +393,10 @@ async def make_request_data_and_publish_sub_queue(parsed_data, result, params, t
             "bridge_id": parsed_data['bridge_id']
         },
         "chatbot_suggestions" : {
-            "org_id": parsed_data['org_id'],
-            "bridge_id": parsed_data['bridge_id'],
+            "response_format": parsed_data['response_format'],
+            "assistant": result['modelResponse'],
+            "user": parsed_data['user'],
+            "bridge_summary": parsed_data['bridge_summary'],
             "thread_id": parsed_data['thread_id'],
             "sub_thread_id": parsed_data['sub_thread_id'],
             "configuration": params['configuration']
