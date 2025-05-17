@@ -402,8 +402,8 @@ async def make_request_data_and_publish_sub_queue(parsed_data, result, params, t
         "handle_gpt_memory" : {
             "id" : parsed_data['id'],
             "user" :  parsed_data['user'],
-            "modelResponse" :  result['modelResponse'],
-            "memory" :  parsed_data['memory'],
+            "assistant" :  result['modelResponse'],
+            "purpose" :  parsed_data['memory'],
             "gpt_memory_context" :  parsed_data['gpt_memory_context']
         },
         "check_handle_gpt_memory" : {
