@@ -111,7 +111,7 @@ def tool_call_formatter(configuration: dict, service: str, variables: dict, vari
                 'type': 'function',
                 'function': {
                     'name': transformed_tool['name'],
-                    # "strict": True,
+                    "strict": True,
                     'description': transformed_tool['description'],
                     'parameters': {
                         'type': 'object',
