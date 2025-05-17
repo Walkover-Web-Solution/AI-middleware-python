@@ -176,12 +176,13 @@ async def get_vectors_and_text(request):
         query = body.get('query')
         top_k = body.get('top_k', 2)
         
-        if query is None:
-            raise HTTPException(status_code=400, detail="Query is required.")
+        if query is None and doc_id is None:
+            raise HTTPException(status_code=400, detail="Query and Doc_id required.")
         text = await get_text_from_vectorsQuery({
             'Document_id': doc_id, 
             'query': query, 
-            'org_id': org_id
+            'org_id': org_id,
+            'top_k': top_k
         })
         return JSONResponse(status_code=200, content={
             "success": True,
