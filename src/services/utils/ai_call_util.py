@@ -52,7 +52,7 @@ async def call_gtwy_agent(args):
             (
                 f"http://localhost:8080/api/v2/model/chat/completion"
                 if Config.ENVIROMENT and Config.ENVIROMENT.upper() == "LOCAL"
-                else f"https://dev.gtwy.ai/api/v2/model/chat/completion"
+                else f"https://dev-api.gtwy.ai/api/v2/model/chat/completion"
                 if Config.ENVIROMENT and Config.ENVIROMENT.upper() == "TESTING"
                 else f"https://api.gtwy.ai/api/v2/model/chat/completion"
             ),
