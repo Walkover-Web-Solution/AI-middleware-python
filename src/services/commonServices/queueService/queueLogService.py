@@ -137,10 +137,11 @@ class Queue2:
         await validateResponse(**messages['validateResponse'])
         await total_token_calculation(**messages['total_token_calculation'])
         await get_bridge_avg_response_time(**messages['get_bridge_avg_response_time'])
-        if messages['check_chatbot_suggestions']['bridgeType']:
-            await chatbot_suggestions(**messages['chatbot_suggestions'])
         if messages['check_handle_gpt_memory']['gpt_memory'] and messages['check_handle_gpt_memory']['type'] == 'chat':
             await handle_gpt_memory(**messages['handle_gpt_memory'])
+        if messages['check_chatbot_suggestions']['bridgeType']:
+            await chatbot_suggestions(**messages['chatbot_suggestions'])
+        
         # return result
 
     async def consume_messages(self):
