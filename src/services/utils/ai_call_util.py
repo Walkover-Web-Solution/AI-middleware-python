@@ -49,7 +49,13 @@ async def call_gtwy_agent(args):
         org_id = args.get('org_id')
         token = generate_token({"org":{'id': str(org_id)},"user":{ 'id' : str(org_id)} }, Config.SecretKey)
         response, rs_headers = await fetch(
-            f"https://{Config.URL}/api/v2/model/chat/completion",
+            (
+                f"http://localhost:8080/api/v2/model/chat/completion"
+                if Config.ENVIROMENT and Config.ENVIROMENT.upper() == "LOCAL"
+                else f"https://dev.gtwy.ai/api/v2/model/chat/completion"
+                if Config.ENVIROMENT and Config.ENVIROMENT.upper() == "TESTING"
+                else f"https://api.gtwy.ai/api/v2/model/chat/completion"
+            ),
             "POST",
             {
                 "Content-Type": "application/json",
