@@ -117,7 +117,7 @@ def tool_call_formatter(configuration: dict, service: str, variables: dict, vari
                         'type': 'object',
                         'properties': clean_json(transform_required_params_to_required(transformed_tool.get('properties', {}), variables=variables, variables_path=variables_path, function_name=transformed_tool['name'], parentValue={'required': transformed_tool.get('required', [])})),
                         'required': transformed_tool.get('required'),
-                        # "additionalProperties": False,
+                        "additionalProperties": False,
                     }
                 }
             } for transformed_tool in configuration.get('tools', [])
@@ -128,13 +128,13 @@ def tool_call_formatter(configuration: dict, service: str, variables: dict, vari
             {
                 'type': 'function',
                 'name': transformed_tool['name'],
-                # "strict": True,
+                "strict": True,
                 'description': transformed_tool['description'],
                 'parameters': {
                     'type': 'object',
                     'properties': clean_json(transform_required_params_to_required(transformed_tool.get('properties', {}), variables=variables, variables_path=variables_path, function_name=transformed_tool['name'], parentValue={'required': transformed_tool.get('required', [])})),
                     'required': transformed_tool.get('required'),
-                    # "additionalProperties": False,
+                    "additionalProperties": False,
                 }
             } for transformed_tool in configuration.get('tools', [])
         ]
