@@ -262,8 +262,6 @@ async def get_all_service_models_controller(service):
 
                 },
                 "reasoning" : {
-                    "o1-preview" : restructure_configuration(model_config_document[service]['o1-preview']),
-                    # "o1-mini" : restructure_configuration(model_config_document[service]['o1-mini']),
                     "o1" : restructure_configuration(model_config_document[service]['o1']),
                     "o3-mini" : restructure_configuration(model_config_document[service]['o3-mini']),
                     "o4-mini" : restructure_configuration(model_config_document[service]['o4-mini']),
@@ -292,8 +290,6 @@ async def get_all_service_models_controller(service):
                     "gpt-4.1-nano": restructure_configuration(model_config_document[service]['gpt-4.1-nano']),
                 },
                 "reasoning" : {
-                    "o1-preview" : restructure_configuration(model_config_document[service]['o1-preview']),
-                    # "o1-mini" : restructure_configuration(model_config_document[service]['o1-mini']),
                     "o1" : restructure_configuration(model_config_document[service]['o1']),
                     "o3-mini" : restructure_configuration(model_config_document[service]['o3-mini']),
                     "o4-mini" : restructure_configuration(model_config_document[service]['o4-mini']),
