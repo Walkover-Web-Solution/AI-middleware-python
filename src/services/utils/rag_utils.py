@@ -39,7 +39,7 @@ async def get_csv_query_type(doc_data, query):
     
     user = 'Tell me the query type'
     variables = {'headers' : doc_data['content']['headers'], 'query' : query}
-    response = await call_ai_middleware(user, bridge_id = bridge_ids['get_csv_query_type'], varaibles = variables)
+    response = await call_ai_middleware(user, bridge_id = bridge_ids['get_csv_query_type'], variables = variables)
     query_type = response['search']
     return 'columnWiseData' if query_type == 'column' else 'rowWiseData'
     
