@@ -11,6 +11,8 @@ import datetime
 from src.controllers.rag_controller import get_text_from_vectorsQuery
 from globals import *
 from src.db_services.ConfigurationServices import get_bridges_without_tools, update_bridge
+from src.services.utils.ai_call_util import call_gtwy_agent
+
 
 def clean_json(data):
     """Recursively remove keys with empty string, empty list, or empty dictionary."""
@@ -217,10 +219,12 @@ async def process_data_and_run_tools(codes_mapping, tool_id_and_name_mapping, or
 
             if not tool_data.get("response"):
                 # if function is present in db/NO response, create task for async processing
-                if tool_id_and_name_mapping[name].get('type') != 'RAG':
-                    task = axios_work(tool_data.get("args"), tool_id_and_name_mapping[name])
-                else:
+                if tool_id_and_name_mapping[name].get('type') == 'RAG':
                     task = get_text_from_vectorsQuery({**tool_data.get("args"), "org_id":org_id}) 
+                elif tool_id_and_name_mapping[name].get('type') == 'AGENT':
+                    task = call_gtwy_agent({**tool_data.get("args"), "org_id":org_id, "bridge_id": tool_id_and_name_mapping[name].get("bridge_id")})
+                else: 
+                    task = axios_work(tool_data.get("args"), tool_id_and_name_mapping[name])
                 tasks.append((tool_call_key, tool_data, task))
             else:
                 # If function is not present in db/response exists, append to responses
