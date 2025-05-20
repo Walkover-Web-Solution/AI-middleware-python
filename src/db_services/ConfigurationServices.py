@@ -492,6 +492,32 @@ async def update_built_in_tools(version_id, tool, add=1):
     
     return data
 
+async def update_agents(version_id, agents, add=1):
+    if add == 1:
+        # Add or update the connected agents
+        to_update = {'$set': {f'connected_agents.{agent_name}': agent_info for agent_name, agent_info in agents.items()}}
+    else:
+        # Remove the specified connected agents
+        to_update = {'$unset': {f'connected_agents.{agent_name}': "" for agent_name in agents.keys()}}
+    
+    data = await version_model.find_one_and_update(
+        {'_id': ObjectId(version_id)},
+        to_update,
+        return_document=True,
+        upsert=True
+    )
+    
+    if not data:
+        return {
+            'success': False,
+            'error': 'No records updated or version not found'
+        }
+    
+    if 'connected_agents' not in data:
+        data['connected_agents'] = {}
+    
+    return data
+
 async def get_template_by_id(template_id):
     try:
         cache_key = f"template_{template_id}"
@@ -534,7 +560,8 @@ async def get_all_bridges_in_org(org_id):
         "status": 1,
         "versions": 1,
         "published_version_id": 1,
-        "total_tokens": 1
+        "total_tokens": 1,
+        "variables_state" : 1 
     })
     bridges_list = await bridge.to_list(length=None)
     for itr in bridges_list:
