@@ -7,7 +7,6 @@ from src.services.commonServices.common import chat
 from aio_pika.abc import AbstractIncomingMessage
 from src.services.utils.logger import logger
 
-
 executor = ThreadPoolExecutor(max_workers= int(Config.max_workers) or 10)
 
 
@@ -23,7 +22,7 @@ class Queue:
     def __init__(self):
         if not hasattr(self, 'initialized'):  # Ensure initialization happens only once
             print("Queue Service Initialized")
-            self.queue_name = Config.QUEUE_NAME or "AI-MIDDLEARE-DEFAULT"
+            self.queue_name = Config.QUEUE_NAME or f"AI-MIDDLEARE-DEFAULT-{Config.ENVIROMENT}"
             self.failed_queue_name = f"{self.queue_name}-Failed"
             # self.failed_exchange_name = f"{self.failed_queue_name}-exchange"
             self.binding_key = None
@@ -129,7 +128,6 @@ class Queue:
     async def process_messages(self, messages):
         """Implement your batch processing logic here."""
         loop = asyncio.get_event_loop()
-        # await loop.run_in_executor(executor, lambda: asyncio.run(chat(messages)))
         await chat(messages)
         # return result
 

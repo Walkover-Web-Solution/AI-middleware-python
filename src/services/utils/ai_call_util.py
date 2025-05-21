@@ -48,22 +48,18 @@ async def call_gtwy_agent(args):
         
         org_id = args.get('org_id')
         token = generate_token({"org":{'id': str(org_id)},"user":{ 'id' : str(org_id)} }, Config.SecretKey)
-        response, rs_headers = await fetch(
-            (
+        url = (
                 f"http://localhost:8080/api/v2/model/chat/completion"
                 if Config.ENVIROMENT and Config.ENVIROMENT.upper() == "LOCAL"
                 else f"https://dev-api.gtwy.ai/api/v2/model/chat/completion"
                 if Config.ENVIROMENT and Config.ENVIROMENT.upper() == "TESTING"
                 else f"https://api.gtwy.ai/api/v2/model/chat/completion"
-            ),
-            "POST",
-            {
+            )
+        header = {
                 "Content-Type": "application/json",
                 "Authorization": token
-            },
-            None,
-            request_body
-        )
+            }
+        response, rs_headers = await fetch(url=url,method="POST",headers=header,json_body=request_body)
         if not response.get('success', True):
             raise Exception(response.get('message', 'Unknown error'))
         result = response.get('response', {}).get('data', {}).get('content', "")

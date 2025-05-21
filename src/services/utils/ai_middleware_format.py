@@ -23,7 +23,8 @@ async def Response_formatter(response = {}, service = None, tools={}, type='chat
                 "tools_data": tools_data or {},
                 "images" : images,
                 "annotations" : response.get("choices", [{}])[0].get("message", {}).get("annotations", None),
-                "fallback" : response.get('fallback') or False
+                "fallback" : response.get('fallback') or False,
+                "firstAttemptError" : response.get('firstAttemptError') or ''
             },
             "usage" : {
                 "input_tokens" : response.get("usage", {}).get("prompt_tokens", None),
@@ -57,7 +58,8 @@ async def Response_formatter(response = {}, service = None, tools={}, type='chat
                 "role" : response.get("role", None),
                 "finish_reason" : response.get("stop_reason", None),
                 "tools_data": tools_data or {},
-                "fall_back" : response.get('fallback') or False
+                "fall_back" : response.get('fallback') or False,
+                "firstAttemptError" : response.get('firstAttemptError') or ''
             },
             "usage" : {
                 "input_tokens" : response.get("usage", {}).get("input_tokens", None),
@@ -107,7 +109,9 @@ async def Response_formatter(response = {}, service = None, tools={}, type='chat
                 "status": response.get("status", None),
                 "tools_data": tools_data or {},
                 "images": images,
-                "annotations": response.get("output", [{}])[0].get("content", [{}])[0].get("annotations", None)
+                "annotations": response.get("output", [{}])[0].get("content", [{}])[0].get("annotations", None),
+                "fall_back" : response.get('fallback') or False,
+                "firstAttemptError" : response.get('firstAttemptError') or ''
             },
             "usage": {
                 "input_tokens": response.get("usage", {}).get("input_tokens", None),
@@ -136,7 +140,7 @@ async def validateResponse(final_response,configration,bridgeId, message_id, org
     content = final_response.get("data",{}).get("content","")
     parsed_data = content.replace(" ", "").replace("\n", "")
     if(parsed_data == '' and content):
-        await send_alert(data={"response":content,"configration":configration,"message_id":message_id,"bridge_id":bridgeId, "org_id": org_id, "message": "\n issue occurs"})
+        await send_alert(data={"response":"\n..\n","configration":configration,"message_id":message_id,"bridge_id":bridgeId, "org_id": org_id, "message": "\n issue occurs"})
 
 async def send_alert(data):
     dataTosend = {**data, "ENVIROMENT":Config.ENVIROMENT} if Config.ENVIROMENT else data

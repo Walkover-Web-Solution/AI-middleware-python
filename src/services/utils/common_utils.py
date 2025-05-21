@@ -5,7 +5,7 @@ from src.services.utils.time import Timer
 from src.services.commonServices.baseService.utils import axios_work
 from src.services.utils.apiservice import fetch
 from src.configs.serviceKeys import model_config_change
-from ...controllers.conversationController import getThread
+from ...controllers.conversationController import getThread, save_sub_thread_id_and_name
 from src.services.utils.token_calculation import TokenCalculator
 import src.db_services.ConfigurationServices as ConfigurationService
 from .helper import Helper
@@ -76,7 +76,8 @@ def parse_request_body(request_body):
         "name" : body.get('name'),
         "org_name" : body.get('org_name'),
         "variables_state" : body.get('variables_state'),
-        "built_in_tools" : body.get('built_in_tools') or []
+        "built_in_tools" : body.get('built_in_tools') or [],
+        "thread_flag" : body.get('thread_flag') or False
     }
 
 
@@ -132,7 +133,10 @@ async def manage_threads(parsed_data):
     sub_thread_id = parsed_data['sub_thread_id']
     bridge_id = parsed_data['bridge_id']
     bridge_type = parsed_data['bridgeType']
-    org_id = parsed_data['org_id']      
+    org_id = parsed_data['org_id']    
+    thread_flag = parsed_data['thread_flag']
+    response_format = parsed_data['response_format']
+
     
     if thread_id:
         thread_id = thread_id.strip()
@@ -144,7 +148,7 @@ async def manage_threads(parsed_data):
         sub_thread_id = thread_id
         parsed_data['gpt_memory'] = False
         result = {"success": True}
-    
+        
     return {
         "thread_id": thread_id,
         "sub_thread_id": sub_thread_id,
@@ -320,3 +324,15 @@ def send_error(bridge_id, org_id, error_message, error_type):
     asyncio.create_task(send_error_to_webhook(
         bridge_id, org_id, error_message, error_type=error_type
     ))
+
+def restructure_json_schema(response_type, service):
+    match service:
+        case 'openai_response':
+            schema = response_type.get('json_schema', {})
+            del response_type['json_schema']
+            for key, value in schema.items():
+                response_type[key] = value
+            return response_type
+        case _:
+            return response_type
+        

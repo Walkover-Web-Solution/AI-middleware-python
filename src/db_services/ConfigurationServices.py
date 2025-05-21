@@ -37,7 +37,7 @@ async def get_bridges(bridge_id = None, org_id = None, version_id = None):
                 }
             }
         ]
-        
+       
         result = await model.aggregate(pipeline).to_list(length=None)
         bridges = result[0] if result else {}
 
@@ -83,7 +83,7 @@ async def get_bridges_with_redis(bridge_id = None, org_id = None, version_id = N
                 }
             }
         ]
-        
+       
         result = await model.aggregate(pipeline).to_list(length=None)
         bridges = result[0] if result else {}
         await store_in_cache(cache_key, result)
@@ -113,7 +113,7 @@ async def get_bridges_without_tools(bridge_id = None, org_id = None, version_id 
             'success': False,
             'error': "something went wrong!!"
         }
-    
+   
 async def get_bridges_with_tools(bridge_id, org_id, version_id=None):
     try:
         model = version_model if version_id else configurationModel
@@ -130,7 +130,7 @@ async def get_bridges_with_tools(bridge_id, org_id, version_id=None):
             {
                 '$lookup': {
                     'from': 'apicalls',
-                    'localField': 'function_ids', 
+                    'localField': 'function_ids',
                     'foreignField': '_id',
                     'as': 'apiCalls'
                 }
@@ -174,15 +174,15 @@ async def get_bridges_with_tools(bridge_id, org_id, version_id=None):
                 }
             }
         ]
-        
+       
         result = await model.aggregate(pipeline).to_list(length=None)
-        
+       
         if not result:
             return {
                 'success': False,
                 'error': 'No matching records found'
             }
-        
+       
         return {
             'success': True,
             'bridges': result[0]
@@ -192,12 +192,13 @@ async def get_bridges_with_tools(bridge_id, org_id, version_id=None):
         return {
             'success': False,
             'error': "something went wrong!!"
-        }     
+        }    
+
 
 async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None):
     try:
         cache_key = f"{version_id or bridge_id}"
-        
+       
         # Attempt to retrieve data from Redis cache
         cached_data = await find_in_cache(cache_key)
         if cached_data:
@@ -207,195 +208,227 @@ async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None)
         model = version_model if version_id else configurationModel
         id_to_use = ObjectId(version_id) if version_id else ObjectId(bridge_id)
         pipeline = [
-            # Stage 0: Match the specific bridge or version with the given org_id
-            {
-                '$match': {'_id': ObjectId(id_to_use), "org_id": org_id}
-            },
-            {
-                '$project': {
-                    'configuration.encoded_prompt': 0
+    # Stage 0: Match the specific bridge or version with the given org_id
+    {
+        '$match': {'_id': ObjectId(id_to_use), "org_id": org_id}
+    },
+    {
+        '$project': {
+            'configuration.encoded_prompt': 0
+        }
+    },
+    # Stage 1: Lookup to join with 'apicalls' collection
+    {
+        '$lookup': {
+            'from': 'apicalls',
+            'localField': 'function_ids',
+            'foreignField': '_id',
+            'as': 'apiCalls'
+        }
+    },
+    # Stage 2: Restructure fields for _id, function_ids and apiCalls
+    {
+        '$addFields': {
+            '_id': {'$toString': '$_id'},
+            'function_ids': {
+                '$map': {
+                    'input': '$function_ids',
+                    'as': 'fid',
+                    'in': {'$toString': '$$fid'}
                 }
             },
-            # Stage 1: Lookup to join with 'apicalls' collection
-            {
-                '$lookup': {
-                    'from': 'apicalls',
-                    'localField': 'function_ids', 
-                    'foreignField': '_id',
-                    'as': 'apiCalls'
-                }
-            },
-            # Stage 2: Restructure fields for _id, function_ids and apiCalls
-            {
-                '$addFields': {
-                    '_id': {'$toString': '$_id'},
-                    'function_ids': {
-                        '$map': {
-                            'input': '$function_ids',
-                            'as': 'fid',
-                            'in': {'$toString': '$$fid'}
-                        }
-                    },
-                    'apiCalls': {
-                        '$arrayToObject': {
-                            '$map': {
-                                'input': '$apiCalls',
-                                'as': 'api_call',
-                                'in': {
-                                    'k': {'$toString': '$$api_call._id'},
-                                    'v': {
-                                        '$mergeObjects': [
-                                            '$$api_call',
-                                            {
-                                                '_id': {'$toString': '$$api_call._id'},
-                                                'bridge_ids': {
-                                                    '$map': {
-                                                        'input': '$$api_call.bridge_ids',
-                                                        'as': 'bid',
-                                                        'in': {'$toString': '$$bid'}
-                                                    }
-                                                }
-                                            }
-                                        ]
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            },
-            # Stage 3: Convert 'apikey_object_id' to an array of key-value pairs
-            {
-                '$addFields': {
-                    'apikeys_array': { '$objectToArray': '$apikey_object_id' }
-                }
-            },
-            # Stage 4: Lookup 'apikeycredentials' using the ObjectIds from 'apikeys_array.v'
-            {
-                '$lookup': {
-                    'from': 'apikeycredentials',
-                    'let': { 
-                        'apikey_ids_object': { 
-                            '$map': { 
-                                'input': '$apikeys_array.v', 
-                                'as': 'id', 
-                                'in': {
-                                    '$convert': {
-                                        'input': '$$id',
-                                        'to': 'objectId',
-                                        'onError': None,
-                                        'onNull': None
-                                    }
-                                }
-                            } 
-                        } 
-                    },
-                    'pipeline': [
-                        {
-                            '$match': {
-                                '$expr': { '$in': ['$_id', '$$apikey_ids_object'] }
-                            }
-                        },
-                        {
-                            '$project': { 'service': 1, 'apikey': 1 }
-                        }
-                    ],
-                    'as': 'apikeys_docs'
-                }
-            },
-            # Stage 5: Map each service to its corresponding apikey
-            {
-                '$addFields': {
-                    'apikeys': {
-                        '$arrayToObject': {
-                            '$map': {
-                                'input': '$apikeys_array',
-                                'as': 'item',
-                                'in': [
-                                    '$$item.k',  # Service name as the key
+            'apiCalls': {
+                '$arrayToObject': {
+                    '$map': {
+                        'input': '$apiCalls',
+                        'as': 'api_call',
+                        'in': {
+                            'k': {'$toString': '$$api_call._id'},
+                            'v': {
+                                '$mergeObjects': [
+                                    '$$api_call',
                                     {
-                                        '$arrayElemAt': [
-                                            {
-                                                '$map': {
-                                                    'input': {
-                                                        '$filter': {
-                                                            'input': '$apikeys_docs',
-                                                            'as': 'doc',
-                                                            'cond': { 
-                                                                '$eq': [
-                                                                    '$$doc._id', 
-                                                                    {
-                                                                        '$convert': {
-                                                                            'input': '$$item.v',
-                                                                            'to': 'objectId',
-                                                                            'onError': None,
-                                                                            'onNull': None
-                                                                        }
-                                                                    }
-                                                                ]
-                                                            }
-                                                        }
-                                                    },
-                                                    'as': 'matched_doc',
-                                                    'in': '$$matched_doc.apikey'
-                                                }
-                                            },
-                                            0  # Get the first matched apikey
-                                        ]
+                                        '_id': {'$toString': '$$api_call._id'},
+                                        'bridge_ids': {
+                                            '$map': {
+                                                'input': '$$api_call.bridge_ids',
+                                                'as': 'bid',
+                                                'in': {'$toString': '$$bid'}
+                                            }
+                                        }
                                     }
                                 ]
                             }
                         }
                     }
                 }
-            },
-            # Stage 6: Lookup 'rag_parent_datas' using 'doc_ids'
-            {
-                '$lookup': {
-                    'from': 'rag_parent_datas',
-                    'let': { 
-                        'doc_ids': { 
-                            '$map': {
-                                'input': { '$ifNull': ['$doc_ids', []] },
-                                'as': 'doc_id',
-                                'in': { '$toObjectId': '$$doc_id' }
+            }
+        }
+    },
+    # Stage 3: Convert 'apikey_object_id' to an array of key-value pairs
+    {
+        '$addFields': {
+            'apikeys_array': { '$objectToArray': '$apikey_object_id' }
+        }
+    },
+    # Stage 4: Lookup 'apikeycredentials' using the ObjectIds from 'apikeys_array.v'
+    {
+        '$lookup': {
+            'from': 'apikeycredentials',
+            'let': {
+                'apikey_ids_object': {
+                    '$map': {
+                        'input': '$apikeys_array.v',
+                        'as': 'id',
+                        'in': {
+                            '$convert': {
+                                'input': '$$id',
+                                'to': 'objectId',
+                                'onError': None,
+                                'onNull': None
                             }
                         }
-                    },
-                    'pipeline': [
-                        {
-                            '$match': {
-                                '$expr': { '$in': ['$_id', '$$doc_ids'] }
-                            }
-                        },
-                        {
-                            '$addFields': {
-                                '_id': { '$toString': '$_id' }
-                            }
-                        }
-                    ],
-                    'as': 'rag_data'
+                    }
                 }
             },
-            # Stage 7: (Optional) Remove temporary fields to clean up the output
-            {
-                '$project': {
-                    'apikeys_array': 0,
-                    'apikeys_docs': 0,
-                    # Exclude additional temporary fields as needed
+            'pipeline': [
+                {
+                    '$match': {
+                        '$expr': { '$in': ['$_id', '$$apikey_ids_object'] }
+                    }
+                },
+                {
+                    '$project': { 'service': 1, 'apikey': 1 }
+                }
+            ],
+            'as': 'apikeys_docs'
+        }
+    },
+    # Stage 5: Map each service to its corresponding apikey
+    {
+        '$addFields': {
+            'apikeys': {
+                '$arrayToObject': {
+                    '$map': {
+                        'input': '$apikeys_array',
+                        'as': 'item',
+                        'in': [
+                            '$$item.k',  # Service name as the key
+                            {
+                                '$arrayElemAt': [
+                                    {
+                                        '$map': {
+                                            'input': {
+                                                '$filter': {
+                                                    'input': '$apikeys_docs',
+                                                    'as': 'doc',
+                                                    'cond': {
+                                                        '$eq': [
+                                                            '$$doc._id',
+                                                            {
+                                                                '$convert': {
+                                                                    'input': '$$item.v',
+                                                                    'to': 'objectId',
+                                                                    'onError': None,
+                                                                    'onNull': None
+                                                                }
+                                                            }
+                                                        ]
+                                                    }
+                                                }
+                                            },
+                                            'as': 'matched_doc',
+                                            'in': '$$matched_doc.apikey'
+                                        }
+                                    },
+                                    0  # Get the first matched apikey
+                                ]
+                            }
+                        ]
+                    }
                 }
             }
-        ]
-        
+        }
+    },
+    # Stage 6: Lookup 'rag_parent_datas' using 'doc_ids'
+    {
+        '$lookup': {
+            'from': 'rag_parent_datas',
+            'let': {
+                'doc_ids': {
+                    '$map': {
+                        'input': { '$ifNull': ['$doc_ids', []] },
+                        'as': 'doc_id',
+                        'in': { '$toObjectId': '$$doc_id' }
+                    }
+                }
+            },
+            'pipeline': [
+                {
+                    '$match': {
+                        '$expr': { '$in': ['$_id', '$$doc_ids'] }
+                    }
+                },
+                {
+                    '$addFields': {
+                        '_id': { '$toString': '$_id' }
+                    }
+                }
+            ],
+            'as': 'rag_data'
+        }
+    },
+    # Stage 7: Lookup 'pre_tools' data from 'apicalls' collection using the ObjectIds in 'pre_tools'
+    {
+        '$lookup': {
+            'from': 'apicalls',
+            'let': {
+                'pre_tools_ids': {
+                    '$map': {
+                        'input': '$pre_tools',
+                        'as': 'id',
+                        'in': {
+                            '$convert': {
+                                'input': '$$id',
+                                'to': 'objectId',
+                                'onError': None,
+                                'onNull': None
+                            }
+                        }
+                    }
+                }
+            },
+            'pipeline': [
+                {
+                    '$match': {
+                        '$expr': {
+                            '$in': ['$_id', {'$ifNull': ['$$pre_tools_ids', []]}]
+                        }
+                    }
+                }
+            ],
+            'as': 'pre_tools_data'
+        }
+    },
+    # Stage 8: (Optional) Remove temporary fields to clean up the output
+    {
+        '$project': {
+            'apikeys_array': 0,
+            'apikeys_docs': 0,
+            # Exclude additional temporary fields as needed
+        }
+    }
+]
+       
         # Execute the aggregation pipeline
         result = await model.aggregate(pipeline).to_list(length=None)
-        
+       
         if not result:
             return {
                 'success': False,
                 'error': 'No matching records found'
             }
-        
+       
         # Optionally, you can structure the output to include 'apikeys' at the top level
         response =  {
             'success': True,
@@ -412,15 +445,18 @@ async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None)
 
 
 
+
+
+
 async def update_api_call(id, update_fields):
-    try: 
+    try:
         data = await apiCallModel.find_one_and_update(
                 {'_id': ObjectId(id)},
                 {'$set': update_fields},
                 return_document=True,
                 upsert=True
             )
-        
+       
         if not data:
             return {
                 'success': False,
@@ -441,7 +477,7 @@ async def update_api_call(id, update_fields):
             'success': False,
             'error': 'Something went wrong!'
         }
-    
+        
 
 async def update_bridge_ids_in_api_calls(function_id, bridge_id, add=1):
     to_update = {'$set': {'status': 1}}
@@ -449,7 +485,7 @@ async def update_bridge_ids_in_api_calls(function_id, bridge_id, add=1):
         to_update['$addToSet'] = {'bridge_ids': ObjectId(bridge_id)}
     else:
         to_update['$pull'] = {'bridge_ids': ObjectId(bridge_id)}
-                                
+                               
     data = await apiCallModel.find_one_and_update(
             {'_id': ObjectId(function_id)},
             to_update,
@@ -473,23 +509,49 @@ async def update_built_in_tools(version_id, tool, add=1):
         to_update['$addToSet'] = {'built_in_tools': tool}
     else:
         to_update['$pull'] = {'built_in_tools': tool}
-    
+   
     data = await version_model.find_one_and_update(
         {'_id': ObjectId(version_id)},
         to_update,
         return_document=True,
         upsert=True
     )
-    
+   
     if not data:
         return {
             'success': False,
             'error': 'No records updated or version not found'
         }
-    
+   
     if 'built_in_tools' not in data:
         data['built_in_tools'] = []
-    
+   
+    return data
+
+async def update_agents(version_id, agents, add=1):
+    if add == 1:
+        # Add or update the connected agents
+        to_update = {'$set': {f'connected_agents.{agent_name}': agent_info for agent_name, agent_info in agents.items()}}
+    else:
+        # Remove the specified connected agents
+        to_update = {'$unset': {f'connected_agents.{agent_name}': "" for agent_name in agents.keys()}}
+   
+    data = await version_model.find_one_and_update(
+        {'_id': ObjectId(version_id)},
+        to_update,
+        return_document=True,
+        upsert=True
+    )
+   
+    if not data:
+        return {
+            'success': False,
+            'error': 'No records updated or version not found'
+        }
+   
+    if 'connected_agents' not in data:
+        data['connected_agents'] = {}
+   
     return data
 
 async def update_agents(version_id, agents, add=1):
@@ -525,14 +587,14 @@ async def get_template_by_id(template_id):
         if template_content:
             template_content = json.loads(template_content)
             return template_content
-        
+       
         template_content = await templateModel.find_one({'_id' : ObjectId(template_id)})
         await store_in_cache(cache_key, template_content)
         return template_content
-    except Exception as error : 
+    except Exception as error :
         logger.error(f"Error in get_template_by_id: {str(error)}")
         return None
-    
+   
 async def create_bridge(data):
     try:
         result = await configurationModel.insert_one(data)
@@ -561,7 +623,7 @@ async def get_all_bridges_in_org(org_id):
         "versions": 1,
         "published_version_id": 1,
         "total_tokens": 1,
-        "variables_state" : 1 
+        "variables_state" : 1
     })
     bridges_list = await bridge.to_list(length=None)
     for itr in bridges_list:
@@ -589,7 +651,7 @@ async def get_bridge_by_id(org_id, bridge_id, version_id=None):
             }
         }
     ]
-    
+   
     result = await model.aggregate(pipeline).to_list(length=None)
     bridge = result[0] if result else None
     return bridge
@@ -621,7 +683,7 @@ async def update_bridge(bridge_id = None, update_fields = None, version_id = Non
     model = version_model if version_id else configurationModel
     id_to_use = ObjectId(version_id) if version_id else ObjectId(bridge_id)
     cache_key = f"{version_id if version_id else bridge_id}"
-    
+   
     updated_bridge = await model.find_one_and_update(
         {'_id': ObjectId(id_to_use)},
         {'$set': update_fields},
@@ -673,7 +735,7 @@ async def get_apikey_creds(id):
             'success': False,
             'error': "something went wrong!!"
         }
-    
+ 
 async def update_apikey_creds(version_id):
     try:
         return await apikeyCredentialsModel.update_one(
@@ -687,11 +749,15 @@ async def update_apikey_creds(version_id):
             'error': "something went wrong!!"
         }
 
-async def save_sub_thread_id(org_id, thread_id, sub_thread_id):
+async def save_sub_thread_id(org_id, thread_id, sub_thread_id, display_name):
     try:
+        update_data = {'$setOnInsert': {'thread_id': thread_id}}
+        if display_name is not None and isinstance(display_name, str):
+            update_data['$set'] = {'display_name': display_name}
+       
         result = await threadsModel.find_one_and_update(
             {'org_id': org_id, 'sub_thread_id': sub_thread_id},
-            {'$setOnInsert': {'thread_id': thread_id}},
+            update_data,
             upsert=True,
             return_document=True
         )

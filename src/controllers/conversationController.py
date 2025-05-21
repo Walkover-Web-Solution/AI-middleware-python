@@ -1,6 +1,11 @@
 from ..db_services import conversationDbService as chatbotDbService
 import traceback
 from globals import *
+from ..configs.constant import bridge_ids
+from ..services.utils.ai_call_util import call_ai_middleware
+from ..db_services.ConfigurationServices import save_sub_thread_id
+from ..services.commonServices.baseService.utils import sendResponse
+
 
 async def getAllThreads(bridge_id, org_id, page, pageSize):
     try:
@@ -133,5 +138,29 @@ async def add_tool_call_data_in_history(chats):
         processed_chats = [chat for idx, chat in enumerate(chats) if idx not in tools_call_indices]
         return processed_chats
 
+async def save_sub_thread_id_and_name(thread_id, sub_thread_id, org_id, thread_flag, response_format, bridge_id, user):
+    try:
+        display_name = None
+        variables = {
+            'user' : user
+        }
+        if thread_flag:
+            message  = 'generate description'
+            display_name = await call_ai_middleware(message, bridge_ids['generate_description'], response_type='text', variables=variables)
+            await save_sub_thread_id(org_id, thread_id, sub_thread_id, display_name)
+        if display_name is not None:
+            response = {
+                'data': {
+                    'display_name': display_name,
+                    'sub_thread_id': sub_thread_id,
+                    'thread_id': thread_id,
+                    'bridge_id': bridge_id
+                }
+            }
+            await sendResponse(response_format, response, True)
+
+    except Exception as err:
+        logger.error(f"Error in saving sub thread id and name:, {str(err)}")
+        return { 'success': False, 'message': str(err) }
 # Exporting the functions
 __all__ = ['getAllThreads', 'savehistory', 'getThread', 'getThreadHistory', 'getChatData']

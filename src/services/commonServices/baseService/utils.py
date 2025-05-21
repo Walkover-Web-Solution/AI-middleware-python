@@ -111,13 +111,13 @@ def tool_call_formatter(configuration: dict, service: str, variables: dict, vari
                 'type': 'function',
                 'function': {
                     'name': transformed_tool['name'],
-                    # "strict": True,
+                    "strict": True,
                     'description': transformed_tool['description'],
                     'parameters': {
                         'type': 'object',
                         'properties': clean_json(transform_required_params_to_required(transformed_tool.get('properties', {}), variables=variables, variables_path=variables_path, function_name=transformed_tool['name'], parentValue={'required': transformed_tool.get('required', [])})),
                         'required': transformed_tool.get('required'),
-                        # "additionalProperties": False,
+                        "additionalProperties": False,
                     }
                 }
             } for transformed_tool in configuration.get('tools', [])
@@ -128,13 +128,13 @@ def tool_call_formatter(configuration: dict, service: str, variables: dict, vari
             {
                 'type': 'function',
                 'name': transformed_tool['name'],
-                # "strict": True,
+                "strict": True,
                 'description': transformed_tool['description'],
                 'parameters': {
                     'type': 'object',
                     'properties': clean_json(transform_required_params_to_required(transformed_tool.get('properties', {}), variables=variables, variables_path=variables_path, function_name=transformed_tool['name'], parentValue={'required': transformed_tool.get('required', [])})),
                     'required': transformed_tool.get('required'),
-                    # "additionalProperties": False,
+                    "additionalProperties": False,
                 }
             } for transformed_tool in configuration.get('tools', [])
         ]
@@ -371,10 +371,15 @@ async def make_request_data(request: Request):
 
 async def make_request_data_and_publish_sub_queue(parsed_data, result, params, thread_info):
     data = {
-        "save_sub_thread_id" : {
+        "save_sub_thread_id_and_name" : {
             "org_id" : parsed_data['org_id'],
             "thread_id" : thread_info['thread_id'],
-            "sub_thread_id" : thread_info['sub_thread_id']
+            "sub_thread_id" : thread_info['sub_thread_id'],
+            "thread_flag" : parsed_data['thread_flag'],
+            "response_format" : parsed_data['response_format'],
+            "bridge_id" : parsed_data['bridge_id'],
+            "user" : parsed_data['user']
+
         },
         "metrics_service": {
             "dataset": [parsed_data['usage']],

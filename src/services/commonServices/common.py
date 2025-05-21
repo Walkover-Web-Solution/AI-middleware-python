@@ -12,7 +12,7 @@ from ..utils.send_error_webhook import send_error_to_webhook
 import json
 from src.handler.executionHandler import handle_exceptions
 from models.mongo_connection import db
-from src.services.utils.common_utils import parse_request_body, initialize_timer, load_model_configuration, handle_pre_tools, handle_fine_tune_model,manage_threads, prepare_prompt, configure_custom_settings, build_service_params, process_background_tasks, build_service_params_for_batch, add_default_template, filter_missing_vars, send_error
+from src.services.utils.common_utils import parse_request_body, initialize_timer, load_model_configuration, handle_pre_tools, handle_fine_tune_model,manage_threads, prepare_prompt, configure_custom_settings, build_service_params, build_service_params_for_batch, add_default_template, filter_missing_vars, send_error, restructure_json_schema, process_background_tasks
 from src.services.utils.rich_text_support import process_chatbot_response
 app = FastAPI()
 from src.services.utils.helper import Helper
@@ -68,7 +68,11 @@ async def chat(request_body):
         params = build_service_params(
             parsed_data, custom_config, model_output_config, thread_info, timer, memory, send_error_to_webhook
         )
-
+        # Step 9 : json_schema service conversion
+        if 'response_type' in custom_config and custom_config['response_type'].get('type') == 'json_schema':
+            custom_config['response_type'] = restructure_json_schema(custom_config['response_type'], parsed_data['service'])
+        
+        
         class_obj = await Helper.create_service_handler(params, parsed_data['service'])
         result = await class_obj.execute()
             

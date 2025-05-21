@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, Request, HTTPException
+from fastapi.responses import JSONResponse
 import asyncio
 from src.services.commonServices.common import chat, embedding, batch, run_testcases
 from src.services.commonServices.baseService.utils import make_request_data
@@ -9,7 +10,6 @@ from config import Config
 from src.services.commonServices.queueService.queueService import queue_obj
 from src.middlewares.ratelimitMiddleware import rate_limit
 from globals import *
-
 
 router = APIRouter()
 
@@ -57,7 +57,7 @@ async def playground_chat_completion(request: Request, db_config: dict = Depends
             result =  await embedding(data_to_send)
             return result
     loop = asyncio.get_event_loop()
-    result = await loop.run_in_executor(executor, lambda: asyncio.run(chat(data_to_send)))
+    result = await chat(data_to_send)
     return result
 
 @router.post('/batch/chat/completion', dependencies=[Depends(auth_and_rate_limit)])
