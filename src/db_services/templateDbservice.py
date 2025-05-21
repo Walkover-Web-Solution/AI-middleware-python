@@ -25,5 +25,4 @@ async def get_template(template_id: str):
         return document
 
     except Exception as e:
-        print(f"Error fetching template from database: {str(e)}")
         raise

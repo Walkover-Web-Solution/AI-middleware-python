@@ -6,5 +6,4 @@ router = APIRouter()
 @router.get('/{template_id}', dependencies=[Depends(jwt_middleware)])
 async def get_template(request: Request, template_id: str):
     # Process template_id here if needed
-    print(f"Processing template ID: {template_id}")
     return await return_template(request, template_id)

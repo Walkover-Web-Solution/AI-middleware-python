@@ -32,9 +32,6 @@ def serialize_mongo_doc(doc):
 
 async def return_template(request, template_id):
     try:
-        # Log the template_id being requested
-        print(f"Fetching template with ID: {template_id}")
-        
         # Get template data from database service
         data = await get_template(template_id)
         
@@ -51,7 +48,6 @@ async def return_template(request, template_id):
         return JSONResponse(content={"status": "success", "data": serialized_data})
     
     except Exception as e:
-        print(f"Error processing template request: {str(e)}")
         import traceback
         traceback.print_exc()
         return JSONResponse(
