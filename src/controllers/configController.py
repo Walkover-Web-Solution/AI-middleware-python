@@ -19,13 +19,24 @@ from globals import *
 from src.configs.constant import bridge_ids
 from src.services.utils.ai_call_util import call_ai_middleware
 from src.services.cache_service import find_in_cache
-
+from src.db_services.templateDbservice import get_template
 async def create_bridges_controller(request):
     try:
         bridges = await request.json()
         purpose = bridges.get('purpose')
         org_id = request.state.profile['org']['id']
         prompt = None
+        if 'templateId' in bridges:
+            template_id = bridges['templateId']
+            template_data = await get_template(template_id)
+            if not template_data:
+                return JSONResponse(
+                    status_code=404,
+                    content={"success": False, "message": "Template not found"}
+                )
+            # Override prompt with template's prompt if available
+            prompt = template_data.get('prompt', prompt)
+        
         if purpose is not None:
             variables = {
                 "purpose": purpose,
@@ -35,7 +46,9 @@ async def create_bridges_controller(request):
             model = bridge_data.get('model')
             service = bridge_data.get('service')
             name = bridge_data.get('name')
-            prompt = bridge_data.get('system_prompt')
+            # Only override prompt from AI if not explicitly provided in request
+            if prompt is None:
+                prompt = bridge_data.get('system_prompt')
             slugName = bridge_data.get('name')
             type = bridge_data.get('type')
 
