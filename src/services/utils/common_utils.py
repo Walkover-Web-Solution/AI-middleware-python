@@ -19,6 +19,7 @@ from globals import *
 from src.services.utils.send_error_webhook import send_error_to_webhook
 from src.services.commonServices.queueService.queueLogService import sub_queue_obj
 from src.services.commonServices.baseService.utils import make_request_data_and_publish_sub_queue
+from src.db_services.metrics_service import create
 
 def parse_request_body(request_body):
     body = request_body.get('body', {})
@@ -250,6 +251,7 @@ def build_service_params(parsed_data, custom_config, model_output_config, thread
     }
 
 async def process_background_tasks(parsed_data, result, params, thread_info):
+    asyncio.create_task(create([parsed_data['usage']], result["historyParams"], parsed_data['version_id']))
     data = await make_request_data_and_publish_sub_queue(parsed_data, result, params, thread_info)
     data = make_json_serializable(data)
     await sub_queue_obj.publish_message(data)
