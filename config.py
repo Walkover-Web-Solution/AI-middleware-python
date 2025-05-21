@@ -52,4 +52,3 @@ class Config:
     TRIGGER_PROJECT_ID = os.getenv('TRIGGER_PROJECT_ID', '')
     CHATBOT_ACCESS_KEY = os.getenv('Chatbot_Access_key')
     LOG_QUEUE_NAME = os.getenv('LOG_QUEUE_NAME')
-    URL = os.getenv('URL')
