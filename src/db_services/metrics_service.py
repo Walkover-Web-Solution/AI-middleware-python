@@ -45,14 +45,15 @@ async def find_one_pg(id):
 
 async def create(dataset, history_params, version_id):
     try:
-        result = await savehistory(
+        result = await try_catch (
+            savehistory,
             history_params['thread_id'], history_params['sub_thread_id'], history_params['user'], history_params['message'],
             history_params['org_id'], history_params['bridge_id'], history_params['model'],
             history_params['channel'], history_params['type'], history_params['actor'],
             history_params.get('tools'),history_params.get('chatbot_message'),history_params.get('tools_call_data'),history_params.get('message_id'), version_id, history_params.get('image_url'), history_params.get('revised_prompt'), history_params.get('urls'), history_params.get('AiConfig'), history_params.get('annotations')
         )
         
-        chat_id = result['result'][0]
+        chat_id = result[0]
         dataset[0]['chat_id'] = chat_id
         dataset[0]['message_id'] = history_params.get('message_id')
 

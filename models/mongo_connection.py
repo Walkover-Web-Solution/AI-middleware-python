@@ -1,4 +1,5 @@
 from motor.motor_asyncio import AsyncIOMotorClient
+from pymongo import errors
 from config import Config
 import certifi
 from globals import *

@@ -5,7 +5,7 @@ from src.services.utils.time import Timer
 from src.services.commonServices.baseService.utils import axios_work
 from src.services.utils.apiservice import fetch
 from src.configs.serviceKeys import model_config_change
-from ...controllers.conversationController import getThread, save_sub_thread_id_and_name
+from ...controllers.conversationController import getThread
 from src.services.utils.token_calculation import TokenCalculator
 import src.db_services.ConfigurationServices as ConfigurationService
 from .helper import Helper
@@ -133,22 +133,19 @@ async def manage_threads(parsed_data):
     sub_thread_id = parsed_data['sub_thread_id']
     bridge_id = parsed_data['bridge_id']
     bridge_type = parsed_data['bridgeType']
-    org_id = parsed_data['org_id']    
-    thread_flag = parsed_data['thread_flag']
-    response_format = parsed_data['response_format']
-
+    org_id = parsed_data['org_id']      
     
     if thread_id:
         thread_id = thread_id.strip()
-        result = await getThread(thread_id, sub_thread_id, org_id, bridge_id, bridge_type)
-        if result["success"]:
-            parsed_data['configuration']["conversation"] = result.get("data", [])
+        result = await try_catch(getThread, thread_id, sub_thread_id, org_id, bridge_id, bridge_type)
+        if result:
+            parsed_data['configuration']["conversation"] = result or []
     else:
         thread_id = str(uuid.uuid1())
         sub_thread_id = thread_id
         parsed_data['gpt_memory'] = False
         result = {"success": True}
-        
+    
     return {
         "thread_id": thread_id,
         "sub_thread_id": sub_thread_id,
