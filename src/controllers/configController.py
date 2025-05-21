@@ -46,9 +46,7 @@ async def create_bridges_controller(request):
             model = bridge_data.get('model')
             service = bridge_data.get('service')
             name = bridge_data.get('name')
-            # Only override prompt from AI if not explicitly provided in request
-            if prompt is None:
-                prompt = bridge_data.get('system_prompt')
+            prompt = bridge_data.get('system_prompt')
             slugName = bridge_data.get('name')
             type = bridge_data.get('type')
 
