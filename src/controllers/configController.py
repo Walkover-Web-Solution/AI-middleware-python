@@ -25,20 +25,22 @@ async def create_bridges_controller(request):
         bridges = await request.json()
         purpose = bridges.get('purpose')
         org_id = request.state.profile['org']['id']
-        prompt = None
+        prompt = bridges.get('prompt')  # Get prompt directly from request body if provided
+        
         if purpose is not None:
             variables = {
                 "purpose": purpose,
             }
             user = "Generate Bridge Configuration accroding to the given user purpose."
-            bridge_data =  await call_ai_middleware(user, bridge_id = bridge_ids['create_bridge_using_ai'], variables = variables)
+            bridge_data =  await call_ai_middleware(user, bridge_id=bridge_ids['create_bridge_using_ai'], variables=variables)
             model = bridge_data.get('model')
             service = bridge_data.get('service')
             name = bridge_data.get('name')
-            prompt = bridge_data.get('system_prompt')
+            # Only override prompt from AI if not explicitly provided in request
+            if prompt is None:
+                prompt = bridge_data.get('system_prompt')
             slugName = bridge_data.get('name')
             type = bridge_data.get('type')
-
         else:
             service = bridges.get('service')
             model = bridges.get('model')
@@ -50,23 +52,23 @@ async def create_bridges_controller(request):
         configurations = modelObj['configuration']
         status = 1
         keys_to_update = [
-        'model',
-        'creativity_level',
-        'max_tokens',
-        'probability_cutoff',
-        'log_probablity',
-        'repetition_penalty',
-        'novelty_penalty',
-        'n',
-        'response_count',
-        'additional_stop_sequences',
-        'stream',
-        'stop',
-        'response_type',
-        'tool_choice',
-        'size',
-        'quality',
-        'style',
+            'model',
+            'creativity_level',
+            'max_tokens',
+            'probability_cutoff',
+            'log_probablity',
+            'repetition_penalty',
+            'novelty_penalty',
+            'n',
+            'response_count',
+            'additional_stop_sequences',
+            'stream',
+            'stop',
+            'response_type',
+            'tool_choice',
+            'size',
+            'quality',
+            'style',
         ]
         model_data = {}
         for key in keys_to_update:
@@ -74,10 +76,12 @@ async def create_bridges_controller(request):
                 model_data[key] = configurations[key]['default'] if key == 'model' else 'default'
         model_data['type'] = type
         model_data['response_format'] = {
-        "type": "default", # need changes
-        "cred": {}
-        } 
-        model_data["is_rich_text"]= True
+            "type": "default",  # need changes
+            "cred": {}
+        }
+        model_data["is_rich_text"] = True
+        
+        # Add prompt to model_data if it's provided
         if prompt is not None:
             model_data['prompt'] = prompt
         result = await create_bridge({
@@ -92,13 +96,12 @@ async def create_bridges_controller(request):
         })
         if result.get("success"):
             create_version = await create_bridge_version(result['bridge'])
-            update_fields = {'versions' : [create_version]}
-            updated_bridge_result = (await update_bridge(str(result['bridge']['_id']), update_fields)).get('result',{})
+            update_fields = {'versions': [create_version]}
+            updated_bridge_result = (await update_bridge(str(result['bridge']['_id']), update_fields)).get('result', {})
             return JSONResponse(status_code=200, content={
                 "success": True,
                 "message": "Bridge created successfully",
-                "bridge" : json.loads(json.dumps(updated_bridge_result, default=str))
-
+                "bridge": json.loads(json.dumps(updated_bridge_result, default=str))
             })
         else:
             return JSONResponse(status_code=400, content={
@@ -106,7 +109,7 @@ async def create_bridges_controller(request):
                 "message": json.loads(json.dumps(result.get('error'), default=str))
             })
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e)   
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e)  
      
 async def create_bridges_using_ai_controller(request):
     try:
