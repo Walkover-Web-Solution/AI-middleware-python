@@ -2,7 +2,7 @@
 from models.mongo_connection import db
 from bson import ObjectId
 
-configurationModel = db["showcasetemplates"]
+configurationModel = db["templates"]
 
 async def get_template(template_id: str):
     try:
