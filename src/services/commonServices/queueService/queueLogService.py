@@ -1,28 +1,33 @@
 import asyncio
-from aio_pika import connect_robust, Message, DeliveryMode, RobustConnection
+from aio_pika import connect_robust,Message, DeliveryMode, RobustConnection
 import json
 from config import Config
 from concurrent.futures import ThreadPoolExecutor
-from src.services.commonServices.common import chat
 from aio_pika.abc import AbstractIncomingMessage
 from src.services.utils.logger import logger
+from src.db_services.metrics_service import create
+from src.services.utils.ai_middleware_format import validateResponse
+from src.services.commonServices.bridge_avg_response_time import get_bridge_avg_response_time
+from src.services.utils.gpt_memory import handle_gpt_memory
+from src.services.commonServices.suggestion import chatbot_suggestions
+from src.services.commonServices.baseService.utils import total_token_calculation
+from src.controllers.conversationController import save_sub_thread_id_and_name
 
 executor = ThreadPoolExecutor(max_workers= int(Config.max_workers) or 10)
 
-
-class Queue:
+class Queue2:
     _instance = None
 
     def __new__(cls, *args, **kwargs):
         if cls._instance is None:
-            cls._instance = super(Queue, cls).__new__(cls, *args, **kwargs)
+            cls._instance = super(Queue2, cls).__new__(cls, *args, **kwargs)
         return cls._instance
     
 
     def __init__(self):
         if not hasattr(self, 'initialized'):  # Ensure initialization happens only once
-            print("Queue Service Initialized")
-            self.queue_name = Config.QUEUE_NAME or f"AI-MIDDLEARE-DEFAULT-{Config.ENVIROMENT}"
+            print("Queue2 Service Initialized")
+            self.queue_name = Config.LOG_QUEUE_NAME or f"AI-MIDDLEARE-DATA-QUEUE-{Config.ENVIROMENT}"
             self.failed_queue_name = f"{self.queue_name}-Failed"
             # self.failed_exchange_name = f"{self.failed_queue_name}-exchange"
             self.binding_key = None
@@ -33,7 +38,7 @@ class Queue:
             self.channel = None
             self.initialized = True
             self.queues_declared = False
-            
+
     async def connect(self):
         try:
             if not self.connection or self.connection.is_closed:
@@ -85,8 +90,8 @@ class Queue:
             # Ensure the connection and channel are active
             await self.connect()
             # Check if the channel is open before publishing
-            if self.channel.is_closed:
-                raise Exception("Channel is closed, cannot publish message.")
+            # if self.channel.is_closed:
+            #     raise Exception("Channel is closed, cannot publish message.")
             # Publish the message
             message_body = json.dumps(message)
             await self.channel.default_exchange.publish(
@@ -127,8 +132,16 @@ class Queue:
 
     async def process_messages(self, messages):
         """Implement your batch processing logic here."""
-        loop = asyncio.get_event_loop()
-        await chat(messages)
+        await save_sub_thread_id_and_name(**messages['save_sub_thread_id_and_name'])
+        # await create(**messages['metrics_service'])
+        await validateResponse(**messages['validateResponse'])
+        await total_token_calculation(**messages['total_token_calculation'])
+        await get_bridge_avg_response_time(**messages['get_bridge_avg_response_time'])
+        if messages['check_handle_gpt_memory']['gpt_memory'] and messages['check_handle_gpt_memory']['type'] == 'chat':
+            await handle_gpt_memory(**messages['handle_gpt_memory'])
+        if messages['check_chatbot_suggestions']['bridgeType']:
+            await chatbot_suggestions(**messages['chatbot_suggestions'])
+        
         # return result
 
     async def consume_messages(self):
@@ -164,4 +177,4 @@ class Queue:
         except Exception as e:
             logger.error(f"Error while consuming messages: {e}")
 
-queue_obj = Queue()
+sub_queue_obj = Queue2()

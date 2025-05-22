@@ -176,12 +176,13 @@ async def get_vectors_and_text(request):
         query = body.get('query')
         top_k = body.get('top_k', 2)
         
-        if query is None:
-            raise HTTPException(status_code=400, detail="Query is required.")
+        if query is None and doc_id is None:
+            raise HTTPException(status_code=400, detail="Query and Doc_id required.")
         text = await get_text_from_vectorsQuery({
             'Document_id': doc_id, 
             'query': query, 
-            'org_id': org_id
+            'org_id': org_id,
+            'top_k': top_k
         })
         return JSONResponse(status_code=200, content={
             "success": True,
@@ -265,7 +266,7 @@ async def get_text_from_vectorsQuery(args):
             to_search_for = await get_csv_query_type(doc_data, query)
             additional_query['chunkType'] = to_search_for
         
-        embedding = OpenAIEmbeddings(api_key=Config.OPENAI_API_KEY).embed_documents([query])
+        embedding = OpenAIEmbeddings(api_key=Config.OPENAI_API_KEY, model="text-embedding-3-small").embed_documents([query])
         # Query Pinecone
         query_response = index.query(
             vector=embedding[0] if isinstance(embedding, list) and len(embedding) == 1 else list(map(float, embedding)),
@@ -278,7 +279,11 @@ async def get_text_from_vectorsQuery(args):
         # Query MongoDB using query_response_ids
         mongo_query = {"_id": {"$in": [ObjectId(id) for id in query_response_ids] }}
         cursor = rag_model.find(mongo_query)
+        # Create a dictionary to map id to pos so that we can maintain order in mongo results.
+        id_to_position = {id: pos for pos, id in enumerate(query_response_ids)}
+        
         mongo_results = await cursor.to_list(length=None)
+        mongo_results.sort(key=lambda x: id_to_position.get(str(x.get('_id')), float('inf')))
         
         text = ""
         for result in mongo_results:

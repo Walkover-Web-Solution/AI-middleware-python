@@ -3,7 +3,6 @@ from bson import ObjectId
 import traceback
 import json
 import asyncio
-from src.services.utils.apiservice import fetch
 from src.services.cache_service import delete_in_cache
 from .ConfigurationServices import get_bridges_with_tools, get_bridges_with_tools_and_apikeys, get_bridges_without_tools
 from src.services.commonServices.common import chat
@@ -11,6 +10,9 @@ from ..services.utils.helper import Helper
 from ..services.utils.nlp import compute_cosine_similarity
 from ..services.utils.time import Timer
 from src.db_services.testcase_services import delete_current_testcase_history
+from src.configs.constant import bridge_ids
+from ..services.utils.ai_call_util import call_ai_middleware
+from globals import *
 
 configurationModel = db["configurations"]
 version_model = db['configuration_versions']
@@ -21,8 +23,7 @@ async def get_version(org_id, version_id):
         bridge = await version_model.find_one({'_id' : ObjectId(version_id), 'org_id' : org_id})
         return bridge
     except Exception as e:
-        print(f"An error occurred: {e}")
-        traceback.print_exc()
+        logger.error(f"An error occurred in get_version: {str(e)}, {traceback.format_exc()}")
         return None
 
 async def create_bridge_version(bridge_data, parent_id=None):
@@ -38,7 +39,7 @@ async def create_bridge_version(bridge_data, parent_id=None):
         await version_model.insert_one(bridge_version_data)
         return str(bridge_version_data['_id'])
     except Exception as e:
-        print("error:", e)
+        logger.error(f"Error in create_bridge_version:, {str(e)}")
         return {
            'success': False,
             'error': str(e)
@@ -77,7 +78,7 @@ async def update_bridges(bridge_id, update_fields):
         }
 
     except Exception as error:
-        print(error)
+        logger.error(f'Error in update_bridges: {str(error)}')
         return {
             'success': False,
             'error': 'Something went wrong!'
@@ -150,7 +151,7 @@ async def get_version_with_tools(bridge_id, org_id):
             'bridges': result[0]
         }
     except Exception as error:
-        print(error)
+        logger.error(f'Error in get_version_with_tools: {str(error)}')
         return {
             'success': False,
             'error': "something went wrong!!"
@@ -160,27 +161,20 @@ async def publish(org_id, version_id):
     try:
         get_version_data = (await get_bridges_with_tools_and_apikeys(None, org_id, version_id)).get("bridges")
         if not get_version_data:
-            return {
-                "success": False,
-                "error": "Version data not found"
-            }
+            raise Exception("Version data not found")
         
         parent_id = str(get_version_data.get('parent_id'))
         cache_key = f"{parent_id}"
         await delete_in_cache(cache_key)
 
         if not parent_id:
-            return {
-                "success": False,
-                "error": "Parent ID not found in version data"
-            }
+            raise Exception("Parent ID not found in version data")
+            
         parent_configuration = await configurationModel.find_one({'_id': ObjectId(parent_id)})
         
         if not parent_configuration:
-            return {
-                "success": False,
-                "error": "Parent configuration not found"
-            }
+            raise Exception("Parent configuration not found")
+            
         
         published_version_id = str(get_version_data['_id'])
         get_version_data.pop('_id', None)
@@ -206,12 +200,9 @@ async def publish(org_id, version_id):
         }
     
     except Exception as e:
-        print(f"An error occurred: {e}")
+        logger.error(f"Error in publish: {str(e)}")
         traceback.print_exc()
-        return {
-            "success": False,
-            "error": str(e)
-        }
+        raise   
 async def makeQuestion(parent_id, prompt, functions, save = False):
     if functions: 
         filtered_functions = {
@@ -220,12 +211,10 @@ async def makeQuestion(parent_id, prompt, functions, save = False):
         prompt += "\nFunctionalities available\n" + json.dumps(filtered_functions)
         
     
-    
-    response, headers = await fetch(url='https://proxy.viasocket.com/proxy/api/1258584/29gjrmh24/api/v2/model/chat/completion',method='POST',json_body= {"user": prompt,"bridge_id": "67459164ea7147ad4b75f92a"},headers = {'pauthkey': '1b13a7a038ce616635899a239771044c','Content-Type': 'application/json'})
-    # Update the document in the configurationModel
-    expected_questions = json.loads(response.get("response",{}).get("data",{}).get("content","{}")).get("questions",[])
+    expected_questions = await call_ai_middleware(prompt, bridge_id = bridge_ids['make_question'])
     updated_configuration= {"starterQuestion": expected_questions}
     
+    # Update the document in the configurationModel
     if save: 
         configurationModel.update_one(  # this should be async
             {'_id': ObjectId(parent_id)},

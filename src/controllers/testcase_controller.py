@@ -1,7 +1,7 @@
 from fastapi.responses import JSONResponse, Response
 from src.db_services.testcase_services import fetch_testcases_history
 import traceback
-from src.services.utils.testcase_utils import make_json_serializable
+from src.services.cache_service import make_json_serializable
 
 async def get_testcases_history(request, bridge_id):
     try:

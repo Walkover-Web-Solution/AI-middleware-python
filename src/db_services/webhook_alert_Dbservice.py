@@ -1,4 +1,5 @@
 from models.mongo_connection import db
+from globals import *
 
 alertModel = db['alerts']
 
@@ -11,7 +12,7 @@ async def get_webhook_data(org_id):
             'webhook_data': webhook_data or []
         }
     except Exception as error:
-        print(error)
+        logger.error(f'Error in get_webhook_data: %s, {str(error)}')
         return {
             'success': False,
             'error': error

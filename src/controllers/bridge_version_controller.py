@@ -5,10 +5,11 @@ from ..db_services.bridge_version_services import create_bridge_version, update_
 from src.services.utils.helper import Helper
 from ..db_services.ConfigurationServices import get_bridges_with_tools, update_bridge, get_bridges_without_tools
 from bson import ObjectId
-from ..services.utils.apiservice import fetch
 from ..configs.models import services
-import traceback
-from src.configs.model_configuration import model_config_document
+from src.services.utils.common_utils import get_service_by_model
+from globals import *
+from ..configs.constant import bridge_ids
+from src.services.utils.ai_call_util import call_ai_middleware
 
 
 with open('src/services/utils/model_features.json', 'r') as file: 
@@ -54,7 +55,7 @@ async def get_version(request, version_id: str):
                 path_variables.append(vars_dict)
         all_variables = variables + path_variables
         bridge.get('bridges')['all_varaibles'] = all_variables
-        return Helper.response_middleware_for_bridge({"succcess": True,"message": "bridge get successfully","bridge":bridge.get("bridges", {})})
+        return Helper.response_middleware_for_bridge(bridge.get('bridges')['service'],{"success": True,"message": "bridge get successfully","bridge":bridge.get("bridges", {})})
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e,)
     
@@ -67,7 +68,7 @@ async def publish_version(request, version_id):
             return JSONResponse({"success": True, "message": "version published successfully", "version_id": version_id })
         return result
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     
 async def check_testcases(request, version_id):
     try:
@@ -107,25 +108,23 @@ async def suggest_model(request, version_id):
         
         prompt = version_data['configuration']['prompt']
         tool_calls = [{call['endpoint_name'] : call['description']} for call in version_data['apiCalls'].values()]
-
-        ai_response, headers = await fetch(url='https://proxy.viasocket.com/proxy/api/1258584/29gjrmh24/api/v2/model/chat/completion', method='POST', json_body={'user' : json.dumps({'prompt' : prompt, 'tool_calls' : tool_calls}), 'bridge_id': '67a75ab42d85a6d4f16a4c7e', 'variables' : {'available_models': str(available_models), 'unavailable_models': str(unavailable_models) }}, headers = {'pauthkey' : '1b13a7a038ce616635899a239771044c', 'Content-Type': 'application/json' })
-        
-        ai_response = json.loads(ai_response['response']['data']['content'])
-        
+        message = json.dumps({'prompt' : prompt, 'tool_calls' : tool_calls})
+        variables = {'available_models': str(available_models), 'unavailable_models': str(unavailable_models) }
+        ai_response = await call_ai_middleware(message, bridge_id = bridge_ids['suggest_model'], variables = variables)
         response = {
             'available': {
-                'model' : ai_response['best_model_from_available_model'], 
-                'service' : model_config_document.get(ai_response['best_model_from_available_model']).get('service')
+                'model' : ai_response['best_model_from_available_models'], 
+                'service' : get_service_by_model(ai_response['best_model_from_available_models'])
             }
         }
-        if ai_response.get('best_model_from_unavailable_model'):
+        if ai_response.get('best_model_from_unavailable_models'):
             response['unavailable'] = {
-                'model' : ai_response['best_model_from_unavailable_model'], 
-               'service' : model_config_document.get(ai_response['best_model_from_unavailable_model']).get('service')
+                'model' : ai_response['best_model_from_unavailable_models'], 
+                'service' : get_service_by_model(ai_response['best_model_from_unavailable_models'])
             }
         
         return JSONResponse({'success' : True, 'message': 'suggestion fetched successfully', 'data': response })
     except Exception as e: 
-        traceback.print_exc()
+        logger.error(f"Error in suggest_model: {str(e)}, {traceback.format_exc()}")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail= {'model' : None, 'error' : str(e) })
     

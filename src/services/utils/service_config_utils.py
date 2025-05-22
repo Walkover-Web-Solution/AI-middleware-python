@@ -4,6 +4,9 @@ def tool_choice_function_name_formatter(service, configuration, toolchoice, foun
         case "openai" | "groq":
             configuration['tool_choice'] = found_choice if found_choice is not None else toolchoice
             return configuration['tool_choice']
+        case "openai_response":
+            configuration['tool_choice'] = {'type': 'function', 'name': toolchoice} if toolchoice is not None else found_choice
+            return configuration['tool_choice']
         case "anthropic":
             if found_choice == 'default':
                 default_choice = found_choice

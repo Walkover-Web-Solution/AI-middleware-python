@@ -5,6 +5,7 @@ from src.services.utils.helper import Helper
 from src.services.utils.apicallUtills import  get_api_data, save_api, delete_api
 import pydash as _
 import datetime
+from globals import *
 
 
 async def creates_api(request: Request):
@@ -68,7 +69,7 @@ async def creates_api(request: Request):
         raise HTTPException(status_code=400, detail="Something went wrong!")
 
     except Exception as error:
-        print(f"error in viasocket embed get api=> {error}")
+        logger.error(f"error in viasocket embed get api=> {str(error)}")
         raise HTTPException(status_code=400, detail=str(error))
 
 
@@ -94,7 +95,7 @@ async def updates_api(request: Request, bridge_id: str):
         result = await get_bridges_with_tools(bridge_id, org_id, version_id)
 
         if result.get("success"):
-            return Helper.response_middleware_for_bridge({
+            return Helper.response_middleware_for_bridge(result.get('bridges')['service'], {
                 "success": True,
                 "message": "Bridge Updated successfully",
                 "bridge" : result.get('bridges')
@@ -104,7 +105,7 @@ async def updates_api(request: Request, bridge_id: str):
             return JSONResponse(status_code=400, content=result)
 
     except Exception as error:
-        print(f"error in viasocket embed get api => {error}")
+        logger.error(f"error in viasocket embed get api => {str(error)}")
         raise HTTPException(status_code=400, detail=str(error))
 
 

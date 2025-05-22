@@ -3,8 +3,8 @@ from fastapi.responses import JSONResponse
 from ..services.utils.getConfiguration import getConfiguration
 from src.configs.models import services
 from src.services.commonServices.common import chat
-import asyncio
-import traceback
+from globals import *
+
 async def add_configuration_data_to_body(request: Request):
 
     try:
@@ -16,7 +16,7 @@ async def add_configuration_data_to_body(request: Request):
         if chatbotData:
             del request.state.chatbot
         version_id = body.get('version_id') or request.path_params.get('version_id')
-        db_config = await getConfiguration(body.get('configuration'), body.get('service'), bridge_id, body.get('apikey'), body.get('template_id'), body.get('variables', {}), request.state.profile.get("org",{}).get("id",""), body.get('variables_path'), version_id = version_id, extra_tools = body.get('extra_tools',[]))
+        db_config = await getConfiguration(body.get('configuration'), body.get('service'), bridge_id, body.get('apikey'), body.get('template_id'), body.get('variables', {}), request.state.profile.get("org",{}).get("id",""), body.get('variables_path'), version_id = version_id, extra_tools = body.get('extra_tools',[]), built_in_tools = body.get('built_in_tools'))
         if not db_config.get("success"):
                 raise HTTPException(status_code=400, detail={"success": False, "error": db_config["error"]}) 
         body.update(db_config)
@@ -29,8 +29,7 @@ async def add_configuration_data_to_body(request: Request):
     except HTTPException as he:
          raise he
     except Exception as e:
-        print("Error in get_data: ", e)
-        traceback.print_exc()
+        logger.error(f"Error in get_data: {str(e)}, {traceback.format_exc()}")
         raise HTTPException(status_code=400, detail={"success": False, "error": "Error in getting data: "+ str(e)})
     
 

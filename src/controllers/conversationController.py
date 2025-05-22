@@ -1,12 +1,18 @@
 from ..db_services import conversationDbService as chatbotDbService
 import traceback
+from globals import *
+from ..configs.constant import bridge_ids
+from ..services.utils.ai_call_util import call_ai_middleware
+from ..db_services.ConfigurationServices import save_sub_thread_id
+from ..services.commonServices.baseService.utils import sendResponse
+
 
 async def getAllThreads(bridge_id, org_id, page, pageSize):
     try:
         chats = await chatbotDbService.findAllThreads(bridge_id, org_id, page, pageSize)
         return { 'success': True, 'data': chats }
     except Exception as err:
-        print("getAllThreads =>", err)
+        logger.error("getAllThreads =>", err)
         return { 'success': False, 'message': str(err) }
 
 async def getThread(thread_id, sub_thread_id, org_id, bridge_id, bridgeType):
@@ -23,8 +29,7 @@ async def getThread(thread_id, sub_thread_id, org_id, bridge_id, bridgeType):
         chats = await add_tool_call_data_in_history(chats)
         return { 'success': True, 'data': chats }
     except Exception as err:
-        print("Error in getting thread:",err)
-        traceback.print_exc()
+        logger.error(f"Error in getting thread:, {str(err)}, {traceback.format_exc()}")
         return { 'success': False, 'message': str(err) }
 
 async def getChatData(chat_id):
@@ -32,7 +37,7 @@ async def getChatData(chat_id):
         chat = await chatbotDbService.findChat(chat_id)
         return { 'success': True, 'data': chat }
     except Exception as err:
-        print(err)
+        logger.error(f"Error in getting chat data:, {str(err)}")
         return { 'success': False, 'message': str(err) }
 
 async def getThreadHistory(thread_id, org_id, bridge_id):
@@ -40,7 +45,7 @@ async def getThreadHistory(thread_id, org_id, bridge_id):
         chats = await chatbotDbService.findMessage(org_id, thread_id, bridge_id)
         return { 'success': True, 'data': chats }
     except Exception as err:
-        print(err)
+        logger.error(f'Error in getting thread history:, {str(err)}')
         return { 'success': False, 'message': str(err) }
 
 async def savehistory(thread_id, sub_thread_id, userMessage, botMessage, org_id, bridge_id, model_name, type, messageBy, userRole="user", tools={}, chatbot_message = "",tools_call_data = [],message_id = None, version_id = None, image_url = None, revised_prompt = None, urls = None, AiConfig = None, annotations = None):
@@ -105,8 +110,7 @@ async def savehistory(thread_id, sub_thread_id, userMessage, botMessage, org_id,
         result = chatbotDbService.createBulk(chatToSave)
         return { 'success': True, 'message': "successfully saved chat history", 'result': list(result) }
     except Exception as error:
-        print("saveconversation error=>", error)
-        traceback.print_exc()
+        logger.error(f"saveconversation error=>, {str(error)}, {traceback.format_exc()}")
         return { 'success': False, 'message': str(error) }
 
 async def add_tool_call_data_in_history(chats):
@@ -134,5 +138,29 @@ async def add_tool_call_data_in_history(chats):
         processed_chats = [chat for idx, chat in enumerate(chats) if idx not in tools_call_indices]
         return processed_chats
 
+async def save_sub_thread_id_and_name(thread_id, sub_thread_id, org_id, thread_flag, response_format, bridge_id, user):
+    try:
+        display_name = None
+        variables = {
+            'user' : user
+        }
+        if thread_flag:
+            message  = 'generate description'
+            display_name = await call_ai_middleware(message, bridge_ids['generate_description'], response_type='text', variables=variables)
+            await save_sub_thread_id(org_id, thread_id, sub_thread_id, display_name)
+        if display_name is not None:
+            response = {
+                'data': {
+                    'display_name': display_name,
+                    'sub_thread_id': sub_thread_id,
+                    'thread_id': thread_id,
+                    'bridge_id': bridge_id
+                }
+            }
+            await sendResponse(response_format, response, True)
+
+    except Exception as err:
+        logger.error(f"Error in saving sub thread id and name:, {str(err)}")
+        return { 'success': False, 'message': str(err) }
 # Exporting the functions
 __all__ = ['getAllThreads', 'savehistory', 'getThread', 'getThreadHistory', 'getChatData']

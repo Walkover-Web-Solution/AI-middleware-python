@@ -12,6 +12,7 @@ from src.configs.model_configuration import model_config_document
 import jwt
 from ..commonServices.openAI.openaiCall import UnifiedOpenAICase
 from ..commonServices.openAI.openai_batch import OpenaiBatch
+from ..commonServices.openAI.openai_response import OpenaiResponse
 from ..commonServices.groq.groqCall import Groq
 from ..commonServices.anthrophic.antrophicCall import Antrophic
 from ...configs.constant import service_name
@@ -134,11 +135,11 @@ class Helper:
     def generate_token(payload, accesskey):
         return jwt.encode(payload, accesskey)
 
-    def response_middleware_for_bridge(finalResponse):
+    def response_middleware_for_bridge(service, finalResponse):
         try:
             response = finalResponse['bridge']
             model = response['configuration']['model']
-            modelObj = model_config_document[model]
+            modelObj = model_config_document[service][model]
             configurations = modelObj['configuration']
             db_config = response['configuration']
             # if response.get('apikey'):
@@ -148,7 +149,7 @@ class Helper:
             config = {}
             for key in configurations.keys():
                 config[key] = db_config.get(key, response['configuration'].get(key, configurations[key].get("default", '')))
-            for key in ['prompt','response_format','type', 'pre_tools','fine_tune_model', 'is_rich_text']:
+            for key in ['prompt','response_format','type', 'pre_tools','fine_tune_model', 'is_rich_text','tone','responseStyle']:
                 if key == 'response_format':
                     config[key] = db_config.get(key, response['configuration'].get(key, {"type":'default',"cred":{}}))
                 elif key == 'fine_tune_model':
@@ -180,6 +181,8 @@ class Helper:
             class_obj = Antrophic(params)
         elif service == service_name['groq']:
             class_obj = Groq(params)
+        elif service == service_name['openai_response']:
+            class_obj = OpenaiResponse(params)
             
         return class_obj
 
@@ -188,7 +191,7 @@ class Helper:
         usage = {}
         token_cost = {}
         permillion = 1000000
-        modelObj = model_config_document[model]
+        modelObj = model_config_document[service][model]
         if modelObj is None:
             raise AttributeError(f"Model function '{model}' not found in model_configuration.")
 
@@ -254,7 +257,14 @@ class Helper:
     def add_doc_description_to_prompt(prompt, rag_data):
         prompt += '\n Available Knowledge Base :- Here are the available documents to get data when needed call the function get_knowledge_base_data: \n' +  '\n'.join([f"name : {data.get('name')}, description : {data.get('description')},  doc_id : {data.get('_id')} \n" for data in rag_data])    
         return prompt
-        
+    
+    def append_tone_and_response_style_prompts(prompt, tone, response_style):
+        if tone:
+            prompt += f"\n\nTone Prompt: {tone['prompt']}"
+        if response_style:
+            prompt += f"\n\nResponse Style Prompt: {response_style['prompt']}"
+        return prompt
+      
     async def get_timezone_and_org_name(org_id):
         cached_data = await find_in_cache(org_id)
         if cached_data:
