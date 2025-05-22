@@ -21,8 +21,7 @@ from src.services.commonServices.queueService.queueLogService import sub_queue_o
 from src.services.utils.logger import logger
 from src.routes.bridge_version_routes import router as bridge_version
 from src.routes.image_process_routes import router as image_process_routes
-from src.routes.utils_routes import router as utils_routes
-from src.routes.utility_routes import router as utility_routes
+from src.routes.utils_router import router as utils_router
 from src.routes.rag_routes import router as rag_routes
 from src.routes.Internal_routes import router as Internal_routes
 from src.routes.testcase_routes import router as testcase_routes
@@ -154,8 +153,7 @@ app.include_router(config_router, prefix="/api/v1/config")
 app.include_router(apiCall_router, prefix="/functions")
 app.include_router(bridge_version, prefix="/bridge/versions" )
 app.include_router(image_process_routes, prefix="/image/processing" )
-app.include_router(utils_routes, prefix="/utils" )
-app.include_router(utility_routes,prefix="/utility")
+app.include_router(utils_router, prefix="/utils" )
 app.include_router(rag_routes,prefix="/rag")
 app.include_router(Internal_routes,prefix="/internal")
 app.include_router(testcase_routes, prefix='/testcases')

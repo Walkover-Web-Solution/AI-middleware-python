@@ -102,6 +102,8 @@ async def chat(request_body):
         }
         
         if not parsed_data['is_playground']:
+            if result.get('modelResponse') and result['modelResponse'].get('data'):
+                result['modelResponse']['data']['message_id'] = parsed_data['message_id']
             await sendResponse(parsed_data['response_format'], result["modelResponse"], success=True, variables=parsed_data.get('variables',{}))
             parsed_data['usage'].update({
                 **result.get("usage", {}),
@@ -115,8 +117,6 @@ async def chat(request_body):
                 "apikey_object_id": params['apikey_object_id'],
                 "expectedCost" : parsed_data['tokens'].get('expectedCost',0)
             })
-            if result.get('modelResponse') and result['modelResponse'].get('data'):
-                result['modelResponse']['data']['message_id'] = parsed_data['message_id']
             await process_background_tasks(parsed_data, result, params, thread_info)
         return JSONResponse(status_code=200, content={"success": True, "response": result["modelResponse"]})
     
