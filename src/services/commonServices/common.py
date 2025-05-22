@@ -117,8 +117,6 @@ async def chat(request_body):
                 "apikey_object_id": params['apikey_object_id'],
                 "expectedCost" : parsed_data['tokens'].get('expectedCost',0)
             })
-            if result.get('modelResponse') and result['modelResponse'].get('data'):
-                result['modelResponse']['data']['message_id'] = parsed_data['message_id']
             await process_background_tasks(parsed_data, result, params, thread_info)
         return JSONResponse(status_code=200, content={"success": True, "response": result["modelResponse"]})
     
