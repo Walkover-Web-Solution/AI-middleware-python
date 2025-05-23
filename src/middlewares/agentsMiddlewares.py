@@ -19,8 +19,7 @@ async def agents_auth(request: Request):
                 check_token = jwt.decode(token, Config.PUBLIC_CHATBOT_TOKEN, algorithms=["HS256"])
                 if check_token:
                     request.state.profile = check_token
-                    body = await request.json()  
-                    body.limiter_key = check_token.get('userId')
+                    request.state.profile['limiter_key'] = check_token.get('userId')
                     return 
             
             raise HTTPException(status_code=404, detail="not valid user")        

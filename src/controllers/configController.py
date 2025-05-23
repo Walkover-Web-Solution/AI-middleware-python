@@ -1,7 +1,7 @@
 from fastapi import HTTPException, status
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
-from src.db_services.ConfigurationServices import create_bridge, get_bridge_by_id, get_all_bridges_in_org, update_bridge, update_bridge_ids_in_api_calls, get_bridges_with_tools, get_apikey_creds, update_apikey_creds, update_built_in_tools, update_agents
+from src.db_services.ConfigurationServices import create_bridge, get_bridge_by_id, get_all_bridges_in_org, update_bridge, update_bridge_ids_in_api_calls, get_bridges_with_tools, get_apikey_creds, update_apikey_creds, update_built_in_tools, update_agents, get_all_agents_data, get_agents_data
 from src.configs.modelConfiguration import ModelsConfig as model_configuration
 from src.services.utils.helper import Helper
 import json
@@ -382,6 +382,7 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
         user_id = request.state.profile['user']['id']
         version_description = body.get('version_description')
         tool_call_count = body.get('tool_call_count')
+        page_config = body.get('page_config')
         update_fields = {}
         user_history = []
         if apikey_object_id is not None:
@@ -430,6 +431,8 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
             update_fields['doc_ids'] = doc_ids
         if variables_state is not None:
             update_fields['variables_state'] = variables_state
+        if page_config is not None:
+            update_fields['page_config'] = page_config
         if service is not None:
             update_fields['service'] = service
             model = new_configuration['model']
@@ -548,3 +551,13 @@ async def get_all_in_built_tools_controller():
             }
         ]
     }
+
+async def get_all_agents(request):
+    # body  = await request.json()
+    user_email = request.state.profile.get("userEmail",'')
+    return get_all_agents_data(user_email)
+
+async def get_agent(request,slug_name):
+    # body  = await request.json()
+    user_email = request.state.profile.get("userEmail",'')
+    return get_agents_data(slug_name, user_email)

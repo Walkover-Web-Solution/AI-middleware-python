@@ -444,10 +444,6 @@ async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None)
         }
 
 
-
-
-
-
 async def update_api_call(id, update_fields):
     try:
         data = await apiCallModel.find_one_and_update(
@@ -770,4 +766,38 @@ async def save_sub_thread_id(org_id, thread_id, sub_thread_id, display_name):
         return {
             'success': False,
             'error': str(error)
-        }
+        }    
+
+async def get_all_agents_data(user_email):
+    data = await configurationModel.find({
+        "$or": [
+            {"page_config.availability": "public"},
+            {
+                "$and": [
+                    {"page_config.availability": "private"},
+                    {"page_config.accessible_users": user_email}
+                ]
+            }
+        ]
+    })
+    return data
+
+
+async def get_agents_data(slug_name, user_email):
+    return await configurationModel.find_one({
+        "$or": [
+            {
+                "$and": [
+                    {"page_config.availability": "public"},
+                    {"url_slugname": slug_name}
+                ]
+            },
+            {
+                "$and": [
+                    {"page_config.availability": "private"},
+                    {"url_slugname": slug_name},
+                    {"page_config.accessible_users": user_email}
+                ]
+            }
+        ]
+    })

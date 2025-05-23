@@ -16,11 +16,17 @@ async def send_data_middleware(request: Request, botId: str):
         body = await request.json()
         org_id = request.state.profile['org']['id']
         slugName = body.get("slugName")
-        threadId = str(body.get("threadId")) if body.get("threadId") is not None else None
+        url_slugName = body.get('url_slugName')
+        isPublic = 'ispublic' in request.state.profile
+        user_email = body.get('state',{}).get("profile",{}).get("userEmail",'')
+        if isPublic:
+            threadId = str(request.state.profile['userId'])
+        else:
+            threadId = str(body.get("threadId")) if body.get("threadId") is not None else None
         profile = request.state.profile
         message = body.get("message")
         userId = profile['user']['id']
-        subThreadId = body.get("subThreadId")
+        subThreadId = threadId if isPublic and not body.get("subThreadId")  else body.get("subThreadId") 
         chatBotId = botId
         flag = body.get("flag") or False
         if not message or message == "":
@@ -28,7 +34,10 @@ async def send_data_middleware(request: Request, botId: str):
 
         channelId = f"{chatBotId}{threadId.strip() if threadId and threadId.strip() else userId}{subThreadId.strip() if subThreadId and subThreadId.strip() else userId}"
         channelId = channelId.replace(" ", "_")
-        bridge_response = await ConfigurationServices.get_bridge_by_slugname(org_id, slugName)
+        if(isPublic):
+            bridge_response = await ConfigurationServices.get_agents_data(url_slugName, user_email)
+        else:
+            bridge_response = await ConfigurationServices.get_bridge_by_slugname(org_id, slugName)
         bridges = bridge_response['bridges'] if bridge_response['success'] else {}
 
         if not bridges: 
@@ -66,6 +75,7 @@ async def send_data_middleware(request: Request, botId: str):
                     }
                 },
                 **body.get('configuration', {}),
+                "max_token": bridges.get('bridges').get('max_token') if isPublic else None
             },
             "chatbot": True,
             "response_type": { 

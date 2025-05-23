@@ -1,5 +1,6 @@
 import json
 import uuid
+import hashlib
 from fastapi import Request, HTTPException
 from fastapi.responses import JSONResponse
 from ..db_services import ConfigurationServices
@@ -7,12 +8,13 @@ from config import Config
 from ..routes.v2.modelRouter import chat_completion
 from src.middlewares.getDataUsingBridgeId import add_configuration_data_to_body
 from src.services.commonServices.generateToken import generateToken
-async def get_agent_data(request: Request, agent: str):
+async def get_agent_data(request: Request, agent: str): #ignore
     try:
         body = await request.json()
         profile = request.state.profile
         message = body.get("message")
         userId = profile['user']['id']
+        subThreadId = body.get("subThreadId")
 
         flag = body.get("flag") or False
         
@@ -44,7 +46,7 @@ async def get_agent_data(request: Request, agent: str):
         request.state.chatbot = {
             "bridge_id": str(bridges.get('_id', '')),
             "user": message,
-            "thread_id": threadId,
+            "thread_id": userId,
             "sub_thread_id":subThreadId,
             "variables": {**body.get('interfaceContextData', {}), **body.get('variables',{}), **json.loads(profile.get('variables', "{}"))},
             "configuration": {
@@ -76,15 +78,29 @@ async def get_agent_data(request: Request, agent: str):
     except Exception as error: 
         return JSONResponse(status_code=400, content={'error': str(error)})
 
-
 async def login_public_user(request: Request):
     try:
-        body = await request.json()
-        userId = body.get('userId') or str(uuid.uuid4())
-        ispublic = False if body.get('userId') else True
-        return generateToken({'userId':userId, 'ispublic': ispublic}, Config.PUBLIC_CHATBOT_TOKEN)
+        body = await request.json() if await request.body() else {}
+        user_info = body.get('state', {}).get('profile', {}).get('user', {})
+        user_id = user_info.get('id')
+        user_email = user_info.get('email')
+        is_public = not bool(user_email)
+
+        # Attempt to use IP address as fallback user_id
+        if not user_id:
+            client_host = request.client.host if request.client else None
+            if client_host:
+                # Hash the IP to create a consistent but anonymized user ID
+                user_id = hashlib.sha256(client_host.encode()).hexdigest()
+            else:
+                user_id = str(uuid.uuid4())  # Fallback to UUID if IP not available
+
+        return {
+            "token": generateToken({'userId': user_id, "userEmail": user_email, 'ispublic': is_public}, Config.PUBLIC_CHATBOT_TOKEN),
+            "user_id": user_id
+        }
+
     except HTTPException as http_error:
         raise http_error  # Re-raise HTTP exceptions for proper handling
-    except Exception as error: 
+    except Exception as error:
         return JSONResponse(status_code=400, content={'error': str(error)})
-
