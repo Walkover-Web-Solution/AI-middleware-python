@@ -769,7 +769,7 @@ async def save_sub_thread_id(org_id, thread_id, sub_thread_id, display_name):
         }    
 
 async def get_all_agents_data(user_email):
-    data = await configurationModel.find({
+    cursor = configurationModel.find({
         "$or": [
             {"page_config.availability": "public"},
             {
@@ -780,6 +780,9 @@ async def get_all_agents_data(user_email):
             }
         ]
     })
+    data = []
+    async for doc in cursor:
+        data.append(doc)
     return data
 
 

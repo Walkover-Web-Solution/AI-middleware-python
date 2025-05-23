@@ -80,8 +80,7 @@ async def get_agent_data(request: Request, agent: str): #ignore
 
 async def login_public_user(request: Request):
     try:
-        body = await request.json() if await request.body() else {}
-        user_info = body.get('state', {}).get('profile', {}).get('user', {})
+        user_info = request.get('state', {}).get('profile', {}).get('user', {})
         user_id = user_info.get('id')
         user_email = user_info.get('email')
         is_public = not bool(user_email)

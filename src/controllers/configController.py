@@ -554,10 +554,16 @@ async def get_all_in_built_tools_controller():
 
 async def get_all_agents(request):
     # body  = await request.json()
-    user_email = request.state.profile.get("userEmail",'')
-    return get_all_agents_data(user_email)
+    user_email = request.state.profile.get("userEmail", '')
+    return {
+        "success": True,
+        "data": await get_all_agents_data(user_email)
+    }
 
 async def get_agent(request,slug_name):
     # body  = await request.json()
     user_email = request.state.profile.get("userEmail",'')
-    return get_agents_data(slug_name, user_email)
+    return  {
+        "success": True,
+        "data": await get_agents_data(slug_name, user_email)
+    }
