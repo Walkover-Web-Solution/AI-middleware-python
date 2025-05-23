@@ -20,8 +20,8 @@ services = {
         "embedding": {"embedding-001"}
     },
     "anthropic" : {
-        "models": {"claude-3-5-sonnet-latest","claude-3-opus-latest","claude-3-opus-20240229","claude-3-5-sonnet-20241022","claude-3-sonnet-20240229", "claude-3-haiku-20240307","claude-3-5-haiku-20241022","claude-3-5-haiku-latest","claude-3-7-sonnet-latest"},
-        "chat": {"claude-3-5-sonnet-latest","claude-3-opus-latest","claude-3-opus-20240229","claude-3-5-sonnet-20241022","claude-3-sonnet-20240229", "claude-3-haiku-20240307","claude-3-5-haiku-20241022","claude-3-5-haiku-latest", "claude-3-7-sonnet-latest"}
+        "models": {"claude-3-5-sonnet-latest","claude-3-opus-latest","claude-3-opus-20240229","claude-3-5-sonnet-20241022","claude-3-sonnet-20240229", "claude-3-haiku-20240307","claude-3-5-haiku-20241022","claude-3-5-haiku-latest","claude-3-7-sonnet-latest", "claude-sonnet-4-20250514", "claude-opus-4-20250514"},
+        "chat": {"claude-3-5-sonnet-latest","claude-3-opus-latest","claude-3-opus-20240229","claude-3-5-sonnet-20241022","claude-3-sonnet-20240229", "claude-3-haiku-20240307","claude-3-5-haiku-20241022","claude-3-5-haiku-latest", "claude-3-7-sonnet-latest", "claude-sonnet-4-20250514", "claude-opus-4-20250514"}
     },
     "groq" : {
         "models": {"llama-3.1-405b-reasoning", "llama-3.3-70b-versatile", "llama-3.1-8b-instant", "llama3-groq-70b-8192-tool-use-preview","llama3-groq-8b-8192-tool-use-preview","llama3-70b-8192","llama3-8b-8192","mixtral-8x7b-32768","gemma-7b-it","gemma2-9b-it","whisper-large-v3", "llama-guard-3-8b", "deepseek-r1-distill-llama-70b", "deepseek-r1-distill-qwen-32b", "qwen-2.5-32b", "qwen-2.5-coder-32b", "meta-llama/llama-4-scout-17b-16e-instruct"},
