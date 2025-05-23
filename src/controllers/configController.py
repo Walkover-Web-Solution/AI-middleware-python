@@ -384,6 +384,7 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
         user_id = request.state.profile['user']['id']
         version_description = body.get('version_description')
         tool_call_count = body.get('tool_call_count')
+        IsstarterQuestionEnable = body.get('IsstarterQuestionEnable')
         update_fields = {}
         user_history = []
         if apikey_object_id is not None:
@@ -432,6 +433,8 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
             update_fields['doc_ids'] = doc_ids
         if variables_state is not None:
             update_fields['variables_state'] = variables_state
+        if IsstarterQuestionEnable is not None:
+            update_fields['IsstarterQuestionEnable'] = IsstarterQuestionEnable
         if service is not None:
             update_fields['service'] = service
             model = new_configuration['model']
