@@ -6,6 +6,7 @@ from src.services.utils.common_utils import updateVariablesWithTimeZone
 from src.services.commonServices.baseService.utils import makeFunctionName
 from src.services.utils.service_config_utils import tool_choice_function_name_formatter
 apiCallModel = db['apicalls']
+from globals import *
 
 # from src.services.commonServices.generateToken import generateToken
 # from src.configs.modelConfiguration import ModelsConfig
@@ -19,7 +20,7 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
     else : bridge_data = result
     bridge_status = bridge_data.get('bridges',{}).get('bridge_status')
     if(bridge_status == 0):
-        raise Exception("Bridge is Currently Paused")
+        raise BadRequestException("Bridge is Currently Paused")
     if not result['success']:
         return {
             'success': False,

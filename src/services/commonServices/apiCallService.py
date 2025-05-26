@@ -124,39 +124,3 @@ def traverse_body(body, required_params=None, path="", paths=None):
             required_params.append(key)  # [?] it can repeat
 
     return {"required_params": required_params, "paths": paths}
-
-
-async def create_open_api(function_name, desc,api_object_id, required_params=None, model_config = {}):
-    if required_params is None:
-        required_params = []
-    
-    tools_call = model_config.get('bridges', {}).get('configuration', {}).get('tools', [])
-    current_function_data = next((tool for tool in tools_call if tool['name'] == function_name), None)
-
-    old_properties = current_function_data.get('properties', {}) if current_function_data else {}
-    old_required = current_function_data.get('required', []) if current_function_data else []
-    try:
-        format = {
-            "type": "function",
-            "id":api_object_id,
-            "name": function_name,
-            "description": desc
-        }
-        properties = {}
-        final_required = []
-        for field in required_params:
-            if old_properties.get(field):
-                properties[field] = old_properties.get(field)
-            else:
-                properties[field] = {"type": "string"}
-                final_required.append(field)
-
-            if field in old_required:
-                final_required.append(field)
-        if required_params:
-            format["required"] = final_required
-            format["properties"] = properties
-        return {"success": True, "format": format}
-    except Exception as error:
-        return {"success": False, "error": str(error)}
-    

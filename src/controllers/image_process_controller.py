@@ -3,6 +3,7 @@ import uuid
 from google.cloud import storage
 from google.oauth2 import service_account
 from config import Config
+from fastapi import HTTPException
 
 async def image_processing(request):
     body = await request.form()
@@ -31,7 +32,4 @@ async def image_processing(request):
         }
     except Exception as e:
         # Handle exceptions and return an error response
-        return {
-            'success': False,
-            'error': str(e)
-        }
+        raise HTTPException(status_code=400, detail={"success": False, "error": "Error in image processing: "+ str(e)})
