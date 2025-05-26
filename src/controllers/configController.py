@@ -386,9 +386,9 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
         tool_call_count = body.get('tool_call_count')
         update_fields = {}
         user_history = []
-        starter_question_enable = body.get('starter_question_enable')
-        if starter_question_enable is not None:
-            update_fields['starter_question_enable'] = starter_question_enable
+        IsstarterQuestionEnable = body.get('IsstarterQuestionEnable')
+        if IsstarterQuestionEnable is not None:
+            update_fields['IsstarterQuestionEnable'] = IsstarterQuestionEnable
         if apikey_object_id is not None:
             update_fields['apikey_object_id'] = apikey_object_id
             data = await get_apikey_creds(apikey_object_id)
