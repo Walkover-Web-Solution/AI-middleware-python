@@ -176,7 +176,7 @@ async def makeQuestion(parent_id, prompt, functions, save = False):
         
     
     expected_questions = await call_ai_middleware(prompt, bridge_id = bridge_ids['make_question'])
-    updated_configuration= {"starterQuestion": expected_questions}
+    updated_configuration= {"starterQuestion": expected_questions.get("questions",[])}
     
     # Update the document in the configurationModel
     if save: 
