@@ -6,6 +6,7 @@ import sys
 import json
 from src.services.utils.send_error_webhook import send_error_to_webhook
 import asyncio
+from src.services.utils.ai_middleware_format import send_alert
 
 def handle_exceptions(func):
     @wraps(func)
@@ -41,6 +42,13 @@ def handle_exceptions(func):
             org_id = state['profile']['org']['id']
             if is_playground == False:
                 await send_error_to_webhook(bridge_id, org_id,error_json, error_type = 'Error')
+            
+            asyncio.create_task(send_alert(data={
+                "message": "Error for status code 400 occurred",
+                "error" : error_json,
+                "bridge_id": bridge_id,
+                "org_id": org_id
+            }))
             return JSONResponse(
                 status_code=400,
                 content=json.loads(json.dumps({
