@@ -85,7 +85,7 @@ async def chat(request_body):
         if parsed_data['configuration']['type'] == 'chat':
             if parsed_data['is_rich_text'] and parsed_data['bridgeType'] and parsed_data['reasoning_model'] == False:
                 try:
-                    await process_chatbot_response(result, params, parsed_data, model_config, model_output_config)
+                    await process_chatbot_response(result, params, parsed_data, model_output_config, timer, params['execution_time_logs'])
                 except Exception as e:
                     raise RuntimeError(f"error in chatbot : {e}")
             
