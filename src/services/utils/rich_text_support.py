@@ -4,7 +4,7 @@ import uuid
 from src.configs.constant import bridge_ids
 from .ai_call_util import call_ai_middleware
 import json
-async def process_chatbot_response(result, params, data, model_config, modelOutputConfig):
+async def process_chatbot_response(result, params, data, modelOutputConfig, timer, execution_time_logs):
 
 
     try:
@@ -35,7 +35,9 @@ async def process_chatbot_response(result, params, data, model_config, modelOutp
         if(data.get('actions')): user += "If the component action type is reply then choose the button action type reply else choose it sendDatatoFrontend"
         variables =  { "actions" : data.get('actions') or {}, "user_reference": user_reference, "user_contains": user_contains, "function_calls": function_calls}
         thread_id =  f"{data.get('thread_id') or random_id}-{data.get('sub_thread_id') or random_id}"
+        timer.start()
         response = await call_ai_middleware(user, bridge_id = bridge_id, variables = variables, thread_id = thread_id)
+        execution_time_logs[len(execution_time_logs) + 1] = timer.stop("AI middleware")
         response = json.dumps(response)
         _.set_(result['modelResponse'], modelOutputConfig.get('message'), response)
         result['historyParams']['chatbot_message'] = response
