@@ -110,7 +110,7 @@ async def create_bridges_controller(request):
             "bridge" : json.loads(json.dumps(updated_bridge_result, default=str))
         })
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail= "Error in creating bridge: "+ str(e))   
+        raise HTTPException(status_code=400, detail= "Error in creating bridge: "+ str(e))   
      
 async def create_bridges_using_ai_controller(request):
     try:
