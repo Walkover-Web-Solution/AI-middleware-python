@@ -2,7 +2,7 @@ from fastapi import APIRouter, Request
 from src.services.cache_service import clear_cache, find_in_cache
 from ..services.utils.formatter.ai_middleware_chat_api import structured_output_optimizer
 
-router = APIRouter(prefix="/utils")
+router = APIRouter()
 
 @router.delete('/redis')
 async def clear_redis_cache(request: Request):
