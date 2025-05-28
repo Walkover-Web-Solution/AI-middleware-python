@@ -7,6 +7,7 @@ from src.services.utils.logger import logger
 from src.services.utils.common_utils import process_background_tasks
 from src.services.commonServices.queueService.baseQueue import BaseQueue
 
+
 class Queue(BaseQueue):
     _instance = None
 
@@ -24,8 +25,7 @@ class Queue(BaseQueue):
     async def process_messages(self, messages):
         """Implement your batch processing logic here."""
         loop = asyncio.get_event_loop()
-        parsed_data, result, params, thread_info = await chat(messages)
-        await process_background_tasks(parsed_data, result, params, thread_info)
+        await chat(messages)
         # return result
 
     async def consume_messages(self):

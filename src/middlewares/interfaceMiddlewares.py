@@ -28,11 +28,7 @@ async def send_data_middleware(request: Request, botId: str):
 
         channelId = f"{chatBotId}{threadId.strip() if threadId and threadId.strip() else userId}{subThreadId.strip() if subThreadId and subThreadId.strip() else userId}"
         channelId = channelId.replace(" ", "_")
-        bridge_response = await ConfigurationServices.get_bridge_by_slugname(org_id, slugName)
-        bridges = bridge_response['bridges'] if bridge_response['success'] else {}
-
-        if not bridges: 
-            raise HTTPException(status_code=400, detail="Invalid bridge Id")
+        bridges = await ConfigurationServices.get_bridge_by_slugname(org_id, slugName)
 
         actions = [
             {
@@ -43,9 +39,6 @@ async def send_data_middleware(request: Request, botId: str):
             }
             for actionId, actionDetails in bridges.get('actions', {}).items()
         ]
-
-        if not bridge_response['success']:
-            raise HTTPException(status_code=400, detail="Some error occurred")
 
         request.state.chatbot = {
             "bridge_id": str(bridges.get('_id', '')),
@@ -80,7 +73,7 @@ async def send_data_middleware(request: Request, botId: str):
     except HTTPException as http_error:
         raise http_error  # Re-raise HTTP exceptions for proper handling
     except Exception as error: 
-        return JSONResponse(status_code=400, content={'error': str(error)})
+        return JSONResponse(status_code=400, content={'error': 'Error: ' + str(error)})
 
 async def chat_bot_auth(request: Request):
     timer_obj = Timer()
@@ -129,12 +122,8 @@ async def reset_chatBot(request: Request, botId: str):
     
     channelId = f"{botId}{thread_id.strip() if thread_id and thread_id.strip() else userId}{sub_thread_id.strip() if sub_thread_id and sub_thread_id.strip() else userId}"
     channelId = channelId.replace(" ", "_")
-    bridge_response = await ConfigurationServices.get_bridge_by_slugname(org_id, slugName)
-    bridges = bridge_response['bridges'] if bridge_response['success'] else {}
-    if not bridges: 
-        raise HTTPException(status_code=400, detail="Invalid bridge Id")
-    else:
-        bridge_id = str(bridges.get('_id', ''))
+    bridges = await ConfigurationServices.get_bridge_by_slugname(org_id, slugName)
+    bridge_id = str(bridges.get('_id', ''))
     if purpose == 'is_reset':
         result = await reset_and_mode_chat_history(org_id, bridge_id, thread_id, 'is_reset', True)
         id = f"{thread_id}_{ version_id or bridge_id}"

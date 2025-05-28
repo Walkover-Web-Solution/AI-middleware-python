@@ -5,7 +5,7 @@ from src.services.utils.time import Timer
 from src.services.commonServices.baseService.utils import axios_work
 from src.services.utils.apiservice import fetch
 from src.configs.serviceKeys import model_config_change
-from ...controllers.conversationController import getThread, save_sub_thread_id_and_name
+from ...controllers.conversationController import getThread
 from src.services.utils.token_calculation import TokenCalculator
 import src.db_services.ConfigurationServices as ConfigurationService
 from .helper import Helper
@@ -19,6 +19,7 @@ from globals import *
 from src.services.utils.send_error_webhook import send_error_to_webhook
 from src.services.commonServices.queueService.queueLogService import sub_queue_obj
 from src.services.commonServices.baseService.utils import make_request_data_and_publish_sub_queue
+from src.db_services.metrics_service import create
 
 def parse_request_body(request_body):
     body = request_body.get('body', {})
@@ -132,22 +133,19 @@ async def manage_threads(parsed_data):
     sub_thread_id = parsed_data['sub_thread_id']
     bridge_id = parsed_data['bridge_id']
     bridge_type = parsed_data['bridgeType']
-    org_id = parsed_data['org_id']    
-    thread_flag = parsed_data['thread_flag']
-    response_format = parsed_data['response_format']
-
+    org_id = parsed_data['org_id']      
     
     if thread_id:
         thread_id = thread_id.strip()
-        result = await getThread(thread_id, sub_thread_id, org_id, bridge_id, bridge_type)
-        if result["success"]:
-            parsed_data['configuration']["conversation"] = result.get("data", [])
+        result = await try_catch(getThread, thread_id, sub_thread_id, org_id, bridge_id, bridge_type)
+        if result:
+            parsed_data['configuration']["conversation"] = result or []
     else:
         thread_id = str(uuid.uuid1())
         sub_thread_id = thread_id
         parsed_data['gpt_memory'] = False
         result = {"success": True}
-        
+    
     return {
         "thread_id": thread_id,
         "sub_thread_id": sub_thread_id,
@@ -250,6 +248,7 @@ def build_service_params(parsed_data, custom_config, model_output_config, thread
     }
 
 async def process_background_tasks(parsed_data, result, params, thread_info):
+    asyncio.create_task(create([parsed_data['usage']], result["historyParams"], parsed_data['version_id']))
     data = await make_request_data_and_publish_sub_queue(parsed_data, result, params, thread_info)
     data = make_json_serializable(data)
     await sub_queue_obj.publish_message(data)

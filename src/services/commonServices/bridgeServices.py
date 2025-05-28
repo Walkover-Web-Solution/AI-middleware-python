@@ -1,4 +1,4 @@
-from fastapi import Request
+from fastapi import Request, HTTPException
 from fastapi.responses import JSONResponse
 from src.db_services.ConfigurationServices import get_bridges, get_bridges_with_tools
 from datetime import datetime, timezone
@@ -61,8 +61,11 @@ async def optimize_prompt_controller(request : Request, bridge_id: str):
         })
         
     except Exception as e:
-        return {'error': str(e)}
+        raise HTTPException(status_code=400, detail={"success": False, "error": "Error in optimizing prompt: "+ str(e)})
     
+    
+
+
 
 async def generate_summary(request):
     try:

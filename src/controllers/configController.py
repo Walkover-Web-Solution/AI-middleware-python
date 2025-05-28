@@ -19,13 +19,24 @@ from globals import *
 from src.configs.constant import bridge_ids
 from src.services.utils.ai_call_util import call_ai_middleware
 from src.services.cache_service import find_in_cache
-
+from src.db_services.templateDbservice import get_template
 async def create_bridges_controller(request):
     try:
         bridges = await request.json()
         purpose = bridges.get('purpose')
         org_id = request.state.profile['org']['id']
         prompt = None
+        if 'templateId' in bridges:
+            template_id = bridges['templateId']
+            template_data = await get_template(template_id)
+            if not template_data:
+                return JSONResponse(
+                    status_code=404,
+                    content={"success": False, "message": "Template not found"}
+                )
+            # Override prompt with template's prompt if available
+            prompt = template_data.get('prompt', prompt)
+        
         if purpose is not None:
             variables = {
                 "purpose": purpose,
@@ -90,23 +101,16 @@ async def create_bridges_controller(request):
             "status": status,
             "gpt_memory" : True
         })
-        if result.get("success"):
-            create_version = await create_bridge_version(result['bridge'])
-            update_fields = {'versions' : [create_version]}
-            updated_bridge_result = (await update_bridge(str(result['bridge']['_id']), update_fields)).get('result',{})
-            return JSONResponse(status_code=200, content={
-                "success": True,
-                "message": "Bridge created successfully",
-                "bridge" : json.loads(json.dumps(updated_bridge_result, default=str))
-
-            })
-        else:
-            return JSONResponse(status_code=400, content={
-                "success": False,
-                "message": json.loads(json.dumps(result.get('error'), default=str))
-            })
+        create_version = await create_bridge_version(result['bridge'])
+        update_fields = {'versions' : [create_version]}
+        updated_bridge_result = (await update_bridge(str(result['bridge']['_id']), update_fields)).get('result',{})
+        return JSONResponse(status_code=200, content={
+            "success": True,
+            "message": "Bridge created successfully",
+            "bridge" : json.loads(json.dumps(updated_bridge_result, default=str))
+        })
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e)   
+        raise HTTPException(status_code=400, detail= "Error in creating bridge: "+ str(e))   
      
 async def create_bridges_using_ai_controller(request):
     try:
@@ -314,7 +318,9 @@ async def get_all_service_models_controller(service):
                     "claude-3-sonnet-20240229" :  restructure_configuration(model_config_document[service]['claude-3-sonnet-20240229']),
                     "claude-3-haiku-20240307" :  restructure_configuration(model_config_document[service]['claude-3-haiku-20240307']),
                     "claude-3-5-haiku-20241022" :  restructure_configuration(model_config_document[service]['claude-3-5-haiku-20241022']),
-                    "claude-3-7-sonnet-latest" :  restructure_configuration(model_config_document[service]['claude-3-7-sonnet-latest'])
+                    "claude-3-7-sonnet-latest" :  restructure_configuration(model_config_document[service]['claude-3-7-sonnet-latest']),
+                    "claude-sonnet-4-20250514" :  restructure_configuration(model_config_document[service]['claude-sonnet-4-20250514']),
+                    "claude-opus-4-20250514" :  restructure_configuration(model_config_document[service]['claude-opus-4-20250514'])
                 }
             }
         
@@ -371,12 +377,13 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
         user_id = request.state.profile['user']['id']
         version_description = body.get('version_description')
         tool_call_count = body.get('tool_call_count')
+        IsstarterQuestionEnable = body.get('IsstarterQuestionEnable')
         update_fields = {}
         user_history = []
         if apikey_object_id is not None:
             update_fields['apikey_object_id'] = apikey_object_id
-            data = await get_apikey_creds(apikey_object_id)
-            apikey = data.get('apikey',"")
+            data = await try_catch(get_apikey_creds, apikey_object_id)
+            apikey = (data or {}).get('apikey',"")
         name = body.get('name')
         function_id = body.get('functionData', {}).get('function_id', None)
         function_operation = body.get('functionData', {}).get('function_operation')
@@ -419,6 +426,8 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
             update_fields['doc_ids'] = doc_ids
         if variables_state is not None:
             update_fields['variables_state'] = variables_state
+        if IsstarterQuestionEnable is not None:
+            update_fields['IsstarterQuestionEnable'] = IsstarterQuestionEnable
         if service is not None:
             update_fields['service'] = service
             model = new_configuration['model']
@@ -508,7 +517,7 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
         await update_bridge(bridge_id=bridge_id, update_fields=update_fields, version_id=version_id) # todo :: add transaction
         result = await get_bridges_with_tools(bridge_id, org_id, version_id)
         await add_bulk_user_entries(user_history)
-        await update_apikey_creds(version_id)
+        await try_catch(update_apikey_creds, version_id)
         if service is not None:
             bridge['service'] = service
         if result.get("success"):

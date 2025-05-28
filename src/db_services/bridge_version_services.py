@@ -27,182 +27,146 @@ async def get_version(org_id, version_id):
         return None
 
 async def create_bridge_version(bridge_data, parent_id=None):
-    try:
-        bridge_version_data = bridge_data.copy()
-        keys_to_remove = ['name', 'slugName', 'bridgeType', 'status']
-        for key in keys_to_remove:
-            if key in bridge_version_data:
-                del bridge_version_data[key]
-        bridge_version_data['is_drafted'] = True
-        bridge_version_data['parent_id'] = parent_id or str(bridge_data['_id'])
-        bridge_version_data['_id'] = ObjectId()
-        await version_model.insert_one(bridge_version_data)
-        return str(bridge_version_data['_id'])
-    except Exception as e:
-        logger.error(f"Error in create_bridge_version:, {str(e)}")
-        return {
-           'success': False,
-            'error': str(e)
-        }
+    bridge_version_data = bridge_data.copy()
+    keys_to_remove = ['name', 'slugName', 'bridgeType', 'status']
+    for key in keys_to_remove:
+        if key in bridge_version_data:
+            del bridge_version_data[key]
+    bridge_version_data['is_drafted'] = True
+    bridge_version_data['parent_id'] = parent_id or str(bridge_data['_id'])
+    bridge_version_data['_id'] = ObjectId()
+    await version_model.insert_one(bridge_version_data)
+    return str(bridge_version_data['_id'])
+
 async def update_bridges(bridge_id, update_fields):
-    try:
-        update_query = {}
+    update_query = {}
 
-        # Handle 'versions' separately with $addToSet
-        if 'versions' in update_fields:
-            update_query['$addToSet'] = {'versions': {'$each': update_fields.pop('versions')}}
+    # Handle 'versions' separately with $addToSet
+    if 'versions' in update_fields:
+        update_query['$addToSet'] = {'versions': {'$each': update_fields.pop('versions')}}
 
-        # Add remaining fields to $set
-        if update_fields:
-            update_query['$set'] = update_fields
+    # Add remaining fields to $set
+    if update_fields:
+        update_query['$set'] = update_fields
 
-        updated_bridge = await configurationModel.find_one_and_update(
-            {'_id': ObjectId(bridge_id)},
-            update_query,
-            return_document=True,
-            upsert=True
-        )
+    updated_bridge = await configurationModel.find_one_and_update(
+        {'_id': ObjectId(bridge_id)},
+        update_query,
+        return_document=True,
+        upsert=True
+    )
 
-        if not updated_bridge:
-            return {
-                'success': False,
-                'error': 'No records updated or bridge not found'
-            }
-        if updated_bridge:
-            updated_bridge['_id'] = str(updated_bridge['_id'])  # Convert ObjectId to string
-            if 'function_ids' in updated_bridge:
-                updated_bridge['function_ids'] = [str(fid) for fid in updated_bridge['function_ids']]  # Convert function_ids to string
-        return {
-            'success': True,
-            'result': updated_bridge
-        }
+    if not updated_bridge:
+        raise BadRequestException('No records updated or bridge not found')
 
-    except Exception as error:
-        logger.error(f'Error in update_bridges: {str(error)}')
-        return {
-            'success': False,
-            'error': 'Something went wrong!'
-        }
+    if updated_bridge:
+        updated_bridge['_id'] = str(updated_bridge['_id'])  # Convert ObjectId to string
+        if 'function_ids' in updated_bridge:
+            updated_bridge['function_ids'] = [str(fid) for fid in updated_bridge['function_ids']]  # Convert function_ids to string
+    return updated_bridge
     
 async def get_version_with_tools(bridge_id, org_id):
-    try:
-        pipeline = [
-            {
-                '$match': {'_id': ObjectId(bridge_id), "org_id": org_id}
-            },
-            {
-                '$lookup': {
-                    'from': 'apicalls',
-                    'localField': 'function_ids', 
-                    'foreignField': '_id',
-                    'as': 'apiCalls'
-                }
-            },
-            {
-                '$addFields': {
-                    '_id': {'$toString': '$_id'},
-                    'function_ids': {
+    pipeline = [
+        {
+            '$match': {'_id': ObjectId(bridge_id), "org_id": org_id}
+        },
+        {
+            '$lookup': {
+                'from': 'apicalls',
+                'localField': 'function_ids', 
+                'foreignField': '_id',
+                'as': 'apiCalls'
+            }
+        },
+        {
+            '$addFields': {
+                '_id': {'$toString': '$_id'},
+                'function_ids': {
+                    '$map': {
+                        'input': '$function_ids',
+                        'as': 'fid',
+                        'in': {'$toString': '$$fid'}
+                    }
+                },
+                'apiCalls': {
+                    '$arrayToObject': {
                         '$map': {
-                            'input': '$function_ids',
-                            'as': 'fid',
-                            'in': {'$toString': '$$fid'}
-                        }
-                    },
-                    'apiCalls': {
-                        '$arrayToObject': {
-                            '$map': {
-                                'input': '$apiCalls',
-                                'as': 'api_call',
-                                'in': {
-                                    'k': {'$toString': '$$api_call._id'},
-                                    'v': {
-                                        '$mergeObjects': [
-                                            '$$api_call',
-                                            {
-                                                '_id': {'$toString': '$$api_call._id'},
-                                                'bridge_ids': {
-                                                    '$map': {
-                                                        'input': '$$api_call.bridge_ids',
-                                                        'as': 'bid',
-                                                        'in': {'$toString': '$$bid'}
-                                                    }
+                            'input': '$apiCalls',
+                            'as': 'api_call',
+                            'in': {
+                                'k': {'$toString': '$$api_call._id'},
+                                'v': {
+                                    '$mergeObjects': [
+                                        '$$api_call',
+                                        {
+                                            '_id': {'$toString': '$$api_call._id'},
+                                            'bridge_ids': {
+                                                '$map': {
+                                                    'input': '$$api_call.bridge_ids',
+                                                    'as': 'bid',
+                                                    'in': {'$toString': '$$bid'}
                                                 }
                                             }
-                                        ]
-                                    }
+                                        }
+                                    ]
                                 }
                             }
                         }
                     }
                 }
             }
-        ]
+        }
+    ]
 
-        result = await version_model.aggregate(pipeline).to_list(length=None)
-        
-        if not result:
-            return {
-                'success': False,
-                'error': 'No matching records found'
-            }
-        
-        return {
-            'success': True,
-            'bridges': result[0]
-        }
-    except Exception as error:
-        logger.error(f'Error in get_version_with_tools: {str(error)}')
-        return {
-            'success': False,
-            'error': "something went wrong!!"
-        }
+    result = await version_model.aggregate(pipeline).to_list(length=None)
+    
+    if not result:
+        raise BadRequestException('No matching records found')
+    
+    return {
+        'success': True,
+        'bridges': result[0]
+    }
     
 async def publish(org_id, version_id):
-    try:
-        get_version_data = (await get_bridges_with_tools_and_apikeys(None, org_id, version_id)).get("bridges")
-        if not get_version_data:
-            raise Exception("Version data not found")
-        
-        parent_id = str(get_version_data.get('parent_id'))
-        cache_key = f"{parent_id}"
-        await delete_in_cache(cache_key)
-
-        if not parent_id:
-            raise Exception("Parent ID not found in version data")
-            
-        parent_configuration = await configurationModel.find_one({'_id': ObjectId(parent_id)})
-        
-        if not parent_configuration:
-            raise Exception("Parent configuration not found")
-            
-        
-        published_version_id = str(get_version_data['_id'])
-        get_version_data.pop('_id', None)
-        updated_configuration = {**parent_configuration, **get_version_data}
-        updated_configuration['published_version_id'] = published_version_id
-        
-        asyncio.create_task(makeQuestion(parent_id, updated_configuration.get("configuration",{}).get("prompt",""), updated_configuration.get('apiCalls'), save=True))
-        asyncio.create_task(delete_current_testcase_history(version_id))
-        
-        if updated_configuration.get('function_ids'):
-            updated_configuration['function_ids'] = [ObjectId(fid) for fid in updated_configuration['function_ids']]
-        
-        await configurationModel.update_one(
-            {'_id': ObjectId(parent_id)},
-            {'$set': updated_configuration}
-        )
-        
-        await version_model.update_one({'_id': ObjectId(published_version_id)}, {'$set': {'is_drafted': False}})
-        
-        return {
-            "success": True,
-            "message": "Configuration updated successfully", 
-        }
+    get_version_data = (await get_bridges_with_tools_and_apikeys(None, org_id, version_id)).get("bridges")
+    if not get_version_data:
+        raise BadRequestException('version data not found')
     
-    except Exception as e:
-        logger.error(f"Error in publish: {str(e)}")
-        traceback.print_exc()
-        raise   
+    parent_id = str(get_version_data.get('parent_id'))
+    cache_key = f"{parent_id}"
+    await delete_in_cache(cache_key)
+
+    if not parent_id:
+        raise BadRequestException("Parent ID not found in version data")
+    
+    parent_configuration = await configurationModel.find_one({'_id': ObjectId(parent_id)})
+    
+    if not parent_configuration:
+        raise BadRequestException("Parent configuration not found")
+    
+    published_version_id = str(get_version_data['_id'])
+    get_version_data.pop('_id', None)
+    updated_configuration = {**parent_configuration, **get_version_data}
+    updated_configuration['published_version_id'] = published_version_id
+    
+    asyncio.create_task(makeQuestion(parent_id, updated_configuration.get("configuration",{}).get("prompt",""), updated_configuration.get('apiCalls'), save=True))
+    asyncio.create_task(delete_current_testcase_history(version_id))
+    
+    if updated_configuration.get('function_ids'):
+        updated_configuration['function_ids'] = [ObjectId(fid) for fid in updated_configuration['function_ids']]
+    
+    await configurationModel.update_one(
+        {'_id': ObjectId(parent_id)},
+        {'$set': updated_configuration}
+    )
+    
+    await version_model.update_one({'_id': ObjectId(published_version_id)}, {'$set': {'is_drafted': False}})
+    
+    return {
+        "success": True,
+        "message": "Configuration updated successfully", 
+    }
 async def makeQuestion(parent_id, prompt, functions, save = False):
     if functions: 
         filtered_functions = {
@@ -212,7 +176,7 @@ async def makeQuestion(parent_id, prompt, functions, save = False):
         
     
     expected_questions = await call_ai_middleware(prompt, bridge_id = bridge_ids['make_question'])
-    updated_configuration= {"starterQuestion": expected_questions}
+    updated_configuration= {"starterQuestion": expected_questions.get("questions",[])}
     
     # Update the document in the configurationModel
     if save: 
