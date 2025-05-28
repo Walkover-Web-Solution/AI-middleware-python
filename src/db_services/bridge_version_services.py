@@ -61,7 +61,7 @@ async def update_bridges(bridge_id, update_fields):
 
     if updated_bridge:
         updated_bridge['_id'] = str(updated_bridge['_id'])  # Convert ObjectId to string
-        if 'function_ids' in updated_bridge:
+        if 'function_ids' in updated_bridge and updated_bridge['function_ids'] is not None:
             updated_bridge['function_ids'] = [str(fid) for fid in updated_bridge['function_ids']]  # Convert function_ids to string
     return updated_bridge
     
