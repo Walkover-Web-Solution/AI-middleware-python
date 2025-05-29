@@ -667,12 +667,25 @@ async def update_bridge(bridge_id = None, update_fields = None, version_id = Non
     }
 
 
-async def get_apikey_creds(id):
+async def get_apikey_creds(org_id, apikey_object_ids):
     try:
-        return await apikeyCredentialsModel.find_one(
-            {'_id': ObjectId(id)},
-            {'apikey' : 1}
-        )
+        apikey_creds = {}
+        for service, object_id in apikey_object_ids.items():
+            apikey_cred = await apikeyCredentialsModel.find_one(
+                {'_id': ObjectId(object_id), 'org_id': org_id},
+                {'apikey': 1}
+            )
+            if not apikey_cred:
+                raise BadRequestException(f"Apikey for {service} not found")
+
+            apikey_creds[service] = apikey_cred['apikey']
+
+        return {
+            'success': True,
+            'apikey': apikey_creds
+        }
+    except BadRequestException:
+        raise
     except Exception as error:
         logger.error(f"Error in get_apikey_creds: {str(error)}")
         raise error
