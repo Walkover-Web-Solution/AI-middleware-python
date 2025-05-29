@@ -371,7 +371,6 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
         type = None
         if new_configuration is not None:
             type = new_configuration.get('type')
-        apikey = body.get('apikey')
         apikey_object_id = body.get('apikey_object_id')
         variables_path = body.get('variables_path')
         variables_state = body.get('variables_state')
@@ -387,9 +386,8 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
         update_fields = {}
         user_history = []
         if apikey_object_id is not None:
+            await get_apikey_creds(org_id, apikey_object_id)
             update_fields['apikey_object_id'] = apikey_object_id
-            data = await get_apikey_creds(apikey_object_id)
-            apikey = data.get('apikey',"")
         name = body.get('name')
         function_id = body.get('functionData', {}).get('function_id', None)
         function_operation = body.get('functionData', {}).get('function_operation')
@@ -451,8 +449,6 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
                 new_configuration = {**new_configuration,**configuration}
             updated_configuration = {**current_configuration, **new_configuration}
             update_fields['configuration'] = updated_configuration
-        if apikey is not None:
-            update_fields['apikey'] = apikey
         if name is not None:
             update_fields['name'] = name
         if variables_path is not None:
