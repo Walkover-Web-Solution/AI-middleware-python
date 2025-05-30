@@ -9,11 +9,9 @@ from config import Config
 from ..configs.constant import service_name
 from src.db_services.conversationDbService import storeSystemPrompt, add_bulk_user_entries
 from bson import ObjectId
-from datetime import datetime, timezone
 from src.services.utils.getDefaultValue import get_default_values_controller
 from src.db_services.bridge_version_services import create_bridge_version
 from src.services.utils.apicallUtills import delete_all_version_and_bridge_ids_from_cache
-from src.db_services.conversationDbService import get_timescale_data
 from src.configs.model_configuration import model_config_document
 from globals import *
 from src.configs.constant import bridge_ids
