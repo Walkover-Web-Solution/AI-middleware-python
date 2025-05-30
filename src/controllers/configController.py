@@ -353,177 +353,198 @@ async def get_all_service_controller():
     }
 
 async def update_bridge_controller(request, bridge_id=None, version_id=None):
+    """Update bridge configuration with provided parameters.
+    
+    Args:
+        request: HTTP request object containing user profile and request body
+        bridge_id: Optional ID of the bridge to update
+        version_id: Optional version ID of the bridge to update
+        
+    Returns:
+        JSON response with updated bridge information
+        
+    Raises:
+        HTTPException: For validation errors or unexpected exceptions
+    """
     try:
-        body  = await request.json()
+        # Extract request data
+        body = await request.json()
         org_id = request.state.profile['org']['id']
-        slugName = body.get('slugName')
-        user_reference=body.get('user_reference')
-        service = body.get('service')
-        bridgeType = body.get('bridgeType')
-        new_configuration = body.get('configuration')
-        type = None
-        if new_configuration is not None:
-            type = new_configuration.get('type')
-        apikey = body.get('apikey')
-        apikey_object_id = body.get('apikey_object_id')
-        variables_path = body.get('variables_path')
-        variables_state = body.get('variables_state')
-        bridge_summary = body.get('bridge_summary')
-        expected_qna = body.get('expected_qna', None)
-        gpt_memory = body.get('gpt_memory')
-        gpt_memory_context = body.get('gpt_memory_context')
-        bridge_status = body.get('bridge_status')
-        doc_ids = body.get('doc_ids')
         user_id = request.state.profile['user']['id']
-        version_description = body.get('version_description')
-        tool_call_count = body.get('tool_call_count')
-        IsstarterQuestionEnable = body.get('IsstarterQuestionEnable')
+        
+        # Get existing bridge data
+        bridge = await get_bridge_by_id(org_id, bridge_id, version_id)
+        parent_id = bridge.get('parent_id')
+        current_configuration = bridge.get('configuration', {})
+        current_variables_path = bridge.get('variables_path', {})
+        function_ids = bridge.get('function_ids') or []
+        
+        # Initialize update fields and user history tracking
         update_fields = {}
         user_history = []
+        
+        # Extract configuration data
+        new_configuration = body.get('configuration')
+        config_type = new_configuration.get('type') if new_configuration else None
+        service = body.get('service')
+        
+        # Process API key if provided
+        apikey_object_id = body.get('apikey_object_id')
         if apikey_object_id is not None:
             await get_apikey_creds(org_id, apikey_object_id)
             update_fields['apikey_object_id'] = apikey_object_id
-        name = body.get('name')
-        function_id = body.get('functionData', {}).get('function_id', None)
-        function_operation = body.get('functionData', {}).get('function_operation')
-        function_name = body.get('functionData', {}).get('function_name',None)
-        built_in_tools = body.get('built_in_tools_data', {}).get('built_in_tools', None)
-        agents =  body.get('agents', None)
-        if agents is not None:
-            connected_agents = agents.get('connected_agents', None)
-            agent_status = agents.get('agent_status', None)
-        built_in_tools_operation = body.get('built_in_tools_data', {}).get('built_in_tools_operation', None)
-        bridge = await get_bridge_by_id(org_id, bridge_id, version_id)
-        parent_id = bridge.get('parent_id')
+        
+        # Handle system prompt if present in configuration
+        if new_configuration and (prompt := new_configuration.get('prompt')):
+            prompt_result = await storeSystemPrompt(prompt, org_id, parent_id if parent_id is not None else version_id)
+            new_configuration['system_prompt_version_id'] = prompt_result.get('id')
+        
+        # Reset fine-tune model for non-fine-tune configurations
         if new_configuration and 'type' in new_configuration and new_configuration.get('type') != 'fine-tune':
-            new_configuration['fine_tune_model'] = {}
-            new_configuration['fine_tune_model']['current_model'] = None
-        current_configuration = bridge.get('configuration', {})
-        current_variables_path = bridge.get('variables_path',{})
-        function_ids = bridge.get('function_ids') or []
-        prompt = new_configuration.get('prompt') if new_configuration else None
-        if prompt:
-            result = await storeSystemPrompt(prompt, org_id, parent_id if parent_id is not None else version_id)
-            new_configuration['system_prompt_version_id'] = result.get('id')
-        if bridge_status is not None and bridge_status in [0, 1]:
-            update_fields['bridge_status'] = bridge_status
-        if bridge_summary is not None:
-            update_fields['bridge_summary'] = bridge_summary
-        if expected_qna is not None:
-            update_fields['expected_qna'] = expected_qna
-        if slugName is not None:
-            update_fields['slugName'] = slugName
-        if tool_call_count is not None:
-            update_fields['tool_call_count'] = tool_call_count
-        if user_reference is not None:
-            update_fields['user_reference'] = user_reference
-        if gpt_memory is not None:
-            update_fields['gpt_memory'] = gpt_memory
-        if gpt_memory_context is not None:
-            update_fields['gpt_memory_context'] = gpt_memory_context
-        if doc_ids is not None:
-            update_fields['doc_ids'] = doc_ids
-        if variables_state is not None:
-            update_fields['variables_state'] = variables_state
-        if IsstarterQuestionEnable is not None:
-            update_fields['IsstarterQuestionEnable'] = IsstarterQuestionEnable
+            new_configuration['fine_tune_model'] = {'current_model': None}
+        
+        # Process basic fields
+        simple_fields = {
+            'bridge_status': lambda v: v in [0, 1],
+            'bridge_summary': lambda v: True,
+            'expected_qna': lambda v: True,
+            'slugName': lambda v: True,
+            'tool_call_count': lambda v: True,
+            'user_reference': lambda v: True,
+            'gpt_memory': lambda v: True,
+            'gpt_memory_context': lambda v: True,
+            'doc_ids': lambda v: True,
+            'variables_state': lambda v: True,
+            'IsstarterQuestionEnable': lambda v: True,
+            'name': lambda v: True,
+            'bridgeType': lambda v: True
+        }
+        
+        # Update simple fields if they exist in the request
+        for field, validator in simple_fields.items():
+            value = body.get(field)
+            if value is not None and validator(value):
+                update_fields[field] = value
+        
+        # Handle service and model configuration
         if service is not None:
             update_fields['service'] = service
-            model = new_configuration['model']
-            configuration = await get_default_values_controller(service,model,current_configuration,type)
-            type = new_configuration.get('type', 'chat')
-            configuration['type'] = type
-            new_configuration = configuration
-        if bridgeType is not None:
-            update_fields['bridgeType'] = bridgeType
+            if new_configuration and 'model' in new_configuration:
+                model = new_configuration['model']
+                configuration = await get_default_values_controller(service, model, current_configuration, config_type)
+                configuration['type'] = new_configuration.get('type', 'chat')
+                new_configuration = configuration
+        
+        # Process configuration updates
         if new_configuration is not None:
-            if(new_configuration.get('model') and service is None):
+            # If model is changing but service isn't provided, get default values
+            if new_configuration.get('model') and service is None:
                 service = bridge.get('service')
                 model = new_configuration.get('model')
-                configuration = await get_default_values_controller(service,model,current_configuration,type)
-                type = new_configuration.get('type', 'chat')
-                configuration['type'] = type
-                new_configuration = {**new_configuration,**configuration}
-            updated_configuration = {**current_configuration, **new_configuration}
-            update_fields['configuration'] = updated_configuration
-        if name is not None:
-            update_fields['name'] = name
+                configuration = await get_default_values_controller(service, model, current_configuration, config_type)
+                configuration['type'] = new_configuration.get('type', 'chat')
+                new_configuration = {**new_configuration, **configuration}
+            
+            # Merge configurations and update
+            update_fields['configuration'] = {**current_configuration, **new_configuration}
+        
+        # Process variables path
+        variables_path = body.get('variables_path')
         if variables_path is not None:
             updated_variables_path = {**current_variables_path, **variables_path}
+            # Convert list values to empty dictionaries
             for key, value in updated_variables_path.items():
                 if isinstance(value, list):
                     updated_variables_path[key] = {}
             update_fields['variables_path'] = updated_variables_path
+        
+        # Process built-in tools
+        built_in_tools = body.get('built_in_tools_data', {}).get('built_in_tools')
+        built_in_tools_operation = body.get('built_in_tools_data', {}).get('built_in_tools_operation')
         if built_in_tools is not None:
-            if built_in_tools_operation is None:
-                await update_built_in_tools(version_id, built_in_tools, 0)
-            elif built_in_tools_operation == '1':
-                await update_built_in_tools(version_id, built_in_tools, 1)
-        if agents is not None and connected_agents is not None:
-            if agent_status is None:
-                await update_agents(version_id, connected_agents, 0)
-            elif str(agent_status) == '1':
-                await update_agents(version_id, connected_agents, 1)
-        if function_id is not None: 
-            Id_to_delete = {
+            operation_value = 1 if built_in_tools_operation == '1' else 0
+            await update_built_in_tools(version_id, built_in_tools, operation_value)
+        
+        # Process agents
+        agents = body.get('agents')
+        if agents is not None:
+            connected_agents = agents.get('connected_agents')
+            agent_status = agents.get('agent_status')
+            if connected_agents is not None:
+                operation_value = 1 if agent_status == '1' else 0
+                await update_agents(version_id, connected_agents, operation_value)
+        
+        # Process function updates
+        function_data = body.get('functionData', {})
+        function_id = function_data.get('function_id')
+        function_operation = function_data.get('function_operation')
+        function_name = function_data.get('function_name')
+        
+        if function_id is not None:
+            id_to_delete = {
                 "bridge_ids": [],
                 "version_ids": []
             }
-            if function_operation is not None:      # to add function id 
+            target_id = bridge_id if bridge_id is not None else version_id
+            
+            if function_operation is not None:  # Add function ID
                 if function_id not in function_ids:
                     function_ids.append(function_id)
                     update_fields['function_ids'] = [ObjectId(fid) for fid in function_ids]
-                    Id_to_delete = await update_bridge_ids_in_api_calls(function_id, bridge_id if bridge_id is not None else version_id, 1)# delete from history
-            elif function_operation is None:        # to remove function id 
-                if function_name is not None:   
-                        if function_name in  current_variables_path:
-                            del current_variables_path[function_name]
-                            update_fields['variables_path'] = current_variables_path
+                    id_to_delete = await update_bridge_ids_in_api_calls(function_id, target_id, 1)
+            else:  # Remove function ID
+                if function_name is not None and function_name in current_variables_path:
+                    del current_variables_path[function_name]
+                    update_fields['variables_path'] = current_variables_path
+                
                 if function_id in function_ids:
                     function_ids.remove(function_id)
                     update_fields['function_ids'] = [ObjectId(fid) for fid in function_ids]
-                    Id_to_delete = await update_bridge_ids_in_api_calls(function_id, bridge_id if bridge_id is not None else version_id, 0)# delete from history
-            await delete_all_version_and_bridge_ids_from_cache(Id_to_delete)
+                    id_to_delete = await update_bridge_ids_in_api_calls(function_id, target_id, 0)
+            
+            await delete_all_version_and_bridge_ids_from_cache(id_to_delete)
         
+        # Build user history entries
         for key, value in body.items():
+            history_entry = {
+                'user_id': user_id,
+                'org_id': org_id,
+                'bridge_id': parent_id or '',
+                'version_id': version_id
+            }
+            
             if key == 'configuration':
-                for configuration in value.keys():
-                    user_history.append(
-                        {
-                            'user_id': user_id,
-                            'org_id': org_id,
-                            'bridge_id': parent_id or '',
-                            'type': configuration,
-                            'version_id' : version_id
-                        }
-                    )
+                for config_key in value.keys():
+                    user_history.append({**history_entry, 'type': config_key})
             else:
-                user_history.append(
-                    {
-                        'user_id': user_id,
-                        'org_id': org_id,
-                        'bridge_id':  parent_id or '',
-                        'type': key,
-                        'version_id' : version_id
-                    }
-                )
-        if version_id is not None and version_description is None:
-            update_fields['is_drafted'] = True
-        if version_description is not None:
-           update_fields['version_description'] = version_description
-        await update_bridge(bridge_id=bridge_id, update_fields=update_fields, version_id=version_id) # todo :: add transaction
+                user_history.append({**history_entry, 'type': key})
+        
+        # Handle version information
+        version_description = body.get('version_description')
+        if version_id is not None:
+            if version_description is None:
+                update_fields['is_drafted'] = True
+            else:
+                update_fields['version_description'] = version_description
+        
+        # Perform database updates
+        await update_bridge(bridge_id=bridge_id, update_fields=update_fields, version_id=version_id)
         result = await get_bridges_with_tools(bridge_id, org_id, version_id)
         await add_bulk_user_entries(user_history)
         await try_catch(update_apikey_creds, version_id)
+        
+        # Update service in bridge if it was changed
         if service is not None:
             bridge['service'] = service
+        
+        # Return success response
         if result.get("success"):
-            return Helper.response_middleware_for_bridge(bridge['service'],{
+            return Helper.response_middleware_for_bridge(bridge['service'], {
                 "success": True,
                 "message": "Bridge Updated successfully",
-                "bridge" : result.get('bridges')
-
+                "bridge": result.get('bridges')
             })
+        
     except ValidationError as e:
         raise HTTPException(status_code=400, detail=f"Validation error: {e.json()}")
     except Exception as e:
