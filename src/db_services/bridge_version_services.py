@@ -152,6 +152,8 @@ async def publish(org_id, version_id):
     
     asyncio.create_task(makeQuestion(parent_id, updated_configuration.get("configuration",{}).get("prompt",""), updated_configuration.get('apiCalls'), save=True))
     asyncio.create_task(delete_current_testcase_history(version_id))
+    # delete apicalls from updated_configuration
+    del updated_configuration['apiCalls']
     
     if updated_configuration.get('function_ids'):
         updated_configuration['function_ids'] = [ObjectId(fid) for fid in updated_configuration['function_ids']]
