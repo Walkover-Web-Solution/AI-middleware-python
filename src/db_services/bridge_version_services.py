@@ -159,7 +159,7 @@ async def get_version_with_tools(bridge_id, org_id):
     
 async def publish(org_id, version_id):
     try:
-        get_version_data = (await get_bridges_with_tools_and_apikeys(None, org_id, version_id)).get("bridges")
+        get_version_data = (await get_bridges_with_tools(bridge_id = None, org_id = org_id, version_id = version_id)).get('bridges')
         if not get_version_data:
             raise Exception("Version data not found")
         
@@ -184,6 +184,9 @@ async def publish(org_id, version_id):
         asyncio.create_task(makeQuestion(parent_id, updated_configuration.get("configuration",{}).get("prompt",""), updated_configuration.get('apiCalls'), save=True))
         asyncio.create_task(delete_current_testcase_history(version_id))
         
+        # delete apicalls from updated_configuration
+        del updated_configuration['apiCalls']
+
         if updated_configuration.get('function_ids'):
             updated_configuration['function_ids'] = [ObjectId(fid) for fid in updated_configuration['function_ids']]
         
