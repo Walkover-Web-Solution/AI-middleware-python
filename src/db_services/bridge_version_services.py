@@ -129,7 +129,7 @@ async def get_version_with_tools(bridge_id, org_id):
     }
     
 async def publish(org_id, version_id):
-    get_version_data = (await get_bridges_with_tools_and_apikeys(None, org_id, version_id)).get("bridges")
+    get_version_data = await get_version(org_id, version_id)
     if not get_version_data:
         raise BadRequestException('version data not found')
     
