@@ -59,6 +59,7 @@ async def update_bridges(bridge_id, update_fields):
     if not updated_bridge:
         raise BadRequestException('No records updated or bridge not found')
 
+
     if updated_bridge:
         updated_bridge['_id'] = str(updated_bridge['_id'])  # Convert ObjectId to string
         if 'function_ids' in updated_bridge and updated_bridge['function_ids'] is not None:
