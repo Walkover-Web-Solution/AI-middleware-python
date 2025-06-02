@@ -111,15 +111,15 @@ async def add_tool_call_data_in_history(chats):
 
 async def save_sub_thread_id_and_name(thread_id, sub_thread_id, org_id, thread_flag, response_format, bridge_id, user):
     try:
-        display_name = None
         variables = {
             'user' : user
         }
+        display_name = sub_thread_id
         if thread_flag:
             message  = 'generate description'
             display_name = await call_ai_middleware(message, bridge_ids['generate_description'], response_type='text', variables=variables)
-            await save_sub_thread_id(org_id, thread_id, sub_thread_id, display_name)
-        if display_name is not None:
+        await save_sub_thread_id(org_id, thread_id, sub_thread_id, display_name)
+        if display_name is not None and display_name != sub_thread_id:
             response = {
                 'data': {
                     'display_name': display_name,
