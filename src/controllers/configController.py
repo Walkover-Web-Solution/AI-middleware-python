@@ -99,23 +99,16 @@ async def create_bridges_controller(request):
             "status": status,
             "gpt_memory" : True
         })
-        if result.get("success"):
-            create_version = await create_bridge_version(result['bridge'])
-            update_fields = {'versions' : [create_version]}
-            updated_bridge_result = (await update_bridge(str(result['bridge']['_id']), update_fields)).get('result',{})
-            return JSONResponse(status_code=200, content={
-                "success": True,
-                "message": "Bridge created successfully",
-                "bridge" : json.loads(json.dumps(updated_bridge_result, default=str))
-
-            })
-        else:
-            return JSONResponse(status_code=400, content={
-                "success": False,
-                "message": json.loads(json.dumps(result.get('error'), default=str))
-            })
+        create_version = await create_bridge_version(result['bridge'])
+        update_fields = {'versions' : [create_version]}
+        updated_bridge_result = (await update_bridge(str(result['bridge']['_id']), update_fields)).get('result',{})
+        return JSONResponse(status_code=200, content={
+            "success": True,
+            "message": "Bridge created successfully",
+            "bridge" : json.loads(json.dumps(updated_bridge_result, default=str))
+        })
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e)   
+        raise HTTPException(status_code=400, detail= "Error in creating bridge: "+ str(e))   
      
 async def create_bridges_using_ai_controller(request):
     try:
@@ -536,7 +529,9 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
         await update_bridge(bridge_id=bridge_id, update_fields=update_fields, version_id=version_id)
         result = await get_bridges_with_tools(bridge_id, org_id, version_id)
         await add_bulk_user_entries(user_history)
-        await update_apikey_creds(version_id)
+        await try_catch(update_apikey_creds, version_id)
+        
+        # Update service in bridge if it was changed
         if service is not None:
             bridge['service'] = service
         

@@ -7,13 +7,6 @@ from ..db_services.ConfigurationServices import save_sub_thread_id
 from ..services.commonServices.baseService.utils import sendResponse
 
 
-async def getAllThreads(bridge_id, org_id, page, pageSize):
-    try:
-        chats = await chatbotDbService.findAllThreads(bridge_id, org_id, page, pageSize)
-        return { 'success': True, 'data': chats }
-    except Exception as err:
-        logger.error("getAllThreads =>", err)
-        return { 'success': False, 'message': str(err) }
 
 async def getThread(thread_id, sub_thread_id, org_id, bridge_id, bridgeType):
     try:
@@ -27,26 +20,10 @@ async def getThread(thread_id, sub_thread_id, org_id, bridge_id, bridgeType):
                     filtered_chats.append(chat)
             chats = filtered_chats
         chats = await add_tool_call_data_in_history(chats)
-        return { 'success': True, 'data': chats }
+        return chats
     except Exception as err:
         logger.error(f"Error in getting thread:, {str(err)}, {traceback.format_exc()}")
-        return { 'success': False, 'message': str(err) }
-
-async def getChatData(chat_id):
-    try:
-        chat = await chatbotDbService.findChat(chat_id)
-        return { 'success': True, 'data': chat }
-    except Exception as err:
-        logger.error(f"Error in getting chat data:, {str(err)}")
-        return { 'success': False, 'message': str(err) }
-
-async def getThreadHistory(thread_id, org_id, bridge_id):
-    try:
-        chats = await chatbotDbService.findMessage(org_id, thread_id, bridge_id)
-        return { 'success': True, 'data': chats }
-    except Exception as err:
-        logger.error(f'Error in getting thread history:, {str(err)}')
-        return { 'success': False, 'message': str(err) }
+        raise err
 
 async def savehistory(thread_id, sub_thread_id, userMessage, botMessage, org_id, bridge_id, model_name, type, messageBy, userRole="user", tools={}, chatbot_message = "",tools_call_data = [],message_id = None, version_id = None, image_url = None, revised_prompt = None, urls = None, AiConfig = None, annotations = None):
     try:
@@ -101,17 +78,11 @@ async def savehistory(thread_id, sub_thread_id, userMessage, botMessage, org_id,
                 "annotations" : annotations
             })
 
-        # if userRole == "tool":
-        #     success =  chatbotDbService.deleteLastThread(org_id, thread_id, bridge_id)
-        #     chatToSave = chatToSave[-1:]
-        #     if not success:
-        #         return { 'success': False, 'message': "failed to delete last chat!" }
-
         result = chatbotDbService.createBulk(chatToSave)
-        return { 'success': True, 'message': "successfully saved chat history", 'result': list(result) }
+        return list(result)
     except Exception as error:
         logger.error(f"saveconversation error=>, {str(error)}, {traceback.format_exc()}")
-        return { 'success': False, 'message': str(error) }
+        raise error
 
 async def add_tool_call_data_in_history(chats):
         tools_call_indices = []
@@ -140,15 +111,15 @@ async def add_tool_call_data_in_history(chats):
 
 async def save_sub_thread_id_and_name(thread_id, sub_thread_id, org_id, thread_flag, response_format, bridge_id, user):
     try:
-        display_name = None
         variables = {
             'user' : user
         }
+        display_name = sub_thread_id
         if thread_flag:
             message  = 'generate description'
             display_name = await call_ai_middleware(message, bridge_ids['generate_description'], response_type='text', variables=variables)
-            await save_sub_thread_id(org_id, thread_id, sub_thread_id, display_name)
-        if display_name is not None:
+        await save_sub_thread_id(org_id, thread_id, sub_thread_id, display_name)
+        if display_name is not None and display_name != sub_thread_id:
             response = {
                 'data': {
                     'display_name': display_name,

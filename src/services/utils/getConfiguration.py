@@ -9,6 +9,7 @@ from .getConfiguration_utils import (
 )
 
 apiCallModel = db['apicalls']
+from globals import *
 
 async def getConfiguration(configuration, service, bridge_id, apikey, template_id=None, variables={}, 
                            org_id="", variables_path=None, version_id=None, extra_tools=[], built_in_tools=[]):

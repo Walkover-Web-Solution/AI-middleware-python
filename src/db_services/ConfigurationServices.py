@@ -3,6 +3,7 @@ from bson import ObjectId
 from ..services.cache_service import find_in_cache, store_in_cache, delete_in_cache
 import json
 from globals import *
+from bson import errors
 
 configurationModel = db["configurations"]
 apiCallModel = db['apicalls']
@@ -37,16 +38,19 @@ async def get_bridges(bridge_id = None, org_id = None, version_id = None):
                 }
             }
         ]
-       
+        
         result = await model.aggregate(pipeline).to_list(length=None)
-        bridges = result[0] if result else {}
-
+        if not result: 
+            raise errors.InvalidId("No matching records found")
+        bridges = result[0] if result else {} # Why this line is written
         return {
             'success': True,
             'bridges': bridges,
         }
+    except errors.InvalidId as error:
+        raise BadRequestException("Invalid Bridge ID provided")
     except Exception as error:
-        logger.error(f'Error in get bridges : {str(error)}')
+        logger.error(f'Error in get bridges : {str(error)}, {type(error)}')
         return {
             'success': False,
             'error': "something went wrong!!"
@@ -83,7 +87,7 @@ async def get_bridges_with_redis(bridge_id = None, org_id = None, version_id = N
                 }
             }
         ]
-       
+        
         result = await model.aggregate(pipeline).to_list(length=None)
         bridges = result[0] if result else {}
         await store_in_cache(cache_key, result)
@@ -98,22 +102,26 @@ async def get_bridges_with_redis(bridge_id = None, org_id = None, version_id = N
             'error': "something went wrong!!"
         }
 # todo
-async def get_bridges_without_tools(bridge_id = None, org_id = None, version_id = None):
+async def get_bridges_without_tools(bridge_id=None, org_id=None, version_id=None):
     try:
         model = version_model if version_id else configurationModel
         id_to_use = ObjectId(version_id) if version_id else ObjectId(bridge_id)
-        bridge_data = await model.find_one({'_id' : ObjectId(id_to_use)})
+        bridge_data = await model.find_one({'_id': ObjectId(id_to_use)})
+
+        if not bridge_data:
+            raise errors.InvalidId("No matching bridge found")
+
         return {
             'success': True,
             'bridges': bridge_data,
         }
+    except errors.InvalidId:
+        raise BadRequestException("Invalid Bridge ID provided")
     except Exception as error:
         logger.error(f'Error in get_bridges_without_tools : {str(error)}')
-        return {
-            'success': False,
-            'error': "something went wrong!!"
-        }
-   
+        raise error
+
+    
 async def get_bridges_with_tools(bridge_id, org_id, version_id=None):
     try:
         model = version_model if version_id else configurationModel
@@ -174,26 +182,19 @@ async def get_bridges_with_tools(bridge_id, org_id, version_id=None):
                 }
             }
         ]
-       
         result = await model.aggregate(pipeline).to_list(length=None)
-       
         if not result:
-            return {
-                'success': False,
-                'error': 'No matching records found'
-            }
-       
+            raise errors.InvalidId("No matching bridge found")
+
         return {
             'success': True,
             'bridges': result[0]
         }
+    except errors.InvalidId:
+        raise BadRequestException("Invalid Bridge ID provided")
     except Exception as error:
-        logger.error(f'Error in get_bridges_with_tools:, {str(error)}')
-        return {
-            'success': False,
-            'error': "something went wrong!!"
-        }    
-
+        logger.error(f'Error in get_bridges_with_tools: {str(error)}')
+        raise error    
 
 async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None):
     try:
@@ -202,9 +203,8 @@ async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None)
         # Attempt to retrieve data from Redis cache
         cached_data = await find_in_cache(cache_key)
         if cached_data:
-            # Deserialize the cached JSON data
-            cached_result = json.loads(cached_data)
-            return cached_result  # Return the cached response directly
+            return json.loads(cached_data)
+
         model = version_model if version_id else configurationModel
         id_to_use = ObjectId(version_id) if version_id else ObjectId(bridge_id)
         pipeline = [
@@ -436,48 +436,16 @@ async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None)
         }
         await store_in_cache(cache_key, response)
         return response
+
+    except errors.InvalidId:
+        raise BadRequestException("Invalid Bridge ID provided")
     except Exception as error:
         logger.error(f'Error in get_bridges_with_tools_and_apikeys: {str(error)}')
-        return {
-            'success': False,
-            'error': "something went wrong!!"
-        }
+        raise error
 
 
 
-
-
-
-async def update_api_call(id, update_fields):
-    try:
-        data = await apiCallModel.find_one_and_update(
-                {'_id': ObjectId(id)},
-                {'$set': update_fields},
-                return_document=True,
-                upsert=True
-            )
-       
-        if not data:
-            return {
-                'success': False,
-                'error': 'No records updated or bridge not found'
-            }
-        if data:
-            data['_id'] = str(data['_id'])  # Convert ObjectId to string
-            if 'bridge_ids' in data:
-                data['bridge_ids'] = [str(bid) for bid in data['bridge_ids']]  # Convert bridge_ids to string
-        return {
-            'success': True,
-            'result': data
-        }
-
-    except Exception as error:
-        logger.error(f'Error in update_api_call: {str(error)}')
-        return {
-            'success': False,
-            'error': 'Something went wrong!'
-        }
-        
+    
 
 async def update_bridge_ids_in_api_calls(function_id, bridge_id, add=1):
     to_update = {'$set': {'status': 1}}
@@ -485,7 +453,7 @@ async def update_bridge_ids_in_api_calls(function_id, bridge_id, add=1):
         to_update['$addToSet'] = {'bridge_ids': ObjectId(bridge_id)}
     else:
         to_update['$pull'] = {'bridge_ids': ObjectId(bridge_id)}
-                               
+                                
     data = await apiCallModel.find_one_and_update(
             {'_id': ObjectId(function_id)},
             to_update,
@@ -509,23 +477,23 @@ async def update_built_in_tools(version_id, tool, add=1):
         to_update['$addToSet'] = {'built_in_tools': tool}
     else:
         to_update['$pull'] = {'built_in_tools': tool}
-   
+    
     data = await version_model.find_one_and_update(
         {'_id': ObjectId(version_id)},
         to_update,
         return_document=True,
         upsert=True
     )
-   
+    
     if not data:
         return {
             'success': False,
             'error': 'No records updated or version not found'
         }
-   
+    
     if 'built_in_tools' not in data:
         data['built_in_tools'] = []
-   
+    
     return data
 
 async def update_agents(version_id, agents, add=1):
@@ -544,10 +512,7 @@ async def update_agents(version_id, agents, add=1):
     )
    
     if not data:
-        return {
-            'success': False,
-            'error': 'No records updated or version not found'
-        }
+        raise 'No records updated or version not found'
    
     if 'connected_agents' not in data:
         data['connected_agents'] = {}
@@ -587,27 +552,24 @@ async def get_template_by_id(template_id):
         if template_content:
             template_content = json.loads(template_content)
             return template_content
-       
+        
         template_content = await templateModel.find_one({'_id' : ObjectId(template_id)})
         await store_in_cache(cache_key, template_content)
         return template_content
-    except Exception as error :
+    except Exception as error : 
         logger.error(f"Error in get_template_by_id: {str(error)}")
         return None
-   
+    
 async def create_bridge(data):
     try:
         result = await configurationModel.insert_one(data)
         return {
             'success': True,
-            'bridge': {**data, '_id': result.inserted_id}
+            'bridge': {**data, '_id': str(result.inserted_id)}
         }
     except Exception as error:
         logger.error(f"Error in create_bridge: {str(error)}")
-        return {
-            'success': False,
-            'error': error
-        }
+        raise BadRequestException("Failed to create bridge")
 
 async def get_all_bridges_in_org(org_id):
     bridge = configurationModel.find({"org_id": org_id}, {
@@ -651,7 +613,7 @@ async def get_bridge_by_id(org_id, bridge_id, version_id=None):
             }
         }
     ]
-   
+    
     result = await model.aggregate(pipeline).to_list(length=None)
     bridge = result[0] if result else None
     return bridge
@@ -663,27 +625,27 @@ async def get_bridge_by_slugname(org_id, slug_name):
             'org_id': org_id
         })
 
-        if bridge and 'responseRef' in bridge:
+        if not bridge:
+            raise BadRequestException("Bridge not found")
+
+        if 'responseRef' in bridge:
             response_ref_id = bridge['responseRef']
             response_ref = await configurationModel.find_one({'_id': response_ref_id})
             bridge['responseRef'] = response_ref
 
-        return {
-            'success': True,
-            'bridges': bridge
-        }
+        return bridge
+    except BadRequestException:
+        raise
     except Exception as error:
         logger.error(f'Error in get_bridge_by_slugname: {str(error)}')
-        return {
-            'success': False,
-            'error': "something went wrong!!"
-        }
+        raise BadRequestException("Failed to fetch bridge by slugName")
+
 
 async def update_bridge(bridge_id = None, update_fields = None, version_id = None):
     model = version_model if version_id else configurationModel
     id_to_use = ObjectId(version_id) if version_id else ObjectId(bridge_id)
     cache_key = f"{version_id if version_id else bridge_id}"
-   
+    
     updated_bridge = await model.find_one_and_update(
         {'_id': ObjectId(id_to_use)},
         {'$set': update_fields},
@@ -692,7 +654,7 @@ async def update_bridge(bridge_id = None, update_fields = None, version_id = Non
     )
 
     if not updated_bridge:
-        raise ('No records updated or bridge not found')
+        raise BadRequestException('Bridge not found or no records updated')
 
     updated_bridge['_id'] = str(updated_bridge['_id'])  # Convert ObjectId to string
     if 'function_ids' in updated_bridge and updated_bridge['function_ids'] is not None:
@@ -704,26 +666,7 @@ async def update_bridge(bridge_id = None, update_fields = None, version_id = Non
         'result': updated_bridge
     }
 
-async def update_tools_calls(bridge_id, org_id, configuration):
-    try:
-        await configurationModel.find_one_and_update(
-            {'_id': ObjectId(bridge_id), 'org_id': org_id},
-            {'$set': {
-                'configuration': configuration,
 
-            }}
-        )
-        return {
-            'success': True,
-            'message': "bridge updated successfully"
-        }
-    except Exception as error:
-        logger.error(f"Error in update_tools_calls: {str(error)}")
-        return {
-            'success': False,
-            'error': "something went wrong!!"
-        }
-        
 async def get_apikey_creds(org_id, apikey_object_ids):
     try:
         apikey_creds = {}
@@ -745,11 +688,8 @@ async def get_apikey_creds(org_id, apikey_object_ids):
         raise
     except Exception as error:
         logger.error(f"Error in get_apikey_creds: {str(error)}")
-        return {
-            'success': False,
-            'error': "something went wrong!!"
-        }
- 
+        raise error
+    
 async def update_apikey_creds(version_id):
     try:
         return await apikeyCredentialsModel.update_one(
@@ -758,10 +698,7 @@ async def update_apikey_creds(version_id):
         )
     except Exception as error:
         logger.error(f"Error in update_apikey_creds: {str(error)}")
-        return {
-            'success': False,
-            'error': "something went wrong!!"
-        }
+        raise error
 
 async def save_sub_thread_id(org_id, thread_id, sub_thread_id, display_name):
     try:
@@ -781,7 +718,4 @@ async def save_sub_thread_id(org_id, thread_id, sub_thread_id, display_name):
         }
     except Exception as error:
         logger.error(f"Error in save_sub_thread_id: {error}")
-        return {
-            'success': False,
-            'error': str(error)
-        }
+        raise error

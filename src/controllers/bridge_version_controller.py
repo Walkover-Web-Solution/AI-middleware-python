@@ -22,8 +22,6 @@ async def create_version(request):
       version_description = body.get('version_description') or ""
       org_id = request.state.profile['org']['id']
       bridge_data = await get_bridges_without_tools(org_id=org_id, version_id= version_id)
-      if bridge_data is None:
-          return JSONResponse({"success": False, "message": "no version found"})
       parent_id = bridge_data.get('bridges').get('parent_id')
       bridge_data['bridges']['version_description'] = version_description
       create_new_version = await create_bridge_version(bridge_data.get('bridges'), parent_id=parent_id)
@@ -36,7 +34,7 @@ async def create_version(request):
       }
    
    except Exception as e:
-       raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e)
+       raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail= "Error creating version: " + str(e))
 
 async def get_version(request, version_id: str):
     try:
@@ -63,10 +61,8 @@ async def get_version(request, version_id: str):
 async def publish_version(request, version_id):
     try:
         org_id = request.state.profile['org']['id']
-        result = await publish(org_id, version_id)
-        if result['success']:
-            return JSONResponse({"success": True, "message": "version published successfully", "version_id": version_id })
-        return result
+        await publish(org_id, version_id)
+        return JSONResponse({"success": True, "message": "version published successfully", "version_id": version_id })
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     
