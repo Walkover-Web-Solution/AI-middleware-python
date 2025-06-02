@@ -111,7 +111,6 @@ async def add_tool_call_data_in_history(chats):
 
 async def save_sub_thread_id_and_name(thread_id, sub_thread_id, org_id, thread_flag, response_format, bridge_id, user):
     try:
-        display_name = None
         variables = {
             'user' : user
         }
