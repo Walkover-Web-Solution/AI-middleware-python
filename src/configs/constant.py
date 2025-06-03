@@ -3,7 +3,8 @@ service_name = {
     'gemini': 'gemini',
     'anthropic': 'anthropic',
     'groq': 'groq',
-    'openai_response': 'openai_response'
+    'openai_response': 'openai_response',
+    'open_router': 'open_router'
 }
 
 bridge_ids = {
