@@ -339,6 +339,14 @@ async def get_all_service_models_controller(service):
                     "meta-llama/llama-4-scout-17b-16e-instruct" : restructure_configuration(model_config_document[service]['meta-llama/llama-4-scout-17b-16e-instruct'])
                 }
             }
+        elif service == service_name['open_router']:
+            return{
+                "chat" : {
+                    "deepseek/deepseek-chat-v3-0324:free" : restructure_configuration(model_config_document[service]['deepseek/deepseek-chat-v3-0324:free']),
+                    "openai/gpt-4o" : restructure_configuration(model_config_document[service]['openai/gpt-4o'])
+                }
+            }
+
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
