@@ -10,6 +10,7 @@ from ..openAI.runModel import runModel, openai_response_model
 from ..anthrophic.antrophicModelRun import anthropic_runmodel
 from ....configs.constant import service_name
 from ..groq.groqModelRun import groq_runmodel
+from ..openRouter.openRouter_modelrun import openrouter_modelrun
 from ....configs.constant import service_name
 from ..openAI.image_model import OpenAIImageModel
 from concurrent.futures import ThreadPoolExecutor
@@ -81,7 +82,7 @@ class BaseService:
             tools[function_response['name']] = function_response['content']
         
             match service:
-                case 'openai' | 'groq':
+                case 'openai' | 'groq' | 'open_router':
                     assistant_tool_calls = response['choices'][0]['message']['tool_calls'][index]
                     configuration['messages'].append({'role': 'assistant', 'content': None, 'tool_calls': [assistant_tool_calls]})
                     tool_calls_id = assistant_tool_calls['id']
@@ -108,18 +109,14 @@ class BaseService:
         if not response.get('success'):
             return {'success': False, 'error': response.get('error')}
         
-        modelObj = model_config_document[self.service][self.model]
-        modelOutputConfig = modelObj['outputConfig']
         model_response = response.get('modelResponse', {})
         if configuration.get('tool_choice') is not None and configuration['tool_choice'] not in ['auto', 'none']:
-            if service == 'openai' or service == 'groq' or service == 'openai_response':
-                    configuration['tool_choice'] = 'auto'
-            elif service == 'anthropic':
+            if service == 'anthropic':
                 configuration['tool_choice'] = {'type': 'auto'}
+            else:
+                configuration['tool_choice'] = 'auto'
         if validate_tool_call(service, model_response) and l <= int(self.tool_call_count):
             l += 1
-            
-            # Continue with the rest of the logic here
         else:
             return response
         
@@ -169,40 +166,46 @@ class BaseService:
 # todo
     def update_model_response(self, model_response, functionCallRes={}):
         funcModelResponse = functionCallRes.get("modelResponse", {})
-        if self.service in ['openai', 'groq', 'anthropic', 'openai_response']:
+        if self.service in [
+            service_name['openai'],
+            service_name['groq'],
+            service_name['anthropic'],
+            service_name['openai_response'],
+            service_name['open_router']
+        ]:
             usage_config = self.modelOutputConfig['usage'][0]
 
             def get_combined_tokens(key, default=0):
                 return (_.get(model_response, key, default) or 0) + (_.get(funcModelResponse, key, default) or 0)
 
-            if self.service != 'openai_response':
+            if self.service != service_name['openai_response']:
                 self.prompt_tokens = get_combined_tokens(usage_config['prompt_tokens'])
                 self.completion_tokens = get_combined_tokens(usage_config['completion_tokens'])
                 self.total_tokens = self.prompt_tokens + self.completion_tokens
 
-            if self.service in ['openai', 'groq']:
+            if self.service in [service_name['openai'], service_name['groq'], service_name['open_router']]:
                     cached_tokens_key = usage_config.get('cached_tokens', 0)
                     self.cached_tokens = get_combined_tokens(cached_tokens_key)
                     _.set_(model_response, cached_tokens_key, self.cached_tokens)
         
-            if self.service == 'anthropic':
+            if self.service == service_name['anthropic']:
                 self.cache_creation_input_tokens = get_combined_tokens(usage_config.get('cache_creation_input_tokens', 0))
                 self.cache_read_input_tokens = get_combined_tokens(usage_config.get('cache_read_input_tokens', 0))
                 _.set_(model_response, usage_config.get('cache_creation_input_tokens', 0), self.cache_creation_input_tokens)
                 _.set_(model_response, usage_config.get('cache_read_input_tokens', 0), self.cache_read_input_tokens)
 
-            if self.service in ['openai', 'anthropic', 'groq']:
+            if self.service in [service_name['openai'], service_name['anthropic'], service_name['groq'], service_name['open_router']]:
                 _.set_(model_response, usage_config['prompt_tokens'], self.prompt_tokens)
                 _.set_(model_response, usage_config['completion_tokens'], self.completion_tokens)
 
             if funcModelResponse:
                 _.set_(model_response, self.modelOutputConfig['message'], _.get(funcModelResponse, self.modelOutputConfig['message']))
-                if self.service in ['openai', 'groq', 'openai_response']:
+                if self.service in [service_name['openai'], service_name['groq'], service_name['openai_response'], service_name['open_router']]:
                     _.set_(model_response, self.modelOutputConfig['tools'], _.get(funcModelResponse, self.modelOutputConfig['tools']))
 
     def calculate_usage(self, model_response):
         match self.service:
-            case 'openai' | 'groq' :
+            case 'openai' | 'groq' | 'open_router':
                 usage = {}
                 usage["totalTokens"] = _.get(model_response, self.modelOutputConfig['usage'][0]['total_tokens'])
                 usage["inputTokens"] = _.get(model_response, self.modelOutputConfig['usage'][0]['prompt_tokens'])
@@ -280,6 +283,8 @@ class BaseService:
                 response = await loop.run_in_executor(executor, lambda: asyncio.run(anthropic_runmodel(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer, self.name, self.org_name)))
             elif service == service_name['groq']:
                 response = await groq_runmodel(configuration, apikey, self.execution_time_logs, self.bridge_id,  self.timer, self.name, self.org_name)
+            elif service == service_name['open_router']:
+                response = await openrouter_modelrun(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer, self.message_id, self.org_id, self.name, self.org_name)
             if not response['success']:
                 raise ValueError(response['error'], self.func_tool_call_data)
             return {

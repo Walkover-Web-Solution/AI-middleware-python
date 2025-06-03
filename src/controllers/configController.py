@@ -347,7 +347,7 @@ async def get_all_service_controller():
     return {
         "success": True,
         "message": "Get all service successfully",
-        "services": ['openai', 'anthropic', 'groq', 'openai_response']
+        "services": ['openai', 'anthropic', 'groq', 'openai_response', 'open_router']
     }
 
 async def update_bridge_controller(request, bridge_id=None, version_id=None):
