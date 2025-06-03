@@ -13,7 +13,10 @@ async def chatbot_suggestions(response_format, assistant, user, bridge_summary, 
         conversation = ConversationService.createOpenAiConversation(configuration.get('conversation',{}), None).get('messages', [])
         if conversation is None:
             conversation = []
-        conversation.extend([{"role": "user", "content": user}, {"role": "assistant", "content": assistant.get('data', '').get('content')}])
+        if isinstance(assistant, str):
+            conversation.extend([{"role": "user", "content": user}, {"role": "assistant", "content": assistant}])
+        else:
+            conversation.extend([{"role": "user", "content": user}, {"role": "assistant", "content": assistant.get('data', '').get('content')}])
         final_prompt = prompt_summary if prompt_summary is not None else prompt
         random_id = str(uuid.uuid4())
         message = f'Generate suggestions based on the user conversations. \n **User Conversations**: {conversation[-2:]}'
