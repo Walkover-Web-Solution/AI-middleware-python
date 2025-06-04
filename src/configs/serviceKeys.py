@@ -79,7 +79,7 @@ ServiceKeys = {
             "best_response_count": "best_of",
             "response_suffix": "suffix",
             "response_type": "text", 
-            "max_tokens" : "max_output_tokens"
+            "max_tokens" : "max_tokens"
         },
 
     }
