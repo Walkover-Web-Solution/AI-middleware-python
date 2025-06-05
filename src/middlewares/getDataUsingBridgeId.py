@@ -12,7 +12,7 @@ async def add_configuration_data_to_body(request: Request):
         chatbotData = getattr(request.state, "chatbot", None)
         if chatbotData:
             body.update(chatbotData)
-        bridge_id = body.get("bridge_id") or request.path_params.get('bridge_id') or getattr(request.state, 'chatbot', {}).get('bridge_id', None)
+        bridge_id = body.get('agent_id') or body.get("bridge_id") or request.path_params.get('bridge_id') or getattr(request.state, 'chatbot', {}).get('bridge_id', None)
         if chatbotData:
             del request.state.chatbot
         version_id = body.get('version_id') or request.path_params.get('version_id')
