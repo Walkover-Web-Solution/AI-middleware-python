@@ -370,6 +370,8 @@ async def make_request_data(request: Request):
     return result
 
 async def make_request_data_and_publish_sub_queue(parsed_data, result, params, thread_info):
+    suggestion_content = {'data': {'content': {}}}
+    suggestion_content['data']['content'] = result['historyParams']['message'] if parsed_data['is_rich_text'] == True else result['modelResponse']
     data = {
         "save_sub_thread_id_and_name" : {
             "org_id" : parsed_data['org_id'],
@@ -403,7 +405,7 @@ async def make_request_data_and_publish_sub_queue(parsed_data, result, params, t
         },
         "chatbot_suggestions" : {
             "response_format": parsed_data['response_format'],
-            "assistant": result['modelResponse'],
+            "assistant": suggestion_content,
             "user": parsed_data['user'],
             "bridge_summary": parsed_data['bridge_summary'],
             "thread_id": parsed_data['thread_id'],
