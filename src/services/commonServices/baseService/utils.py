@@ -403,7 +403,7 @@ async def make_request_data_and_publish_sub_queue(parsed_data, result, params, t
         },
         "chatbot_suggestions" : {
             "response_format": parsed_data['response_format'],
-            "assistant": result['modelResponse'],
+            "assistant": result['historyParams']['message'] if parsed_data['is_rich_text'] == True else result['modelResponse'],
             "user": parsed_data['user'],
             "bridge_summary": parsed_data['bridge_summary'],
             "thread_id": parsed_data['thread_id'],
