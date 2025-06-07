@@ -18,9 +18,9 @@ async def send_data_middleware(request: Request, botId: str):
         slugName = body.get("slugName")
         url_slugName = body.get('url_slugName')
         isPublic = 'ispublic' in request.state.profile
-        user_email = body.get('state',{}).get("profile",{}).get("userEmail",'')
+        user_email = body.get('state',{}).get("profile",{}).get("user",{}).get("email",'')
         if isPublic:
-            threadId = str(request.state.profile['userId'])
+            threadId = str(request.state.profile['user']['id'])
         else:
             threadId = str(body.get("threadId")) if body.get("threadId") is not None else None
         profile = request.state.profile
@@ -36,6 +36,8 @@ async def send_data_middleware(request: Request, botId: str):
         channelId = channelId.replace(" ", "_")
         if(isPublic):
             bridge_response = await ConfigurationServices.get_agents_data(url_slugName, user_email)
+            org = { "id": bridge_response.get('bridges', {}).get('org_id') }
+            request.state.profile["org"] = org
         else:
             bridge_response = await ConfigurationServices.get_bridge_by_slugname(org_id, slugName)
         bridges = bridge_response['bridges'] if bridge_response['success'] else {}
@@ -75,7 +77,7 @@ async def send_data_middleware(request: Request, botId: str):
                     }
                 },
                 **body.get('configuration', {}),
-                "max_token": bridges.get('bridges').get('max_token') if isPublic else None
+                "max_token": bridges.get('max_token', None) if isPublic else None
             },
             "chatbot": True,
             "response_type": { 
@@ -114,11 +116,14 @@ async def chat_bot_auth(request: Request):
                         "id": str(check_token['org_id'])
                     },
                     "user": {
-                        "id": str(check_token['user_id'])
+                        "id": str(check_token['user_id']),
+                        "email": str(check_token.get('userEmail', ""))
                     },
                 }
                 if check_token.get('variables') is not None:
                     request.state.profile["variables"] = json.dumps(check_token['variables']) if not isinstance(check_token['variables'], str) else check_token['variables']
+                if check_token.get('ispublic') is not None:
+                    request.state.profile["ispublic"] = check_token['ispublic']
                 return True
         raise HTTPException(status_code=401, detail="unauthorized user")
     except jwt.ExpiredSignatureError:

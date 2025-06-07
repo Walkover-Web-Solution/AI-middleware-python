@@ -787,7 +787,7 @@ async def get_all_agents_data(user_email):
 
 
 async def get_agents_data(slug_name, user_email):
-    return await configurationModel.find_one({
+    bridges = await configurationModel.find_one({
         "$or": [
             {
                 "$and": [
@@ -804,3 +804,4 @@ async def get_agents_data(slug_name, user_email):
             }
         ]
     })
+    return {"bridges": bridges, "success": True}
