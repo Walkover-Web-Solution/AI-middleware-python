@@ -47,13 +47,14 @@ async def optimize_prompt_controller(request : Request, bridge_id: str):
     try:
         body = await request.json()
         version_id = body.get('version_id')
+        variables =  { "query" : body.get('query') or ""}
         org_id = request.state.profile.get("org",{}).get("id","")
         result = await get_bridges(bridge_id, org_id, version_id)
         bridge = result.get('bridges')
         prompt = bridge.get('configuration',{}).get('prompt',"")
         bridgeName = bridge.get('name')
         result = ""
-        result = await call_ai_middleware(prompt, bridge_id = bridge_ids['optimze_prompt'], response_type='text', thread_id = bridgeName)
+        result = await call_ai_middleware(prompt,variables=variables, bridge_id = bridge_ids['optimze_prompt'], response_type='text', thread_id = bridgeName)
         return JSONResponse(status_code=200, content={
             "success": True,
             "message": "Prompt optimized successfully",
