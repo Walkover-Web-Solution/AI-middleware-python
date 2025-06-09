@@ -1,4 +1,5 @@
 import json
+import asyncio
 from typing import Union, List
 from config import Config
 from redis.asyncio import Redis
@@ -7,6 +8,69 @@ from globals import *
 
 # Initialize the Redis client
 client = Redis.from_url(Config.REDIS_URI)  # Adjust these parameters as needed
+
+# Configure Redis to enable keyspace notifications
+async def enable_notifications():
+    await client.config_set('notify-keyspace-events', 'Ex')
+
+# Function to handle expired keys
+async def handle_expired_key(key: str):
+    print(f"Key expired: {key}")
+    # Get the value from the reference key
+    ref_key = f"{key}_ref"
+    value = await client.get(ref_key)
+    if value:
+        value_array = json.loads(value)
+        print(f"Retrieved value for expired key: {value_array}")
+        # Delete the reference key after processing
+        await client.delete(ref_key)
+        # Here you would process the value array
+        # For example: await delete_files_from_cloud(value_array)
+
+# Function to listen for expired keys
+async def listen_for_expired_keys():
+    try:
+        pubsub = client.pubsub()
+        await pubsub.subscribe('__keyevent@0__:expired')
+        
+        print("Started listening for key expirations...")
+        while True:
+            message = await pubsub.get_message(ignore_subscribe_messages=True)
+            if message:
+                print(f"Received expiration message: {message}")
+                await handle_expired_key(message['data'].decode())
+            await asyncio.sleep(0.1)
+    except Exception as e:
+        print(f"Error in key expiration listener: {e}")
+
+# Function to demonstrate key expiration (POC)
+async def demo_key_expiration(key: str, value: any, ttl: int = 60):
+    """Set a key with TTL and start listening for its expiration
+    
+    Args:
+        key (str): Key to store
+        value (str): Value to store
+        ttl (int): Time to live in seconds (default 60 seconds)
+    """
+    try:
+        # Enable notifications if not already enabled
+        await enable_notifications()
+        
+        # Store the main key with TTL
+        await client.set(key, 'trigger', ex=ttl)
+        
+        # Store the actual value in a reference key without TTL
+        ref_key = f"{key}_ref"
+        if isinstance(value, (list, dict)):
+            value = json.dumps(value)
+        await client.set(ref_key, value)
+        print(f"Stored key '{key}' with TTL of {ttl} seconds")
+        
+        # Start listening for expired keys in the background
+        asyncio.create_task(listen_for_expired_keys())
+        
+    except Exception as e:
+        print(f"Error in demo_key_expiration: {e}")
 
 REDIS_PREFIX = 'AIMIDDLEWARE_'
 DEFAULT_REDIS_TTL = 172800  # 2 days
@@ -127,4 +191,4 @@ def make_json_serializable(data):
     except (TypeError, OverflowError):
         return str(data)
 
-__all__ = ['delete_in_cache', 'store_in_cache', 'find_in_cache', 'verify_ttl', 'clear_cache','store_in_cache_for_batch', 'find_in_cache_for_batch', 'delete_in_cache_for_batch']
+__all__ = ['delete_in_cache', 'store_in_cache', 'find_in_cache', 'verify_ttl', 'clear_cache','store_in_cache_for_batch', 'find_in_cache_for_batch', 'delete_in_cache_for_batch', 'demo_key_expiration']
