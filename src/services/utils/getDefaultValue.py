@@ -29,8 +29,11 @@ async def get_default_values_controller(service, model, current_configuration, t
                             default_values[key] = value.get('default', None)
                             continue
                         if key == 'response_type':
-                            if current_value in config_items[key]['options']:
+                            current_type = current_value.get('type') if isinstance(current_value, dict) else None
+                            if current_type and any(opt.get('type') == current_type for opt in config_items[key]['options']):
                                 default_values[key] = current_value
+                                if current_type == 'json_schema':
+                                    default_values['response_type']['json_schema'] = current_value.get('json_schema', None)
                             else:
                                 default_values[key] = value.get('default', None)
                             continue    
