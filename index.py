@@ -25,6 +25,7 @@ from src.routes.utils_router import router as utils_router
 from src.routes.rag_routes import router as rag_routes
 from src.routes.Internal_routes import router as Internal_routes
 from src.routes.testcase_routes import router as testcase_routes
+from src.routes.auth_routes import router as auth_router
 from models.Timescale.connections import init_async_dbservice
 from src.configs.model_configuration import init_model_configuration
 from globals import *
@@ -157,6 +158,7 @@ app.include_router(utils_router, prefix="/utils" )
 app.include_router(rag_routes,prefix="/rag")
 app.include_router(Internal_routes,prefix="/internal")
 app.include_router(testcase_routes, prefix='/testcases')
+app.include_router(auth_router, prefix="/auth")
 
 
 if __name__ == "__main__":
