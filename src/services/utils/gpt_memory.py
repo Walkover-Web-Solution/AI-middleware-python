@@ -13,4 +13,4 @@ async def handle_gpt_memory(id, user, assistant, purpose, gpt_memory_context):
             raise Exception(response.get('message', 'Unknown error'))
         return response
     except Exception as err:
-        logger.error(f'Error calling function=>, {str(err)}')
+        logger.error(f'Error calling function handle_gpt_memory =>, {str(err)}')

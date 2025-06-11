@@ -12,7 +12,7 @@ from src.controllers.rag_controller import get_text_from_vectorsQuery
 from globals import *
 from src.db_services.ConfigurationServices import get_bridges_without_tools, update_bridge
 from src.services.utils.ai_call_util import call_gtwy_agent
-
+from globals import *
 
 def clean_json(data):
     """Recursively remove keys with empty string, empty list, or empty dictionary."""
@@ -50,7 +50,7 @@ async def axios_work(data, function_payload):
         }
         
     except Exception as err:
-        print("Error calling function=>",function_payload.get("url"),  err)
+        logger.error("Error calling function axios_work => ",function_payload.get("url"),  err)
         return {
             'response': str(err),
             'metadata':{
