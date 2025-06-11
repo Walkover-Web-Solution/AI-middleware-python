@@ -28,5 +28,5 @@ async def chatbot_suggestions(response_format, assistant, user, bridge_summary, 
         await sendResponse(response_format,response, success=True)
             
     except Exception as err:
-        logger.error(f'Error calling function=>, {str(err)}')
+        logger.error(f'Error calling function chatbot_suggestions =>, {str(err)}')
     

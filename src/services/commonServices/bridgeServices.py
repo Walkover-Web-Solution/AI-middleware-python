@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from src.controllers.configController import duplicate_create_bridges
 from src.configs.constant import bridge_ids
 from src.services.utils.ai_call_util import call_ai_middleware
-
+from globals import *
 import json
 
 async def duplicate_bridge(request : Request):
@@ -92,7 +92,7 @@ async def generate_summary(request):
         })
             
     except Exception as err:
-        print("Error calling function=>", err)
+        logger.error("Error calling function generate_summary =>", err)
 async def function_agrs_using_ai(request):
     try:
         body = await request.json()
@@ -106,5 +106,5 @@ async def function_agrs_using_ai(request):
         })
             
     except Exception as err:
-        print("Error calling function=>", err)
+        logger.error("Error calling function function_agrs_using_ai =>", err)
     
