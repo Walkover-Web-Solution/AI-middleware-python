@@ -265,8 +265,9 @@ async def get_all_service_models_controller(service):
                 },
                 "reasoning" : {
                     "o1" : restructure_configuration(model_config_document[service]['o1']),
+                    "o3" : restructure_configuration(model_config_document[service]['o3']),
                     "o3-mini" : restructure_configuration(model_config_document[service]['o3-mini']),
-                    "o4-mini" : restructure_configuration(model_config_document[service]['o4-mini']),
+                    "o4-mini" : restructure_configuration(model_config_document[service]['o4-mini'])
                 },
                 "image" : {
                     "dall-e-2" : restructure_configuration(model_config_document[service]['dall-e-2']),
@@ -293,6 +294,7 @@ async def get_all_service_models_controller(service):
                 },
                 "reasoning" : {
                     "o1" : restructure_configuration(model_config_document[service]['o1']),
+                    "o3" : restructure_configuration(model_config_document[service]['o3']),
                     "o3-mini" : restructure_configuration(model_config_document[service]['o3-mini']),
                     "o4-mini" : restructure_configuration(model_config_document[service]['o4-mini']),
                 }
