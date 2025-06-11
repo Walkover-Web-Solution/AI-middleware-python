@@ -4,6 +4,7 @@ import uuid
 from src.configs.constant import bridge_ids
 from .ai_call_util import call_ai_middleware
 import json
+from globals import *
 async def process_chatbot_response(result, params, data, modelOutputConfig, timer, execution_time_logs):
 
 
@@ -44,4 +45,4 @@ async def process_chatbot_response(result, params, data, modelOutputConfig, time
         return
             
     except Exception as err:
-        print("Error calling function=>", err)
+        logger.error("Error calling function process_chatbot_response=>", err)
