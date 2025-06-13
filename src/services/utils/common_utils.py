@@ -86,6 +86,10 @@ def add_default_template(prompt):
     prompt += ' \n Additional Information if requied : For current date and time always refer: {{current_time_date_and_current_identifier}}'
     return prompt
 
+def add_user_in_varaibles(variables, user):
+    variables['user'] = user
+    return variables
+
 def initialize_timer(state: Dict[str, Any]) -> Timer:
     timer_obj = Timer()
     timer_obj.defaultStart(state.get('timer', []))
