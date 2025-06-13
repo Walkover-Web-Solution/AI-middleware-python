@@ -87,7 +87,7 @@ def add_default_template(prompt):
     return prompt
 
 def add_user_in_varaibles(variables, user):
-    variables['user'] = user
+    variables['user_message'] = user
     return variables
 
 def initialize_timer(state: Dict[str, Any]) -> Timer:
