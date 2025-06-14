@@ -38,7 +38,7 @@ async def process_chatbot_response(result, params, data, modelOutputConfig, time
         thread_id =  f"{data.get('thread_id') or random_id}-{data.get('sub_thread_id') or random_id}"
         timer.start()
         response = await call_ai_middleware(user, bridge_id = bridge_id, variables = variables, thread_id = thread_id)
-        execution_time_logs[len(execution_time_logs) + 1] = timer.stop("AI middleware")
+        execution_time_logs.append({"step": f"Processing time for Rich Text", "time_taken": timer.stop("API chat completion")})
         response = json.dumps(response)
         _.set_(result['modelResponse'], modelOutputConfig.get('message'), response)
         result['historyParams']['chatbot_message'] = response

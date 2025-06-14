@@ -14,7 +14,9 @@ async def execute_with_retry(
     org_id=None,
     alert_on_retry=False,
     name = "",
-    org_name= ""
+    org_name= "",
+    service = "",
+    count = 0
 ):
     try:
         # Start timer
@@ -26,7 +28,7 @@ async def execute_with_retry(
         first_result = await api_call(first_config)
 
         if first_result['success']:
-            execution_time_logs[len(execution_time_logs) + 1] = timer.stop("API chat completion")
+            execution_time_logs.append({"step": f"{service} Processing time for call :- {count + 1}", "time_taken": timer.stop("API chat completion")})
             return first_result
         else:
             print("First API call failed with error:", first_result['error'])
@@ -53,7 +55,7 @@ async def execute_with_retry(
             filter_model_keys(second_config)
             second_result = await api_call(second_config)
 
-            execution_time_logs[len(execution_time_logs) + 1] = timer.stop("API chat completion")
+            execution_time_logs.append({"step": f"{service} Processing time for call :- {count + 1}", "time_taken": timer.stop("API chat completion")})
             if second_result['success']:
                 print("Second API call completed successfully.")
                 second_result['response']['firstAttemptError'] = firstAttemptError
@@ -65,7 +67,7 @@ async def execute_with_retry(
                 return second_result
 
     except Exception as e:
-        execution_time_logs[len(execution_time_logs) + 1] = timer.stop("API chat completion")
+        execution_time_logs.append({"step": f"{service} Processing time for call :- {count + 1}", "time_taken": timer.stop("API chat completion")})
         print("execute_with_retry error=>", e)
         traceback.print_exc()
         return {

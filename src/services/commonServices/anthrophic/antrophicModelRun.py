@@ -1,9 +1,10 @@
 from anthropic import AsyncAnthropic
 import traceback
 from ..retry_mechanism import execute_with_retry
+from globals import *
 
 
-async def anthropic_runmodel(configuration, apikey, execution_time_logs, bridge_id, timer, name = "", org_name = ""):
+async def anthropic_runmodel(configuration, apikey, execution_time_logs, bridge_id, timer, name = "", org_name = "", service = "", count = 0):
     try:
         # Initialize async client
         anthropic_client = AsyncAnthropic(api_key=apikey)
@@ -41,12 +42,14 @@ async def anthropic_runmodel(configuration, apikey, execution_time_logs, bridge_
             org_id=None,      # Adjust if needed
             alert_on_retry=False,  # Adjust if needed
             name=name,
-            org_name=org_name
+            org_name=org_name,
+            service = service,
+            count = count
         )
 
     except Exception as e:
-        execution_time_logs[len(execution_time_logs) + 1] = timer.stop("Anthropic chat completion")
-        print("Anthropic runmodel error=>", e)
+        execution_time_logs.append({"step": f"{service} Processing time for call :- {count + 1}", "time_taken": timer.stop("API chat completion")})
+        logger.error("Anthropic runmodel error=>", e)
         traceback.print_exc()
         return {
             'success': False,

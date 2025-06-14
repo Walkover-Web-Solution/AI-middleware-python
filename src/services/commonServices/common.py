@@ -97,8 +97,9 @@ async def chat(request_body):
                 parsed_data['tokens'] = Helper.calculate_usage(parsed_data['model'],result["modelResponse"],parsed_data['service'])
         latency = {
             "over_all_time": timer.stop("Api total time") if hasattr(timer, "start_times") else "",
-            "model_execution_time": sum(params['execution_time_logs'].values()) or "",
-            "execution_time_logs": params['execution_time_logs'] or {}
+            "model_execution_time": sum([log.get("time_taken", 0) for log in params['execution_time_logs']]) or "",
+            "execution_time_logs": params['execution_time_logs'] or {},
+            "function_time_logs": params['function_time_logs'] or {}
         }
         
         if not parsed_data['is_playground']:
@@ -127,7 +128,8 @@ async def chat(request_body):
             latency = {
                 "over_all_time": timer.stop("Api total time") or "",
                 "model_execution_time": sum(params['execution_time_logs'].values()) or "",
-                "execution_time_logs": params['execution_time_logs'] or {}
+                "execution_time_logs": params['execution_time_logs'] or {},
+                "function_time_logs": params['function_time_logs'] or {}
             }
             parsed_data['usage'].update({
                 **parsed_data['usage'],

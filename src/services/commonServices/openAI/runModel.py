@@ -1,9 +1,10 @@
 from openai import AsyncOpenAI
 import traceback
 from ..retry_mechanism import execute_with_retry
+from globals import *
 
 
-async def runModel(configuration, apiKey, execution_time_logs, bridge_id, timer, message_id=None, org_id=None, name = "", org_name= ""):
+async def runModel(configuration, apiKey, execution_time_logs, bridge_id, timer, message_id=None, org_id=None, name = "", org_name= "", service = "", count=0):
     try:
         openAI = AsyncOpenAI(api_key=apiKey)
 
@@ -42,12 +43,14 @@ async def runModel(configuration, apiKey, execution_time_logs, bridge_id, timer,
             org_id=org_id,
             alert_on_retry=True,
             name = name,
-            org_name = org_name
+            org_name = org_name,
+            service = service,
+            count = count
         )
 
     except Exception as error:
-        execution_time_logs[len(execution_time_logs) + 1] = timer.stop("OpenAI chat completion")
-        print("runModel error=>", error)
+        execution_time_logs.append({"step": f"{service} Processing time for call :- {count + 1}", "time_taken": timer.stop("API chat completion")})
+        logger.error("runModel error=>", error)
         traceback.print_exc()
         return {
             'success': False,
@@ -66,7 +69,7 @@ async def openai_test_model(configuration, api_key):
             'status_code': getattr(error, 'status_code', None)
         }
     
-async def openai_response_model(configuration, apiKey, execution_time_logs, bridge_id, timer, message_id=None, org_id=None, name = "", org_name= ""):
+async def openai_response_model(configuration, apiKey, execution_time_logs, bridge_id, timer, message_id=None, org_id=None, name = "", org_name= "", service = "", count = 0):
     try:
         client = AsyncOpenAI(api_key=apiKey)
 
@@ -106,12 +109,14 @@ async def openai_response_model(configuration, apiKey, execution_time_logs, brid
             org_id=org_id,
             alert_on_retry=True,
             name = name,
-            org_name = org_name
+            org_name = org_name,
+            service = service,
+            count = count
         )
 
     except Exception as error:
-        execution_time_logs[len(execution_time_logs) + 1] = timer.stop("OpenAI response api")
-        print("runModel error=>", error)
+        execution_time_logs.append({"step": f"{service} Processing time for call :- {count + 1}", "time_taken": timer.stop("API chat completion")})
+        logger.error("runModel error=>", error)
         traceback.print_exc()
         return {
             'success': False,

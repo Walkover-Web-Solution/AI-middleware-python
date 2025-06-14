@@ -1,9 +1,10 @@
 from openai import AsyncOpenAI
 import traceback
 from ..retry_mechanism import execute_with_retry
+from globals import *
 
 
-async def openrouter_modelrun(configuration, apiKey, execution_time_logs, bridge_id, timer, message_id=None, org_id=None, name = "", org_name= ""):
+async def openrouter_modelrun(configuration, apiKey, execution_time_logs, bridge_id, timer, message_id=None, org_id=None, name = "", org_name= "", service = "", count = 0):
     try:
         openAI = AsyncOpenAI(base_url="https://openrouter.ai/api/v1", api_key=apiKey)
 
@@ -42,12 +43,14 @@ async def openrouter_modelrun(configuration, apiKey, execution_time_logs, bridge
             org_id=org_id,
             alert_on_retry=True,
             name = name,
-            org_name = org_name
+            org_name = org_name,
+            service = service,
+            count = count
         )
 
     except Exception as error:
-        execution_time_logs[len(execution_time_logs) + 1] = timer.stop("OpenRouter chat completion")
-        print("runModel error=>", error)
+        execution_time_logs.append({"step": f"{service} Processing time for call :- {count + 1}", "time_taken": timer.stop("API chat completion")})
+        logger.error("runModel error=>", error)
         traceback.print_exc()
         return {
             'success': False,

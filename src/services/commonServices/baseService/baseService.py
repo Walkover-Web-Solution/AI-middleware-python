@@ -60,6 +60,7 @@ class BaseService:
         self.org_name = params.get('org_name')
         self.send_error_to_webhook = params.get('send_error_to_webhook')
         self.built_in_tools = params.get('built_in_tools')
+        self.function_time_logs = params.get('function_time_logs')
 
 
     def aiconfig(self):
@@ -70,7 +71,7 @@ class BaseService:
         if not self.playground:
             asyncio.create_task(sendResponse(self.response_format, data = {'function_call': True, 'Name': function_list}, success = True))
         codes_mapping = await self.replace_variables_in_args(codes_mapping)
-        return await process_data_and_run_tools(codes_mapping, self.tool_id_and_name_mapping, self.org_id)
+        return await process_data_and_run_tools(codes_mapping, self.tool_id_and_name_mapping, self.org_id, self.timer, self.function_time_logs)
 
 
     def update_configration(self, response, function_responses, configuration, mapping_response_data, service, tools):    
@@ -271,20 +272,20 @@ class BaseService:
             logger.error(f"An error occurred: {str(e)}")
             raise ValueError(f"Service key error: {e.args[0]}")
         
-    async def chats(self, configuration, apikey, service):
+    async def chats(self, configuration, apikey, service, count=0):
         try:
             response = {}
             loop = asyncio.get_event_loop()
             if service == service_name['openai']:
-                response = await runModel(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer, self.message_id, self.org_id, self.name, self.org_name)
+                response = await runModel(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer, self.message_id, self.org_id, self.name, self.org_name, service, count)
             if service == service_name['openai_response']:
-                response = await openai_response_model(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer, self.message_id, self.org_id, self.name, self.org_name)
+                response = await openai_response_model(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer, self.message_id, self.org_id, self.name, self.org_name, service, count)
             elif service == service_name['anthropic']:
-                response = await loop.run_in_executor(executor, lambda: asyncio.run(anthropic_runmodel(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer, self.name, self.org_name)))
+                response = await loop.run_in_executor(executor, lambda: asyncio.run(anthropic_runmodel(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer, self.name, self.org_name, service, count)))
             elif service == service_name['groq']:
-                response = await groq_runmodel(configuration, apikey, self.execution_time_logs, self.bridge_id,  self.timer, self.name, self.org_name)
+                response = await groq_runmodel(configuration, apikey, self.execution_time_logs, self.bridge_id,  self.timer, self.name, self.org_name, service, count)
             elif service == service_name['open_router']:
-                response = await openrouter_modelrun(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer, self.message_id, self.org_id, self.name, self.org_name)
+                response = await openrouter_modelrun(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer, self.message_id, self.org_id, self.name, self.org_name, service, count)
             if not response['success']:
                 raise ValueError(response['error'], self.func_tool_call_data)
             return {
