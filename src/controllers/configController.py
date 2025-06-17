@@ -208,7 +208,7 @@ async def get_all_bridges(request):
         alerting_embed_token = Helper.generate_token({ "org_id": Config.ORG_ID, "project_id": Config.ALERTING_PROJECT_ID, "user_id": org_id },Config.Access_key )
         trigger_embed_token = Helper.generate_token({ "org_id": Config.ORG_ID, "project_id": Config.TRIGGER_PROJECT_ID, "user_id": org_id },Config.Access_key )
         history_page_chatbot_token = Helper.generate_token({ "org_id": "11202", "chatbot_id": "67286d4083e482fd5b466b69", "user_id": org_id },Config.CHATBOT_ACCESS_KEY )
-        doctstar_embed_token = Helper.generate_token({ "org_id": "11427", "collection_id": "fH-OUOxoiQU_", "user_id": org_id },Config.DOCSTAR_ACCESS_KEY )
+        doctstar_embed_token = Helper.generate_token({ "org_id": Config.DOCSTAR_ORG_ID, "collection_id": Config.DOCSTAR_COLLECTION_ID, "user_id": org_id },Config.DOCSTAR_ACCESS_KEY )
         # metrics_data = await get_timescale_data(org_id)
         # bridges = Helper.sort_bridges(bridges, metrics_data)
         avg_response_time = {}
