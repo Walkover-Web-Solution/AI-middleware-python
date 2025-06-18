@@ -5952,4 +5952,3 @@ class ModelsConfig:
             "outputConfig": outputConfig,
             "inputConfig": inputConfig
         }
-
