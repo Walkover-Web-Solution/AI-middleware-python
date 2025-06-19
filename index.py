@@ -26,9 +26,8 @@ from src.routes.rag_routes import router as rag_routes
 from src.routes.Internal_routes import router as Internal_routes
 from src.routes.testcase_routes import router as testcase_routes
 from models.Timescale.connections import init_async_dbservice
-from src.configs.model_configuration import init_model_configuration, listen_for_changes
+from src.configs.model_configuration import init_model_configuration, background_listen_for_changes
 from globals import *
-import threading
 
 
 atatus_client = atatus.get_client()
@@ -65,19 +64,29 @@ async def lifespan(app: FastAPI):
         consume_task = asyncio.create_task(consume_messages_in_executor())
         consume_sub_task = asyncio.create_task(consume_sub_messages_in_executor())
     
-        
     asyncio.create_task(init_async_dbservice()) if Config.ENVIROMENT == 'LOCAL' else await init_async_dbservice()
     
     asyncio.create_task(repeat_function())
+
+    logger.info("Starting MongoDB change stream listener as a background task.")
+    change_stream_task = asyncio.create_task(background_listen_for_changes())
+    
     yield  # Startup logic is complete
+    
     # Shutdown logic
     logger.info("Shutting down...")
+    
+    logger.info("Shutting down MongoDB change stream listener.")
+    change_stream_task.cancel()
+
     if consume_task:
         consume_task.cancel()
     if consume_sub_task:
         consume_sub_task.cancel()
+
     await queue_obj.disconnect()
     await sub_queue_obj.disconnect()
+
     try:
         if consume_task:
             await consume_task
@@ -85,6 +94,11 @@ async def lifespan(app: FastAPI):
             await consume_sub_task
     except asyncio.CancelledError:
         logger.error("Consumer task was cancelled during shutdown.")
+    
+    try:
+        await change_stream_task
+    except asyncio.CancelledError:
+        logger.info("MongoDB change stream listener task successfully cancelled.")
 
 # Initialize the FastAPI app
 app = FastAPI(debug=True, lifespan=lifespan)
@@ -159,13 +173,6 @@ app.include_router(utils_router, prefix="/utils" )
 app.include_router(rag_routes,prefix="/rag")
 app.include_router(Internal_routes,prefix="/internal")
 app.include_router(testcase_routes, prefix='/testcases')
-
-
-# Start the change stream listener in a background thread
-change_stream_thread = threading.Thread(target=listen_for_changes, name="ModelConfigChangeStream")
-change_stream_thread.daemon = True
-change_stream_thread.start()
-logger.info("MongoDB change stream thread started to monitor model configurations.")
 
 
 if __name__ == "__main__":
