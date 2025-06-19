@@ -26,8 +26,10 @@ from src.routes.rag_routes import router as rag_routes
 from src.routes.Internal_routes import router as Internal_routes
 from src.routes.testcase_routes import router as testcase_routes
 from models.Timescale.connections import init_async_dbservice
-from src.configs.model_configuration import init_model_configuration
+from src.configs.model_configuration import init_model_configuration, listen_for_changes
 from globals import *
+import threading
+
 
 atatus_client = atatus.get_client()
 if atatus_client is None and (Config.ENVIROMENT == 'PRODUCTION' or Config.ENVIROMENT == 'TESTING'):
@@ -157,6 +159,13 @@ app.include_router(utils_router, prefix="/utils" )
 app.include_router(rag_routes,prefix="/rag")
 app.include_router(Internal_routes,prefix="/internal")
 app.include_router(testcase_routes, prefix='/testcases')
+
+
+# Start the change stream listener in a background thread
+change_stream_thread = threading.Thread(target=listen_for_changes, name="ModelConfigChangeStream")
+change_stream_thread.daemon = True
+change_stream_thread.start()
+logger.info("MongoDB change stream thread started to monitor model configurations.")
 
 
 if __name__ == "__main__":
