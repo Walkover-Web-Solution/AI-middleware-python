@@ -6,7 +6,7 @@ from models.mongo_connection import db
 from src.services.utils.logger import logger
 from globals import *
 
-modelConfigModel = db["modelconfigurations"]
+model_config_model = db["modelconfigurations"]
 model_config_document = {}
 
 async def init_model_configuration():
@@ -24,7 +24,7 @@ async def _async_change_listener():
     """The core async change stream listener."""
     pipeline = [{"$match": {"operationType": {"$in": ["insert", "update", "replace"]}}}]
     try:
-        async with modelConfigModel.watch(pipeline) as stream:
+        async with model_config_model.watch(pipeline) as stream:
             logger.info("MongoDB change stream is now listening for model configuration changes.")
             async for change in stream:
                 logger.info(f"Change detected in model configurations: {change['operationType']}")
@@ -36,15 +36,15 @@ async def _async_change_listener():
         logger.error(f"An unexpected error occurred in the async listener: {e}")
         raise
 
-def listen_for_changes():
-    """A synchronous wrapper for the change stream listener with a retry loop."""
+async def background_listen_for_changes():
+    """An asynchronous change stream listener with a retry loop, designed to run as a background task."""
     while True:
         try:
-            asyncio.run(_async_change_listener())
+            await _async_change_listener()
         except (OperationFailure, PyMongoError) as e:
             logger.error(f"MongoDB connection error in change stream: {e}. Reconnecting in 5 seconds...")
-            time.sleep(5)
+            await asyncio.sleep(5)
         except Exception as e:
-            logger.error(f"An unexpected error occurred in listen_for_changes: {e}. Restarting in 10 seconds...")
-            time.sleep(10)
+            logger.error(f"An unexpected error occurred in background_listen_for_changes: {e}. Restarting in 10 seconds...")
+            await asyncio.sleep(10)
 
