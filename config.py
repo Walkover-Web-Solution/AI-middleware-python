@@ -51,4 +51,5 @@ class Config:
     PINECONE_INDEX = os.getenv('PINECONE_INDEX')
     TRIGGER_PROJECT_ID = os.getenv('TRIGGER_PROJECT_ID', '')
     CHATBOT_ACCESS_KEY = os.getenv('Chatbot_Access_key')
+    PUBLIC_CHATBOT_TOKEN = os.getenv('public_chatbot_token')
     LOG_QUEUE_NAME = os.getenv('LOG_QUEUE_NAME')

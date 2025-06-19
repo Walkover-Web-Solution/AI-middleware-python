@@ -27,6 +27,7 @@ from src.routes.Internal_routes import router as Internal_routes
 from src.routes.testcase_routes import router as testcase_routes
 from models.Timescale.connections import init_async_dbservice
 from src.configs.model_configuration import init_model_configuration
+from src.routes.runagents_routes import router as runagents_routes
 from globals import *
 
 atatus_client = atatus.get_client()
@@ -157,6 +158,7 @@ app.include_router(utils_router, prefix="/utils" )
 app.include_router(rag_routes,prefix="/rag")
 app.include_router(Internal_routes,prefix="/internal")
 app.include_router(testcase_routes, prefix='/testcases')
+app.include_router(runagents_routes, prefix='/publicAgent')
 
 
 if __name__ == "__main__":
