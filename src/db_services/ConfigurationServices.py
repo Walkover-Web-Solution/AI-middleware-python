@@ -700,11 +700,16 @@ async def update_apikey_creds(version_id):
         logger.error(f"Error in update_apikey_creds: {str(error)}")
         raise error
 
-async def save_sub_thread_id(org_id, thread_id, sub_thread_id, display_name):
+async def save_sub_thread_id(org_id, thread_id, sub_thread_id, display_name, bridge_id): # bridge_id is now a required parameter
     try:
         update_data = {'$setOnInsert': {'thread_id': thread_id}}
+        
+        # Fields to be set or updated
+        set_fields = {'bridge_id': bridge_id} # bridge_id will always be set
         if display_name is not None and isinstance(display_name, str):
-            update_data['$set'] = {'display_name': display_name}
+            set_fields['display_name'] = display_name
+            
+        update_data['$set'] = set_fields
        
         result = await threadsModel.find_one_and_update(
             {'org_id': org_id, 'sub_thread_id': sub_thread_id},
@@ -714,7 +719,7 @@ async def save_sub_thread_id(org_id, thread_id, sub_thread_id, display_name):
         )
         return {
             'success': True,
-            'message': f"sub_thread_id saved successfully {result}"
+            'message': f"sub_thread_id and bridge_id saved successfully {result}" # Updated success message
         }
     except Exception as error:
         logger.error(f"Error in save_sub_thread_id: {error}")
