@@ -53,7 +53,6 @@ async def generate_summary(request):
             
     except Exception as err:
         logger.error("Error calling function generate_summary =>", err)
-
 async def function_agrs_using_ai(request):
     try:
         body = await request.json()
