@@ -181,7 +181,7 @@ async def get_all_bridges(request):
                 "alerting_embed_token": alerting_embed_token,
                 "trigger_embed_token": trigger_embed_token,
                 "history_page_chatbot_token" : history_page_chatbot_token,
-                "doctstar_embed_token" : doctstar_embed_token,
+                # "doctstar_embed_token" : doctstar_embed_token,
                 "org_id": org_id,
                 "avg_response_time": avg_response_time
             })
