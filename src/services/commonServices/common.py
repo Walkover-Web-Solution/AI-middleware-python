@@ -127,7 +127,7 @@ async def chat(request_body):
         if not parsed_data['is_playground']:
             latency = {
                 "over_all_time": timer.stop("Api total time") or "",
-                "model_execution_time": sum(params['execution_time_logs'].values()) or "",
+                "model_execution_time":  sum([log.get("time_taken", 0) for log in params['execution_time_logs']]) or "",
                 "execution_time_logs": params['execution_time_logs'] or {},
                 "function_time_logs": params['function_time_logs'] or {}
             }
