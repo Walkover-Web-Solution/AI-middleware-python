@@ -20,6 +20,8 @@ from src.services.utils.send_error_webhook import send_error_to_webhook
 from src.services.commonServices.queueService.queueLogService import sub_queue_obj
 from src.services.commonServices.baseService.utils import make_request_data_and_publish_sub_queue
 from src.db_services.metrics_service import create
+from src.controllers.conversationController import save_sub_thread_id_and_name
+from src.services.utils.ai_middleware_format import send_alert
 
 def parse_request_body(request_body):
     body = request_body.get('body', {})
@@ -259,6 +261,16 @@ async def process_background_tasks(parsed_data, result, params, thread_info):
     await sub_queue_obj.publish_message(data)
 
 
+async def process_background_tasks_for_error(parsed_data, error):
+    # Combine the tasks into a single asyncio.gather call
+    tasks = [
+        send_alert(data={"org_name" : parsed_data['org_name'], "bridge_name" : parsed_data['name'], "configuration": parsed_data['configuration'], "error": str(error), "message_id": parsed_data['message_id'], "bridge_id": parsed_data['bridge_id'], "message": "Exception for the code", "org_id": parsed_data['org_id']}),
+        create([parsed_data['usage']],parsed_data['historyParams'] , parsed_data['version_id']),
+        save_sub_thread_id_and_name(parsed_data['thread_id'], parsed_data['sub_thread_id'], parsed_data['org_id'], parsed_data['thread_flag'], parsed_data['response_format'], parsed_data['bridge_id'], parsed_data['user'])
+    ]
+    # Filter out None values
+    await asyncio.gather(*[task for task in tasks if task is not None], return_exceptions=True)
+
 def build_service_params_for_batch(parsed_data, custom_config, model_output_config):
     
     return {
@@ -337,4 +349,100 @@ def restructure_json_schema(response_type, service):
             return response_type
         case _:
             return response_type
+
+
+def create_latency_object(timer, params):
+    """
+    Create a latency metrics object for API usage tracking.
+    
+    Args:
+        timer: Timer object for tracking execution time
+        params: Parameters dictionary containing execution logs
+        
+    Returns:
+        Dictionary containing latency metrics
+    """
+    return {
+        "over_all_time": timer.stop("Api total time") if hasattr(timer, "start_times") else "",
+        "model_execution_time": sum([log.get("time_taken", 0) for log in params['execution_time_logs']]) or "",
+        "execution_time_logs": params['execution_time_logs'] or {},
+        "function_time_logs": params['function_time_logs'] or {}
+    }
+
+
+def update_usage_metrics(parsed_data, params, latency, result=None, error=None, success=False):
+    """
+      be metrics with latency and other information.
+    Handles both success and error cases with a unified interface.
+    
+    Args:
+        parsed_data: Dictionary containing parsed request data
+        params: Parameters dictionary containing execution logs
+        latency: Latency metrics object
+        result: Optional result dictionary from the API call (for success case)
+        error: Optional error object or string (for error case)
+        success: Boolean indicating if the operation was successful
+        
+    Returns:
+        Updated usage dictionary
+    """
+    # Base fields common to both success and error cases
+    update_data = {
+        "service": parsed_data['service'],
+        "model": parsed_data['model'],
+        "orgId": parsed_data['org_id'],
+        "latency": json.dumps(latency),
+        "success": success,
+        "apikey_object_id": params.get('apikey_object_id'),
+        "expectedCost": parsed_data['tokens'].get('expectedCost', 0),
+        "variables": parsed_data.get('variables') or {}
+    }
+    
+    # Add success-specific fields
+    if success and result:
+        update_data.update({
+            **(result.get("usage", {}) or {}),
+            "prompt": parsed_data['configuration'].get("prompt") or ""
+        })
+    
+    # Add error-specific fields
+    elif error and not success:
+        update_data["error"] = str(error)
+    
+    # Update the usage dictionary
+    parsed_data['usage'].update({
+        **parsed_data['usage'],
+        **update_data
+    })
+    
+    return parsed_data['usage']
+
+
+def create_history_params(parsed_data, error=None, class_obj=None):
+    """
+    Create history parameters for error tracking and logging.
+    
+    Args:
+        parsed_data: Dictionary containing parsed request data
+        error: Optional error object
+        class_obj: Optional class object with aiconfig method
+        
+    Returns:
+        Dictionary containing history parameters
+    """
+    return {
+        "thread_id": parsed_data['thread_id'],
+        "sub_thread_id": parsed_data['sub_thread_id'],
+        "user": parsed_data['user'],
+        "message": None,
+        "org_id": parsed_data['org_id'],
+        "bridge_id": parsed_data['bridge_id'],
+        "model": parsed_data['model'] or parsed_data['configuration'].get("model", None),
+        "channel": 'chat',
+        "type": "error",
+        "actor": "user",
+        'tools_call_data': error.args[1] if error and len(error.args) > 1 else None,
+        "message_id": parsed_data['message_id'],
+        "AiConfig": class_obj.aiconfig() if class_obj else None
+    }
         
