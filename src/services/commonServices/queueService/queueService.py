@@ -37,12 +37,9 @@ class Queue(BaseQueue):
                 print(f"Started consuming from queue {self.queue_name}")
                 logger.info(f"Started consuming from queue {self.queue_name}")
                 
-                # Using the message handler wrapper from BaseQueue
-                async def process_callback(message_data):
-                    await self.process_messages(message_data)
-                    
+                # Using the message handler wrapper from BaseQueue with direct reference to process_messages
                 await primary_queue.consume(
-                    lambda message: self._message_handler_wrapper(message, process_callback)
+                    lambda message: self._message_handler_wrapper(message, self.process_messages)
                 )
                 
                 while True:
