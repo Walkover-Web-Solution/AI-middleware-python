@@ -3,14 +3,15 @@ service_name = {
     'gemini': 'gemini',
     'anthropic': 'anthropic',
     'groq': 'groq',
-    'openai_response': 'openai_response'
+    'openai_response': 'openai_response',
+    'open_router': 'open_router'
 }
 
 bridge_ids = {
     'gpt_memory': '6752d9fc232e8659b2b65f0d',
     'suggest_model': '67a75ab42d85a6d4f16a4c7e',
     'make_question': '67459164ea7147ad4b75f92a',
-    'optimze_prompt' : '67384c4b44c79501aa8e62d9',
+    'optimze_prompt' : '6843d832aab19264b8967f3b',
     'create_bridge_using_ai': '67e4e7934e58b9c3b991a29c',
     'structured_output_optimizer' : '67766c4eec020b944b3e0670',
     'chatbot_response_with_actions' : '67b3157bdd16f681b71b06a4',

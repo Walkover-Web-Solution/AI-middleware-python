@@ -1,8 +1,9 @@
 from groq import AsyncGroq
 import traceback
 from ..retry_mechanism import execute_with_retry
+from globals import *
 
-async def groq_runmodel(configuration, apiKey, execution_time_logs, bridge_id, timer, name = "", org_name = ""):
+async def groq_runmodel(configuration, apiKey, execution_time_logs, bridge_id, timer, name = "", org_name = "", service = "", count = 0):
     try:
         # Initialize async client
         groq_client = AsyncGroq(api_key=apiKey)
@@ -10,7 +11,7 @@ async def groq_runmodel(configuration, apiKey, execution_time_logs, bridge_id, t
         # Define the API call function
         async def api_call(config):
             try:
-                response = await groq_client.chat.completions.create(**configuration)
+                response = await groq_client.chat.completions.create(**config)
                 return {'success': True, 'response': response.to_dict()}
             except Exception as error:
                 return {
@@ -40,12 +41,14 @@ async def groq_runmodel(configuration, apiKey, execution_time_logs, bridge_id, t
             org_id = None,
             alert_on_retry= False,
             name = name,
-            org_name = org_name
+            org_name = org_name ,
+            service = service,
+            count = count
         )
 
     except Exception as e:
-        execution_time_logs[len(execution_time_logs) + 1] = timer.stop("Groq chat completion")
-        print("Groq runmodel error=>", e)
+        execution_time_logs.append({"step": f"{service} Processing time for call :- {count + 1}", "time_taken": timer.stop("API chat completion")})
+        logger.error("Groq runmodel error=>", e)
         traceback.print_exc()
         return {
             'success': False,

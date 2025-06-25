@@ -189,6 +189,37 @@ class ConversationService:
             logger.error(f"create conversation error=>, {str(e)}, {traceback.format_exc()}")
             raise ValueError(f"Error while creating conversation: {str(e)}")
 
+    @staticmethod
+    def createOpenRouterConversation(conversation, memory):
+        try:
+            threads = []
+            if memory is not None:
+                threads.append({'role': 'user', 'content': 'provide the summary of the previous conversation stored in the memory?'})
+                threads.append({'role': 'assistant', 'content': f'Summary of previous conversations :  {memory}' })
+            for message in conversation or []:
+                if message['role'] != "tools_call" and message['role'] != "tool":
+                    content = [{"type": "text", "text": message['content']}]
+                    if 'urls' in message and isinstance(message['urls'], list):
+                        for url in message['urls']:
+                            content.append({
+                                "type": "image_url",
+                                "image_url": {
+                                    "url": url
+                                }
+                            })
+                    else:
+                        # Default behavior for messages without URLs
+                        content = message['content']
+                    threads.append({'role': message['role'], 'content': content})
+            
+            return {
+                'success': True, 
+                'messages': threads
+            }
+        except Exception as e:
+            traceback.print_exc()
+            logger.error(f"create conversation error=>, {str(e)}")
+            raise ValueError(e.args[0])
 
 
 # Example usage:

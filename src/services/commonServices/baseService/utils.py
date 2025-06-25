@@ -25,7 +25,7 @@ def clean_json(data):
 
 def validate_tool_call(service, response):
     match service: # TODO: Fix validation process.
-        case 'openai' | 'groq':
+        case 'openai' | 'groq' | 'open_router':
             return len(response.get('choices', [])[0].get('message', {}).get("tool_calls", [])) > 0
         case 'openai_response':
             return response.get('output')[0]['type'] == 'function_call'
@@ -105,7 +105,7 @@ def transform_required_params_to_required(properties, variables={}, variables_pa
     return transformed_properties
 
 def tool_call_formatter(configuration: dict, service: str, variables: dict, variables_path: dict) -> dict:
-    if service == service_name['openai']:
+    if service == service_name['openai'] or service == service_name['open_router']:
         data_to_send =  [
             {
                 'type': 'function',
@@ -202,14 +202,15 @@ async def sendResponse(response_format, data, success = False, variables={}):
             data_to_send['variables'] = variables
             return await send_request(**response_format['cred'], method='POST', data=data_to_send)
 
-async def process_data_and_run_tools(codes_mapping, tool_id_and_name_mapping, org_id):
+async def process_data_and_run_tools(codes_mapping, tool_id_and_name_mapping, org_id, timer, function_time_logs):
     try:
+        timer.start()
+        executed_functions = []
         responses = []
         tool_call_logs = {**codes_mapping} 
 
         # Prepare tasks for async execution
         tasks = []
-
         for tool_call_key, tool in codes_mapping.items():
             name = tool['name']
 
@@ -226,6 +227,7 @@ async def process_data_and_run_tools(codes_mapping, tool_id_and_name_mapping, or
                 else: 
                     task = axios_work(tool_data.get("args"), tool_id_and_name_mapping[name])
                 tasks.append((tool_call_key, tool_data, task))
+                executed_functions.append(name)
             else:
                 # If function is not present in db/response exists, append to responses
                 responses.append({
@@ -269,6 +271,10 @@ async def process_data_and_run_tools(codes_mapping, tool_id_and_name_mapping, or
         # Create mapping by tool_call_id (now tool_call_key) for return
         mapping = {resp['tool_call_id']: resp for resp in responses}
 
+        # Record executed function names and timing
+        executed_names = ", ".join(executed_functions) if executed_functions else "No functions executed"
+        function_time_logs.append({"step": executed_names, "time_taken": timer.stop("process_data_and_run_tools")})
+
         return responses, mapping, tool_call_logs
 
     except Exception as error:
@@ -282,7 +288,7 @@ def make_code_mapping_by_service(responses, service):
     codes_mapping = {}
     function_list = []
     match service:
-        case 'openai' | 'groq':
+        case 'openai' | 'groq' | 'open_router':
 
             for tool_call in responses['choices'][0]['message']['tool_calls']:
                 name = tool_call['function']['name']

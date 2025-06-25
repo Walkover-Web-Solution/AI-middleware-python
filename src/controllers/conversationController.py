@@ -119,7 +119,7 @@ async def save_sub_thread_id_and_name(thread_id, sub_thread_id, org_id, thread_f
         display_name = sub_thread_id
         message  = 'generate description'
         display_name = await call_ai_middleware(message, bridge_ids['generate_description'], response_type='text', variables=variables)
-        await save_sub_thread_id(org_id, thread_id, sub_thread_id, display_name)
+        await save_sub_thread_id(org_id, thread_id, sub_thread_id, display_name, bridge_id)
         if display_name is not None and display_name != sub_thread_id:
             response = {
                 'data': {

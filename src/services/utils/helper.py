@@ -15,6 +15,7 @@ from ..commonServices.openAI.openai_batch import OpenaiBatch
 from ..commonServices.openAI.openai_response import OpenaiResponse
 from ..commonServices.groq.groqCall import Groq
 from ..commonServices.anthrophic.antrophicCall import Antrophic
+from ..commonServices.openRouter.openRouter_call import OpenRouter
 from ...configs.constant import service_name
 from ..commonServices.openAI.openai_embedding_call import OpenaiEmbedding
 from ..cache_service import find_in_cache, store_in_cache
@@ -183,6 +184,8 @@ class Helper:
             class_obj = Groq(params)
         elif service == service_name['openai_response']:
             class_obj = OpenaiResponse(params)
+        elif service == service_name['open_router']:
+            class_obj = OpenRouter(params)
             
         return class_obj
 

@@ -18,6 +18,7 @@ from src.configs.constant import bridge_ids
 from src.services.utils.ai_call_util import call_ai_middleware
 from src.services.cache_service import find_in_cache
 from src.db_services.templateDbservice import get_template
+
 async def create_bridges_controller(request):
     try:
         bridges = await request.json()
@@ -133,50 +134,6 @@ async def create_bridges_using_ai_controller(request):
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e)    
 
-async def duplicate_create_bridges(bridges):
-    try:
-
-        org_id = bridges.get('org_id')
-        service = bridges.get('service') 
-        bridgeType = bridges.get('bridgeType')
-        name = bridges.get('name')
-        configuration = bridges.get('configuration') 
-        apikey = bridges.get('apikey') 
-        slugName = bridges.get('slugName') 
-        function_ids = []
-        if bridges.get('function_ids'):
-            function_ids = [ObjectId(fid) for fid in bridges.get('function_ids')]
-        actions= bridges.get('actions', {})
-        apikey_object_id = bridges.get('apikey_object_id')
-
-        result = await create_bridge({
-            "configuration": configuration,
-            "org_id": org_id,
-            "name": name,
-            "slugName": slugName,
-            "service": service,
-            "apikey": apikey,
-            "bridgeType": bridgeType,
-            "function_ids":function_ids,
-            "actions": actions,
-            "apikey_object_id":apikey_object_id
-        })
-
-        if result.get("success"):
-            res = result.get('bridge')
-            # todo: optimize in future
-            if(function_ids):
-                for function_id in function_ids:
-                    await update_bridge_ids_in_api_calls(function_id, str(res.get("_id")), 1)
-            return res
-
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=result)
-
-    except HTTPException as e:
-        raise e
-    except Exception as error:
-        logger.error(f"common error=> {str(error)}, {traceback.format_exc()}")
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="An unexpected error occurred while creating the bridge. Please try again later.")
 
 async def get_bridge(request, bridge_id: str):
     try:
@@ -208,6 +165,7 @@ async def get_all_bridges(request):
         alerting_embed_token = Helper.generate_token({ "org_id": Config.ORG_ID, "project_id": Config.ALERTING_PROJECT_ID, "user_id": org_id },Config.Access_key )
         trigger_embed_token = Helper.generate_token({ "org_id": Config.ORG_ID, "project_id": Config.TRIGGER_PROJECT_ID, "user_id": org_id },Config.Access_key )
         history_page_chatbot_token = Helper.generate_token({ "org_id": "11202", "chatbot_id": "67286d4083e482fd5b466b69", "user_id": org_id },Config.CHATBOT_ACCESS_KEY )
+        # doctstar_embed_token = Helper.generate_token({ "org_id": Config.DOCSTAR_ORG_ID, "collection_id": Config.DOCSTAR_COLLECTION_ID, "user_id": org_id },Config.DOCSTAR_ACCESS_KEY )
         # metrics_data = await get_timescale_data(org_id)
         # bridges = Helper.sort_bridges(bridges, metrics_data)
         avg_response_time = {}
@@ -223,6 +181,7 @@ async def get_all_bridges(request):
                 "alerting_embed_token": alerting_embed_token,
                 "trigger_embed_token": trigger_embed_token,
                 "history_page_chatbot_token" : history_page_chatbot_token,
+                # "doctstar_embed_token" : doctstar_embed_token,
                 "org_id": org_id,
                 "avg_response_time": avg_response_time
             })
@@ -232,6 +191,7 @@ async def get_all_bridges(request):
 async def get_all_service_models_controller(service):
     try:
         service = service.lower()
+        
         def restructure_configuration(config):
             model_field = config.get("configuration", {}).get("model", "")
             additional_parameters = config.get("configuration", {})
@@ -240,116 +200,51 @@ async def get_all_service_models_controller(service):
                 "configuration": {
                     "model": model_field,
                     "additional_parameters": additional_parameters
-                }
-            }
-        if service == service_name['openai']:
-            return {
-                "chat": {
-                    # "gpt-3.5-turbo": restructure_configuration(model_config_document[service]['gpt-3.5-turbo']),
-                    "gpt-4": restructure_configuration(model_config_document[service]['gpt-4']),
-                    "gpt-4-turbo": restructure_configuration(model_config_document[service]['gpt-4-turbo']),
-                    "gpt-4o": restructure_configuration(model_config_document[service]['gpt-4o']),
-                    "gpt-4o-mini": restructure_configuration(model_config_document[service]['gpt-4o-mini']),
-                    "chatgpt-4o-latest": restructure_configuration(model_config_document[service]['chatgpt-4o-latest']),
-                    "gpt-4o-search-preview": restructure_configuration(model_config_document[service]['gpt-4o-search-preview']),
-                    "gpt-4o-mini-search-preview": restructure_configuration(model_config_document[service]['gpt-4o-mini-search-preview']),
-                    "gpt-4.1": restructure_configuration(model_config_document[service]['gpt-4.1']),
-                    "gpt-4.1-mini": restructure_configuration(model_config_document[service]['gpt-4.1-mini']),
-                    "gpt-4.1-nano": restructure_configuration(model_config_document[service]['gpt-4.1-nano']),
                 },
-                "fine-tune" : {
-                    "gpt-4-0613": restructure_configuration(model_config_document[service]['gpt-4-0613']),
-                    "gpt-4o-2024-08-06": restructure_configuration(model_config_document[service]['gpt-4o-2024-08-06']),
-                    "gpt-4o-mini-2024-07-18": restructure_configuration(model_config_document[service]['gpt-4o-mini-2024-07-18']),
-
-                },
-                "reasoning" : {
-                    "o1" : restructure_configuration(model_config_document[service]['o1']),
-                    "o3" : restructure_configuration(model_config_document[service]['o3']),
-                    "o3-mini" : restructure_configuration(model_config_document[service]['o3-mini']),
-                    "o4-mini" : restructure_configuration(model_config_document[service]['o4-mini'])
-                },
-                "image" : {
-                    "dall-e-2" : restructure_configuration(model_config_document[service]['dall-e-2']),
-                    "dall-e-3" : restructure_configuration(model_config_document[service]['dall-e-3']),
-                },
-                "embedding": {
-                    "text-embedding-3-large": restructure_configuration(model_config_document[service]['text-embedding-3-large']),
-                    "text-embedding-3-small": restructure_configuration(model_config_document[service]['text-embedding-3-small']),
-                    "text-embedding-ada-002": restructure_configuration(model_config_document[service]['text-embedding-ada-002'])
-                }
-            }
-        elif service == service_name['openai_response']:
-            return {
-                "chat": {
-                    # "gpt-3.5-turbo": restructure_configuration(model_config_document[service]['gpt-3.5-turbo']),
-                    "gpt-4": restructure_configuration(model_config_document[service]['gpt-4']),
-                    "gpt-4-turbo": restructure_configuration(model_config_document[service]['gpt-4-turbo']),
-                    "gpt-4o": restructure_configuration(model_config_document[service]['gpt-4o']),
-                    "gpt-4o-mini": restructure_configuration(model_config_document[service]['gpt-4o-mini']),
-                    "chatgpt-4o-latest": restructure_configuration(model_config_document[service]['chatgpt-4o-latest']),
-                    "gpt-4.1": restructure_configuration(model_config_document[service]['gpt-4.1']),
-                    "gpt-4.1-mini": restructure_configuration(model_config_document[service]['gpt-4.1-mini']),
-                    "gpt-4.1-nano": restructure_configuration(model_config_document[service]['gpt-4.1-nano']),
-                },
-                "reasoning" : {
-                    "o1" : restructure_configuration(model_config_document[service]['o1']),
-                    "o3" : restructure_configuration(model_config_document[service]['o3']),
-                    "o3-mini" : restructure_configuration(model_config_document[service]['o3-mini']),
-                    "o4-mini" : restructure_configuration(model_config_document[service]['o4-mini']),
-                }
-                # "image" : {
-                #     "dall-e-2" : model_config_document[service]['dall-e-2'],
-                #     "dall-e-3" : model_config_document[service]['dall-e-3'],
-                # },
-                # "embedding": {
-                #     "text-embedding-3-large": model_config_document[service]['text-embedding-3-large'],
-                #     "text-embedding-3-small": model_config_document[service]['text-embedding-3-small'],
-                #     "text-embedding-ada-002": model_config_document[service]['text-embedding-ada-002']
-                # }
-            }
-        elif service == service_name['anthropic']:
-            return {
-                "chat" : {
-                    "claude-3-5-sonnet-20241022" :  restructure_configuration(model_config_document[service]['claude-3-5-sonnet-20241022']),
-                    "claude-3-5-sonnet-latest" :  restructure_configuration(model_config_document[service]['claude-3-5-sonnet-latest']),
-                    "claude-3-opus-20240229" :  restructure_configuration(model_config_document[service]['claude-3-opus-20240229']),
-                    "claude-3-opus-latest" :  restructure_configuration(model_config_document[service]['claude-3-opus-latest']),
-                    "claude-3-sonnet-20240229" :  restructure_configuration(model_config_document[service]['claude-3-sonnet-20240229']),
-                    "claude-3-haiku-20240307" :  restructure_configuration(model_config_document[service]['claude-3-haiku-20240307']),
-                    "claude-3-5-haiku-20241022" :  restructure_configuration(model_config_document[service]['claude-3-5-haiku-20241022']),
-                    "claude-3-7-sonnet-latest" :  restructure_configuration(model_config_document[service]['claude-3-7-sonnet-latest']),
-                    "claude-sonnet-4-20250514" :  restructure_configuration(model_config_document[service]['claude-sonnet-4-20250514']),
-                    "claude-opus-4-20250514" :  restructure_configuration(model_config_document[service]['claude-opus-4-20250514'])
-                }
+                "validationConfig" : config.get("validationConfig", {})
             }
         
-        elif service == service_name['groq']:
-            return {
-                "chat": {
-                    "llama-3.3-70b-versatile": restructure_configuration(model_config_document[service]['llama-3.3-70b-versatile']),
-                    "llama-3.1-8b-instant": restructure_configuration(model_config_document[service]['llama-3.1-8b-instant']),
-                    "llama3-70b-8192": restructure_configuration(model_config_document[service]['llama3-70b-8192']),
-                    "llama3-8b-8192": restructure_configuration(model_config_document[service]['llama3-8b-8192']),
-                    # "mixtral-8x7b-32768": restructure_configuration(model_config_document[service]['mixtral-8x7b-32768']),
-                    "gemma2-9b-it": restructure_configuration(model_config_document[service]['gemma2-9b-it']),
-                    # "llama-guard-3-8b": restructure_configuration(model_config_document[service]['llama-guard-3-8b']),
-                    "deepseek-r1-distill-llama-70b": restructure_configuration(model_config_document[service]['deepseek-r1-distill-llama-70b']),
-                    # "deepseek-r1-distill-qwen-32b": restructure_configuration(model_config_document[service]['deepseek-r1-distill-qwen-32b']),
-                    # "qwen-2.5-32b": restructure_configuration(model_config_document[service]['qwen-2.5-32b']),
-                    # "qwen-2.5-coder-32b": restructure_configuration(model_config_document[service]['qwen-2.5-coder-32b']),
-                    "meta-llama/llama-4-scout-17b-16e-instruct" : restructure_configuration(model_config_document[service]['meta-llama/llama-4-scout-17b-16e-instruct'])
-                }
-            }
+        # Check if service exists in model_config_document
+        if service not in model_config_document:
+            return {}
+        
+        # Initialize result dictionary with default categories
+        result = {
+            "chat": {},
+            "fine-tune": {},
+            "reasoning": {},
+            "image": {},
+            "embedding": {}
+        }
+        
+        # Iterate through all models in the service
+        service_models = model_config_document[service]
+        
+        for model_name, model_config in service_models.items():
+            # Check if model has status and if it equals 1
+            if model_config.get('status') != 1:
+                continue
+            
+            # Get model type from configuration, default to 'chat' if not specified
+            model_type = model_config.get('validationConfig', {}).get('type', 'chat')
+            
+            # Add the model to appropriate category
+            result[model_type][model_name] = restructure_configuration(model_config)
+        
+        # Remove empty categories
+        result = {category: models for category, models in result.items() if models}
+        
+        return result
         
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Error in get_all_service_models_controller: {e}")
+        return {}
 
 async def get_all_service_controller():
     return {
         "success": True,
         "message": "Get all service successfully",
-        "services": ['openai', 'anthropic', 'groq', 'openai_response']
+        "services": ['openai', 'anthropic', 'groq', 'openai_response', 'open_router']
     }
 
 async def update_bridge_controller(request, bridge_id=None, version_id=None):
