@@ -25,7 +25,7 @@ async def create_bridges_controller(request):
         purpose = bridges.get('purpose')
         org_id = request.state.profile['org']['id']
         folder_id = request.state.folder_id if hasattr(request.state, 'folder_id') else None
-        user_id = request.state.user_id if hasattr(request.state, 'user_id') else None
+        user_id = request.state.user_id
         prompt = None
         if 'templateId' in bridges:
             template_id = bridges['templateId']
