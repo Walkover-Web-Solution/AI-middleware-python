@@ -15,7 +15,9 @@ async def make_data_if_proxy_token_given(req):
         'ip': "9.255.0.55",
         'user': {
             'id': response_data['data'][0]['id'],
-            'name': response_data['data'][0]['name']
+            'name': response_data['data'][0]['name'],
+            'is_embedUser': response_data['data'][0]['meta'].get('type') == 'embed',
+            'folder_id': response_data['data'][0]['meta'].get('folder_id' , None)
         },
         'org': {
             'id': response_data['data'][0]['currentCompany']['id'],
@@ -48,7 +50,9 @@ async def jwt_middleware(request: Request):
                 if isinstance(check_token['user'].get('meta'), str):
                     request.state.embed = False
                 else:
-                    request.state.embed = check_token['user'].get('meta', {}).get('type', False) == 'embed'
+                    request.state.embed = check_token['user'].get('meta', {}).get('type', False) == 'embed' or False
+                request.state.folder_id = check_token['extraDetails'].get('folder_id', None)
+                request.state.user_id = check_token['user'].get('id')
                 return 
             
             raise HTTPException(status_code=404, detail="unauthorized user")        

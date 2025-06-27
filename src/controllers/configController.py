@@ -24,6 +24,8 @@ async def create_bridges_controller(request):
         bridges = await request.json()
         purpose = bridges.get('purpose')
         org_id = request.state.profile['org']['id']
+        folder_id = request.state.folder_id if hasattr(request.state, 'folder_id') else None
+        user_id = request.state.user_id
         prompt = None
         if 'templateId' in bridges:
             template_id = bridges['templateId']
@@ -98,7 +100,9 @@ async def create_bridges_controller(request):
             "bridgeType": bridgeType,
             "org_id" : org_id,
             "status": status,
-            "gpt_memory" : True
+            "gpt_memory" : True,
+            "folder_id" : folder_id,
+            "user_id" : user_id
         })
         create_version = await create_bridge_version(result['bridge'])
         update_fields = {'versions' : [create_version]}
@@ -160,7 +164,10 @@ async def get_bridge(request, bridge_id: str):
 async def get_all_bridges(request):
     try:
         org_id = request.state.profile['org']['id']
-        bridges = await get_all_bridges_in_org(org_id)
+        folder_id = request.state.folder_id if hasattr(request.state, 'folder_id') else None
+        user_id = request.state.user_id if hasattr(request.state, 'user_id') else None
+        isEmbedUser = request.state.embed
+        bridges = await get_all_bridges_in_org(org_id, folder_id, user_id, isEmbedUser)
         embed_token = Helper.generate_token({ "org_id": Config.ORG_ID, "project_id": Config.PROJECT_ID, "user_id": org_id },Config.Access_key )
         alerting_embed_token = Helper.generate_token({ "org_id": Config.ORG_ID, "project_id": Config.ALERTING_PROJECT_ID, "user_id": org_id },Config.Access_key )
         trigger_embed_token = Helper.generate_token({ "org_id": Config.ORG_ID, "project_id": Config.TRIGGER_PROJECT_ID, "user_id": org_id },Config.Access_key )
