@@ -51,7 +51,7 @@ async def jwt_middleware(request: Request):
                     request.state.embed = False
                 else:
                     request.state.embed = check_token['user'].get('meta', {}).get('type', False) == 'embed' or False
-                request.state.folder_id = check_token['extraDetails'].get('folder_id', None)
+                request.state.folder_id = check_token.get('extraDetails', {}).get('folder_id', None)
                 request.state.user_id = check_token['user'].get('id')
                 return 
             
