@@ -6,7 +6,10 @@ from globals import *
 async def get_all_apicalls_controller(request):
     try:
         org_id = request.state.profile['org']['id']
-        functions = await get_all_api_calls_by_org_id(org_id=org_id)
+        folder_id = request.state.folder_id if hasattr(request.state, 'folder_id') else None
+        user_id = request.state.user_id
+        isEmbedUser = request.state.embed
+        functions = await get_all_api_calls_by_org_id(org_id=org_id, folder_id=folder_id, user_id=user_id, isEmbedUser=isEmbedUser)
         return JSONResponse(status_code=200, content={
                 "success": True,
                 "message": "Get all functions of a org successfully",

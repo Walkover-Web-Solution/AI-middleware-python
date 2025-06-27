@@ -14,6 +14,9 @@ async def creates_api(request: Request):
     try:
         body = await request.json()
         org_id = request.state.profile.get("org",{}).get("id","")
+        folder_id = request.state.folder_id if hasattr(request.state, 'folder_id') else None
+        user_id = request.state.user_id
+        isEmbedUser = request.state.embed
         function_name = body.get('id')
         payload = body.get('payload')
         url = body.get('url')
@@ -32,8 +35,8 @@ async def creates_api(request: Request):
             traversed_body = traverse_body(body_content)
             required_params = traversed_body.get('required_params', [])
             fields = [{"variable_name": param, "description": '', "enum": ''} for param in required_params]
-            api_data = await get_api_data(org_id, function_name)
-            result  = await save_api(desc, org_id, api_data, required_params, function_name, fields, endpoint_name, 'v1')
+            api_data = await get_api_data(org_id, function_name, folder_id, user_id, isEmbedUser)
+            result  = await save_api(desc, org_id, folder_id, user_id, api_data, required_params, function_name, fields, endpoint_name, 'v1')
             result['api_data']['_id'] = str(result['api_data']['_id'])
             if 'created_at' in result['api_data'] and isinstance(result['api_data']['created_at'], datetime.datetime):
                         result['api_data']['created_at'] = result['api_data']['created_at'].strftime('%Y-%m-%d %H:%M:%S')  # Convert datetime to string

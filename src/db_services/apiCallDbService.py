@@ -10,9 +10,14 @@ versionModel = db['configuration_versions']
 from globals import *
 
 # todo :: to make it more better
-async def get_all_api_calls_by_org_id(org_id):
+async def get_all_api_calls_by_org_id(org_id, folder_id, user_id, isEmbedUser):
+    query = {"org_id": org_id}
+    if folder_id:
+        query["folder_id"] = folder_id
+    if user_id and isEmbedUser:
+        query["user_id"] = user_id
     pipeline = [
-        {'$match': {'org_id': org_id}},
+        {'$match': query},
         {'$addFields': {
             '_id': {'$toString': '$_id'},
             'bridge_ids': {'$map': {

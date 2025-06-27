@@ -571,8 +571,13 @@ async def create_bridge(data):
         logger.error(f"Error in create_bridge: {str(error)}")
         raise BadRequestException("Failed to create bridge")
 
-async def get_all_bridges_in_org(org_id):
-    bridge = configurationModel.find({"org_id": org_id}, {
+async def get_all_bridges_in_org(org_id, folder_id, user_id, isEmbedUser):
+    query = {"org_id": org_id}
+    if folder_id:
+        query["folder_id"] = folder_id
+    if user_id and isEmbedUser:
+        query["user_id"] = user_id
+    bridge = configurationModel.find(query, {
         "_id": 1,
         "name": 1,
         "service": 1,
