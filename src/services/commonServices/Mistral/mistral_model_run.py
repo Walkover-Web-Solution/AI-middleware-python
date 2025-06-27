@@ -13,33 +13,6 @@ async def mistral_model_run(configuration, apiKey, execution_time_logs, bridge_i
         async def api_call(config):
             try:
                 chat_completion = await mistral.chat.complete_async(**config)
-                # response_dict = {
-                #     'id': chat_completion.id,
-                #     'object': chat_completion.object,
-                #     'model': chat_completion.model,
-                #     'created': chat_completion.created,
-                #     'usage': {
-                #         'prompt_tokens': chat_completion.usage.prompt_tokens,
-                #         'completion_tokens': chat_completion.usage.completion_tokens,
-                #         'total_tokens': chat_completion.usage.total_tokens
-                #     },
-                #     'choices': []
-                # }
-                
-                # # Process choices
-                # for choice in chat_completion.choices:
-                #     choice_dict = {
-                #         'index': choice.index,
-                #         'finish_reason': choice.finish_reason,
-                #         'message': {
-                #             'role': choice.message.role,
-                #             'content': choice.message.content
-                #         }
-                #     }
-                #     if choice.message.tool_calls:
-                #         choice_dict['message']['tool_calls'] = choice.message.tool_calls
-                #     response_dict['choices'].append(choice_dict)
-                
                 return {'success': True, 'response': chat_completion.model_dump()}
             except Exception as error:
                 return {
