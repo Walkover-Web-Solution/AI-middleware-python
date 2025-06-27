@@ -314,3 +314,40 @@ class Helper:
             return int(hours), int(minutes)
         except Exception as e:
             return f"Invalid timezone: {e}"
+        
+    def get_req_opt_variables_in_prompt(prompt, variable_state, variable_path):
+        def flatten_values_only(d):
+            result = {}
+            for value in d.values():  # Ignore top-level keys
+                if isinstance(value, dict):
+                    result.update(flatten_dict(value))
+            return result
+
+        def flatten_dict(d, parent_key=''):
+            flat = {}
+            for k, v in d.items():
+                new_key = f'{parent_key}.{k}' if parent_key else k
+                if isinstance(v, dict):
+                    flat.update(flatten_dict(v, new_key))
+                else:
+                    flat[new_key] = "required"
+            return flat
+
+        # Extract variables from prompt
+        prompt_vars = re.findall(r'{{(.*?)}}', prompt)
+
+        # Determine status for prompt variables
+        final = {
+            var: 'required' if variable_state.get(var) == 'required' else 'optional'
+            for var in prompt_vars
+        }
+
+        # Add flattened variable_path keys as required
+        for path in flatten_values_only(variable_path):
+            final[path] = 'required'
+
+        return final
+
+
+
+            

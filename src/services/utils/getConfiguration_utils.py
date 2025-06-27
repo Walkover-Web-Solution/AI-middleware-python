@@ -269,7 +269,10 @@ def add_connected_agents(result, tools, tool_id_and_name_mapping):
     for bridge_name, bridge_info in connected_agents.items():
         id = bridge_info.get('bridge_id', '')
         description = bridge_info.get('description', '')
+        variables = bridge_info.get('variables', {})
+        fields = variables.get('fields', {})
         name = makeFunctionName(bridge_name)
+
         
         tools.append({
             "type": "function",
@@ -282,9 +285,10 @@ def add_connected_agents(result, tools, tool_id_and_name_mapping):
                     "enum": [],
                     "required_params": [],
                     "parameter": {}
-                }
+                },
+                **fields
             },
-            "required": ["user"]
+            "required": ["user"] + variables.get('required_params', [])
         })
         
         tool_id_and_name_mapping[name] = {

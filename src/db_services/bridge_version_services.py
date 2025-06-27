@@ -135,6 +135,11 @@ async def publish(org_id, version_id):
         raise BadRequestException('version data not found')
     
     parent_id = str(get_version_data.get('parent_id'))
+    prompt = get_version_data.get('configuration',{}).get('prompt','')
+    variable_state = get_version_data.get('variables_state', {})
+    variable_path = get_version_data.get('variables_path', {})
+    agent_variables = Helper.get_req_opt_variables_in_prompt(prompt, variable_state, variable_path)
+
     cache_key = f"{parent_id}"
     await delete_in_cache(cache_key)
 
@@ -158,6 +163,7 @@ async def publish(org_id, version_id):
     
     if updated_configuration.get('function_ids'):
         updated_configuration['function_ids'] = [ObjectId(fid) for fid in updated_configuration['function_ids']]
+    updated_configuration['agent_variables'] = agent_variables
     
     await configurationModel.update_one(
         {'_id': ObjectId(parent_id)},
