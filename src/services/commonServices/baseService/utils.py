@@ -25,8 +25,9 @@ def clean_json(data):
 
 def validate_tool_call(service, response):
     match service: # TODO: Fix validation process.
-        case 'openai' | 'groq' | 'open_router':
-            return len(response.get('choices', [])[0].get('message', {}).get("tool_calls", [])) > 0
+        case 'openai' | 'groq' | 'open_router' | 'mistral':
+            tool_calls = response.get('choices', [])[0].get('message', {}).get("tool_calls", [])
+            return len(tool_calls) > 0 if tool_calls is not None else False
         case 'openai_response':
             return response.get('output')[0]['type'] == 'function_call'
         case 'anthropic':
@@ -105,7 +106,7 @@ def transform_required_params_to_required(properties, variables={}, variables_pa
     return transformed_properties
 
 def tool_call_formatter(configuration: dict, service: str, variables: dict, variables_path: dict) -> dict:
-    if service == service_name['openai'] or service == service_name['open_router']:
+    if service == service_name['openai'] or service == service_name['open_router'] or service == service_name['mistral']:
         data_to_send =  [
             {
                 'type': 'function',
@@ -288,7 +289,7 @@ def make_code_mapping_by_service(responses, service):
     codes_mapping = {}
     function_list = []
     match service:
-        case 'openai' | 'groq' | 'open_router':
+        case 'openai' | 'groq' | 'open_router' | 'mistral':
 
             for tool_call in responses['choices'][0]['message']['tool_calls']:
                 name = tool_call['function']['name']

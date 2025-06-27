@@ -4,7 +4,8 @@ service_name = {
     'anthropic': 'anthropic',
     'groq': 'groq',
     'openai_response': 'openai_response',
-    'open_router': 'open_router'
+    'open_router': 'open_router',
+    'mistral': 'mistral'
 }
 
 bridge_ids = {

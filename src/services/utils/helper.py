@@ -16,11 +16,12 @@ from ..commonServices.openAI.openai_response import OpenaiResponse
 from ..commonServices.groq.groqCall import Groq
 from ..commonServices.anthrophic.antrophicCall import Antrophic
 from ..commonServices.openRouter.openRouter_call import OpenRouter
+from ..commonServices.Mistral.mistral_call import Mistral
 from ...configs.constant import service_name
 from ..commonServices.openAI.openai_embedding_call import OpenaiEmbedding
 from ..cache_service import find_in_cache, store_in_cache
 from ..utils.apiservice import fetch
-from datetime import datetime, timezone, timedelta
+from datetime import datetime
 import pytz
 class Helper:
     @staticmethod
@@ -186,6 +187,8 @@ class Helper:
             class_obj = OpenaiResponse(params)
         elif service == service_name['open_router']:
             class_obj = OpenRouter(params)
+        elif service == service_name['mistral']:
+            class_obj = Mistral(params)
             
         return class_obj
 

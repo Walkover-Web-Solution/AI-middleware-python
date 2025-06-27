@@ -16,7 +16,7 @@ class TokenCalculator:
     def calculate_usage(self, model_response):
         usage = {}
         match self.service:
-            case 'openai' | 'groq' | 'open_router':
+            case 'openai' | 'groq' | 'open_router' | 'mistral':
                 usage["totalTokens"] = _.get(model_response, self.model_output_config['usage'][0]['total_tokens']) or 0
                 usage["inputTokens"] = _.get(model_response, self.model_output_config['usage'][0]['prompt_tokens']) or 0 
                 usage["outputTokens"] = _.get(model_response, self.model_output_config['usage'][0]['completion_tokens']) or 0
