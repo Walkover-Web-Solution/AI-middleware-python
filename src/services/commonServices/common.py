@@ -1,15 +1,12 @@
-import json
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 import traceback
 from ...db_services import metrics_service as metrics_service
 import pydash as _
 from ..utils.helper import Helper
-import asyncio
 from .baseService.utils import sendResponse
-from ..utils.ai_middleware_format import Response_formatter, send_alert
+from ..utils.ai_middleware_format import Response_formatter
 from ..utils.send_error_webhook import send_error_to_webhook
-import json
 from src.handler.executionHandler import handle_exceptions
 from models.mongo_connection import db
 from src.services.utils.common_utils import (
@@ -37,12 +34,10 @@ from src.services.utils.common_utils import (
 from src.services.utils.rich_text_support import process_chatbot_response
 app = FastAPI()
 from src.services.utils.helper import Helper
-configurationModel = db["configurations"]
-import pydash as _
 from src.services.commonServices.testcases import run_testcases as run_bridge_testcases
 from globals import *
 
-
+configurationModel = db["configurations"]
 
 @app.post("/chat/{bridge_id}")
 @handle_exceptions
