@@ -378,61 +378,61 @@ async def make_request_data(request: Request):
 
 async def make_request_data_and_publish_sub_queue(parsed_data, result, params, thread_info):
     suggestion_content = {'data': {'content': {}}}
-    suggestion_content['data']['content'] = result['historyParams']['message'] if parsed_data['is_rich_text'] == True else result['modelResponse']
+    suggestion_content['data']['content'] = result.get('historyParams', {}).get('message') if parsed_data.get('is_rich_text') == True else result.get('modelResponse')
     data = {
         "save_sub_thread_id_and_name" : {
-            "org_id" : parsed_data['org_id'],
-            "thread_id" : thread_info['thread_id'],
-            "sub_thread_id" : thread_info['sub_thread_id'],
-            "thread_flag" : parsed_data['thread_flag'],
-            "response_format" : parsed_data['response_format'],
-            "bridge_id" : parsed_data['bridge_id'],
-            "user" : parsed_data['user']
-
+            "org_id" : parsed_data.get('org_id'),
+            "thread_id" : thread_info.get('thread_id'),
+            "sub_thread_id" : thread_info.get('sub_thread_id'),
+            "thread_flag" : parsed_data.get('thread_flag'),
+            "response_format" : parsed_data.get('response_format'),
+            "bridge_id" : parsed_data.get('bridge_id'),
+            "user" : parsed_data.get('user')
         },
         "metrics_service": {
-            "dataset": [parsed_data['usage']],
-            "history_params": result["historyParams"],
-            "version_id": parsed_data['version_id']
+            "dataset": [parsed_data.get('usage', {})],
+            "history_params": result.get("historyParams", {}),
+            "version_id": parsed_data.get('version_id')
         },
         "validateResponse": {
-            "final_response": result['modelResponse'],
-            "configration": parsed_data['configuration'],
-            "bridgeId": parsed_data['bridge_id'],
-            "message_id": parsed_data['message_id'],
-            "org_id": parsed_data['org_id']
+            "final_response": result.get('modelResponse'),
+            "configration": parsed_data.get('configuration'),
+            "bridgeId": parsed_data.get('bridge_id'),
+            "message_id": parsed_data.get('message_id'),
+            "org_id": parsed_data.get('org_id')
         },
         "total_token_calculation": {
-            "tokens": parsed_data['tokens'],
-            "bridge_id": parsed_data['bridge_id']
+            "tokens": parsed_data.get('tokens', {}),
+            "bridge_id": parsed_data.get('bridge_id')
         },
         "get_bridge_avg_response_time": {
-            "org_id": parsed_data['org_id'],
-            "bridge_id": parsed_data['bridge_id']
+            "org_id": parsed_data.get('org_id'),
+            "bridge_id": parsed_data.get('bridge_id')
         },
         "chatbot_suggestions" : {
-            "response_format": parsed_data['response_format'],
+            "response_format": parsed_data.get('response_format'),
             "assistant": suggestion_content,
-            "user": parsed_data['user'],
-            "bridge_summary": parsed_data['bridge_summary'],
-            "thread_id": parsed_data['thread_id'],
-            "sub_thread_id": parsed_data['sub_thread_id'],
-            "configuration": params['configuration']
+            "user": parsed_data.get('user'),
+            "bridge_summary": parsed_data.get('bridge_summary'),
+            "thread_id": parsed_data.get('thread_id'),
+            "sub_thread_id": parsed_data.get('sub_thread_id'),
+            "configuration": params.get('configuration', {})
         },
         "handle_gpt_memory" : {
-            "id" : parsed_data['id'],
-            "user" :  parsed_data['user'],
-            "assistant" :  result['modelResponse'],
-            "purpose" :  parsed_data['memory'],
-            "gpt_memory_context" :  parsed_data['gpt_memory_context']
+            "id" : parsed_data.get('id'),
+            "user" : parsed_data.get('user'),
+            "assistant" : result.get('modelResponse'),
+            "purpose" : parsed_data.get('memory'),
+            "gpt_memory_context" : parsed_data.get('gpt_memory_context')
         },
         "check_handle_gpt_memory" : {
-            "gpt_memory" :  parsed_data['gpt_memory'],
-            "type" :  parsed_data['configuration']['type']
+            "gpt_memory" : parsed_data.get('gpt_memory'),
+            "type" : parsed_data.get('configuration', {}).get('type')
         },
         "check_chatbot_suggestions" : {
-            "bridgeType" :  parsed_data['bridgeType'],
-            }
+            "bridgeType" : parsed_data.get('bridgeType'),
+        },
+        "type" : parsed_data.get('type')
     }
 
     return data

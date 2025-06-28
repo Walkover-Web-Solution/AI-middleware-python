@@ -256,8 +256,6 @@ def build_service_params(parsed_data, custom_config, model_output_config, thread
 
 async def process_background_tasks(parsed_data, result, params, thread_info):
     asyncio.create_task(create([parsed_data['usage']], result["historyParams"], parsed_data['version_id']))
-    if parsed_data.get('type') == 'image':
-        return
     data = await make_request_data_and_publish_sub_queue(parsed_data, result, params, thread_info)
     data = make_json_serializable(data)
     await sub_queue_obj.publish_message(data)
