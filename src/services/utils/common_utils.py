@@ -112,9 +112,6 @@ async def load_model_configuration(model, configuration, service):
             continue
         if config["level"] == 2 or key in configuration:
             custom_config[key] = configuration.get(key, config["default"])
-            if isinstance(config['default'], dict) and config['default'].get('key'):
-                value_key = config['default']['key']
-                custom_config[key] = {value_key: config.get(value_key, config['default'].get(value_key))}
     
     return model_obj, custom_config, model_output_config
 
