@@ -251,7 +251,14 @@ async def get_all_service_controller():
     return {
         "success": True,
         "message": "Get all service successfully",
-        "services": ['openai', 'anthropic', 'groq', 'openai_response', 'open_router', 'mistral']
+        "services": {
+            "openai": {"model": "gpt-4o"},
+            "anthropic": {"model": "claude-3-7-sonnet-latest"},
+            "groq": {"model": "llama3-70b-8192"},
+            "openai_response": {"model": "gpt-4o"},
+            "open_router": {"model": "deepseek/deepseek-chat-v3-0324:free"},
+            "mistral": {"model": "mistral-medium-latest"}
+        }
     }
 
 async def update_bridge_controller(request, bridge_id=None, version_id=None):
