@@ -35,7 +35,9 @@ async def get_default_values_controller(service, model, current_configuration, t
                                 if current_type == 'json_schema':
                                     default_values['response_type']['json_schema'] = current_value.get('json_schema', None)
                             else:
-                                default_values[key] = value.get('default', None)
+                                json_key = value.get('default').get('key')
+                                default_values[key] = {json_key : value.get('default', None).get(json_key)}
+
                             continue    
                         min_value = value.get('min')
                         max_value = value.get('max')
