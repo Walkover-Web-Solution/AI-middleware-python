@@ -1,3 +1,4 @@
+from src.db_services.conversationDbService import add_bulk_user_entries
 from models.mongo_connection import db
 from bson import ObjectId
 import traceback
@@ -129,7 +130,7 @@ async def get_version_with_tools(bridge_id, org_id):
         'bridges': result[0]
     }
     
-async def publish(org_id, version_id):
+async def publish(org_id, version_id, user_id):
     get_version_data = (await get_bridges_with_tools(bridge_id = None, org_id = org_id, version_id = version_id)).get('bridges')
     if not get_version_data:
         raise BadRequestException('version data not found')
@@ -171,6 +172,13 @@ async def publish(org_id, version_id):
     )
     
     await version_model.update_one({'_id': ObjectId(published_version_id)}, {'$set': {'is_drafted': False}})
+    await add_bulk_user_entries([{
+                'user_id': user_id,
+                'org_id': org_id,
+                'bridge_id': parent_id,
+                'version_id': version_id,
+                "type": 'Version published'
+            }])
     
     return {
         "success": True,
