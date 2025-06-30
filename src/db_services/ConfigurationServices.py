@@ -366,7 +366,7 @@ async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None)
             'pipeline': [
                 {
                     '$match': {
-                        '$expr': { '$in': ['$_id', '$$doc_ids'] }
+                        '$expr': { '$or': [{ '$in': ['$_id', '$$doc_ids']}, { '$in': ['$source.nesting.parentDocId', '$$doc_ids']}] }
                     }
                 },
                 {
