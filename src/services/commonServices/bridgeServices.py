@@ -10,7 +10,11 @@ async def optimize_prompt_controller(request : Request, bridge_id: str):
     try:
         body = await request.json()
         version_id = body.get('version_id')
-        variables =  { "query" : body.get('query') or ""}
+        variables = {
+          "query": body.get('query') or "",
+          "history": body.get('history') or ""
+        }
+        
         org_id = request.state.profile.get("org",{}).get("id","")
         result = await get_bridges(bridge_id, org_id, version_id)
         bridge = result.get('bridges')
