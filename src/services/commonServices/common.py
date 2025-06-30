@@ -104,7 +104,7 @@ async def chat(request_body):
                     await process_chatbot_response(result, params, parsed_data, model_output_config, timer, params['execution_time_logs'])
                 except Exception as e:
                     raise RuntimeError(f"error in chatbot : {e}")
-            
+        parsed_data['alert_flag'] = result['modelResponse'].get('alert_flag', False)    
         if parsed_data['version'] == 2:
             result['modelResponse'] = await Response_formatter(result["modelResponse"], parsed_data['service'], result["historyParams"].get('tools', {}), parsed_data['type'], parsed_data['images'])
             if not parsed_data['is_playground']:
