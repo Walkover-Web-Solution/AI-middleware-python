@@ -29,7 +29,6 @@ async def execute_with_retry(
         first_result = await api_call(first_config)
 
         if first_result['success']:
-            first_result['response']["choices"][0]["message"]["content"] = '\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n'
             first_result['response'] = await check_space_issue(first_result['response'], service)
             execution_time_logs.append({"step": f"{service} Processing time for call :- {count + 1}", "time_taken": timer.stop("API chat completion")})
             return first_result
