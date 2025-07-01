@@ -4,7 +4,10 @@ import traceback
 from config import Config
 from src.services.utils.apiservice import fetch
 from src.services.utils.time import Timer
+import httpx
 from globals import *
+from config import Config
+import time
 
 async def make_data_if_proxy_token_given(req):
     headers = {
@@ -27,6 +30,63 @@ async def make_data_if_proxy_token_given(req):
     return data
    
         
+async def content_guard_middleware(request: Request):
+    start_time = time.time()
+    try:
+        # Get request body
+        body = await request.json()
+        user = body.get('user')
+        
+        # Get API key from request body
+        cerebras_api_key = Config.CEREBRAS_API_KEY
+        # Prepare request for Cerebras API
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': f'Bearer {cerebras_api_key}'
+        }
+        
+        # Check the latest user message
+        latest_user_message = user
+        
+        payload = {
+            'model': 'llama-4-scout-17b-16e-instruct',
+            'messages': [{'content': f'Analyze if the following content contains harmful, illegal, unethical, or dangerous instructions or requests. Respond with only "HARMFUL" if it does, or "SAFE" if it does not: "{latest_user_message}"', 'role': 'user'}],
+        }
+        
+        # Call Cerebras API
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.post(
+                'https://api.cerebras.ai/v1/chat/completions',
+                headers=headers,
+                json=payload
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                content = result.get('choices', [{}])[0].get('message', {}).get('content', '')
+                
+                # Check if content is harmful
+                if 'HARMFUL' in content.upper():
+                    # Return harmful content response
+                    raise HTTPException(
+                        status_code=400,
+                        detail="Your request contains content that may be harmful or violates our content policy."
+                    )
+            else:
+                # Log error but allow request to proceed if guard check fails
+                logger.error(f"Content guard API error: {response.status_code} - {response.text}")
+                
+    except HTTPException:
+        # Re-raise HTTP exceptions
+        raise
+    except Exception as err:
+        # Log error but allow request to proceed if middleware fails
+        logger.error(f"Content guard middleware error: {str(err)}")
+        
+    # If we reach here, content is safe or check failed, proceed with request
+    print(f"Content guard middleware execution time: {time.time() - start_time} seconds")
+    return
+
 async def jwt_middleware(request: Request):
         try:
             timer_obj = Timer()

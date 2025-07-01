@@ -3,7 +3,7 @@ from fastapi.responses import JSONResponse
 import asyncio
 from src.services.commonServices.common import chat, embedding, batch, run_testcases
 from src.services.commonServices.baseService.utils import make_request_data
-from ...middlewares.middleware import jwt_middleware
+from ...middlewares.middleware import jwt_middleware, content_guard_middleware
 from ...middlewares.getDataUsingBridgeId import add_configuration_data_to_body
 from concurrent.futures import ThreadPoolExecutor
 from config import Config
@@ -20,7 +20,10 @@ async def auth_and_rate_limit(request: Request):
     await rate_limit(request,key_path='body.bridge_id' , points=100)
     await rate_limit(request,key_path='body.thread_id', points=20)
 
-@router.post('/chat/completion', dependencies=[Depends(auth_and_rate_limit)])
+async def content_guard_check(request: Request):
+    await content_guard_middleware(request)
+
+@router.post('/chat/completion', dependencies=[Depends(auth_and_rate_limit), Depends(content_guard_check)])
 async def chat_completion(request: Request, db_config: dict = Depends(add_configuration_data_to_body)):
     request.state.is_playground = False
     request.state.version = 2
