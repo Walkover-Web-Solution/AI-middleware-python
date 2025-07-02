@@ -1,0 +1,136 @@
+ALLUSERSPROFILE=C:\ProgramData
+APACHE-MAVEN=C:\Users\dimpl\Downloads\apache-maven-3.9.3-bin\apache-maven-3.9.3\bin
+APPDATA=C:\Users\dimpl\AppData\Roaming
+CATALINA_HOME=C:\Program Files\Apache Software Foundation\Tomcat 10.1
+CHOCOLATEYINSTALL=C:\ProgramData\chocolatey
+CHOCOLATEYLASTPATHUPDATE=133826067741452257
+CHROME_CRASHPAD_PIPE_NAME=\\.\pipe\crashpad_5832_XEFJEVPERRDANQDZ
+COMMONPROGRAMFILES=C:\Program Files\Common Files
+COMMONPROGRAMFILES(X86)=C:\Program Files (x86)\Common Files
+COMMONPROGRAMW6432=C:\Program Files\Common Files
+COMPUTERNAME=LAPTOP-73M0RR94
+COMSPEC=C:\WINDOWS\system32\cmd.exe
+DRIVERDATA=C:\Windows\System32\Drivers\DriverData
+EFC_17648_1262719628=1
+EFC_17648_1592913036=1
+EFC_17648_2283032206=1
+EFC_17648_2775293581=1
+EFC_17648_3789132940=1
+FPS_BROWSER_APP_PROFILE_STRING=Internet Explorer
+FPS_BROWSER_USER_PROFILE_STRING=Default
+HOMEDRIVE=C:
+HOMEPATH=\Users\dimpl
+LOCALAPPDATA=C:\Users\dimpl\AppData\Local
+LOGONSERVER=\\LAPTOP-73M0RR94
+NUMBER_OF_PROCESSORS=8
+NVM_HOME=C:\Users\dimpl\.config\herd\bin\nvm
+NVM_SYMLINK=C:\Program Files\nodejs
+ONEDRIVE=C:\Users\dimpl\OneDrive
+ONLINESERVICES=Online Services
+ORIGINAL_XDG_CURRENT_DESKTOP=undefined
+OS=Windows_NT
+PATH=c:\Users\dimpl\.vscode\extensions\ms-python.python-2025.8.0-win32-x64\python_files\deactivate\powershell;C:\Users\dimpl\AI-middleware-python\venv\Scripts;c:\Users\dimpl\.vscode\extensions\ms-python.python-2025.8.0-win32-x64\python_files\deactivate\powershell;C:\Users\dimpl\AI-middleware-python\venv\Scripts;C:\Python313\Scripts\;C:\Python313\;C:\Program Files\Common Files\Oracle\Java\javapath;C:\windows\system32;C:\windows;C:\windows\System32\Wbem;C:\windows\System32\WindowsPowerShell\v1.0\;C:\windows\System32\OpenSSH\;C:\Program Files\Java\jdk-20\bin;C:\Program Files\Java\jdk-18.0.2.1\bin;C:\Users\dimpl\Downloads\apache-maven-3.9.3-bin\apache-maven-3.9.3\bin;C:\Program Files\Apache Software Foundation\Tomcat 10.1\bin;C:\MinGW\bin;C:\Program Files\Microsoft VS Code\bin;C:\Strawberry\c\bin;C:\Strawberry\perl\site\bin;C:\Strawberry\perl\bin;C:\Program Files\Git\cmd;C:\Program Files\Git\mingw64\bin;C:\Program Files\Git\usr\bin;C:\Program Files (x86)\Microsoft SQL Server\160\Tools\Binn\;C:\Program Files\Microsoft SQL Server\160\Tools\Binn\;C:\Program Files\Microsoft SQL Server\Client SDK\ODBC\170\Tools\Binn\;C:\Program Files\Microsoft SQL Server\160\DTS\Binn\;C:\Program Files (x86)\Microsoft SQL Server\160\DTS\Binn\;C:\Program Files\Azure Data Studio\bin;C:\Program Files\PostgreSQL\16\bin;C:\Program Files\HP\HP One Agent;C:\Program Files\Docker\Docker\resources\bin;C:\Users\dimpl\.config\herd\bin\nvm;C:\Program Files\nodejs;C:\Program Files\nodejs\;C:\ProgramData\chocolatey\bin;C:\ngrok-v3;;%SystemRoot%\system32;%SystemRoot%;%SystemRoot%\System32\Wbem;%SYSTEMROOT%\System32\WindowsPowerShell\v1.0\;%SYSTEMROOT%\System32\OpenSSH\;C:\Users\dimpl\.config\herd\bin;C:\Users\dimpl\AppData\Local\Programs\Python\Python311\Scripts\;C:\Users\dimpl\AppData\Local\Programs\Python\Python311\;C:\Users\dimpl\AppData\Local\Microsoft\WindowsApps;C:\Program Files\Azure Data Studio\bin;C:\Program Files\heroku\bin;C:\Users\dimpl\AppData\Roaming\npm;C:\Users\dimpl\AppData\Local\Programs\cursor\resources\app\bin
+PATHEXT=.COM;.EXE;.BAT;.CMD;.VBS;.VBE;.JS;.JSE;.WSF;.WSH;.MSC;.PY;.PYW;.CPL
+PLATFORMCODE=KV
+PROCESSOR_ARCHITECTURE=AMD64
+PROCESSOR_IDENTIFIER=Intel64 Family 6 Model 140 Stepping 2, GenuineIntel
+PROCESSOR_LEVEL=6
+PROCESSOR_REVISION=8c02
+PROGRAMDATA=C:\ProgramData
+PROGRAMFILES=C:\Program Files
+PROGRAMFILES(X86)=C:\Program Files (x86)
+PROGRAMW6432=C:\Program Files
+PSMODULEPATH=C:\Users\dimpl\OneDrive\Documents\WindowsPowerShell\Modules;C:\Program Files\WindowsPowerShell\Modules;C:\WINDOWS\system32\WindowsPowerShell\v1.0\Modules;C:\Program Files (x86)\Microsoft SQL Server\160\Tools\PowerShell\Modules\
+PUBLIC=C:\Users\Public
+REGIONCODE=APJ
+SESSIONNAME=Console
+SYSTEMDRIVE=C:
+SYSTEMROOT=C:\WINDOWS
+TEMP=C:\Users\dimpl\AppData\Local\Temp
+TMP=C:\Users\dimpl\AppData\Local\Temp
+TOMCAT=C:\Program Files\Apache Software Foundation\Tomcat 10.1
+USERDOMAIN=LAPTOP-73M0RR94
+USERDOMAIN_ROAMINGPROFILE=LAPTOP-73M0RR94
+USERNAME=dimpl
+USERPROFILE=C:\Users\dimpl
+WINDIR=C:\WINDOWS
+ZES_ENABLE_SYSMAN=1
+TERM_PROGRAM=vscode
+TERM_PROGRAM_VERSION=1.101.2
+LANG=en_US.UTF-8
+COLORTERM=truecolor
+PYDEVD_DISABLE_FILE_VALIDATION=1
+VSCODE_DEBUGPY_ADAPTER_ENDPOINTS=c:\Users\dimpl\.vscode\extensions\ms-python.debugpy-2025.8.0-win32-x64\.noConfigDebugAdapterEndpoints\endpoint-f249642aaa160a16.txt
+BUNDLED_DEBUGPY_PATH=c:\Users\dimpl\.vscode\extensions\ms-python.debugpy-2025.8.0-win32-x64\bundled\libs\debugpy
+GIT_ASKPASS=c:\Program Files\Microsoft VS Code\resources\app\extensions\git\dist\askpass.sh
+VSCODE_GIT_ASKPASS_NODE=C:\Program Files\Microsoft VS Code\Code.exe
+VSCODE_GIT_ASKPASS_EXTRA_ARGS=
+VSCODE_GIT_ASKPASS_MAIN=c:\Program Files\Microsoft VS Code\resources\app\extensions\git\dist\askpass-main.js
+VSCODE_GIT_IPC_HANDLE=\\.\pipe\vscode-git-bc9763fe92-sock
+ACCESS_KEY=wmyP80YDHRAxbW
+ADMIN_API_KEY=ebc1437c957484fcc548ee8b22449305
+CHATBOTSECRETKEY=chatbotsecretkey123456
+CHATBOT_ACCESS_KEY=67286d4083e482fd5b466b69
+CHATBOT_OPTIONS_TEMPLATE_ID=670d1369e3e737c1fe771d63
+CONSUMER_STATUS=TRUE
+DATABASE_URL=f"postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}/{DB_NAME}"
+DB_HOST=34.47.226.46
+DB_NAME=aimiddleware
+DB_PASS=a!n2GDKtPxPng8$w
+DB_USER=ai_middleware
+DOC_RTC_URL_FOR_TIPTAP=http://localhost:1234/content
+ENCREAPTION_KEY=middlewrescretkey
+ENV=local #only required for local
+GCP_CREDENTIALS={"type": "service_account", "project_id": "via-socket-prod", "private_key_id": "bdd69b0bcc1fad852411dfd3fa09fcd245a8c7fd", "private_key": "-----BEGIN PRIVATE KEY-----
+MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC/t9HeunaGDhV3
+sODWIM7fOm9/+DjloRgEAraHFLAPHxQCfQf75wkdhOa2MbubO2R22buF5ge0Dnwv
+vlQWt2PSo8Ie721CVZA8TW5K9THcjKJBwwkkmeY6sWXxNusLGRgDOJE+VyCI7cTb
+/qSfANBiR3vFjP6ghZEOYjNgn2sdNssu8u4IBL47GDHbnc7FOS1l519F9SdxRNg8
+ulSEWaqtQuukpPNJwrsfjFaKHLS5Ddy3SNj9dF3/6U7UmrnB2bxeeG6MGP/w7w/9
+MwbRsTLl7maAX74D2I1e7hPBraOAO3AusoCbOLNFlTM19k4rEoIQqVPQ04rmOwpx
+AdXXk/YXAgMBAAECggEAGyirLmYzzCHKoL4J28uiArWAfhxn0v/TKx5HRTOFDV9V
+slSMAP9lpyzgkgbRkNgFD2Eg04MWrEcxCIJp3x3zoi9YnJFGZRNB74j4it3ZRmkV
+w0Mh1HGIz9+5lUY2XcgcQriMuswU69DjBlc4ct3mp0WBHycuGwdQ2TzIEnQC9IxD
+WpzLy2enHgXzFe8GAto0JL6wgj55HXFEg/0jauMPZ2FNmzUDvowBo/mfVi8+NPL3
+k0vWuuMSgGtinQPrT9s8DHpytYFNLeBOIZPKI+sK9PMxC2MT9AEAbohFegfbnTqf
+5YzGH8iNh7q/IbB90Qc0FuYw7XmZq5h8ZB/O/p/6AQKBgQD59Hj7uB7Pl8YmNUIx
+tFUEtmnJ06nAJIpwo1Wr+u+JrZgk4gtJiU2NhS8TEpU7mLBHs5g2YtzA8RZbmQwn
+J1mKPMWo99XMrpTRhiZy0xgU8O+aANoTlXkbWsW2g4QnzjWVMYMxANZt82fhRDy0
+LWOfBF708AcUPoBp2c6cU4AxwQKBgQDEWsoQ+B3kxnnVDk9fP25HYIzFLfA0kLdD
+KpvvBBtsfCxZOIvLZ5CjEfJnihkqQjHHlBXVC3yppVPqESIH900FP6FeAuPwjVBR
+KeX7WeRCr6tb7H4SzDWhdPjvp3WK/ytTUYsylFqfwcpN9iW03JDa8DZNISSBGbeK
+ErpAuntt1wKBgFAeo/UTxJSIMtSmd6xVAHd9PRWbiirzy4hlYp241rVL9pvD9RhC
+MaCuUzOK3lj3DXI+SAkO0XHrFV6RBUs7msDrz/PkVRzBzSQIGyTtMyfrPvIfWcez
+Ptmc1Ak3yNG1kIldEI9RlGoz/lU/uTGL5wXesc1TbwF3M1Q6o7aKMWpBAoGAI57Y
+w2VPfv4mgekbqwrFxbsVLnwb9F1AcbXcHesf0nlgTjs82QSLr5mE4RWjZRAnGa6a
+m1B/KANvCqpbAxjw5v/ZFUXu9eec52xzZTq0dwiJTJ7FbEGRhR3EPy2g3DtYL8A+
+QUm6evrb6XK6+ml8+crT/wABME5rBmhJU47A73cCgYEAygcnlt964hP8aETk+AXH
+XJL3bI6Icedjsdxw9aHwhkqCoFtIG3t2h8p7aJLFnD5aeLcXhpmZ5sl1o6hyh9jN
+UV+sf4LGrpSu1CE3bTalCTh8RrDkjDuOdCTQ730vxUnO+/6IA7V1CXM3TOIT1pIQ
+Oe1Za8QAYKGpCMhMmCQMPYY=
+-----END PRIVATE KEY-----
+", "client_email": "ai-middleware-image-testing@via-socket-prod.iam.gserviceaccount.com", "client_id": "103250680190544572199", "auth_uri": "https://accounts.google.com/o/oauth2/auth", "token_uri": "https://oauth2.googleapis.com/token", "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs", "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/ai-middleware-image-testing%40via-socket-prod.iam.gserviceaccount.com", "universe_domain": "googleapis.com"}
+MAX_WORKERS=10
+MONGODB_CONNECTION_URI=mongodb+srv://admin:Uc0sjm9jpLMsSGn5@cluster0.awdsppv.mongodb.net/AI_Middleware?retryWrites=true&w=majority
+MONGODB_DATABASE_NAME=AI_Middleware
+MUI_TEMPLATE_ID=66d571a66e6cefd2f0fdef7e
+MUI_TEMPLATE_ID_WITHOUT_ACTION=672efcc752e03a38301d53da
+OPENAI_API_KEY=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
+ORG_ID=5593
+PINECONE_API_KEY=pcsk_5Wir46_DxJf1JrcvqsM1pzEbwmLVstmgUmaR2X6QLGrKHSpoSdwLxSeEGEaZ2VUKzpnjvb
+PINECONE_INDEX=dev-gtwyai
+PREFETCH_COUNT=50
+PROJECT_ID=projeF0Qeo1w
+PUBLIC_REFERENCEID=870623l170791725365ccbfc587143
+QUEUE_CONNECTIONURL=amqps://socketv3:5QL2g6T5gPKcm5O@smart-yellow-anteater.rmq4.cloudamqp.com/socketv4
+QUEUE_NAME=AI-Middleware-local
+REDIS_URI=redis://localhost:6379
+RTLAYER_AUTH=hRzOZCelBrcFEIbojtst
+SECRETKEY=AIMiddlewareSecret
+SECRET_IV=IVsecret
+TEMPLATE_ID=66d571a66e6cefd2f0fdef7e
+TIMESCALE_SERVICE_URL=postgresql://tsdbadmin:mko27d9uxosm9k6y@om1u0dmt72.ayg2oe4rjn.tsdb.cloud.timescale.com:34635/tsdb
+TRIGGER_PROJECT_ID=projTiW6KZzH
+VIRTUAL_ENV=C:\Users\dimpl\AI-middleware-python\venv
+VIRTUAL_ENV_PROMPT=venv
+VSCODE_INJECTION=1
