@@ -1,4 +1,5 @@
 import copy
+import datetime
 from config import Config
 from ..db_services import conversationDbService as chatbotDbService
 import traceback
@@ -84,6 +85,10 @@ async def savehistory(thread_id, sub_thread_id, userMessage, botMessage, org_id,
         for item in chatbotSaveCopy:
             item["role"] = item.pop("message_by")
             item["content"] = item.pop("message")
+            if item.get('created_at') is None:
+                item['created_at'] = str(datetime.datetime.now())
+            if item.get('createdAt') is None:
+                item['createdAt'] = str(datetime.datetime.now())
 
         response_format_copy = {
             'cred' : {
