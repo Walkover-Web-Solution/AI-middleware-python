@@ -381,7 +381,13 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
             agent_status = agents.get('agent_status')
             if connected_agents is not None:
                 operation_value = 1 if agent_status == '1' else 0
+                if operation_value == 0 and connected_agents:
+                    for agent_name, agent_info in connected_agents.items():
+                        if agent_info.get('bridge_id') and agent_info.get('bridge_id') in current_variables_path:
+                            del current_variables_path[agent_info.get('bridge_id')]
+                            update_fields['variables_path'] = current_variables_path
                 await update_agents(version_id, connected_agents, operation_value)
+                    
         
         # Process function updates
         function_data = body.get('functionData', {})
