@@ -89,7 +89,7 @@ async def create_bridges_controller(request):
         "type": "default", # need changes
         "cred": {}
         } 
-        model_data["is_rich_text"]= True
+        model_data["is_rich_text"]= False
         if prompt is not None:
             model_data['prompt'] = prompt
         result = await create_bridge({
