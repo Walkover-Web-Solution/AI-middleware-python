@@ -1,3 +1,6 @@
+import copy
+import datetime
+from config import Config
 from ..db_services import conversationDbService as chatbotDbService
 import traceback
 from globals import *
@@ -77,6 +80,33 @@ async def savehistory(thread_id, sub_thread_id, userMessage, botMessage, org_id,
                 'version_id': version_id,
                 "annotations" : annotations
             })
+        # sending data through rt layer
+        chatbotSaveCopy = copy.deepcopy(chatToSave)
+        for item in chatbotSaveCopy:
+            item["role"] = item.pop("message_by")
+            item["content"] = item.pop("message")
+            if item.get('created_at') is None:
+                item['created_at'] = str(datetime.datetime.now())
+            if item.get('createdAt') is None:
+                item['createdAt'] = str(datetime.datetime.now())
+
+        response_format_copy = {
+            'cred' : {
+                'channel': org_id + bridge_id,
+                'apikey': Config.RTLAYER_AUTH,
+                'ttl': '1'
+            },
+            'type' : 'RTLayer'
+        }
+        dataToSend={
+            'Thread':{
+                "thread_id" : thread_id,
+                "sub_thread_id": sub_thread_id,
+                "bridge_id":bridge_id
+            },
+            "Messages":chatbotSaveCopy
+        }
+        await sendResponse(response_format_copy, dataToSend, True)
 
         result = chatbotDbService.createBulk(chatToSave)
         return list(result)
@@ -111,14 +141,15 @@ async def add_tool_call_data_in_history(chats):
 
 async def save_sub_thread_id_and_name(thread_id, sub_thread_id, org_id, thread_flag, response_format, bridge_id, user):
     try:
+        if not thread_flag:
+            return
         variables = {
             'user' : user
         }
         display_name = sub_thread_id
-        if thread_flag:
-            message  = 'generate description'
-            display_name = await call_ai_middleware(message, bridge_ids['generate_description'], response_type='text', variables=variables)
-        await save_sub_thread_id(org_id, thread_id, sub_thread_id, display_name)
+        message  = 'generate description'
+        display_name = await call_ai_middleware(message, bridge_ids['generate_description'], response_type='text', variables=variables)
+        await save_sub_thread_id(org_id, thread_id, sub_thread_id, display_name, bridge_id)
         if display_name is not None and display_name != sub_thread_id:
             response = {
                 'data': {

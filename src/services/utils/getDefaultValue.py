@@ -29,10 +29,15 @@ async def get_default_values_controller(service, model, current_configuration, t
                             default_values[key] = value.get('default', None)
                             continue
                         if key == 'response_type':
-                            if current_value in config_items[key]['options']:
+                            current_type = current_value.get('type') if isinstance(current_value, dict) else None
+                            if current_type and any(opt.get('type') == current_type for opt in config_items[key]['options']):
                                 default_values[key] = current_value
+                                if current_type == 'json_schema':
+                                    default_values['response_type']['json_schema'] = current_value.get('json_schema', None)
                             else:
-                                default_values[key] = value.get('default', None)
+                                json_key = value.get('default').get('key')
+                                default_values[key] = {json_key : value.get('default', None).get(json_key)}
+
                             continue    
                         min_value = value.get('min')
                         max_value = value.get('max')
@@ -69,6 +74,12 @@ async def get_default_values_controller(service, model, current_configuration, t
             return get_default_values(modelObj)
         
         elif service == service_name['openai_response']:
+            return get_default_values(modelObj)
+        
+        elif service == service_name['open_router']:
+            return get_default_values(modelObj)
+        
+        elif service == service_name['mistral']:
             return get_default_values(modelObj)
         
         else:

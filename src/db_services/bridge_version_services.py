@@ -1,3 +1,4 @@
+from src.db_services.conversationDbService import add_bulk_user_entries
 from models.mongo_connection import db
 from bson import ObjectId
 import traceback
@@ -58,6 +59,7 @@ async def update_bridges(bridge_id, update_fields):
 
     if not updated_bridge:
         raise BadRequestException('No records updated or bridge not found')
+
 
     if updated_bridge:
         updated_bridge['_id'] = str(updated_bridge['_id'])  # Convert ObjectId to string
@@ -128,12 +130,17 @@ async def get_version_with_tools(bridge_id, org_id):
         'bridges': result[0]
     }
     
-async def publish(org_id, version_id):
+async def publish(org_id, version_id, user_id):
     get_version_data = (await get_bridges_with_tools(bridge_id = None, org_id = org_id, version_id = version_id)).get('bridges')
     if not get_version_data:
         raise BadRequestException('version data not found')
     
     parent_id = str(get_version_data.get('parent_id'))
+    prompt = get_version_data.get('configuration',{}).get('prompt','')
+    variable_state = get_version_data.get('variables_state', {})
+    variable_path = get_version_data.get('variables_path', {})
+    agent_variables = Helper.get_req_opt_variables_in_prompt(prompt, variable_state, variable_path)
+
     cache_key = f"{parent_id}"
     await delete_in_cache(cache_key)
 
@@ -157,6 +164,7 @@ async def publish(org_id, version_id):
     
     if updated_configuration.get('function_ids'):
         updated_configuration['function_ids'] = [ObjectId(fid) for fid in updated_configuration['function_ids']]
+    updated_configuration['agent_variables'] = agent_variables
     
     await configurationModel.update_one(
         {'_id': ObjectId(parent_id)},
@@ -164,6 +172,13 @@ async def publish(org_id, version_id):
     )
     
     await version_model.update_one({'_id': ObjectId(published_version_id)}, {'$set': {'is_drafted': False}})
+    await add_bulk_user_entries([{
+                'user_id': user_id,
+                'org_id': org_id,
+                'bridge_id': parent_id,
+                'version_id': version_id,
+                "type": 'Version published'
+            }])
     
     return {
         "success": True,

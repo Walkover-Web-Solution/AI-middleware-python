@@ -1,27 +1,43 @@
-import json
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 import traceback
 from ...db_services import metrics_service as metrics_service
 import pydash as _
 from ..utils.helper import Helper
-import asyncio
 from .baseService.utils import sendResponse
-from ..utils.ai_middleware_format import Response_formatter, send_alert
+from ..utils.ai_middleware_format import Response_formatter
 from ..utils.send_error_webhook import send_error_to_webhook
-import json
 from src.handler.executionHandler import handle_exceptions
 from models.mongo_connection import db
-from src.services.utils.common_utils import parse_request_body, initialize_timer, load_model_configuration, handle_pre_tools, handle_fine_tune_model,manage_threads, prepare_prompt, configure_custom_settings, build_service_params, build_service_params_for_batch, add_default_template, filter_missing_vars, send_error, restructure_json_schema, process_background_tasks
+from src.services.utils.common_utils import (
+    parse_request_body,
+    initialize_timer,
+    load_model_configuration,
+    handle_pre_tools,
+    handle_fine_tune_model,
+    manage_threads,
+    prepare_prompt,
+    configure_custom_settings,
+    build_service_params,
+    build_service_params_for_batch,
+    add_default_template,
+    filter_missing_vars,
+    send_error,
+    restructure_json_schema,
+    process_background_tasks,
+    add_user_in_varaibles,
+    process_background_tasks_for_error,
+    update_usage_metrics,
+    create_latency_object,
+    create_history_params
+)
 from src.services.utils.rich_text_support import process_chatbot_response
 app = FastAPI()
 from src.services.utils.helper import Helper
-configurationModel = db["configurations"]
-import pydash as _
 from src.services.commonServices.testcases import run_testcases as run_bridge_testcases
 from globals import *
 
-
+configurationModel = db["configurations"]
 
 @app.post("/chat/{bridge_id}")
 @handle_exceptions
@@ -33,7 +49,7 @@ async def chat(request_body):
         parsed_data = parse_request_body(request_body)
 
         parsed_data['configuration']['prompt'] = add_default_template(parsed_data.get('configuration', {}).get('prompt', ''))
-
+        parsed_data['variables'] = add_user_in_varaibles(parsed_data['variables'], parsed_data['user'])
         # Step 2: Initialize Timer
         timer = initialize_timer(parsed_data['state'])
         
@@ -88,35 +104,22 @@ async def chat(request_body):
                     await process_chatbot_response(result, params, parsed_data, model_output_config, timer, params['execution_time_logs'])
                 except Exception as e:
                     raise RuntimeError(f"error in chatbot : {e}")
-            
+        parsed_data['alert_flag'] = result['modelResponse'].get('alert_flag', False)    
         if parsed_data['version'] == 2:
             result['modelResponse'] = await Response_formatter(result["modelResponse"], parsed_data['service'], result["historyParams"].get('tools', {}), parsed_data['type'], parsed_data['images'])
             if not parsed_data['is_playground']:
                 result['modelResponse']['usage'] = params['token_calculator'].get_total_usage()
             if parsed_data.get('type') != 'image':
                 parsed_data['tokens'] = Helper.calculate_usage(parsed_data['model'],result["modelResponse"],parsed_data['service'])
-        latency = {
-            "over_all_time": timer.stop("Api total time") if hasattr(timer, "start_times") else "",
-            "model_execution_time": sum(params['execution_time_logs'].values()) or "",
-            "execution_time_logs": params['execution_time_logs'] or {}
-        }
+        # Create latency object using utility function
+        latency = create_latency_object(timer, params)
         
         if not parsed_data['is_playground']:
             if result.get('modelResponse') and result['modelResponse'].get('data'):
                 result['modelResponse']['data']['message_id'] = parsed_data['message_id']
             await sendResponse(parsed_data['response_format'], result["modelResponse"], success=True, variables=parsed_data.get('variables',{}))
-            parsed_data['usage'].update({
-                **result.get("usage", {}),
-                "service": parsed_data['service'],
-                "model": parsed_data['model'],
-                "orgId": parsed_data['org_id'],
-                "latency": json.dumps(latency),
-                "success": True,
-                "variables": parsed_data['variables'],
-                "prompt": parsed_data['configuration'].get("prompt") or "",
-                "apikey_object_id": params['apikey_object_id'],
-                "expectedCost" : parsed_data['tokens'].get('expectedCost',0)
-            })
+            # Update usage metrics for successful API calls
+            update_usage_metrics(parsed_data, params, latency, result=result, success=True)
             await process_background_tasks(parsed_data, result, params, thread_info)
         return JSONResponse(status_code=200, content={"success": True, "response": result["modelResponse"]})
     
@@ -124,46 +127,15 @@ async def chat(request_body):
         if not isinstance(error, BadRequestException):
             logger.error(f'Error in chat service: %s, {str(error)}, {traceback.format_exc()}')
         if not parsed_data['is_playground']:
-            latency = {
-                "over_all_time": timer.stop("Api total time") or "",
-                "model_execution_time": sum(params['execution_time_logs'].values()) or "",
-                "execution_time_logs": params['execution_time_logs'] or {}
-            }
-            parsed_data['usage'].update({
-                **parsed_data['usage'],
-                "service": parsed_data['service'],
-                "model": parsed_data['model'],
-                "orgId": parsed_data['org_id'],
-                "latency": json.dumps(latency),
-                "success": False,
-                "error": str(error),
-                "apikey_object_id": params['apikey_object_id'],
-                "expectedCost" : parsed_data['tokens'].get('expectedCost',0),
-                "variables" : parsed_data.get('variables') or {}
-            })
-            parsed_data['historyParams'] = {
-                    "thread_id": parsed_data['thread_id'],
-                    "sub_thread_id": parsed_data['sub_thread_id'],
-                    "user": parsed_data['user'],
-                    "message": None,
-                    "org_id": parsed_data['org_id'],
-                    "bridge_id": parsed_data['bridge_id'],
-                    "model": parsed_data['model'] or parsed_data['configuration'].get("model", None),
-                    "channel": 'chat',
-                    "type": "error",
-                    "actor": "user",
-                    'tools_call_data' : error.args[1] if len(error.args) > 1 else None,
-                    "message_id": parsed_data['message_id'],
-                    "AiConfig": class_obj.aiconfig()
-                    }
+            # Create latency object and update usage metrics
+            latency = create_latency_object(timer, params)
+            update_usage_metrics(parsed_data, params, latency, error=error, success=False)
+            
+            # Create history parameters
+            parsed_data['historyParams'] = create_history_params(parsed_data, error, class_obj)
             await sendResponse(parsed_data['response_format'], result.get("modelResponse", str(error)), variables=parsed_data['variables']) if parsed_data['response_format']['type'] != 'default' else None
-            # Combine the tasks into a single asyncio.gather call
-            tasks = [
-                send_alert(data={"org_name" : parsed_data['org_name'], "bridge_name" : parsed_data['name'], "configuration": parsed_data['configuration'], "error": str(error), "message_id": parsed_data['message_id'], "bridge_id": parsed_data['bridge_id'], "message": "Exception for the code", "org_id": parsed_data['org_id']}),
-                metrics_service.create([parsed_data['usage']],parsed_data['historyParams'] , parsed_data['version_id']),
-            ]
-            # Filter out None values
-            await asyncio.gather(*[task for task in tasks if task is not None], return_exceptions=True)
+            # Process background tasks for error handling
+            await process_background_tasks_for_error(parsed_data, error)
         raise ValueError(error)
     
 

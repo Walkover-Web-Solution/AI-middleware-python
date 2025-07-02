@@ -1,9 +1,7 @@
 from fastapi import Request, HTTPException
-from fastapi.responses import JSONResponse
 from ..services.utils.getConfiguration import getConfiguration
-from src.configs.models import services
-from src.services.commonServices.common import chat
 from globals import *
+from src.configs.model_configuration import model_config_document
 
 async def add_configuration_data_to_body(request: Request):
 
@@ -12,7 +10,7 @@ async def add_configuration_data_to_body(request: Request):
         chatbotData = getattr(request.state, "chatbot", None)
         if chatbotData:
             body.update(chatbotData)
-        bridge_id = body.get("bridge_id") or request.path_params.get('bridge_id') or getattr(request.state, 'chatbot', {}).get('bridge_id', None)
+        bridge_id = body.get('agent_id') or body.get("bridge_id") or request.path_params.get('bridge_id') or getattr(request.state, 'chatbot', {}).get('bridge_id', None)
         if chatbotData:
             del request.state.chatbot
         version_id = body.get('version_id') or request.path_params.get('version_id')
@@ -20,10 +18,9 @@ async def add_configuration_data_to_body(request: Request):
         if not db_config.get("success"):
                 raise HTTPException(status_code=400, detail={"success": False, "error": db_config["error"]}) 
         body.update(db_config)
-        # request.state.body = body
         service = body.get("service")
         model = body.get("configuration").get('model')
-        if not (service in services and model in services[service]["models"]):
+        if not (service in model_config_document and model in model_config_document[service]):
             raise HTTPException(status_code=400, detail={"success": False, "error": "model or service does not exist!"})
         return db_config
     except HTTPException as he:

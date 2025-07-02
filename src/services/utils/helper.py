@@ -15,11 +15,13 @@ from ..commonServices.openAI.openai_batch import OpenaiBatch
 from ..commonServices.openAI.openai_response import OpenaiResponse
 from ..commonServices.groq.groqCall import Groq
 from ..commonServices.anthrophic.antrophicCall import Antrophic
+from ..commonServices.openRouter.openRouter_call import OpenRouter
+from ..commonServices.Mistral.mistral_call import Mistral
 from ...configs.constant import service_name
 from ..commonServices.openAI.openai_embedding_call import OpenaiEmbedding
 from ..cache_service import find_in_cache, store_in_cache
 from ..utils.apiservice import fetch
-from datetime import datetime, timezone, timedelta
+from datetime import datetime
 import pytz
 class Helper:
     @staticmethod
@@ -183,6 +185,10 @@ class Helper:
             class_obj = Groq(params)
         elif service == service_name['openai_response']:
             class_obj = OpenaiResponse(params)
+        elif service == service_name['open_router']:
+            class_obj = OpenRouter(params)
+        elif service == service_name['mistral']:
+            class_obj = Mistral(params)
             
         return class_obj
 
@@ -308,3 +314,40 @@ class Helper:
             return int(hours), int(minutes)
         except Exception as e:
             return f"Invalid timezone: {e}"
+        
+    def get_req_opt_variables_in_prompt(prompt, variable_state, variable_path):
+        def flatten_values_only(d):
+            result = {}
+            for value in d.values():  # Ignore top-level keys
+                if isinstance(value, dict):
+                    result.update(flatten_dict(value))
+            return result
+
+        def flatten_dict(d, parent_key=''):
+            flat = {}
+            for k, v in d.items():
+                new_key = f'{parent_key}.{k}' if parent_key else k
+                if isinstance(v, dict):
+                    flat.update(flatten_dict(v, new_key))
+                else:
+                    flat[new_key] = "required"
+            return flat
+
+        # Extract variables from prompt
+        prompt_vars = re.findall(r'{{(.*?)}}', prompt)
+
+        # Determine status for prompt variables
+        final = {
+            var: 'required' if variable_state.get(var) == 'required' else 'optional'
+            for var in prompt_vars
+        }
+
+        # Add flattened variable_path keys as required
+        for path in flatten_values_only(variable_path):
+            final[path] = 'required'
+
+        return final
+
+
+
+            

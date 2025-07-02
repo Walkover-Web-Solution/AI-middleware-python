@@ -26,15 +26,17 @@ from src.routes.rag_routes import router as rag_routes
 from src.routes.Internal_routes import router as Internal_routes
 from src.routes.testcase_routes import router as testcase_routes
 from models.Timescale.connections import init_async_dbservice
-from src.configs.model_configuration import init_model_configuration
 from src.routes.runagents_routes import router as runagents_routes
+from src.configs.model_configuration import init_model_configuration, background_listen_for_changes
 from globals import *
 
+
 atatus_client = atatus.get_client()
-if atatus_client is None and (Config.ENVIROMENT == 'PRODUCTION' or Config.ENVIROMENT == 'TESTING'):
+if atatus_client is None and (Config.ENVIROMENT == 'PRODUCTION'):
+    logger.info("Initializing Atatus client...")
     atatus_client = create_client({
-        'APP_NAME': f'Python - GTWY - Backend - {"PROD" if Config.ENVIROMENT == "PRODUCTION" else "DEV"}',
-        'LICENSE_KEY': 'lic_apm_75107a1dd48345c0a46ceacba62c8c32',
+        'APP_NAME': 'Python - GTWY - Backend - PROD',
+        'LICENSE_KEY': Config.ATATUS_LICENSE_KEY,
         'ANALYTICS': True,
         'ANALYTICS_CAPTURE_OUTGOING': True,
         'LOG_BODY': 'all'
@@ -64,19 +66,29 @@ async def lifespan(app: FastAPI):
         consume_task = asyncio.create_task(consume_messages_in_executor())
         consume_sub_task = asyncio.create_task(consume_sub_messages_in_executor())
     
-        
     asyncio.create_task(init_async_dbservice()) if Config.ENVIROMENT == 'LOCAL' else await init_async_dbservice()
     
     asyncio.create_task(repeat_function())
+
+    logger.info("Starting MongoDB change stream listener as a background task.")
+    change_stream_task = asyncio.create_task(background_listen_for_changes())
+    
     yield  # Startup logic is complete
+    
     # Shutdown logic
     logger.info("Shutting down...")
+    
+    logger.info("Shutting down MongoDB change stream listener.")
+    change_stream_task.cancel()
+
     if consume_task:
         consume_task.cancel()
     if consume_sub_task:
         consume_sub_task.cancel()
+
     await queue_obj.disconnect()
     await sub_queue_obj.disconnect()
+
     try:
         if consume_task:
             await consume_task
@@ -84,6 +96,11 @@ async def lifespan(app: FastAPI):
             await consume_sub_task
     except asyncio.CancelledError:
         logger.error("Consumer task was cancelled during shutdown.")
+    
+    try:
+        await change_stream_task
+    except asyncio.CancelledError:
+        logger.info("MongoDB change stream listener task successfully cancelled.")
 
 # Initialize the FastAPI app
 app = FastAPI(debug=True, lifespan=lifespan)

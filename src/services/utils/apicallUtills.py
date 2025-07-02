@@ -4,9 +4,14 @@ from src.services.cache_service import delete_in_cache
 apiCallModel = db['apicalls']
 from globals import *
 
-async def get_api_data(org_id, function_name):
+async def get_api_data(org_id, function_name, folder_id, user_id, isEmbedUser):
     try:
-        api_call_data =  await apiCallModel.find_one({"org_id": org_id, "function_name": function_name})
+        query = {"org_id": org_id, "function_name": function_name}
+        if folder_id:
+            query["folder_id"] = folder_id
+        if user_id and isEmbedUser:
+            query["user_id"] = user_id
+        api_call_data =  await apiCallModel.find_one(query)
         api_call_data['__id'] = str(api_call_data.get('_id')) if api_call_data.get('_id') else None
         return api_call_data  if api_call_data.get('_id') else None
     except Exception as error:
@@ -15,7 +20,7 @@ async def get_api_data(org_id, function_name):
 
 
 
-async def save_api(desc, org_id, api_data=None, required_params=None, function_name="", fields=None, endpoint_name="", version="v2"):
+async def save_api(desc, org_id, folder_id, user_id, api_data=None, required_params=None, function_name="", fields=None, endpoint_name="", version="v2"):
     if fields is None:
         fields = []
     if required_params is None:
@@ -48,6 +53,8 @@ async def save_api(desc, org_id, api_data=None, required_params=None, function_n
             api_data = {
                 "description": desc,
                 "org_id": org_id,
+                "folder_id": folder_id,
+                "user_id": user_id,
                 "required_params": list(fields.keys()),
                 "fields": fields,
                 "function_name": function_name,

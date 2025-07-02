@@ -1,59 +1,23 @@
 from fastapi import Request, HTTPException
 from fastapi.responses import JSONResponse
 from src.db_services.ConfigurationServices import get_bridges, get_bridges_with_tools
-from datetime import datetime, timezone
-from src.controllers.configController import duplicate_create_bridges
 from src.configs.constant import bridge_ids
 from src.services.utils.ai_call_util import call_ai_middleware
-
-import json
-
-async def duplicate_bridge(request : Request):
-    try:
-        body = await request.json()
-        org_id = request.state.profile.get("org",{}).get("id","")
-        bridge_id = body.get('bridge_id')
-        result = await get_bridges(bridge_id, org_id)
-        bridge = result.get('bridges')
-        timestamp = datetime.now(timezone.utc).strftime('%d%H%S')
-        name = bridge.get('name')
-        new_name = f"{name}_{timestamp}"
-        slugname = bridge.get('slugName')
-        new_slugName = f"{slugname}_{timestamp}"
-        # new_created_at = datetime.now(timezone.utc)
-        res = await duplicate_create_bridges({
-            "org_id": bridge.get('org_id'),
-            "service": bridge.get('service'),
-            "bridgeType": bridge.get('bridgeType'),
-            "name": new_name,
-            "configuration": bridge.get('configuration'),
-            "apikey": bridge.get('apikey'),
-            "slugName": new_slugName,
-            "function_ids": bridge.get('function_ids'),
-            "actions": bridge.get('actions',{}),
-            "apikey_object_id": bridge.get('apikey_object_id',""),
-        })
-        return JSONResponse(status_code=200, content={
-            "success": True,
-            "message": "Bridge duplicated successfully",
-            "result" : json.loads(json.dumps(res, default=str))
-
-        })
-    except Exception as e:
-        return {'error': str(e)}
+from globals import *
     
 
 async def optimize_prompt_controller(request : Request, bridge_id: str):
     try:
         body = await request.json()
         version_id = body.get('version_id')
+        variables =  { "query" : body.get('query') or ""}
         org_id = request.state.profile.get("org",{}).get("id","")
         result = await get_bridges(bridge_id, org_id, version_id)
         bridge = result.get('bridges')
         prompt = bridge.get('configuration',{}).get('prompt',"")
         bridgeName = bridge.get('name')
         result = ""
-        result = await call_ai_middleware(prompt, bridge_id = bridge_ids['optimze_prompt'], response_type='text', thread_id = bridgeName)
+        result = await call_ai_middleware(prompt,variables=variables, bridge_id = bridge_ids['optimze_prompt'], response_type='text', thread_id = bridgeName)
         return JSONResponse(status_code=200, content={
             "success": True,
             "message": "Prompt optimized successfully",
@@ -63,10 +27,6 @@ async def optimize_prompt_controller(request : Request, bridge_id: str):
     except Exception as e:
         raise HTTPException(status_code=400, detail={"success": False, "error": "Error in optimizing prompt: "+ str(e)})
     
-    
-
-
-
 async def generate_summary(request):
     try:
         body = await request.json()
@@ -92,7 +52,7 @@ async def generate_summary(request):
         })
             
     except Exception as err:
-        print("Error calling function=>", err)
+        logger.error("Error calling function generate_summary =>", err)
 async def function_agrs_using_ai(request):
     try:
         body = await request.json()
@@ -106,5 +66,5 @@ async def function_agrs_using_ai(request):
         })
             
     except Exception as err:
-        print("Error calling function=>", err)
+        logger.error("Error calling function function_agrs_using_ai =>", err)
     

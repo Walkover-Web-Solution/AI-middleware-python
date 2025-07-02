@@ -366,7 +366,7 @@ async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None)
             'pipeline': [
                 {
                     '$match': {
-                        '$expr': { '$in': ['$_id', '$$doc_ids'] }
+                        '$expr': { '$or': [{ '$in': ['$_id', '$$doc_ids']}, { '$in': ['$source.nesting.parentDocId', '$$doc_ids']}] }
                     }
                 },
                 {
@@ -571,8 +571,13 @@ async def create_bridge(data):
         logger.error(f"Error in create_bridge: {str(error)}")
         raise BadRequestException("Failed to create bridge")
 
-async def get_all_bridges_in_org(org_id):
-    bridge = configurationModel.find({"org_id": org_id}, {
+async def get_all_bridges_in_org(org_id, folder_id, user_id, isEmbedUser):
+    query = {"org_id": org_id}
+    if folder_id:
+        query["folder_id"] = folder_id
+    if user_id and isEmbedUser:
+        query["user_id"] = user_id
+    bridge = configurationModel.find(query, {
         "_id": 1,
         "name": 1,
         "service": 1,
@@ -585,7 +590,8 @@ async def get_all_bridges_in_org(org_id):
         "versions": 1,
         "published_version_id": 1,
         "total_tokens": 1,
-        "variables_state" : 1
+        "variables_state" : 1,
+        "agent_variables" : 1
     })
     bridges_list = await bridge.to_list(length=None)
     for itr in bridges_list:
@@ -700,11 +706,16 @@ async def update_apikey_creds(version_id):
         logger.error(f"Error in update_apikey_creds: {str(error)}")
         raise error
 
-async def save_sub_thread_id(org_id, thread_id, sub_thread_id, display_name):
+async def save_sub_thread_id(org_id, thread_id, sub_thread_id, display_name, bridge_id): # bridge_id is now a required parameter
     try:
         update_data = {'$setOnInsert': {'thread_id': thread_id}}
+        
+        # Fields to be set or updated
+        set_fields = {'bridge_id': bridge_id} # bridge_id will always be set
         if display_name is not None and isinstance(display_name, str):
-            update_data['$set'] = {'display_name': display_name}
+            set_fields['display_name'] = display_name
+            
+        update_data['$set'] = set_fields
        
         result = await threadsModel.find_one_and_update(
             {'org_id': org_id, 'sub_thread_id': sub_thread_id},
@@ -714,7 +725,7 @@ async def save_sub_thread_id(org_id, thread_id, sub_thread_id, display_name):
         )
         return {
             'success': True,
-            'message': f"sub_thread_id saved successfully {result}"
+            'message': f"sub_thread_id and bridge_id saved successfully {result}" # Updated success message
         }
     except Exception as error:
         logger.error(f"Error in save_sub_thread_id: {error}")

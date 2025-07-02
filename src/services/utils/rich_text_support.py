@@ -4,6 +4,7 @@ import uuid
 from src.configs.constant import bridge_ids
 from .ai_call_util import call_ai_middleware
 import json
+from globals import *
 async def process_chatbot_response(result, params, data, modelOutputConfig, timer, execution_time_logs):
 
 
@@ -37,11 +38,11 @@ async def process_chatbot_response(result, params, data, modelOutputConfig, time
         thread_id =  f"{data.get('thread_id') or random_id}-{data.get('sub_thread_id') or random_id}"
         timer.start()
         response = await call_ai_middleware(user, bridge_id = bridge_id, variables = variables, thread_id = thread_id)
-        execution_time_logs[len(execution_time_logs) + 1] = timer.stop("AI middleware")
+        execution_time_logs.append({"step": f"Processing time for Rich Text", "time_taken": timer.stop("API chat completion")})
         response = json.dumps(response)
         _.set_(result['modelResponse'], modelOutputConfig.get('message'), response)
         result['historyParams']['chatbot_message'] = response
         return
             
     except Exception as err:
-        print("Error calling function=>", err)
+        logger.error("Error calling function process_chatbot_response=>", err)
