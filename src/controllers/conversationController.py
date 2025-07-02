@@ -1,3 +1,5 @@
+import copy
+from config import Config
 from ..db_services import conversationDbService as chatbotDbService
 import traceback
 from globals import *
@@ -77,6 +79,29 @@ async def savehistory(thread_id, sub_thread_id, userMessage, botMessage, org_id,
                 'version_id': version_id,
                 "annotations" : annotations
             })
+        # sending data through rt layer
+        chatbotSaveCopy = copy.deepcopy(chatToSave)
+        for item in chatbotSaveCopy:
+            item["role"] = item.pop("message_by")
+            item["content"] = item.pop("message")
+
+        response_format_copy = {
+            'cred' : {
+                'channel': org_id + bridge_id,
+                'apikey': Config.RTLAYER_AUTH,
+                'ttl': '1'
+            },
+            'type' : 'RTLayer'
+        }
+        dataToSend={
+            'Thread':{
+                "thread_id" : thread_id,
+                "sub_thread_id": sub_thread_id,
+                "bridge_id":bridge_id
+            },
+            "Messages":chatbotSaveCopy
+        }
+        await sendResponse(response_format_copy, dataToSend, True)
 
         result = chatbotDbService.createBulk(chatToSave)
         return list(result)
