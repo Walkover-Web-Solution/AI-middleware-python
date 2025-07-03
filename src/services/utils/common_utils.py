@@ -22,7 +22,7 @@ from src.services.commonServices.baseService.utils import make_request_data_and_
 from src.db_services.metrics_service import create
 from src.controllers.conversationController import save_sub_thread_id_and_name
 from src.services.utils.ai_middleware_format import send_alert
-from src.services.cache_service import find_in_cache_and_expire
+from src.services.cache_service import find_in_cache
 
 def parse_request_body(request_body):
     body = request_body.get('body', {})
@@ -172,12 +172,15 @@ async def prepare_prompt(parsed_data, thread_info, model_config, custom_config):
         id = f"{thread_info['thread_id']}_{thread_info['sub_thread_id']}_{parsed_data.get('version_id') or parsed_data.get('bridge_id')}"
         parsed_data['id'] = id
         if gpt_memory:
-            memory = await find_in_cache_and_expire(id)
+            memory = await find_in_cache(id)
             if memory:
                 # Convert bytes to string if needed
                 if isinstance(memory, bytes):
                     memory = memory.decode('utf-8')
                 parsed_data['memory'] = memory
+            else:
+                response, _ = await fetch("https://flow.sokt.io/func/scriCJLHynCG", "POST", None, None, {"threadID": id})
+                parsed_data['memory'] = response
         configuration['prompt'], missing_vars = Helper.replace_variables_in_prompt(configuration['prompt'], variables)
         
         if template:

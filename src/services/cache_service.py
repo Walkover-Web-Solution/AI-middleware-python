@@ -26,51 +26,6 @@ async def find_in_cache(identifier: str) -> Union[str, None]:
         logger.error(f"Error finding in cache: {str(e)}")
         return None
         
-async def find_in_cache_and_expire(identifier: str) -> Union[str, None]:
-    """Find a value in cache and delete it immediately after reading (expire on read).
-    
-    This function implements the 'expire on read' pattern where a cached value is
-    retrieved once and then immediately deleted from the cache.
-    
-    Args:
-        identifier: The key to look up in the cache
-        
-    Returns:
-        The cached value if found, None otherwise
-    """
-    try:
-        key = f"{REDIS_PREFIX}{identifier}"
-        # Use a pipeline to ensure atomicity of the get and delete operations
-        pipe = client.pipeline()
-        await pipe.get(key)
-        await pipe.delete(key)
-        results = await pipe.execute()
-        return results[0]  # First result is from the GET operation
-    except Exception as e:
-        logger.error(f"Error in find_in_cache_and_expire: {str(e)}")
-        return None
-        
-async def store_in_cache_permanent_until_read(identifier: str, data: dict) -> bool:
-    """Store data in cache with no expiration time, to be retrieved only once.
-    
-    This function stores data in Redis with no expiration time (permanent storage).
-    The data will remain in Redis indefinitely until it's read using find_in_cache_and_expire.
-    
-    Args:
-        identifier: The key to store the data under
-        data: The data to store
-        
-    Returns:
-        True if successful, False otherwise
-    """
-    try:
-        serialized_data = make_json_serializable(data)
-        # Store without expiration time (no ex parameter)
-        return await client.set(f"{REDIS_PREFIX}{identifier}", json.dumps(serialized_data))
-    except Exception as e:
-        logger.error(f"Error storing in permanent cache: {str(e)}")
-        return False
-
 async def delete_in_cache(identifiers: Union[str, List[str]]) -> bool:
     if not await client.ping():
         return False
