@@ -1,6 +1,7 @@
 import json
 from config import Config
 from src.services.utils.apiservice import fetch
+from src.configs.constant import service_name
 
 async def Response_formatter(response = {}, service = None, tools={}, type='chat', images = None):
     tools_data = tools
@@ -12,7 +13,7 @@ async def Response_formatter(response = {}, service = None, tools={}, type='chat
                         except json.JSONDecodeError:
                             pass
                         
-    if service == 'openai' and (type !='image' and type != 'embedding'):
+    if service == service_name['openai'] and (type !='image' and type != 'embedding'):
         return {
             "data" : {
                 "id" : response.get("id", None),
@@ -34,14 +35,14 @@ async def Response_formatter(response = {}, service = None, tools={}, type='chat
 
             }
         }
-    elif service == 'openai' and type == 'embedding':
+    elif service == service_name['openai'] and type == 'embedding':
          return {
             "data" : {
                 "embedding" : response.get('data')[0].get('embedding')
             }
         }
     
-    elif service == 'openai':
+    elif service == service_name['openai']:
         return {
             "data" : {
                 "revised_prompt" : response.get('data')[0].get('revised_prompt'),
@@ -49,7 +50,7 @@ async def Response_formatter(response = {}, service = None, tools={}, type='chat
             }
         }
     
-    elif service == 'anthropic':
+    elif service == service_name['anthropic']:
         return {
             "data" : {
                 "id" : response.get("id", None),
@@ -73,7 +74,7 @@ async def Response_formatter(response = {}, service = None, tools={}, type='chat
                 )
             }
         }
-    elif service == 'groq':
+    elif service == service_name['groq']:
         return {
             "data" : {
                 "id" : response.get("id", None),
@@ -90,7 +91,7 @@ async def Response_formatter(response = {}, service = None, tools={}, type='chat
                 "total_tokens" : response.get("usage", {}).get("total_tokens", None)
             }
         }
-    if service == 'openai_response' and (type != 'image' and type != 'embedding'):
+    if service == service_name['openai_response'] and (type != 'image' and type != 'embedding'):
         return {
             "data": {
                 "id": response.get("id", None),
@@ -120,21 +121,21 @@ async def Response_formatter(response = {}, service = None, tools={}, type='chat
                 "cached_tokens": response.get("usage", {}).get("input_tokens_details", {}).get('cached_tokens', None)
             }
         }
-    elif service == 'openai_response' and type == 'embedding':
+    elif service == service_name['openai_response'] and type == 'embedding':
         return {
             "data": {
                 "embedding": response.get('data')[0].get('embedding')
             }
         }
     
-    elif service == 'openai_response':
+    elif service == service_name['openai_response']:
         return {
             "data": {
                 "revised_prompt": response.get('data')[0].get('revised_prompt'),
                 "image_url": response.get('data')[0].get('url')
             }
         }
-    elif service == 'open_router':
+    elif service == service_name['open_router']:
         return {
             "data" : {
                 "id" : response.get("id", None),
@@ -159,12 +160,34 @@ async def Response_formatter(response = {}, service = None, tools={}, type='chat
 
             }
         }
-    
+    elif service == service_name['mistral']:
+        return {
+            "data" : {
+                "id" : response.get("id", None),
+                "content" : response.get("choices", [{}])[0].get("message", {}).get("content", None),
+                "model" : response.get("model", None),
+                "role" : response.get("choices", [{}])[0].get("message", {}).get("role", None),
+                "finish_reason" : response.get("choices", [{}])[0].get("finish_reason", None),
+                "tools_data": tools_data or {},
+                "images" : images,
+                "annotations" : response.get("choices", [{}])[0].get("message", {}).get("annotations", None),
+                "fallback" : response.get('fallback') or False,
+                "firstAttemptError" : response.get('firstAttemptError') or ''
+            },
+            "usage" : {
+                "input_tokens" : response.get("usage", {}).get("prompt_tokens", None),
+                "output_tokens" : response.get("usage", {}).get("completion_tokens", None),
+                "total_tokens" : response.get("usage", {}).get("total_tokens", None),
+                "cached_tokens": (
+                    response.get("usage", {})
+                    .get("prompt_tokens_details", {}) or {}
+                ).get('cached_tokens')
 
-async def validateResponse(final_response,configration,bridgeId, message_id, org_id):
-    content = final_response.get("data",{}).get("content","")
-    parsed_data = content.replace(" ", "").replace("\n", "")
-    if(parsed_data == '' and content):
+            }
+        }
+
+async def validateResponse(alert_flag, configration, bridgeId, message_id, org_id):
+    if alert_flag:
         await send_alert(data={"response":"\n..\n","configration":configration,"message_id":message_id,"bridge_id":bridgeId, "org_id": org_id, "message": "\n issue occurs"})
 
 async def send_alert(data):

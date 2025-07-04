@@ -25,8 +25,9 @@ def clean_json(data):
 
 def validate_tool_call(service, response):
     match service: # TODO: Fix validation process.
-        case 'openai' | 'groq' | 'open_router':
-            return len(response.get('choices', [])[0].get('message', {}).get("tool_calls", [])) > 0
+        case 'openai' | 'groq' | 'open_router' | 'mistral':
+            tool_calls = response.get('choices', [])[0].get('message', {}).get("tool_calls", [])
+            return len(tool_calls) > 0 if tool_calls is not None else False
         case 'openai_response':
             return response.get('output')[0]['type'] == 'function_call'
         case 'anthropic':
@@ -105,7 +106,7 @@ def transform_required_params_to_required(properties, variables={}, variables_pa
     return transformed_properties
 
 def tool_call_formatter(configuration: dict, service: str, variables: dict, variables_path: dict) -> dict:
-    if service == service_name['openai'] or service == service_name['open_router']:
+    if service == service_name['openai'] or service == service_name['open_router'] or service == service_name['mistral']:
         data_to_send =  [
             {
                 'type': 'function',
@@ -223,7 +224,7 @@ async def process_data_and_run_tools(codes_mapping, tool_id_and_name_mapping, or
                 if tool_id_and_name_mapping[name].get('type') == 'RAG':
                     task = get_text_from_vectorsQuery({**tool_data.get("args"), "org_id":org_id}) 
                 elif tool_id_and_name_mapping[name].get('type') == 'AGENT':
-                    task = call_gtwy_agent({**tool_data.get("args"), "org_id":org_id, "bridge_id": tool_id_and_name_mapping[name].get("bridge_id")})
+                    task = call_gtwy_agent({"org_id":org_id, "bridge_id": tool_id_and_name_mapping[name].get("bridge_id"), "user": tool_data.get("args").get("user"), "variables": {key: value for key, value in tool_data.get("args").items() if key != "user"}})
                 else: 
                     task = axios_work(tool_data.get("args"), tool_id_and_name_mapping[name])
                 tasks.append((tool_call_key, tool_data, task))
@@ -288,7 +289,7 @@ def make_code_mapping_by_service(responses, service):
     codes_mapping = {}
     function_list = []
     match service:
-        case 'openai' | 'groq' | 'open_router':
+        case 'openai' | 'groq' | 'open_router' | 'mistral':
 
             for tool_call in responses['choices'][0]['message']['tool_calls']:
                 name = tool_call['function']['name']
@@ -377,61 +378,61 @@ async def make_request_data(request: Request):
 
 async def make_request_data_and_publish_sub_queue(parsed_data, result, params, thread_info):
     suggestion_content = {'data': {'content': {}}}
-    suggestion_content['data']['content'] = result['historyParams']['message'] if parsed_data['is_rich_text'] == True else result['modelResponse']
+    suggestion_content['data']['content'] = result.get('historyParams', {}).get('message') if parsed_data.get('is_rich_text') == True else result.get('modelResponse')
     data = {
         "save_sub_thread_id_and_name" : {
-            "org_id" : parsed_data['org_id'],
-            "thread_id" : thread_info['thread_id'],
-            "sub_thread_id" : thread_info['sub_thread_id'],
-            "thread_flag" : parsed_data['thread_flag'],
-            "response_format" : parsed_data['response_format'],
-            "bridge_id" : parsed_data['bridge_id'],
-            "user" : parsed_data['user']
-
+            "org_id" : parsed_data.get('org_id'),
+            "thread_id" : thread_info.get('thread_id'),
+            "sub_thread_id" : thread_info.get('sub_thread_id'),
+            "thread_flag" : parsed_data.get('thread_flag'),
+            "response_format" : parsed_data.get('response_format'),
+            "bridge_id" : parsed_data.get('bridge_id'),
+            "user" : parsed_data.get('user')
         },
         "metrics_service": {
-            "dataset": [parsed_data['usage']],
-            "history_params": result["historyParams"],
-            "version_id": parsed_data['version_id']
+            "dataset": [parsed_data.get('usage', {})],
+            "history_params": result.get("historyParams", {}),
+            "version_id": parsed_data.get('version_id')
         },
         "validateResponse": {
-            "final_response": result['modelResponse'],
-            "configration": parsed_data['configuration'],
-            "bridgeId": parsed_data['bridge_id'],
-            "message_id": parsed_data['message_id'],
-            "org_id": parsed_data['org_id']
+            "alert_flag": parsed_data.get('alert_flag'),
+            "configration": parsed_data.get('configuration'),
+            "bridgeId": parsed_data.get('bridge_id'),
+            "message_id": parsed_data.get('message_id'),
+            "org_id": parsed_data.get('org_id')
         },
         "total_token_calculation": {
-            "tokens": parsed_data['tokens'],
-            "bridge_id": parsed_data['bridge_id']
+            "tokens": parsed_data.get('tokens', {}),
+            "bridge_id": parsed_data.get('bridge_id')
         },
         "get_bridge_avg_response_time": {
-            "org_id": parsed_data['org_id'],
-            "bridge_id": parsed_data['bridge_id']
+            "org_id": parsed_data.get('org_id'),
+            "bridge_id": parsed_data.get('bridge_id')
         },
         "chatbot_suggestions" : {
-            "response_format": parsed_data['response_format'],
+            "response_format": parsed_data.get('response_format'),
             "assistant": suggestion_content,
-            "user": parsed_data['user'],
-            "bridge_summary": parsed_data['bridge_summary'],
-            "thread_id": parsed_data['thread_id'],
-            "sub_thread_id": parsed_data['sub_thread_id'],
-            "configuration": params['configuration']
+            "user": parsed_data.get('user'),
+            "bridge_summary": parsed_data.get('bridge_summary'),
+            "thread_id": parsed_data.get('thread_id'),
+            "sub_thread_id": parsed_data.get('sub_thread_id'),
+            "configuration": params.get('configuration', {})
         },
         "handle_gpt_memory" : {
-            "id" : parsed_data['id'],
-            "user" :  parsed_data['user'],
-            "assistant" :  result['modelResponse'],
-            "purpose" :  parsed_data['memory'],
-            "gpt_memory_context" :  parsed_data['gpt_memory_context']
+            "id" : parsed_data.get('id'),
+            "user" : parsed_data.get('user'),
+            "assistant" : result.get('modelResponse'),
+            "purpose" : parsed_data.get('memory'),
+            "gpt_memory_context" : parsed_data.get('gpt_memory_context')
         },
         "check_handle_gpt_memory" : {
-            "gpt_memory" :  parsed_data['gpt_memory'],
-            "type" :  parsed_data['configuration']['type']
+            "gpt_memory" : parsed_data.get('gpt_memory'),
+            "type" : parsed_data.get('configuration', {}).get('type')
         },
         "check_chatbot_suggestions" : {
-            "bridgeType" :  parsed_data['bridgeType'],
-            }
+            "bridgeType" : parsed_data.get('bridgeType'),
+        },
+        "type" : parsed_data.get('type')
     }
 
     return data

@@ -32,6 +32,7 @@ from globals import *
 
 atatus_client = atatus.get_client()
 if atatus_client is None and (Config.ENVIROMENT == 'PRODUCTION'):
+    logger.info("Initializing Atatus client...")
     atatus_client = create_client({
         'APP_NAME': 'Python - GTWY - Backend - PROD',
         'LICENSE_KEY': Config.ATATUS_LICENSE_KEY,

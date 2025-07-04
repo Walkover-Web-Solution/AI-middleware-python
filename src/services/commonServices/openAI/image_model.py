@@ -12,7 +12,7 @@ async def OpenAIImageModel(configuration, apiKey, execution_time_logs, timer):
         openai_config = AsyncOpenAI(api_key=apiKey)
         timer.start()
         chat_completion = await openai_config.images.generate(**configuration)
-        execution_time_logs[len(execution_time_logs) + 1] = timer.stop("Openai image stop")
+        execution_time_logs.append({"step": "OpenAI image Processing time", "time_taken": timer.stop("OpenAI image Processing time")})
         response = chat_completion.to_dict()
         timer.start()
         image_url = response['data'][0]['url']
@@ -33,13 +33,13 @@ async def OpenAIImageModel(configuration, apiKey, execution_time_logs, timer):
         # Get the public URL
         gcp_url = f"https://resources.gtwy.ai/{filename}"
         response['data'][0]['url'] = gcp_url
-        execution_time_logs[len(execution_time_logs) + 1] = timer.stop("Openai image stop")
+        execution_time_logs.append({"step": "OpenAI image Processing time", "time_taken": timer.stop("OpenAI image Processing time")})
         return {
             'success': True,
             'response': response
         }
     except Exception as error:
-        execution_time_logs[len(execution_time_logs) + 1] = timer.stop("Openai image stop")
+        execution_time_logs.append({"step": "OpenAI image Processing time", "time_taken": timer.stop("OpenAI image Processing time")})
         print("runmodel error=>", error)
         traceback.print_exc()
         return {

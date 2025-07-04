@@ -8,13 +8,13 @@ from .utils import validate_tool_call, tool_call_formatter, sendResponse, make_c
 from src.configs.serviceKeys import ServiceKeys
 from ..openAI.runModel import runModel, openai_response_model
 from ..anthrophic.antrophicModelRun import anthropic_runmodel
+from ..Mistral.mistral_model_run import mistral_model_run
 from ....configs.constant import service_name
 from ..groq.groqModelRun import groq_runmodel
 from ..openRouter.openRouter_modelrun import openrouter_modelrun
 from ....configs.constant import service_name
 from ..openAI.image_model import OpenAIImageModel
 from concurrent.futures import ThreadPoolExecutor
-from src.configs.model_configuration import model_config_document
 from globals import *
 
 
@@ -83,7 +83,7 @@ class BaseService:
             tools[function_response['name']] = function_response['content']
         
             match service:
-                case 'openai' | 'groq' | 'open_router':
+                case 'openai' | 'groq' | 'open_router' | 'mistral':
                     assistant_tool_calls = response['choices'][0]['message']['tool_calls'][index]
                     configuration['messages'].append({'role': 'assistant', 'content': None, 'tool_calls': [assistant_tool_calls]})
                     tool_calls_id = assistant_tool_calls['id']
@@ -172,7 +172,8 @@ class BaseService:
             service_name['groq'],
             service_name['anthropic'],
             service_name['openai_response'],
-            service_name['open_router']
+            service_name['open_router'],
+            service_name['mistral']
         ]:
             usage_config = self.modelOutputConfig['usage'][0]
 
@@ -184,7 +185,7 @@ class BaseService:
                 self.completion_tokens = get_combined_tokens(usage_config['completion_tokens'])
                 self.total_tokens = self.prompt_tokens + self.completion_tokens
 
-            if self.service in [service_name['openai'], service_name['groq'], service_name['open_router']]:
+            if self.service in [service_name['openai'], service_name['groq'], service_name['open_router'], service_name['mistral']]:
                     cached_tokens_key = usage_config.get('cached_tokens', 0)
                     self.cached_tokens = get_combined_tokens(cached_tokens_key)
                     _.set_(model_response, cached_tokens_key, self.cached_tokens)
@@ -195,7 +196,7 @@ class BaseService:
                 _.set_(model_response, usage_config.get('cache_creation_input_tokens', 0), self.cache_creation_input_tokens)
                 _.set_(model_response, usage_config.get('cache_read_input_tokens', 0), self.cache_read_input_tokens)
 
-            if self.service in [service_name['openai'], service_name['anthropic'], service_name['groq'], service_name['open_router']]:
+            if self.service in [service_name['openai'], service_name['anthropic'], service_name['groq'], service_name['open_router'], service_name['mistral']]:
                 _.set_(model_response, usage_config['prompt_tokens'], self.prompt_tokens)
                 _.set_(model_response, usage_config['completion_tokens'], self.completion_tokens)
 
@@ -206,7 +207,7 @@ class BaseService:
 
     def calculate_usage(self, model_response):
         match self.service:
-            case 'openai' | 'groq' | 'open_router':
+            case 'openai' | 'groq' | 'open_router' | 'mistral':
                 usage = {}
                 usage["totalTokens"] = _.get(model_response, self.modelOutputConfig['usage'][0]['total_tokens'])
                 usage["inputTokens"] = _.get(model_response, self.modelOutputConfig['usage'][0]['prompt_tokens'])
@@ -286,6 +287,8 @@ class BaseService:
                 response = await groq_runmodel(configuration, apikey, self.execution_time_logs, self.bridge_id,  self.timer, self.name, self.org_name, service, count)
             elif service == service_name['open_router']:
                 response = await openrouter_modelrun(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer, self.message_id, self.org_id, self.name, self.org_name, service, count)
+            elif service == service_name['mistral']:
+                response = await mistral_model_run(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer, self.name, self.org_name, service, count)
             if not response['success']:
                 raise ValueError(response['error'], self.func_tool_call_data)
             return {
@@ -304,7 +307,11 @@ class BaseService:
 
         for key, value in codes_mapping.items():
             args = value.get('args')
-            function_name = self.tool_id_and_name_mapping.get(value.get('name'), {}).get('name', value.get('name'))
+            function_name = value.get('name')
+            if(self.tool_id_and_name_mapping.get(value.get('name'), {}).get('type', '') == 'AGENT'):
+                function_name = self.tool_id_and_name_mapping.get(value.get('name'), {}).get('bridge_id', '')
+            else:
+                function_name = self.tool_id_and_name_mapping.get(value.get('name'), {}).get('name', value.get('name'))
 
             if args is not None and function_name in variables_path:
                 function_variables_path = variables_path[function_name]

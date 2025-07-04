@@ -366,7 +366,7 @@ async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None)
             'pipeline': [
                 {
                     '$match': {
-                        '$expr': { '$in': ['$_id', '$$doc_ids'] }
+                        '$expr': { '$or': [{ '$in': ['$_id', '$$doc_ids']}, { '$in': ['$source.nesting.parentDocId', '$$doc_ids']}] }
                     }
                 },
                 {
@@ -571,8 +571,13 @@ async def create_bridge(data):
         logger.error(f"Error in create_bridge: {str(error)}")
         raise BadRequestException("Failed to create bridge")
 
-async def get_all_bridges_in_org(org_id):
-    bridge = configurationModel.find({"org_id": org_id}, {
+async def get_all_bridges_in_org(org_id, folder_id, user_id, isEmbedUser):
+    query = {"org_id": org_id}
+    if folder_id:
+        query["folder_id"] = folder_id
+    if user_id and isEmbedUser:
+        query["user_id"] = user_id
+    bridge = configurationModel.find(query, {
         "_id": 1,
         "name": 1,
         "service": 1,
@@ -585,7 +590,8 @@ async def get_all_bridges_in_org(org_id):
         "versions": 1,
         "published_version_id": 1,
         "total_tokens": 1,
-        "variables_state" : 1
+        "variables_state" : 1,
+        "agent_variables" : 1
     })
     bridges_list = await bridge.to_list(length=None)
     for itr in bridges_list:

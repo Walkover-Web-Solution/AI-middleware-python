@@ -24,6 +24,8 @@ async def create_bridges_controller(request):
         bridges = await request.json()
         purpose = bridges.get('purpose')
         org_id = request.state.profile['org']['id']
+        folder_id = request.state.folder_id if hasattr(request.state, 'folder_id') else None
+        user_id = request.state.user_id
         prompt = None
         if 'templateId' in bridges:
             template_id = bridges['templateId']
@@ -87,7 +89,7 @@ async def create_bridges_controller(request):
         "type": "default", # need changes
         "cred": {}
         } 
-        model_data["is_rich_text"]= True
+        model_data["is_rich_text"]= False
         if prompt is not None:
             model_data['prompt'] = prompt
         result = await create_bridge({
@@ -98,7 +100,9 @@ async def create_bridges_controller(request):
             "bridgeType": bridgeType,
             "org_id" : org_id,
             "status": status,
-            "gpt_memory" : True
+            "gpt_memory" : True,
+            "folder_id" : folder_id,
+            "user_id" : user_id
         })
         create_version = await create_bridge_version(result['bridge'])
         update_fields = {'versions' : [create_version]}
@@ -160,7 +164,10 @@ async def get_bridge(request, bridge_id: str):
 async def get_all_bridges(request):
     try:
         org_id = request.state.profile['org']['id']
-        bridges = await get_all_bridges_in_org(org_id)
+        folder_id = request.state.folder_id if hasattr(request.state, 'folder_id') else None
+        user_id = request.state.user_id if hasattr(request.state, 'user_id') else None
+        isEmbedUser = request.state.embed
+        bridges = await get_all_bridges_in_org(org_id, folder_id, user_id, isEmbedUser)
         embed_token = Helper.generate_token({ "org_id": Config.ORG_ID, "project_id": Config.PROJECT_ID, "user_id": org_id },Config.Access_key )
         alerting_embed_token = Helper.generate_token({ "org_id": Config.ORG_ID, "project_id": Config.ALERTING_PROJECT_ID, "user_id": org_id },Config.Access_key )
         trigger_embed_token = Helper.generate_token({ "org_id": Config.ORG_ID, "project_id": Config.TRIGGER_PROJECT_ID, "user_id": org_id },Config.Access_key )
@@ -244,7 +251,14 @@ async def get_all_service_controller():
     return {
         "success": True,
         "message": "Get all service successfully",
-        "services": ['openai', 'anthropic', 'groq', 'openai_response', 'open_router']
+        "services": {
+            "openai": {"model": "gpt-4o"},
+            "anthropic": {"model": "claude-3-7-sonnet-latest"},
+            "groq": {"model": "llama3-70b-8192"},
+            "openai_response": {"model": "gpt-4o"},
+            "open_router": {"model": "deepseek/deepseek-chat-v3-0324:free"},
+            "mistral": {"model": "mistral-medium-latest"}
+        }
     }
 
 async def update_bridge_controller(request, bridge_id=None, version_id=None):
@@ -367,7 +381,13 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
             agent_status = agents.get('agent_status')
             if connected_agents is not None:
                 operation_value = 1 if agent_status == '1' else 0
+                if operation_value == 0 and connected_agents:
+                    for agent_name, agent_info in connected_agents.items():
+                        if agent_info.get('bridge_id') and agent_info.get('bridge_id') in current_variables_path:
+                            del current_variables_path[agent_info.get('bridge_id')]
+                            update_fields['variables_path'] = current_variables_path
                 await update_agents(version_id, connected_agents, operation_value)
+                    
         
         # Process function updates
         function_data = body.get('functionData', {})
