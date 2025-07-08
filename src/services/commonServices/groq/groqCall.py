@@ -2,6 +2,7 @@ import pydash as _
 from ..baseService.baseService import BaseService
 from ..createConversations import ConversationService
 from src.configs.constant import service_name
+from src.services.utils.ai_middleware_format import Response_formatter
 
 class Groq(BaseService):
     async def execute(self):
@@ -30,9 +31,9 @@ class Groq(BaseService):
             self.update_model_response(model_response, functionCallRes)
             tools = functionCallRes.get("tools", {}) 
             
-        
+        response = await Response_formatter(model_response, service_name['groq'], tools, self.type, self.image_data)
         if not self.playground:
             usage = self.token_calculator.calculate_usage(model_response)
-            historyParams = self.prepare_history_params(model_response, tools)
+            historyParams = self.prepare_history_params(response, model_response, tools)
         
-        return {'success': True, 'modelResponse': model_response, 'historyParams': historyParams, 'usage': usage }
+        return {'success': True, 'modelResponse': model_response, 'historyParams': historyParams, 'usage': usage, 'response': response }

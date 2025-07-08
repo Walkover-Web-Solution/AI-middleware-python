@@ -2,7 +2,8 @@ import pydash as _
 from ..baseService.baseService import BaseService
 from src.configs.constant import service_name
 from ..createConversations import ConversationService
-from ....services.utils.apiservice import fetch_images_b64
+from ....services.utils.apiservice import  fetch_images_b64
+from src.services.utils.ai_middleware_format import Response_formatter
 
 
 class Antrophic(BaseService):
@@ -35,8 +36,8 @@ class Antrophic(BaseService):
         
         self.update_model_response(modelResponse, functionCallRes)
         tools = functionCallRes.get("tools", {})
-
+        response = await Response_formatter(modelResponse, service_name['anthropic'], tools, self.type, self.image_data)
         if not self.playground:
             usage = self.token_calculator.calculate_usage(modelResponse)
-            historyParams = self.prepare_history_params(modelResponse, tools)
-        return {'success': True, 'modelResponse': modelResponse, 'historyParams': historyParams, 'usage': usage }
+            historyParams = self.prepare_history_params(response, modelResponse, tools)
+        return {'success': True, 'modelResponse': modelResponse, 'historyParams': historyParams, 'usage': usage, 'response': response }

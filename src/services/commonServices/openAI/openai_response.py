@@ -3,6 +3,7 @@ from ..baseService.baseService import BaseService
 from ..createConversations import ConversationService
 from src.configs.constant import service_name
 from src.configs.model_configuration import model_config_document
+from src.services.utils.ai_middleware_format import Response_formatter
 
 class OpenaiResponse(BaseService):
     async def execute(self):
@@ -46,10 +47,10 @@ class OpenaiResponse(BaseService):
                 raise ValueError(functionCallRes.get('error'))
             self.update_model_response(modelResponse, functionCallRes)
             tools = functionCallRes.get("tools", {})
-        
+        response = await Response_formatter(modelResponse, service_name['openai_response'], tools, self.type, self.image_data)
         if not self.playground:
             usage = self.token_calculator.calculate_usage(modelResponse)
-            historyParams = self.prepare_history_params(modelResponse, tools)
+            historyParams = self.prepare_history_params(response, modelResponse, tools)
         
-        return {'success': True, 'modelResponse': modelResponse, 'historyParams': historyParams, 'usage': usage }
+        return {'success': True, 'modelResponse': modelResponse, 'historyParams': historyParams, 'usage': usage, 'response': response }
     
