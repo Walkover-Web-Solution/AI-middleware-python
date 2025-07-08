@@ -8,6 +8,8 @@ import httpx
 from globals import *
 from config import Config
 import time
+from mistralai import Mistral
+from mistralai.models import UserMessage
 
 async def make_data_if_proxy_token_given(req):
     headers = {
@@ -37,44 +39,40 @@ async def content_guard_middleware(request: Request):
         body = await request.json()
         user = body.get('user')
         
-        # Get API key from request body
-        cerebras_api_key = Config.CEREBRAS_API_KEY
-        # Prepare request for Cerebras API
-        headers = {
-            'Content-Type': 'application/json',
-            'Authorization': f'Bearer {cerebras_api_key}'
-        }
+        # Initialize Mistral client
+        mistral_api_key = Config.MISTRAL_API_KEY
+        mistral = Mistral(api_key=mistral_api_key)
         
         # Check the latest user message
         latest_user_message = user
         
-        payload = {
-            'model': 'llama-4-scout-17b-16e-instruct',
-            'messages': [{'content': f'Analyze if the following content contains harmful, illegal, unethical, or dangerous instructions or requests. Respond with only "HARMFUL" if it does, or "SAFE" if it does not: "{latest_user_message}"', 'role': 'user'}],
+        # Prepare Mistral request config
+        config = {
+            'model': 'mistral-small-2506',  # Using Mistral model for content moderation
+            'messages': [UserMessage(content=f'Analyze if the following content contains harmful, illegal, unethical, or dangerous instructions or requests. Respond with only "HARMFUL" if it does, or "SAFE" if it does not: "{latest_user_message}"')],
+            'max_tokens': 10  # Keep response short since we only need HARMFUL/SAFE
         }
         
-        # Call Cerebras API
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            response = await client.post(
-                'https://api.cerebras.ai/v1/chat/completions',
-                headers=headers,
-                json=payload
-            )
+        # Call Mistral API
+        try:
+            chat_completion = await mistral.chat.complete_async(**config)
+            result = chat_completion.model_dump()
+            content = result.get('choices', [{}])[0].get('message', {}).get('content', '')
             
-            if response.status_code == 200:
-                result = response.json()
-                content = result.get('choices', [{}])[0].get('message', {}).get('content', '')
-                
-                # Check if content is harmful
-                if 'HARMFUL' in content.upper():
-                    # Return harmful content response
-                    raise HTTPException(
-                        status_code=400,
-                        detail="Your request contains content that may be harmful or violates our content policy."
-                    )
-            else:
-                # Log error but allow request to proceed if guard check fails
-                logger.error(f"Content guard API error: {response.status_code} - {response.text}")
+            # Check if content is harmful
+            if 'HARMFUL' in content.upper():
+                # Return harmful content response
+                print(f"Content guard middleware execution time: {time.time() - start_time} seconds")
+                raise HTTPException(
+                    status_code=400,
+                    detail="Your request contains content that may be harmful or violates our content policy."
+                )
+        except HTTPException as http_err:
+            # Re-raise HTTP exceptions
+            raise http_err
+        except Exception as error:
+            # Log error but allow request to proceed if guard check fails
+            logger.error(f"Content guard API error: {str(error)}")
                 
     except HTTPException:
         # Re-raise HTTP exceptions
