@@ -25,7 +25,7 @@ async def find_in_cache(identifier: str) -> Union[str, None]:
     except Exception as e:
         logger.error(f"Error finding in cache: {str(e)}")
         return None
-
+        
 async def delete_in_cache(identifiers: Union[str, List[str]]) -> bool:
     if not await client.ping():
         return False
@@ -127,4 +127,4 @@ def make_json_serializable(data):
     except (TypeError, OverflowError):
         return str(data)
 
-__all__ = ['delete_in_cache', 'store_in_cache', 'find_in_cache', 'verify_ttl', 'clear_cache','store_in_cache_for_batch', 'find_in_cache_for_batch', 'delete_in_cache_for_batch']
+__all__ = ['delete_in_cache', 'store_in_cache', 'find_in_cache', 'find_in_cache_and_expire', 'store_in_cache_permanent_until_read', 'verify_ttl', 'clear_cache','store_in_cache_for_batch', 'find_in_cache_for_batch', 'delete_in_cache_for_batch']
