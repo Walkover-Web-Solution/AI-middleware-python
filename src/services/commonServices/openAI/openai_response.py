@@ -11,17 +11,11 @@ class OpenaiResponse(BaseService):
         
         developer = [{"role": "developer", "content": self.configuration['prompt']}] if not self.reasoning_model else []
         
-        if self.image_data:
+        if self.image_data and isinstance(self.image_data, list):
             self.customConfig["input"] = developer + conversation
-            if self.user:
-                user = [{"type": "input_text", "text": self.user}]
-                if isinstance(self.image_data, list):
-                    user.extend({"type": "input_image", "image_url": image_url} for image_url in self.image_data)
-                self.customConfig["input"].append({'role': 'user', 'content': user})
-            else:
-                if isinstance(self.image_data, list):
-                    image_content = [{"type": "input_image", "image_url": image_url} for image_url in self.image_data]
-                    self.customConfig["input"].append({'role': 'user', 'content': image_content})
+            image_content = [{"type": "input_image", "image_url": url} for url in self.image_data]
+            content = [{"type": "input_text", "text": self.user}] + image_content if self.user else image_content
+            self.customConfig["input"].append({'role': 'user', 'content': content})
         else:
             user = [{"role": "user", "content": self.user}] if self.user else []
             self.customConfig["input"] = developer + conversation + user

@@ -18,10 +18,7 @@ class Antrophic(BaseService):
             images_data = await fetch_images_b64(self.image_data)
             images_input = [{'type': 'image', 'source': {'type': 'base64', 'media_type': image_media_type, 'data': image_data}} for image_data, image_media_type in images_data]
         
-        if self.user:
-            self.customConfig["messages"] = conversation + [{"role": "user", "content": images_input + [{"type": "text", "text": self.user}]}]
-        else:
-            self.customConfig["messages"] = conversation + [{"role": "user", "content": images_input}] if images_input else conversation
+        self.customConfig["messages"] = conversation + [{"role": "user", "content": (images_input + [{"type": "text", "text": self.user}] if self.user else images_input)}] if images_input or self.user else conversation
         self.customConfig['tools'] = self.tool_call if self.tool_call and len(self.tool_call) != 0 else []
         self.customConfig = self.service_formatter(self.customConfig, service_name['anthropic'])
         antrophic_response = await self.chats(self.customConfig, self.apikey, service_name['anthropic'])
