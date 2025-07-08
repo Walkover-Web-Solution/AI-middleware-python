@@ -9,7 +9,6 @@ class OpenaiResponse(BaseService):
         historyParams, usage, tools = {}, {}, {}
         conversation = ConversationService.createOpenAiResponseConversation(self.configuration.get('conversation'), self.memory).get('messages', [])
         
-        user = [{"role": "user", "content": self.user}] if self.user else []
         developer = [{"role": "developer", "content": self.configuration['prompt']}] if not self.reasoning_model else []
         
         if self.image_data:
@@ -19,7 +18,12 @@ class OpenaiResponse(BaseService):
                 if isinstance(self.image_data, list):
                     user.extend({"type": "input_image", "image_url": image_url} for image_url in self.image_data)
                 self.customConfig["input"].append({'role': 'user', 'content': user})
+            else:
+                if isinstance(self.image_data, list):
+                    image_content = [{"type": "input_image", "image_url": image_url} for image_url in self.image_data]
+                    self.customConfig["input"].append({'role': 'user', 'content': image_content})
         else:
+            user = [{"role": "user", "content": self.user}] if self.user else []
             self.customConfig["input"] = developer + conversation + user
         
         self.customConfig = self.service_formatter(self.customConfig, service_name['openai_response'])
