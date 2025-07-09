@@ -7,15 +7,6 @@ from src.middlewares.middleware import jwt_middleware
 
 router = APIRouter()
 
-# async def auth_and_rate_limit(request: Request):
-#     await agents_auth(request)
-#     await rate_limit(request,key_path='body.limiter_key' , points=10)
-
-# @router.post("/{agent}/sendMessage", dependencies=[Depends(auth_and_rate_limit)])
-# async def send_message(request: Request, agent: str):
-#    result = await get_agent_data(request, agent)
-#    return result
-
 @router.post("/public/login")
 async def login_user(request: Request):
    result = await login_public_user(request)
