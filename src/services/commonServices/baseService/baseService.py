@@ -89,13 +89,21 @@ class BaseService:
                     tool_calls_id = assistant_tool_calls['id']
                     configuration['messages'].append(mapping_response_data[tool_calls_id])
                 case 'openai_response':
-                    assistant_tool_calls = response['output'][index]
-                    configuration['input'].append(assistant_tool_calls)
-                    tool_calls_id = assistant_tool_calls['id']
-                    configuration['input'].append({                           
+                    # First, add all reasoning outputs to the configuration
+                    for output in response['output']:
+                        if output.get('type') == 'reasoning':
+                            configuration['input'].append(output)
+                    
+                    # Then handle function calls using the index parameter
+                    function_call_outputs = [output for output in response['output'] if output.get('type') == 'function_call']
+                    if index < len(function_call_outputs):
+                        output = function_call_outputs[index]
+                        configuration['input'].append(output)
+                        tool_calls_id = output['id']
+                        configuration['input'].append({                           
                             "type": "function_call_output",
-                            "call_id": assistant_tool_calls['call_id'],
-                            "output":  mapping_response_data[tool_calls_id]['content']
+                            "call_id": output['call_id'],
+                            "output": mapping_response_data[tool_calls_id]['content']
                         })
                 case 'anthropic':
                     ordered_json = {"type":"tool_result",  
