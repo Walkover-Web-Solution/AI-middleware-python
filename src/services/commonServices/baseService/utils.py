@@ -395,7 +395,7 @@ async def make_request_data_and_publish_sub_queue(parsed_data, result, params, t
             "version_id": parsed_data.get('version_id')
         },
         "validateResponse": {
-            "final_response": result.get('modelResponse'),
+            "alert_flag": parsed_data.get('alert_flag'),
             "configration": parsed_data.get('configuration'),
             "bridgeId": parsed_data.get('bridge_id'),
             "message_id": parsed_data.get('message_id'),

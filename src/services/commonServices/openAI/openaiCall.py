@@ -2,6 +2,7 @@ import pydash as _
 from ..baseService.baseService import BaseService
 from ..createConversations import ConversationService
 from src.configs.constant import service_name
+from src.services.utils.ai_middleware_format import Response_formatter
 
 class UnifiedOpenAICase(BaseService):
     async def execute(self):
@@ -29,12 +30,13 @@ class UnifiedOpenAICase(BaseService):
                     self.customConfig["messages"] = [ {"role": "developer", "content": self.configuration['prompt']}] + conversation + ([{"role": "user", "content": self.user}] if self.user else []) 
                 else:
                     self.customConfig["messages"] = [{"role": "developer", "content": self.configuration['prompt']}] + conversation
+                    user_content = []
                     if self.user:
                         user_content = [{"type": "text", "text": self.user}]
-                        if isinstance(self.image_data, list):
-                            for image_url in self.image_data:
-                                user_content.append({"type": "image_url", "image_url": {"url": image_url}})
-                        self.customConfig["messages"].append({'role': 'user', 'content': user_content})
+                    if isinstance(self.image_data, list):
+                        for image_url in self.image_data:
+                            user_content.append({"type": "image_url", "image_url": {"url": image_url}})
+                    self.customConfig["messages"].append({'role': 'user', 'content': user_content})
                 self.customConfig =self.service_formatter(self.customConfig, service_name['openai'])
                 if 'tools' not in self.customConfig and 'parallel_tool_calls' in self.customConfig:
                     del self.customConfig['parallel_tool_calls']
@@ -51,8 +53,9 @@ class UnifiedOpenAICase(BaseService):
                     raise ValueError(functionCallRes.get('error'))
                 self.update_model_response(modelResponse, functionCallRes)
                 tools = functionCallRes.get("tools", {})
+            response = await Response_formatter(modelResponse, service_name['openai'], tools, self.type, self.image_data)
             if not self.playground:
                 usage = self.token_calculator.calculate_usage(modelResponse)
-                historyParams = self.prepare_history_params(modelResponse, tools)
-        return {'success': True, 'modelResponse': modelResponse, 'historyParams': historyParams, 'usage': usage }
+                historyParams = self.prepare_history_params(response, modelResponse, tools)
+        return {'success': True, 'modelResponse': modelResponse, 'historyParams': historyParams, 'usage': usage, 'response': response }
     

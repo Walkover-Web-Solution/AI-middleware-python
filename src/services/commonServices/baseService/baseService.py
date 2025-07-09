@@ -223,17 +223,17 @@ class BaseService:
             case  _:
                 pass
         return usage
-    def prepare_history_params(self, model_response, tools):
+    def prepare_history_params(self,response, model_response, tools):
         return {
             'thread_id': self.thread_id,
             'sub_thread_id': self.sub_thread_id,
             'user': self.user if self.user else json.dumps(self.tool_call),
-            'message': _.get(model_response, self.modelOutputConfig['message']) if _.get(model_response, self.modelOutputConfig.get('tools')) else _.get(model_response, self.modelOutputConfig['message']),
+            'message': response.get('data').get('content') or "",
             'org_id': self.org_id,
             'bridge_id': self.bridge_id,
             'model': self.configuration.get('model'),
             'channel': 'chat',
-            'type': "assistant" if _.get(model_response, self.modelOutputConfig['message']) else "tool_calls",
+            'type': "assistant" if response.get('data').get('content') else "tool_calls",
             'actor': "user" if self.user else "tool",
             'tools': tools,
             'chatbot_message' : "",
