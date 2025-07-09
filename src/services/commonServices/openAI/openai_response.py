@@ -40,7 +40,7 @@ class OpenaiResponse(BaseService):
                 await self.handle_failure(openAIResponse)
             raise ValueError(openAIResponse.get('error'))
         
-        if modelResponse.get('output', [])[0].get('type') == 'function_call':
+        if any(output.get('type') == 'function_call' for output in modelResponse.get('output', [])):
             functionCallRes = await self.function_call(self.customConfig, service_name['openai_response'], openAIResponse, 0, {})
             if not functionCallRes.get('success'):
                 await self.handle_failure(functionCallRes)

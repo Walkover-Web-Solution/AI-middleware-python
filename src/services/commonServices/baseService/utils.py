@@ -29,7 +29,7 @@ def validate_tool_call(service, response):
             tool_calls = response.get('choices', [])[0].get('message', {}).get("tool_calls", [])
             return len(tool_calls) > 0 if tool_calls is not None else False
         case 'openai_response':
-            return response.get('output')[0]['type'] == 'function_call'
+            return any(output.get('type') == 'function_call' for output in response.get('output', []))
         case 'anthropic':
             for item in response.get('content', []):
                 if item.get('name') == 'JSON_Schema_Response_Format':
@@ -309,7 +309,7 @@ def make_code_mapping_by_service(responses, service):
                 function_list.append(name)
         case 'openai_response':
 
-            for tool_call in responses['output']:
+            for tool_call in [output for output in responses['output'] if output.get('type') == 'function_call']:
                 name = tool_call['name']
                 error = False
                 try:
