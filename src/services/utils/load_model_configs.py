@@ -1,7 +1,7 @@
 from models.mongo_connection import db
 from globals import *
 
-modelConfigModel = db["modelconfigurations1"]
+modelConfigModel = db["modelconfigurations"]
 
 async def get_model_configurations():
     try:
