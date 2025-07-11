@@ -242,7 +242,7 @@ class BaseService:
             'model': self.configuration.get('model'),
             'channel': 'chat',
             'type': "assistant" if response.get('data').get('content') else "tool_calls",
-            'actor': "user" if self.user else "tool",
+            'actor': "user" if self.user else "",
             'tools': tools,
             'chatbot_message' : "",
             'tools_call_data' : self.func_tool_call_data,
