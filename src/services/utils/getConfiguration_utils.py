@@ -181,7 +181,7 @@ def setup_api_key(service, result, apikey):
     
     # Validate API key existence
     if not (apikey or db_api_key):
-        raise Exception('Could not find api key')
+        raise Exception('Could not find api key or Agent is not Published')
     
     # Use provided API key or decrypt from database
     return apikey if apikey else Helper.decrypt(db_api_key)
