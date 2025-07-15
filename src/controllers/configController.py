@@ -195,9 +195,10 @@ async def get_all_bridges(request):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-async def get_all_service_models_controller(service):
+async def get_all_service_models_controller(service, request):
     try:
         service = service.lower()
+        org_id = request.state.profile['org']['id']
         
         def restructure_configuration(config):
             model_field = config.get("configuration", {}).get("model", "")
@@ -231,6 +232,10 @@ async def get_all_service_models_controller(service):
             # Check if model has status and if it equals 1
             if model_config.get('status') != 1:
                 continue
+            
+            # Check if model has org_id and if it doesn't match the current org_id
+            if 'org_id' in model_config and model_config['org_id'] != org_id:
+                continue  # Skip this model if org_id doesn't match
             
             # Get model type from configuration, default to 'chat' if not specified
             model_type = model_config.get('validationConfig', {}).get('type', 'chat')
