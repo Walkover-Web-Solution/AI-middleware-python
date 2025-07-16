@@ -125,4 +125,5 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
         "bridge_id": result['bridges'].get('parent_id', result['bridges'].get('_id')),
         "variables_state": result.get("bridges", {}).get("variables_state", {}),
         "built_in_tools": built_in_tools or result.get("bridges", {}).get("built_in_tools"),
+        "bridge_type" : bridge_data.get('bridgeType')
     }

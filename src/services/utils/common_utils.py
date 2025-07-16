@@ -80,7 +80,8 @@ def parse_request_body(request_body):
         "org_name" : body.get('org_name'),
         "variables_state" : body.get('variables_state'),
         "built_in_tools" : body.get('built_in_tools') or [],
-        "thread_flag" : body.get('thread_flag') or False
+        "thread_flag" : body.get('thread_flag') or False,
+        "agent_type" : body.get('bridge_type')
     }
 
 
@@ -196,11 +197,13 @@ async def prepare_prompt(parsed_data, thread_info, model_config, custom_config):
             )
             custom_config['response_type'] = {"type": "json_object"}
         
-        if not parsed_data['is_playground'] and bridge_type is None and model_config.get('response_type'):
+        if not parsed_data['is_playground'] and parsed_data['agent_type'] == 'api' and model_config.get('configuration',{}).get('response_type'):
             res = parsed_data['body'].get('response_type') or parsed_data['body'].get('configuration',{}).get('response_type',{"type": 'json_object'})
+            service = parsed_data['service']
             match res:
                 case "default":
-                    custom_config['response_type'] = {"type": 'json_object'}
+                    if service in ['openai', 'groq', 'mistral', 'openai_response', 'open_router']:
+                        custom_config['response_type'] = {"type": 'json_object'}
                 case "text":
                     custom_config['response_type'] = {"type": 'text'}
                 case _:
