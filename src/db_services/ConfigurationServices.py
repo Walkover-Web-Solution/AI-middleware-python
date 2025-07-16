@@ -713,12 +713,16 @@ async def get_apikey_creds(org_id, apikey_object_ids):
         if not apikey_cred:
             raise BadRequestException(f"Apikey for {service} not found")
     
-async def update_apikey_creds(version_id):
+async def update_apikey_creds(version_id, apikey_object_ids):
     try:
-        return await apikeyCredentialsModel.update_one(
-            {'_id': ObjectId(version_id)},
-            {'$set': {'version_ids': [version_id]}}
-        )
+        if isinstance(apikey_object_ids, dict):
+            for service, api_key_id in apikey_object_ids.items():
+                await apikeyCredentialsModel.update_one(
+                    {'_id': ObjectId(api_key_id)},
+                    {'$addToSet': {'version_ids': version_id}},
+                    upsert=True
+                )
+        return True
     except Exception as error:
         logger.error(f"Error in update_apikey_creds: {str(error)}")
         raise error
