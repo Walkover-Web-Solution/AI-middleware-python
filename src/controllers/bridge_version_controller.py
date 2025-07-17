@@ -10,6 +10,7 @@ from src.services.utils.common_utils import get_service_by_model
 from globals import *
 from ..configs.constant import bridge_ids
 from src.services.utils.ai_call_util import call_ai_middleware
+from src.db_services.ConfigurationServices import update_apikey_creds
 
 
 with open('src/services/utils/model_features.json', 'r') as file: 
@@ -27,6 +28,8 @@ async def create_version(request):
       create_new_version = await create_bridge_version(bridge_data.get('bridges'), parent_id=parent_id)
       update_fields = {'versions' : [create_new_version]}
       await update_bridges(parent_id, update_fields)
+      if bridge_data.get('bridges', {}).get('apikey_object_id'):
+        await update_apikey_creds(version_id, bridge_data.get('bridges', {}).get('apikey_object_id'))
       return {
           "success": True,
           "message" : "version created successfully",
