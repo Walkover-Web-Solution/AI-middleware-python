@@ -29,7 +29,7 @@ async def create_version(request):
       update_fields = {'versions' : [create_new_version]}
       await update_bridges(parent_id, update_fields)
       if bridge_data.get('bridges', {}).get('apikey_object_id'):
-        await update_apikey_creds(version_id, bridge_data.get('bridges', {}).get('apikey_object_id'))
+        await update_apikey_creds(create_new_version, bridge_data.get('bridges', {}).get('apikey_object_id'))
       return {
           "success": True,
           "message" : "version created successfully",
