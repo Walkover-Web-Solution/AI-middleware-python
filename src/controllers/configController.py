@@ -446,7 +446,8 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
         await update_bridge(bridge_id=bridge_id, update_fields=update_fields, version_id=version_id)
         result = await get_bridges_with_tools(bridge_id, org_id, version_id)
         await add_bulk_user_entries(user_history)
-        await try_catch(update_apikey_creds, version_id)
+        if apikey_object_id is not None:
+            await try_catch(update_apikey_creds, version_id, apikey_object_id)
         
         # Update service in bridge if it was changed
         if service is not None:

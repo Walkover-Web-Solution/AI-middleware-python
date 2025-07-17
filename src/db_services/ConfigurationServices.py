@@ -674,34 +674,24 @@ async def update_bridge(bridge_id = None, update_fields = None, version_id = Non
 
 
 async def get_apikey_creds(org_id, apikey_object_ids):
-    try:
-        apikey_creds = {}
-        for service, object_id in apikey_object_ids.items():
-            apikey_cred = await apikeyCredentialsModel.find_one(
-                {'_id': ObjectId(object_id), 'org_id': org_id},
-                {'apikey': 1}
-            )
-            if not apikey_cred:
-                raise BadRequestException(f"Apikey for {service} not found")
-
-            apikey_creds[service] = apikey_cred['apikey']
-
-        return {
-            'success': True,
-            'apikey': apikey_creds
-        }
-    except BadRequestException:
-        raise
-    except Exception as error:
-        logger.error(f"Error in get_apikey_creds: {str(error)}")
-        raise error
-    
-async def update_apikey_creds(version_id):
-    try:
-        return await apikeyCredentialsModel.update_one(
-            {'_id': ObjectId(version_id)},
-            {'$set': {'version_ids': [version_id]}}
+    for service, object_id in apikey_object_ids.items():
+        apikey_cred = await apikeyCredentialsModel.find_one(
+            {'_id': ObjectId(object_id), 'org_id': org_id},
+            {'apikey': 1}
         )
+        if not apikey_cred:
+            raise BadRequestException(f"Apikey for {service} not found")
+    
+async def update_apikey_creds(version_id, apikey_object_ids):
+    try:
+        if isinstance(apikey_object_ids, dict):
+            for service, api_key_id in apikey_object_ids.items():
+                await apikeyCredentialsModel.update_one(
+                    {'_id': ObjectId(api_key_id)},
+                    {'$addToSet': {'version_ids': version_id}},
+                    upsert=True
+                )
+        return True
     except Exception as error:
         logger.error(f"Error in update_apikey_creds: {str(error)}")
         raise error
