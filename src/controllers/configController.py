@@ -209,7 +209,8 @@ async def get_all_service_models_controller(service, request):
                     "model": model_field,
                     "additional_parameters": additional_parameters
                 },
-                "validationConfig" : config.get("validationConfig", {})
+                "validationConfig" : config.get("validationConfig", {}),
+                "outputConfig" : config.get("outputConfig", {})
             }
         
         # Check if service exists in model_config_document
