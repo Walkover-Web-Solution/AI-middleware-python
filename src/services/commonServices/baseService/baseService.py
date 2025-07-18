@@ -89,13 +89,21 @@ class BaseService:
                     tool_calls_id = assistant_tool_calls['id']
                     configuration['messages'].append(mapping_response_data[tool_calls_id])
                 case 'openai_response':
-                    assistant_tool_calls = response['output'][index]
-                    configuration['input'].append(assistant_tool_calls)
-                    tool_calls_id = assistant_tool_calls['id']
-                    configuration['input'].append({                           
+                    # First, add all reasoning outputs to the configuration
+                    for output in response['output']:
+                        if output.get('type') == 'reasoning':
+                            configuration['input'].append(output)
+                    
+                    # Then handle function calls using the index parameter
+                    function_call_outputs = [output for output in response['output'] if output.get('type') == 'function_call']
+                    if index < len(function_call_outputs):
+                        output = function_call_outputs[index]
+                        configuration['input'].append(output)
+                        tool_calls_id = output['id']
+                        configuration['input'].append({                           
                             "type": "function_call_output",
-                            "call_id": assistant_tool_calls['call_id'],
-                            "output":  mapping_response_data[tool_calls_id]['content']
+                            "call_id": output['call_id'],
+                            "output": mapping_response_data[tool_calls_id]['content']
                         })
                 case 'anthropic':
                     ordered_json = {"type":"tool_result",  
@@ -223,18 +231,18 @@ class BaseService:
             case  _:
                 pass
         return usage
-    def prepare_history_params(self, model_response, tools):
+    def prepare_history_params(self,response, model_response, tools):
         return {
             'thread_id': self.thread_id,
             'sub_thread_id': self.sub_thread_id,
-            'user': self.user if self.user else json.dumps(self.tool_call),
-            'message': _.get(model_response, self.modelOutputConfig['message']) if _.get(model_response, self.modelOutputConfig.get('tools')) else _.get(model_response, self.modelOutputConfig['message']),
+            'user': self.user if self.user else "",
+            'message': response.get('data').get('content') or "",
             'org_id': self.org_id,
             'bridge_id': self.bridge_id,
             'model': self.configuration.get('model'),
             'channel': 'chat',
-            'type': "assistant" if _.get(model_response, self.modelOutputConfig['message']) else "tool_calls",
-            'actor': "user" if self.user else "tool",
+            'type': "assistant" if response.get('data').get('content') else "tool_calls",
+            'actor': "user",
             'tools': tools,
             'chatbot_message' : "",
             'tools_call_data' : self.func_tool_call_data,

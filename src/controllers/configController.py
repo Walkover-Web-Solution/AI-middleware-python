@@ -283,6 +283,8 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
         
         # Get existing bridge data
         bridge = await get_bridge_by_id(org_id, bridge_id, version_id)
+        if bridge is None:
+            raise HTTPException(status_code=404, detail="Bridge not found")
         parent_id = bridge.get('parent_id')
         current_configuration = bridge.get('configuration', {})
         current_variables_path = bridge.get('variables_path', {})

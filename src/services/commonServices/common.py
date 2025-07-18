@@ -105,23 +105,20 @@ async def chat(request_body):
                 except Exception as e:
                     raise RuntimeError(f"error in chatbot : {e}")
         parsed_data['alert_flag'] = result['modelResponse'].get('alert_flag', False)    
-        if parsed_data['version'] == 2:
-            result['modelResponse'] = await Response_formatter(result["modelResponse"], parsed_data['service'], result["historyParams"].get('tools', {}), parsed_data['type'], parsed_data['images'])
-            if not parsed_data['is_playground']:
-                result['modelResponse']['usage'] = params['token_calculator'].get_total_usage()
-            if parsed_data.get('type') != 'image':
-                parsed_data['tokens'] = Helper.calculate_usage(parsed_data['model'],result["modelResponse"],parsed_data['service'])
+        if not parsed_data['is_playground']:
+            result['response']['usage'] = params['token_calculator'].get_total_usage()
+        if parsed_data.get('type') != 'image':
+            parsed_data['tokens'] = Helper.calculate_usage(parsed_data['model'],result["response"],parsed_data['service'])
         # Create latency object using utility function
         latency = create_latency_object(timer, params)
-        
         if not parsed_data['is_playground']:
-            if result.get('modelResponse') and result['modelResponse'].get('data'):
-                result['modelResponse']['data']['message_id'] = parsed_data['message_id']
-            await sendResponse(parsed_data['response_format'], result["modelResponse"], success=True, variables=parsed_data.get('variables',{}))
+            if result.get('response') and result['response'].get('data'):
+                result['response']['data']['message_id'] = parsed_data['message_id']
+            await sendResponse(parsed_data['response_format'], result["response"], success=True, variables=parsed_data.get('variables',{}))
             # Update usage metrics for successful API calls
             update_usage_metrics(parsed_data, params, latency, result=result, success=True)
             await process_background_tasks(parsed_data, result, params, thread_info)
-        return JSONResponse(status_code=200, content={"success": True, "response": result["modelResponse"]})
+        return JSONResponse(status_code=200, content={"success": True, "response": result["response"]})
     
     except (Exception, ValueError, BadRequestException) as error:
         if not isinstance(error, BadRequestException):
