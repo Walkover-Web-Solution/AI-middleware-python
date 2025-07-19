@@ -17,8 +17,9 @@ class UnifiedOpenAICase(BaseService):
                 if not self.playground:
                     await self.handle_failure(openAIResponse)
                 raise ValueError(openAIResponse.get('error'))
+            response = await Response_formatter(modelResponse, service_name['openai'], tools, self.type, self.image_data)
             if not self.playground:
-                historyParams = self.prepare_history_params(modelResponse, tools)
+                historyParams = self.prepare_history_params(response, modelResponse, tools)
                 historyParams['message'] = "image generated successfully"
                 historyParams['type'] = 'assistant'
         else:
