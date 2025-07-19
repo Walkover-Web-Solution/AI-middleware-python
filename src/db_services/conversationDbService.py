@@ -35,7 +35,18 @@ async def insertRawData(raw_data) :
         raws = [RawData(**data) for data in raw_data]
         session.add_all(raws)
         session.commit()
+        return [raw.id for raw in raws]  # Return the IDs of inserted records
     except Exception as e: 
+        session.rollback()
+        raise e
+
+async def updateRawDataChatId(raw_data_id, chat_id):
+    session = pg['session']()
+    try:
+        stmt = update(RawData).where(RawData.id == raw_data_id).values(chat_id=chat_id)
+        session.execute(stmt)
+        session.commit()
+    except Exception as e:
         session.rollback()
         raise e
 
@@ -54,7 +65,7 @@ async def find(org_id, thread_id, sub_thread_id, bridge_id):
                 RawData.error,
                 func.coalesce(Conversation.urls, []).label('urls')  # Updated to handle 'urls' as an array
             )
-            .outerjoin(RawData, Conversation.id == RawData.chat_id)
+            .outerjoin(RawData, Conversation.message_id == RawData.message_id)
             .filter(
                 and_(
                     Conversation.org_id == org_id,

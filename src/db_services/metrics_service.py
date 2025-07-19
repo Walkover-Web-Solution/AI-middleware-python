@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 from models.index import combined_models
 from sqlalchemy import and_
 from ..controllers.conversationController import savehistory
-from .conversationDbService import insertRawData, timescale_metrics
+from .conversationDbService import insertRawData, timescale_metrics, updateRawDataChatId
 from ..services.cache_service import find_in_cache, store_in_cache
 from globals import *
 # from src.services.utils.send_error_webhook import send_error_to_webhook
@@ -45,16 +45,10 @@ async def find_one_pg(id):
 
 async def create(dataset, history_params, version_id):
     try:
-        result = await try_catch (
-            savehistory,
-            history_params['thread_id'], history_params['sub_thread_id'], history_params['user'], history_params['message'],
-            history_params['org_id'], history_params['bridge_id'], history_params['model'],
-            history_params['channel'], history_params['type'], history_params['actor'],
-            history_params.get('tools'),history_params.get('chatbot_message'),history_params.get('tools_call_data'),history_params.get('message_id'), version_id, history_params.get('image_url'), history_params.get('revised_prompt'), history_params.get('urls'), history_params.get('AiConfig'), history_params.get('annotations')
-        )
-        
-        chat_id = result[0]
-        dataset[0]['chat_id'] = chat_id
+        # Step 1: First insert raw_data with random_id (temporary chat_id)
+        import random
+        random_id = random.randint(1000000, 9999999)
+        dataset[0]['chat_id'] = random_id
         dataset[0]['message_id'] = history_params.get('message_id')
 
         insert_ai_data_in_pg = [
@@ -70,7 +64,7 @@ async def create(dataset, history_params, version_id):
                 'output_tokens': data_object.get('outputTokens', 0),
                 'expected_cost': data_object.get('expectedCost', 0),
                 'created_at': datetime.now(),
-                'chat_id': data_object.get('chat_id'),
+                'chat_id': random_id,  # Use random_id temporarily
                 'message_id': data_object.get('message_id'),
                 'variables': data_object.get('variables') or {},
                 'is_present': 'prompt' in data_object,
@@ -79,6 +73,23 @@ async def create(dataset, history_params, version_id):
             }
             for data_object in dataset
         ]
+        
+        # Insert raw_data first and get the raw_data IDs
+        raw_data_ids = await insertRawData(insert_ai_data_in_pg)
+        
+        # Step 2: Save conversation history and get the actual chat_id
+        result = await try_catch (
+            savehistory,
+            history_params['thread_id'], history_params['sub_thread_id'], history_params['user'], history_params['message'],
+            history_params['org_id'], history_params['bridge_id'], history_params['model'],
+            history_params['channel'], history_params['type'], history_params['actor'],
+            history_params.get('tools'),history_params.get('chatbot_message'),history_params.get('tools_call_data'),history_params.get('message_id'), version_id, history_params.get('image_url'), history_params.get('revised_prompt'), history_params.get('urls'), history_params.get('AiConfig'), history_params.get('annotations')
+        )
+        
+        # Step 3: Update raw_data with the actual chat_id
+        chat_id = result[0]
+        for raw_data_id in raw_data_ids:
+            await updateRawDataChatId(raw_data_id, chat_id)
         metrics_data = [
             {
                 'org_id': data_object['orgId'],
@@ -99,7 +110,6 @@ async def create(dataset, history_params, version_id):
             }
             for data_object in dataset
         ]
-        await insertRawData(insert_ai_data_in_pg)
         await timescale_metrics(metrics_data)
         cache_key = f"metrix_bridges{history_params['bridge_id']}"
         oldTotalToken = json.loads(await find_in_cache(cache_key) or '0')
