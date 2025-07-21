@@ -16,11 +16,16 @@ async def send_data_middleware(request: Request, botId: str):
         body = await request.json()
         org_id = request.state.profile['org']['id']
         slugName = body.get("slugName")
-        threadId = str(body.get("threadId")) if body.get("threadId") is not None else None
+        isPublic = 'ispublic' in request.state.profile
+        user_email = body.get('state',{}).get("profile",{}).get("user",{}).get("email",'')
+        if isPublic:
+            threadId = str(request.state.profile['user']['id'])
+        else:
+            threadId = str(body.get("threadId")) if body.get("threadId") is not None else None
         profile = request.state.profile
         message = (body.get("message") or "").strip()
         userId = profile['user']['id']
-        subThreadId = body.get("subThreadId")
+        subThreadId = threadId if isPublic and not body.get("subThreadId")  else body.get("subThreadId") 
         chatBotId = botId
         images = body.get("images") or []
         flag = body.get("flag") or False
@@ -29,7 +34,16 @@ async def send_data_middleware(request: Request, botId: str):
 
         channelId = f"{chatBotId}{threadId.strip() if threadId and threadId.strip() else userId}{subThreadId.strip() if subThreadId and subThreadId.strip() else userId}"
         channelId = channelId.replace(" ", "_")
-        bridges = await ConfigurationServices.get_bridge_by_slugname(org_id, slugName)
+        if(isPublic):
+            bridge_response = await ConfigurationServices.get_agents_data(slugName, user_email)
+            org = { "id": bridge_response.get('org_id') }
+            request.state.profile["org"] = org
+        else:
+            bridge_response = await ConfigurationServices.get_bridge_by_slugname(org_id, slugName)
+        bridges = bridge_response if bridge_response else {}
+
+        if not bridges: 
+            raise HTTPException(status_code=400, detail="Invalid bridge Id")
 
         actions = [
             {
@@ -40,7 +54,7 @@ async def send_data_middleware(request: Request, botId: str):
             }
             for actionId, actionDetails in bridges.get('actions', {}).items()
         ]
-
+        
         request.state.chatbot = {
             "bridge_id": str(bridges.get('_id', '')),
             "user": message,
@@ -60,6 +74,7 @@ async def send_data_middleware(request: Request, botId: str):
                     }
                 },
                 **body.get('configuration', {}),
+                "max_token": bridges.get('max_token', None) if isPublic else None
             },
             "chatbot": True,
             "response_type": { 
@@ -98,11 +113,14 @@ async def chat_bot_auth(request: Request):
                         "id": str(check_token['org_id'])
                     },
                     "user": {
-                        "id": str(check_token['user_id'])
+                        "id": str(check_token['user_id']),
+                        "email": str(check_token.get('userEmail', ""))
                     },
                 }
                 if check_token.get('variables') is not None:
                     request.state.profile["variables"] = json.dumps(check_token['variables']) if not isinstance(check_token['variables'], str) else check_token['variables']
+                if check_token.get('ispublic') is not None:
+                    request.state.profile["ispublic"] = check_token['ispublic']
                 return True
         raise HTTPException(status_code=401, detail="unauthorized user")
     except jwt.ExpiredSignatureError:

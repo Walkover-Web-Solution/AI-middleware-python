@@ -750,4 +750,42 @@ async def save_sub_thread_id(org_id, thread_id, sub_thread_id, display_name, bri
         }
     except Exception as error:
         logger.error(f"Error in save_sub_thread_id: {error}")
-        raise error
+        raise error    
+
+async def get_all_agents_data(user_email):
+    cursor = configurationModel.find({
+        "$or": [
+            {"page_config.availability": "public"},
+            {
+                "$and": [
+                    {"page_config.availability": "private"},
+                    {"page_config.accessible_users": user_email}
+                ]
+            }
+        ]
+    })
+    data = []
+    async for doc in cursor:
+        data.append(doc)
+    return data
+
+
+async def get_agents_data(slug_name, user_email):
+    bridges = await configurationModel.find_one({
+        "$or": [
+            {
+                "$and": [
+                    {"page_config.availability": "public"},
+                    {"page_config.url_slugname": slug_name}
+                ]
+            },
+            {
+                "$and": [
+                    {"page_config.availability": "private"},
+                    {"page_config.url_slugname": slug_name},
+                    {"page_config.accessible_users": user_email}
+                ]
+            }
+        ]
+    })
+    return bridges
