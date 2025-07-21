@@ -89,7 +89,7 @@ async def create_bridges_controller(request):
         "type": "default", # need changes
         "cred": {}
         } 
-        model_data["is_rich_text"]= True
+        model_data["is_rich_text"]= False
         if prompt is not None:
             model_data['prompt'] = prompt
         result = await create_bridge({
@@ -283,6 +283,8 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
         
         # Get existing bridge data
         bridge = await get_bridge_by_id(org_id, bridge_id, version_id)
+        if bridge is None:
+            raise HTTPException(status_code=404, detail="Bridge not found")
         parent_id = bridge.get('parent_id')
         current_configuration = bridge.get('configuration', {})
         current_variables_path = bridge.get('variables_path', {})
@@ -449,7 +451,8 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
         await update_bridge(bridge_id=bridge_id, update_fields=update_fields, version_id=version_id)
         result = await get_bridges_with_tools(bridge_id, org_id, version_id)
         await add_bulk_user_entries(user_history)
-        await try_catch(update_apikey_creds, version_id)
+        if apikey_object_id is not None:
+            await try_catch(update_apikey_creds, version_id, apikey_object_id)
         
         # Update service in bridge if it was changed
         if service is not None:

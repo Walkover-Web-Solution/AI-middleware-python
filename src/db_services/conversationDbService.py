@@ -199,15 +199,15 @@ async def add_bulk_user_entries(entries):
         session.close()
 
 
-async def timescale_metrics(metrics_data) : 
-    session = timescale['session']()
-    try:
-        raws = [Metrics_model(**data) for data in metrics_data]
-        session.add_all(raws)
-        session.commit()
-    except Exception as e: 
-        session.rollback()
-        raise e
+async def timescale_metrics(metrics_data):
+    async with timescale['session']() as session:
+        try:
+            raws = [Metrics_model(**data) for data in metrics_data]
+            session.add_all(raws)
+            await session.commit()
+        except Exception as e:
+            await session.rollback()
+            raise e
 
 
 

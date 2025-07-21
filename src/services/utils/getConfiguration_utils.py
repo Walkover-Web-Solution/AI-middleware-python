@@ -11,7 +11,7 @@ from globals import *
 
 async def validate_bridge(bridge_data, result):
     """Validate bridge status and existence"""
-    bridge_status = bridge_data.get('bridges', {}).get('bridge_status')
+    bridge_status = bridge_data.get('bridges', {}).get('bridge_status') or bridge_data.get('bridge_status')
     if bridge_status == 0:
         raise Exception("Bridge is Currently Paused")
     
@@ -181,7 +181,7 @@ def setup_api_key(service, result, apikey):
     
     # Validate API key existence
     if not (apikey or db_api_key):
-        raise Exception('Could not find api key')
+        raise Exception('Could not find api key or Agent is not Published')
     
     # Use provided API key or decrypt from database
     return apikey if apikey else Helper.decrypt(db_api_key)

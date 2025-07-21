@@ -24,13 +24,14 @@ async def send_data_middleware(request: Request, botId: str):
         else:
             threadId = str(body.get("threadId")) if body.get("threadId") is not None else None
         profile = request.state.profile
-        message = body.get("message")
+        message = (body.get("message") or "").strip()
         userId = profile['user']['id']
         subThreadId = threadId if isPublic and not body.get("subThreadId")  else body.get("subThreadId") 
         chatBotId = botId
+        images = body.get("images") or []
         flag = body.get("flag") or False
-        if not message or message == "":
-            return JSONResponse(status_code=400, content={'error':"Message cannot be null"})
+        if not message and not images:
+            return JSONResponse(status_code=400, content={'error': "Message cannot be null"})
 
         channelId = f"{chatBotId}{threadId.strip() if threadId and threadId.strip() else userId}{subThreadId.strip() if subThreadId and subThreadId.strip() else userId}"
         channelId = channelId.replace(" ", "_")

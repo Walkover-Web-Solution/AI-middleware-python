@@ -265,10 +265,20 @@ async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None)
             }
         }
     },
-    # Stage 3: Convert 'apikey_object_id' to an array of key-value pairs
+    # Stage 3: Convert 'apikey_object_id' to an array of key-value pairs, handling null case
     {
         '$addFields': {
-            'apikeys_array': { '$objectToArray': '$apikey_object_id' }
+            'apikey_object_id_safe': { '$ifNull': ['$apikey_object_id', {}] },
+            'has_apikeys': { '$cond': [{ '$eq': [{ '$type': '$apikey_object_id' }, 'object'] }, True, False] }
+        }
+    },
+    {
+        '$addFields': {
+            'apikeys_array': { '$cond': [
+                '$has_apikeys',
+                { '$objectToArray': '$apikey_object_id_safe' },
+                []
+            ]}
         }
     },
     # Stage 4: Lookup 'apikeycredentials' using the ObjectIds from 'apikeys_array.v'
@@ -277,24 +287,36 @@ async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None)
             'from': 'apikeycredentials',
             'let': {
                 'apikey_ids_object': {
-                    '$map': {
-                        'input': '$apikeys_array.v',
-                        'as': 'id',
-                        'in': {
-                            '$convert': {
-                                'input': '$$id',
-                                'to': 'objectId',
-                                'onError': None,
-                                'onNull': None
+                    '$cond': [
+                        { '$gt': [{ '$size': '$apikeys_array' }, 0] },
+                        {
+                            '$map': {
+                                'input': '$apikeys_array.v',
+                                'as': 'id',
+                                'in': {
+                                    '$convert': {
+                                        'input': '$$id',
+                                        'to': 'objectId',
+                                        'onError': None,
+                                        'onNull': None
+                                    }
+                                }
                             }
-                        }
-                    }
+                        },
+                        []
+                    ]
                 }
             },
             'pipeline': [
                 {
                     '$match': {
-                        '$expr': { '$in': ['$_id', '$$apikey_ids_object'] }
+                        '$expr': {
+                            '$cond': [
+                                { '$gt': [{ '$size': '$$apikey_ids_object' }, 0] },
+                                { '$in': ['$_id', '$$apikey_ids_object'] },
+                                False
+                            ]
+                        }
                     }
                 },
                 {
@@ -304,49 +326,55 @@ async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None)
             'as': 'apikeys_docs'
         }
     },
-    # Stage 5: Map each service to its corresponding apikey
+    # Stage 5: Map each service to its corresponding apikey, handling empty case
     {
         '$addFields': {
             'apikeys': {
-                '$arrayToObject': {
-                    '$map': {
-                        'input': '$apikeys_array',
-                        'as': 'item',
-                        'in': [
-                            '$$item.k',  # Service name as the key
-                            {
-                                '$arrayElemAt': [
+                '$cond': [
+                    { '$gt': [{ '$size': '$apikeys_array' }, 0] },
+                    {
+                        '$arrayToObject': {
+                            '$map': {
+                                'input': '$apikeys_array',
+                                'as': 'item',
+                                'in': [
+                                    '$$item.k',  # Service name as the key
                                     {
-                                        '$map': {
-                                            'input': {
-                                                '$filter': {
-                                                    'input': '$apikeys_docs',
-                                                    'as': 'doc',
-                                                    'cond': {
-                                                        '$eq': [
-                                                            '$$doc._id',
-                                                            {
-                                                                '$convert': {
-                                                                    'input': '$$item.v',
-                                                                    'to': 'objectId',
-                                                                    'onError': None,
-                                                                    'onNull': None
-                                                                }
+                                        '$arrayElemAt': [
+                                            {
+                                                '$map': {
+                                                    'input': {
+                                                        '$filter': {
+                                                            'input': '$apikeys_docs',
+                                                            'as': 'doc',
+                                                            'cond': {
+                                                                '$eq': [
+                                                                    '$$doc._id',
+                                                                    {
+                                                                        '$convert': {
+                                                                            'input': '$$item.v',
+                                                                            'to': 'objectId',
+                                                                            'onError': None,
+                                                                            'onNull': None
+                                                                        }
+                                                                    }
+                                                                ]
                                                             }
-                                                        ]
-                                                    }
+                                                        }
+                                                    },
+                                                    'as': 'matched_doc',
+                                                    'in': '$$matched_doc.apikey'
                                                 }
                                             },
-                                            'as': 'matched_doc',
-                                            'in': '$$matched_doc.apikey'
-                                        }
-                                    },
-                                    0  # Get the first matched apikey
+                                            0  # Get the first matched apikey
+                                        ]
+                                    }
                                 ]
                             }
-                        ]
-                    }
-                }
+                        }
+                    },
+                    {}
+                ]
             }
         }
     },
@@ -410,11 +438,13 @@ async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None)
             'as': 'pre_tools_data'
         }
     },
-    # Stage 8: (Optional) Remove temporary fields to clean up the output
+    # Stage 8: Remove temporary fields to clean up the output
     {
         '$project': {
             'apikeys_array': 0,
             'apikeys_docs': 0,
+            'apikey_object_id_safe': 0,
+            'has_apikeys': 0
             # Exclude additional temporary fields as needed
         }
     }
@@ -591,7 +621,8 @@ async def get_all_bridges_in_org(org_id, folder_id, user_id, isEmbedUser):
         "published_version_id": 1,
         "total_tokens": 1,
         "variables_state" : 1,
-        "agent_variables" : 1
+        "agent_variables" : 1,
+        "bridge_status":1
     })
     bridges_list = await bridge.to_list(length=None)
     for itr in bridges_list:
@@ -674,34 +705,24 @@ async def update_bridge(bridge_id = None, update_fields = None, version_id = Non
 
 
 async def get_apikey_creds(org_id, apikey_object_ids):
-    try:
-        apikey_creds = {}
-        for service, object_id in apikey_object_ids.items():
-            apikey_cred = await apikeyCredentialsModel.find_one(
-                {'_id': ObjectId(object_id), 'org_id': org_id},
-                {'apikey': 1}
-            )
-            if not apikey_cred:
-                raise BadRequestException(f"Apikey for {service} not found")
-
-            apikey_creds[service] = apikey_cred['apikey']
-
-        return {
-            'success': True,
-            'apikey': apikey_creds
-        }
-    except BadRequestException:
-        raise
-    except Exception as error:
-        logger.error(f"Error in get_apikey_creds: {str(error)}")
-        raise error
-    
-async def update_apikey_creds(version_id):
-    try:
-        return await apikeyCredentialsModel.update_one(
-            {'_id': ObjectId(version_id)},
-            {'$set': {'version_ids': [version_id]}}
+    for service, object_id in apikey_object_ids.items():
+        apikey_cred = await apikeyCredentialsModel.find_one(
+            {'_id': ObjectId(object_id), 'org_id': org_id},
+            {'apikey': 1}
         )
+        if not apikey_cred:
+            raise BadRequestException(f"Apikey for {service} not found")
+    
+async def update_apikey_creds(version_id, apikey_object_ids):
+    try:
+        if isinstance(apikey_object_ids, dict):
+            for service, api_key_id in apikey_object_ids.items():
+                await apikeyCredentialsModel.update_one(
+                    {'_id': ObjectId(api_key_id)},
+                    {'$addToSet': {'version_ids': version_id}},
+                    upsert=True
+                )
+        return True
     except Exception as error:
         logger.error(f"Error in update_apikey_creds: {str(error)}")
         raise error
