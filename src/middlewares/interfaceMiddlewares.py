@@ -16,7 +16,6 @@ async def send_data_middleware(request: Request, botId: str):
         body = await request.json()
         org_id = request.state.profile['org']['id']
         slugName = body.get("slugName")
-        url_slugName = body.get('url_slugName')
         isPublic = 'ispublic' in request.state.profile
         user_email = body.get('state',{}).get("profile",{}).get("user",{}).get("email",'')
         if isPublic:
@@ -36,8 +35,8 @@ async def send_data_middleware(request: Request, botId: str):
         channelId = f"{chatBotId}{threadId.strip() if threadId and threadId.strip() else userId}{subThreadId.strip() if subThreadId and subThreadId.strip() else userId}"
         channelId = channelId.replace(" ", "_")
         if(isPublic):
-            bridge_response = await ConfigurationServices.get_agents_data(url_slugName, user_email)
-            org = { "id": bridge_response.get('bridges', {}).get('org_id') }
+            bridge_response = await ConfigurationServices.get_agents_data(slugName, user_email)
+            org = { "id": bridge_response.get('org_id') }
             request.state.profile["org"] = org
         else:
             bridge_response = await ConfigurationServices.get_bridge_by_slugname(org_id, slugName)

@@ -776,13 +776,13 @@ async def get_agents_data(slug_name, user_email):
             {
                 "$and": [
                     {"page_config.availability": "public"},
-                    {"url_slugname": slug_name}
+                    {"page_config.url_slugname": slug_name}
                 ]
             },
             {
                 "$and": [
                     {"page_config.availability": "private"},
-                    {"url_slugname": slug_name},
+                    {"page_config.url_slugname": slug_name},
                     {"page_config.accessible_users": user_email}
                 ]
             }
