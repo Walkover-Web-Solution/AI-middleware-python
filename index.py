@@ -160,7 +160,7 @@ app.include_router(utility_routes,prefix="/utility")
 app.include_router(rag_routes,prefix="/rag")
 app.include_router(Internal_routes,prefix="/internal")
 app.include_router(testcase_routes, prefix='/testcases')
-app.include_router(runagents_routes, prefix='/agent')
+app.include_router(runagents_routes, prefix='/publicAgent')
 
 
 if __name__ == "__main__":
