@@ -13,7 +13,6 @@ async def upload_to_gcp_background(image_url: str, filename: str):
     Background task to upload image from OpenAI URL to GCP storage
     """
     try:
-        print(f"Starting background upload for {filename}")
         
         # Fetch image content
         image_content, headers = await fetch(url=image_url, method='GET', image=True)
@@ -28,8 +27,6 @@ async def upload_to_gcp_background(image_url: str, filename: str):
         
         # Upload the image
         blob.upload_from_file(image_content, content_type='image/png')
-        
-        print(f"Successfully uploaded {filename} to GCP")
         
     except Exception as error:
         print(f"Background upload failed for {filename}: {str(error)}")
@@ -53,7 +50,6 @@ async def OpenAIImageModel(configuration, apiKey, execution_time_logs, timer):
         # Add both URLs to response
         response['data'][0]['original_url'] = original_image_url
         response['data'][0]['url'] = gcp_url  # Primary URL (GCP)
-        response['data'][0]['gcp_url'] = gcp_url  # Explicit GCP URL
         
         # Start background upload task (fire and forget)
         asyncio.create_task(upload_to_gcp_background(original_image_url, filename))

@@ -68,7 +68,7 @@ async def Response_formatter(response = {}, service = None, tools={}, type='chat
             "data" : {
                 "revised_prompt" : response.get('data')[0].get('revised_prompt'),
                 "image_url" : response.get('data')[0].get('original_url'),
-                "permanent_url" :   response.get('data')[0].get('gcp_url')
+                "permanent_url" :   response.get('data')[0].get('url')
             }
         }
     elif service == service_name['openai']:
@@ -76,7 +76,7 @@ async def Response_formatter(response = {}, service = None, tools={}, type='chat
             "data" : {
                 "revised_prompt" : response.get('data')[0].get('revised_prompt'),
                 "image_url" : response.get('data')[0].get('original_url'),
-                "permanent_url" : response.get('data')[0].get('gcp_url')
+                "permanent_url" : response.get('data')[0].get('url')
             }
         }
     
