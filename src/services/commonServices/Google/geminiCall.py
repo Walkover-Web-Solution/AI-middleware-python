@@ -1,96 +1,62 @@
-import asyncio
-from .gemini import run_chat
-from ...commonServices.createConversations import ConversationService
-from ....db_services import metrics_service
-import time
-import copy
 import pydash as _
+from ..baseService.baseService import BaseService
+from ..createConversations import ConversationService
+from src.configs.constant import service_name
+from src.services.utils.ai_middleware_format import Response_formatter
 
-class GeminiHandler:
-    def __init__(self, params):
-        self.customConfig = params.get('customConfig')
-        self.configuration = params.get('configuration')
-        self.apikey = params.get('apikey')
-        self.user = params.get('user')
-        self.startTime = params.get('startTime')
-        self.org_id = params.get('org_id')
-        self.bridge_id = params.get('bridge_id')
-        self.thread_id = params.get('thread_id')
-        self.model = params.get('model')
-        self.service = params.get('service')
-        self.rtlayer = params.get('rtlayer')
-        self.modelOutputConfig = params.get('modelOutputConfig')
-        self.webhook = params.get('webhook')
-        self.headers = params.get('headers')
-        self.playground = params.get('playground')
-        self.req = params.get('req')
-        self.responseSender = ResponseSender()
-        self.input = params.get('input')
-
+class GeminiHandler(BaseService):
     async def execute(self):
-        usage = {}
         historyParams = {}
-
-        geminiConfig = {
-            'generationConfig': self.customConfig,
-            'model': self.configuration.get('model'),
-            'user_input': self.user,
-        }
-        if self.configuration.get('conversation'):
-            geminiConfig["history"] = ConversationService.createGeminiConversation(self.configuration.get('conversation')).get('messages', [])
-
-        geminiResponse = run_chat(geminiConfig, self.apikey, "chat")
-        modelResponse = geminiResponse.get("modelResponse", {})
-        if not geminiResponse.get('success'):
-            usage = {
-                'service': self.service,
-                'model': self.model,
-                'orgId': self.org_id,
-                'latency': time.time() - self.startTime,
-                'success': False,
-                'error': geminiResponse.get('error'),
-            }
+        usage = {}
+        tools = {}
+        if self.type == 'image':
+            self.customConfig['prompt'] = self.user
+            gemini_response = await self.image(self.customConfig, self.apikey, service_name['gemini'])
+            model_response = gemini_response.get("modelResponse", {})
+            if not gemini_response.get('success'):
+                if not self.playground:
+                    await self.handle_failure(gemini_response)
+                raise ValueError(gemini_response.get('error'))
+            response = await Response_formatter(model_response, service_name['gemini'], tools, self.type, self.image_data)
             if not self.playground:
-                metrics_service.create([usage], {
-                    'thread_id': self.thread_id,
-                    'user': self.user,
-                    'message': "",
-                    'org_id': self.org_id,
-                    'bridge_id': self.bridge_id,
-                    'model': self.configuration.get('model'),
-                    'channel': 'chat',
-                    'type': "error",
-                    'actor': "user",
-                })
-                self.responseSender.send_response({
-                    'rtlayer': self.rtlayer,
-                    'webhook': self.webhook,
-                    'data': {'success': False, 'error': geminiResponse.get('error')},
-                    'reqBody': self.req.json if self.req else {},
-                    'headers': self.headers or {},
-                })
-            raise ValueError(geminiResponse.get('error'))
-        
-        if not self.playground:
-            usage["totalTokens"] = _.get(geminiResponse, self.modelOutputConfig['usage'][0]['total_tokens'])
-            usage["inputTokens"] = _.get(geminiResponse, self.modelOutputConfig['usage'][0]['prompt_tokens'])
-            usage["outputTokens"] = _.get(geminiResponse, self.modelOutputConfig['usage'][0]['output_tokens'])
-            usage["expectedCost"] = self.modelOutputConfig['usage'][0]['total_cost']
-            historyParams = {
-                'thread_id': self.thread_id,
-                'user': self.user,
-                'message': modelResponse.get(self.modelOutputConfig['message']),
-                'org_id': self.org_id,
-                'bridge_id': self.bridge_id,
-                'model': self.configuration.get('model'),
-                'channel': 'chat',
-                'type': "model",
-                'actor': "user",
-            }
-
-        return {
-            'success': True,
-            'modelResponse': modelResponse,
-            'usage': usage,
-            'historyParams': historyParams,
-        }
+                historyParams = self.prepare_history_params(response, model_response, tools)
+                historyParams['message'] = "image generated successfully"
+                historyParams['type'] = 'assistant'
+        else:
+            conversation = ConversationService.createGeminiConversation(self.configuration.get('conversation'), self.memory).get('messages', [])
+            if self.reasoning_model:
+                self.customConfig["messages"] =  conversation + ([{"role": "user", "content": self.user}] if self.user else []) 
+            else:
+                if not self.image_data:
+                    self.customConfig["messages"] = [ {"role": "developer", "content": self.configuration['prompt']}] + conversation + ([{"role": "user", "content": self.user}] if self.user else []) 
+                else:
+                    self.customConfig["messages"] = [{"role": "developer", "content": self.configuration['prompt']}] + conversation
+                    user_content = []
+                    if self.user:
+                        user_content = [{"type": "text", "text": self.user}]
+                    if isinstance(self.image_data, list):
+                        for image_url in self.image_data:
+                            user_content.append({"type": "image_url", "image_url": {"url": image_url}})
+                    self.customConfig["messages"].append({'role': 'user', 'content': user_content})
+                self.customConfig =self.service_formatter(self.customConfig, service_name['gemini'])
+                if 'tools' not in self.customConfig and 'parallel_tool_calls' in self.customConfig:
+                    del self.customConfig['parallel_tool_calls']
+            gemini_response = await self.chats(self.customConfig, self.apikey, service_name['gemini'])
+            model_response = gemini_response.get("modelResponse", {})
+            if not gemini_response.get('success'):
+                if not self.playground:
+                    await self.handle_failure(gemini_response)
+                raise ValueError(gemini_response.get('error'))
+            if len(model_response.get('choices', [])[0].get('message', {}).get("tool_calls", [])) > 0:
+                functionCallRes = await self.function_call(self.customConfig, service_name['gemini'], gemini_response, 0, {})
+                if not functionCallRes.get('success'):
+                    await self.handle_failure(functionCallRes)
+                    raise ValueError(functionCallRes.get('error'))
+                self.update_model_response(model_response, functionCallRes)
+                tools = functionCallRes.get("tools", {})
+            response = await Response_formatter(model_response, service_name['gemini'], tools, self.type, self.image_data)
+            if not self.playground:
+                usage = self.token_calculator.calculate_usage(model_response)
+                historyParams = self.prepare_history_params(response, model_response, tools)
+        return {'success': True, 'modelResponse': model_response, 'historyParams': historyParams, 'usage': usage, 'response': response }
+    

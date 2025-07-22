@@ -1,7 +1,7 @@
 
 def tool_choice_function_name_formatter(service, configuration, toolchoice, found_choice):
     match service:
-        case "openai" | "groq" | "open_router":
+        case "openai" | "groq" | "open_router" | "gemini":
             configuration['tool_choice'] = found_choice if found_choice is not None else toolchoice
             return configuration['tool_choice']
         case "openai_response":

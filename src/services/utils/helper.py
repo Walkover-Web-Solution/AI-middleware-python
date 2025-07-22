@@ -19,6 +19,7 @@ from ..commonServices.openRouter.openRouter_call import OpenRouter
 from ..commonServices.Mistral.mistral_call import Mistral
 from ...configs.constant import service_name
 from ..commonServices.openAI.openai_embedding_call import OpenaiEmbedding
+from ..commonServices.Google.geminiCall import GeminiHandler
 from ..cache_service import find_in_cache, store_in_cache
 from ..utils.apiservice import fetch
 from datetime import datetime
@@ -177,8 +178,8 @@ class Helper:
     async def create_service_handler(params, service):
         if service == service_name['openai']:
             class_obj = UnifiedOpenAICase(params)
-        # elif service == service_name['gemini']:
-        #     class_obj = GeminiHandler(params)
+        elif service == service_name['gemini']:
+            class_obj = GeminiHandler(params)
         elif service == service_name['anthropic']:
             class_obj = Antrophic(params)
         elif service == service_name['groq']:
