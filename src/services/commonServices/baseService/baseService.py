@@ -11,6 +11,7 @@ from ..anthrophic.antrophicModelRun import anthropic_runmodel
 from ..Mistral.mistral_model_run import mistral_model_run
 from ....configs.constant import service_name
 from ..groq.groqModelRun import groq_runmodel
+from ..Google.gemini_modelrun import gemini_modelrun
 from ..openRouter.openRouter_modelrun import openrouter_modelrun
 from ....configs.constant import service_name
 from ..openAI.image_model import OpenAIImageModel
@@ -83,7 +84,7 @@ class BaseService:
             tools[function_response['name']] = function_response['content']
         
             match service:
-                case 'openai' | 'groq' | 'open_router' | 'mistral':
+                case 'openai' | 'groq' | 'open_router' | 'mistral' | 'gemini':
                     assistant_tool_calls = response['choices'][0]['message']['tool_calls'][index]
                     configuration['messages'].append({'role': 'assistant', 'content': None, 'tool_calls': [assistant_tool_calls]})
                     tool_calls_id = assistant_tool_calls['id']
@@ -181,7 +182,8 @@ class BaseService:
             service_name['anthropic'],
             service_name['openai_response'],
             service_name['open_router'],
-            service_name['mistral']
+            service_name['mistral'],
+            service_name['gemini']
         ]:
             usage_config = self.modelOutputConfig['usage'][0]
 
@@ -193,7 +195,7 @@ class BaseService:
                 self.completion_tokens = get_combined_tokens(usage_config['completion_tokens'])
                 self.total_tokens = self.prompt_tokens + self.completion_tokens
 
-            if self.service in [service_name['openai'], service_name['groq'], service_name['open_router'], service_name['mistral']]:
+            if self.service in [service_name['openai'], service_name['groq'], service_name['open_router'], service_name['mistral'], service_name['gemini']]:
                     cached_tokens_key = usage_config.get('cached_tokens', 0)
                     self.cached_tokens = get_combined_tokens(cached_tokens_key)
                     _.set_(model_response, cached_tokens_key, self.cached_tokens)
@@ -204,18 +206,18 @@ class BaseService:
                 _.set_(model_response, usage_config.get('cache_creation_input_tokens', 0), self.cache_creation_input_tokens)
                 _.set_(model_response, usage_config.get('cache_read_input_tokens', 0), self.cache_read_input_tokens)
 
-            if self.service in [service_name['openai'], service_name['anthropic'], service_name['groq'], service_name['open_router'], service_name['mistral']]:
+            if self.service in [service_name['openai'], service_name['anthropic'], service_name['groq'], service_name['open_router'], service_name['mistral'], service_name['gemini']]:
                 _.set_(model_response, usage_config['prompt_tokens'], self.prompt_tokens)
                 _.set_(model_response, usage_config['completion_tokens'], self.completion_tokens)
 
             if funcModelResponse:
                 _.set_(model_response, self.modelOutputConfig['message'], _.get(funcModelResponse, self.modelOutputConfig['message']))
-                if self.service in [service_name['openai'], service_name['groq'], service_name['openai_response'], service_name['open_router']]:
+                if self.service in [service_name['openai'], service_name['groq'], service_name['openai_response'], service_name['open_router'], service_name['gemini']]:
                     _.set_(model_response, self.modelOutputConfig['tools'], _.get(funcModelResponse, self.modelOutputConfig['tools']))
 
     def calculate_usage(self, model_response):
         match self.service:
-            case 'openai' | 'groq' | 'open_router' | 'mistral':
+            case 'openai' | 'groq' | 'open_router' | 'mistral' | 'gemini':
                 usage = {}
                 usage["totalTokens"] = _.get(model_response, self.modelOutputConfig['usage'][0]['total_tokens'])
                 usage["inputTokens"] = _.get(model_response, self.modelOutputConfig['usage'][0]['prompt_tokens'])
@@ -297,6 +299,8 @@ class BaseService:
                 response = await openrouter_modelrun(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer, self.message_id, self.org_id, self.name, self.org_name, service, count)
             elif service == service_name['mistral']:
                 response = await mistral_model_run(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer, self.name, self.org_name, service, count)
+            elif service == service_name['gemini']:
+                response = await gemini_modelrun(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer, self.name, self.org_name, service, count)
             if not response['success']:
                 raise ValueError(response['error'], self.func_tool_call_data)
             return {
