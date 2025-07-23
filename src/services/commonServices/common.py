@@ -243,9 +243,12 @@ async def image(request_body):
         custom_config = await configure_custom_settings(
             model_config['configuration'], custom_config, parsed_data['service']
         )
+        # Step 5: Manage Threads
+        thread_info = await manage_threads(parsed_data)
+
         # Step 5: Execute Service Handler
         params = build_service_params(
-            parsed_data, custom_config, model_output_config, None, timer, None, send_error_to_webhook
+            parsed_data, custom_config, model_output_config, thread_info, timer, None, send_error_to_webhook
         )
         
         
