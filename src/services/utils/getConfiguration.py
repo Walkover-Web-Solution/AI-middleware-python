@@ -45,6 +45,24 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
     
     # Setup configuration
     configuration, service = setup_configuration(configuration, result, service)
+
+    # Setup API key
+    service = service.lower() if service else ""
+    apikey = setup_api_key(service, result, apikey)
+    apikey_object_id = result.get('bridges', {}).get('apikey_object_id')
+
+    # check type
+    if configuration['type'] == 'image':
+        return{
+        'success': True,
+        'configuration': configuration,
+        'service': service,
+        'apikey': apikey,
+        'apikey_object_id': apikey_object_id,
+        'RTLayer': RTLayer,
+        "bridge_id": result['bridges'].get('parent_id', result['bridges'].get('_id')),
+        "version_id": version_id or result.get('bridges', {}).get('published_version_id'),
+        }
     
     # Setup tool choice
     configuration['tool_choice'] = setup_tool_choice(configuration, result, service)
@@ -57,11 +75,6 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
     tools, tool_id_and_name_mapping = setup_tools(result, variables_path_bridge, extra_tools)
     configuration.pop('tools', None)
     configuration['tools'] = tools
-    
-    # Setup API key
-    service = service.lower() if service else ""
-    apikey = setup_api_key(service, result, apikey)
-    apikey_object_id = result.get('bridges', {}).get('apikey_object_id')
     
     # Check for RTLayer
     RTLayer = True if configuration and 'RTLayer' in configuration else False

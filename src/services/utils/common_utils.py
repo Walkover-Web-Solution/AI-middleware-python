@@ -215,7 +215,7 @@ async def prepare_prompt(parsed_data, thread_info, model_config, custom_config):
 async def configure_custom_settings(model_configuration, custom_config, service):
     return await model_config_change(model_configuration, custom_config, service)
 
-def build_service_params(parsed_data, custom_config, model_output_config, thread_info, timer, memory, send_error_to_webhook):
+def build_service_params(parsed_data, custom_config, model_output_config, thread_info=None, timer=None, memory=None, send_error_to_webhook=None):
     token_calculator = {}
     if not parsed_data['is_playground']:
         token_calculator = TokenCalculator(parsed_data['service'], model_output_config)
@@ -230,8 +230,8 @@ def build_service_params(parsed_data, custom_config, model_output_config, thread
         "org_id": parsed_data['org_id'],
         "bridge_id": parsed_data['bridge_id'],
         "bridge": parsed_data['bridge'],
-        "thread_id": thread_info['thread_id'],
-        "sub_thread_id": thread_info['sub_thread_id'],
+        "thread_id": thread_info['thread_id'] if thread_info else parsed_data['thread_id'],
+        "sub_thread_id": thread_info['sub_thread_id'] if thread_info else parsed_data['sub_thread_id'],
         "model": parsed_data['model'],
         "service": parsed_data['service'],
         "modelOutputConfig": model_output_config,
