@@ -8,7 +8,7 @@ from src.services.utils.ai_middleware_format import validateResponse
 from src.services.commonServices.bridge_avg_response_time import get_bridge_avg_response_time
 from src.services.utils.gpt_memory import handle_gpt_memory
 from src.services.commonServices.suggestion import chatbot_suggestions
-from src.services.commonServices.baseService.utils import total_token_calculation
+from src.services.commonServices.baseService.utils import total_token_calculation, save_files_to_redis  
 from src.controllers.conversationController import save_sub_thread_id_and_name
 from src.services.commonServices.queueService.baseQueue import BaseQueue
 
@@ -42,6 +42,8 @@ class Queue2(BaseQueue):
             await handle_gpt_memory(**messages['handle_gpt_memory'])
         if messages['check_chatbot_suggestions']['bridgeType']:
             await chatbot_suggestions(**messages['chatbot_suggestions'])
+        await save_files_to_redis(**messages['save_files_to_redis'])
+
 
     async def consume_messages(self):
         try:

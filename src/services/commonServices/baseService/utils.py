@@ -13,6 +13,7 @@ from globals import *
 from src.db_services.ConfigurationServices import get_bridges_without_tools, update_bridge
 from src.services.utils.ai_call_util import call_gtwy_agent
 from globals import *
+from src.services.cache_service import store_in_cache, find_in_cache, client, REDIS_PREFIX
 
 def clean_json(data):
     """Recursively remove keys with empty string, empty list, or empty dictionary."""
@@ -432,7 +433,13 @@ async def make_request_data_and_publish_sub_queue(parsed_data, result, params, t
         "check_chatbot_suggestions" : {
             "bridgeType" : parsed_data.get('bridgeType'),
         },
-        "type" : parsed_data.get('type')
+        "type" : parsed_data.get('type'),
+        "save_files_to_redis" : {
+            "thread_id" : parsed_data.get('thread_id'),
+            "sub_thread_id" : parsed_data.get('sub_thread_id'),
+            "bridge_id" : parsed_data.get('bridge_id'),
+            "files" : parsed_data.get('files')
+        }
     }
 
     return data
@@ -451,3 +458,18 @@ async def total_token_calculation(tokens, bridge_id):
     
     # Fix: update_bridge expects update_fields as a dictionary parameter
     await update_bridge(bridge_id=bridge_id, update_fields={'total_tokens': total_tokens})
+
+async def save_files_to_redis(thread_id, sub_thread_id, bridge_id, files):
+    cache_key = f"{bridge_id}_{thread_id}_{sub_thread_id}"
+    existing_cache = await find_in_cache(cache_key)
+    if existing_cache:
+        try:
+            cached_files = json.loads(existing_cache)
+            if cached_files == files:
+                await client.expire(f"{REDIS_PREFIX}{cache_key}", 604800)
+            else:
+                await store_in_cache(cache_key, files, 604800)
+        except (json.JSONDecodeError, Exception):
+            await store_in_cache(cache_key, files, 604800)
+    else:
+        await store_in_cache(cache_key, files, 604800)
