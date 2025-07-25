@@ -17,6 +17,11 @@ class OpenaiResponse(BaseService):
             image_content = [{"type": "input_image", "image_url": url} for url in self.image_data]
             content = [{"type": "input_text", "text": self.user}] + image_content if self.user else image_content
             self.customConfig["input"].append({'role': 'user', 'content': content})
+        elif self.files and len(self.files) > 0:
+            self.customConfig["input"] = developer + conversation
+            file_content = [{"type": "input_file", "file_url": file_url} for file_url in self.files]
+            content = [{"type": "input_text", "text": self.user}] + file_content if self.user else file_content
+            self.customConfig["input"].append({'role': 'user', 'content': content})
         else:
             user = [{"role": "user", "content": self.user}] if self.user else []
             self.customConfig["input"] = developer + conversation + user

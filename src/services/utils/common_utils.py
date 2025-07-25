@@ -22,7 +22,7 @@ from src.services.commonServices.baseService.utils import make_request_data_and_
 from src.db_services.metrics_service import create
 from src.controllers.conversationController import save_sub_thread_id_and_name
 from src.services.utils.ai_middleware_format import send_alert
-from src.services.cache_service import find_in_cache
+from src.services.cache_service import find_in_cache, store_in_cache, client, REDIS_PREFIX
 
 def parse_request_body(request_body):
     body = request_body.get('body', {})
@@ -80,7 +80,8 @@ def parse_request_body(request_body):
         "org_name" : body.get('org_name'),
         "variables_state" : body.get('variables_state'),
         "built_in_tools" : body.get('built_in_tools') or [],
-        "thread_flag" : body.get('thread_flag') or False
+        "thread_flag" : body.get('thread_flag') or False,
+        "files" : body.get('files') or [],
     }
 
 
@@ -152,6 +153,12 @@ async def manage_threads(parsed_data):
         sub_thread_id = thread_id
         parsed_data['gpt_memory'] = False
         result = {"success": True}
+    
+    # cache_key = f"{bridge_id}_{thread_id}_{sub_thread_id}"
+    # if len(parsed_data['files']) == 0:
+    #     cached_files = await find_in_cache(cache_key)
+    #     if cached_files:
+    #         parsed_data['files'] = json.loads(cached_files)
     
     return {
         "thread_id": thread_id,
@@ -256,7 +263,8 @@ def build_service_params(parsed_data, custom_config, model_output_config, thread
         "name" : parsed_data['name'],
         "org_name" : parsed_data['org_name'],
         "send_error_to_webhook": send_error_to_webhook,
-        "built_in_tools" : parsed_data['built_in_tools']
+        "built_in_tools" : parsed_data['built_in_tools'],
+        "files" : parsed_data['files']
 
     }
 
@@ -451,4 +459,14 @@ def create_history_params(parsed_data, error=None, class_obj=None):
         "message_id": parsed_data['message_id'],
         "AiConfig": class_obj.aiconfig() if class_obj else None
     }
+
+
+async def add_files_to_parse_data(thread_id, sub_thread_id, bridge_id):
+    cache_key = f"{bridge_id}_{thread_id}_{sub_thread_id}"
+    files = await find_in_cache(cache_key)
+    if files:
+        return json.loads(files)
+    return []
+    
+    
         
