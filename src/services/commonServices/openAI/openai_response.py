@@ -45,7 +45,14 @@ class OpenaiResponse(BaseService):
                 await self.handle_failure(openAIResponse)
             raise ValueError(openAIResponse.get('error'))
         
-        if any(output.get('type') == 'function_call' for output in modelResponse.get('output', [])):
+        # Check for function calls in multiple possible locations with fallback
+        has_function_call = (
+            any(output.get('type') == 'function_call' for output in modelResponse.get('output', [])) or
+            any(output.get('type') == 'tool_call' for output in modelResponse.get('output', [])) or
+            any('function_call' in str(output) for output in modelResponse.get('output', []) if output.get('type') in ['reasoning', 'message', 'output_text'])
+        )
+        
+        if has_function_call:
             functionCallRes = await self.function_call(self.customConfig, service_name['openai_response'], openAIResponse, 0, {})
             if not functionCallRes.get('success'):
                 await self.handle_failure(functionCallRes)
