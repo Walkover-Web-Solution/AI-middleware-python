@@ -124,8 +124,14 @@ async def Response_formatter(response = {}, service = None, tools={}, type='chat
             "data": {
                 "id": response.get("id", None),
                 "content": (
-                    response.get("output", [{}])[0].get("content", [{}])[0].get("text", None)
-                    if response.get("output", [{}])[0].get("type") == "function_call"
+                    # Check if any item in output is a function call
+                    next(
+                        (f"Function call: {item.get('name', 'unknown')} with arguments: {item.get('arguments', '')}"
+                         for item in response.get("output", [])
+                         if item.get("type") == "function_call"),
+                        None
+                    )
+                    if any(item.get("type") == "function_call" for item in response.get("output", []))
                     else (
                         # Try to get content from multiple types with fallback
                         next(
