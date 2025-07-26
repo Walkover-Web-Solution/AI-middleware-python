@@ -211,9 +211,9 @@ class BaseService:
                 _.set_(model_response, usage_config['prompt_tokens'], self.prompt_tokens)
                 _.set_(model_response, usage_config['completion_tokens'], self.completion_tokens)
 
-            if funcModelResponse:
+            if funcModelResponse and self.service != service_name['openai_response']:
                 _.set_(model_response, self.modelOutputConfig['message'], _.get(funcModelResponse, self.modelOutputConfig['message']))
-                if self.service in [service_name['openai'], service_name['groq'], service_name['openai_response'], service_name['open_router'], service_name['gemini']]:
+                if self.service in [service_name['openai'], service_name['groq'], service_name['open_router'], service_name['gemini']]:
                     _.set_(model_response, self.modelOutputConfig['tools'], _.get(funcModelResponse, self.modelOutputConfig['tools']))
 
     def calculate_usage(self, model_response):
