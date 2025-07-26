@@ -129,7 +129,7 @@ async def Response_formatter(response = {}, service = None, tools={}, type='chat
                     else next(
                         (item.get("content", [{}])[0].get("text", None)
                          for item in response.get("output", [])
-                         if item.get("type") == "message" or item.get("type") == "reasoning"),
+                         if item.get("type") == "message" or item.get("type") == "output_text"),
                         None
                     )
                 ),
