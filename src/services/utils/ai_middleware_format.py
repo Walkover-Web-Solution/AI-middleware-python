@@ -126,11 +126,26 @@ async def Response_formatter(response = {}, service = None, tools={}, type='chat
                 "content": (
                     response.get("output", [{}])[0].get("content", [{}])[0].get("text", None)
                     if response.get("output", [{}])[0].get("type") == "function_call"
-                    else next(
-                        (item.get("content", [{}])[0].get("text", None)
-                         for item in response.get("output", [])
-                         if item.get("type") == "message" or item.get("type") == "output_text"),
-                        None
+                    else (
+                        # Try to get content from multiple types with fallback
+                        next(
+                            (item.get("content", [{}])[0].get("text", None)
+                             for item in response.get("output", [])
+                             if item.get("type") == "message" and item.get("content", [{}])[0].get("text", None) is not None),
+                            None
+                        ) or
+                        next(
+                            (item.get("content", [{}])[0].get("text", None)
+                             for item in response.get("output", [])
+                             if item.get("type") == "output_text" and item.get("content", [{}])[0].get("text", None) is not None),
+                            None
+                        ) or
+                        next(
+                            (item.get("content", [{}])[0].get("text", None)
+                             for item in response.get("output", [])
+                             if item.get("type") == "reasoning" and item.get("content", [{}])[0].get("text", None) is not None),
+                            None
+                        )
                     )
                 ),
                 "model": response.get("model", None),
