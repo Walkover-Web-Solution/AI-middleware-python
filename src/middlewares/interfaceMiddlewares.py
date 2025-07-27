@@ -96,6 +96,7 @@ async def chat_bot_auth(request: Request):
     timer_obj.start()
     # request.state.timer = timer
     request.state.timer = timer_obj.getTime()
+    is_public_agent = request.path_params.get('botId', None) == "Public_Agents"
     token = request.headers.get('Authorization')
     if token:
         token = token.split(' ')[1] if ' ' in token else token
@@ -106,7 +107,7 @@ async def chat_bot_auth(request: Request):
     try:
         decoded_token = jwt.decode(token, options={"verify_signature": False})
         if decoded_token:
-            check_token = jwt.decode(token, Config.CHATBOTSECRETKEY, algorithms=["HS256"])
+            check_token = jwt.decode(token, Config.PUBLIC_CHATBOT_TOKEN if is_public_agent else Config.CHATBOTSECRETKEY, algorithms=["HS256"])
             if check_token:
                 request.state.profile = {
                     "org": {
