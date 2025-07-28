@@ -8,7 +8,7 @@ from src.services.utils.ai_middleware_format import Response_formatter
 class OpenaiResponse(BaseService):
     async def execute(self):
         historyParams, usage, tools = {}, {}, {}
-        conversation = ConversationService.createOpenAiResponseConversation(self.configuration.get('conversation'), self.memory).get('messages', [])
+        conversation = ConversationService.createOpenAiResponseConversation(self.configuration.get('conversation'), self.memory, self.files).get('messages', [])
         
         developer = [{"role": "developer", "content": self.configuration['prompt']}] if not self.reasoning_model else []
         

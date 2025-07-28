@@ -38,7 +38,7 @@ class ConversationService:
             raise ValueError(e.args[0])
     
     @staticmethod
-    def createOpenAiResponseConversation(conversation, memory):
+    def createOpenAiResponseConversation(conversation, memory, files):
         try:
             threads = []
             if memory is not None:
@@ -57,6 +57,11 @@ class ConversationService:
                                 content.append({
                                     "type": "input_image",
                                     "image_url": url
+                                })
+                            elif url not in files:
+                                content.append({
+                                    "type": "input_file",
+                                    "file_url": url
                                 })
                     else:
                         # Default behavior for messages without URLs
@@ -105,7 +110,7 @@ class ConversationService:
             }
 
     @staticmethod
-    async def createAnthropicConversation(conversation, memory):
+    async def createAnthropicConversation(conversation, memory, files):
         try:
             if conversation == None:
                 conversation = []
@@ -134,7 +139,9 @@ class ConversationService:
                 valid_conversation.append(message)
                 expected_role = 'user' if expected_role == 'assistant' else 'assistant'
             for message in valid_conversation:
-                image_data = []
+                content_items = []
+                
+                # Handle image URLs
                 if message.get('image_urls'):
                     image_data = [
                         {'type': 'image', 'source': {'type': 'base64', 'media_type': image_media_type, 'data': image_data}}
@@ -142,10 +149,37 @@ class ConversationService:
                         for image_data, image_media_type in [images.get(image_url)]
                         if image_url in images
                     ]
+                    content_items.extend(image_data)
+                
+                # Handle URLs array for PDFs and other files
+                if message.get('urls') and isinstance(message['urls'], list):
+                    for url in message['urls']:
+                        if url.lower().endswith('.pdf'):
+                            # Only add PDF if not in files array
+                            if files is None or url not in files:
+                                content_items.append({
+                                    "type": "document",
+                                    "source": {
+                                        "type": "url",
+                                        "url": url
+                                    }
+                                })
+                        else:
+                            # For non-PDF files (images), add as image
+                            content_items.append({
+                                "type": "image",
+                                "source": {
+                                    "type": "url",
+                                    "url": url
+                                }
+                            })
+                
+                # Add text content
+                content_items.append({"type": "text", "text": message['content']})
                 
                 threads.append({
                     'role': message['role'],
-                    'content': image_data + [{"type": "text", "text": message['content']}]
+                    'content': content_items
                 })
             
             return {

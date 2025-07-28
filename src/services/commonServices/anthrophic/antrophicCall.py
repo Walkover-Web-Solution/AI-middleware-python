@@ -13,7 +13,7 @@ class Antrophic(BaseService):
         tools = {}
         conversation = []
         images_input = []
-        conversation = (await ConversationService.createAnthropicConversation(self.configuration.get('conversation'), self.memory)).get('messages', [])        
+        conversation = (await ConversationService.createAnthropicConversation(self.configuration.get('conversation'), self.memory, self.files)).get('messages', [])        
         self.customConfig['system'] = self.configuration.get('prompt')
         if self.image_data:
             images_data = await fetch_images_b64(self.image_data)
