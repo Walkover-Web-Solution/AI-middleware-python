@@ -25,7 +25,7 @@ async def send_data_middleware(request: Request, botId: str):
         profile = request.state.profile
         message = (body.get("message") or "").strip()
         userId = profile['user']['id']
-        subThreadId = threadId if isPublic and not body.get("subThreadId")  else body.get("subThreadId") 
+subThreadId = threadId if isPublic and body.get("subThreadId") is None else body.get("subThreadId") 
         chatBotId = botId
         images = body.get("images") or []
         flag = body.get("flag") or False
