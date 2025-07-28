@@ -86,7 +86,7 @@ def check_error_status_code(error_code):
 async def check_space_issue(response, service=None):
     
     content = None
-    if service == service_name['openai'] or service == service_name['groq'] or service == service_name['open_router'] or service == service_name['mistral']:
+    if service == service_name['openai'] or service == service_name['groq'] or service == service_name['open_router'] or service == service_name['mistral'] or service == service_name['gemini']:
         content = response.get("choices", [{}])[0].get("message", {}).get("content", None)
     elif service == service_name['anthropic']:
         content = response.get("content", [{}])[0].get("text", None)
@@ -110,7 +110,7 @@ async def check_space_issue(response, service=None):
     if parsed_data == '' and content:
         response['alert_flag'] = True
         text = 'AI is Hallucinating and sending \'\n\' please check your prompt and configurations once'
-        if service == service_name['openai'] or service == service_name['groq'] or service == service_name['open_router'] or service == service_name['mistral']:
+        if service == service_name['openai'] or service == service_name['groq'] or service == service_name['open_router'] or service == service_name['mistral'] or service == service_name['gemini']:
             response["choices"][0]["message"]["content"] = text
         elif service == service_name['anthropic']:
             response["content"][0]["text"] = text

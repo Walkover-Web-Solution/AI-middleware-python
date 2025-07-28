@@ -1,7 +1,7 @@
 from fastapi import HTTPException, status
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
-from src.db_services.ConfigurationServices import create_bridge, get_bridge_by_id, get_all_bridges_in_org, update_bridge, update_bridge_ids_in_api_calls, get_bridges_with_tools, get_apikey_creds, update_apikey_creds, update_built_in_tools, update_agents
+from src.db_services.ConfigurationServices import create_bridge, get_bridge_by_id, get_all_bridges_in_org, update_bridge, update_bridge_ids_in_api_calls, get_bridges_with_tools, get_apikey_creds, update_apikey_creds, update_built_in_tools, update_agents, get_all_agents_data, get_agents_data
 from src.configs.modelConfiguration import ModelsConfig as model_configuration
 from src.services.utils.helper import Helper
 import json
@@ -195,9 +195,10 @@ async def get_all_bridges(request):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-async def get_all_service_models_controller(service):
+async def get_all_service_models_controller(service, request):
     try:
         service = service.lower()
+        org_id = request.state.profile['org']['id']
         
         def restructure_configuration(config):
             model_field = config.get("configuration", {}).get("model", "")
@@ -208,7 +209,9 @@ async def get_all_service_models_controller(service):
                     "model": model_field,
                     "additional_parameters": additional_parameters
                 },
-                "validationConfig" : config.get("validationConfig", {})
+                "validationConfig" : config.get("validationConfig", {}),
+                "outputConfig": config.get('outputConfig',{}),
+                "org_id": config.get('org_id', None)
             }
         
         # Check if service exists in model_config_document
@@ -231,6 +234,10 @@ async def get_all_service_models_controller(service):
             # Check if model has status and if it equals 1
             if model_config.get('status') != 1:
                 continue
+            
+            # Check if model has org_id and if it doesn't match the current org_id
+            if 'org_id' in model_config and model_config['org_id'] != org_id:
+                continue  # Skip this model if org_id doesn't match
             
             # Get model type from configuration, default to 'chat' if not specified
             model_type = model_config.get('validationConfig', {}).get('type', 'chat')
@@ -257,7 +264,8 @@ async def get_all_service_controller():
             "groq": {"model": "llama3-70b-8192"},
             "openai_response": {"model": "gpt-4o"},
             "open_router": {"model": "deepseek/deepseek-chat-v3-0324:free"},
-            "mistral": {"model": "mistral-medium-latest"}
+            "mistral": {"model": "mistral-medium-latest"},
+            "gemini" : {"model" : "gemini-2.5-flash"}
         }
     }
 
@@ -291,6 +299,7 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
         function_ids = bridge.get('function_ids') or []
         
         # Initialize update fields and user history tracking
+        page_config = body.get('page_config')
         update_fields = {}
         user_history = []
         
@@ -338,6 +347,8 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
                 update_fields[field] = value
         
         # Handle service and model configuration
+        if page_config is not None:
+            update_fields['page_config'] = page_config
         if service is not None:
             update_fields['service'] = service
             if new_configuration and 'model' in new_configuration:
@@ -482,3 +493,21 @@ async def get_all_in_built_tools_controller():
             }
         ]
     }
+
+async def get_all_agents(request):
+    # body  = await request.json()
+    user_email = request.state.profile.get("userEmail", '')
+    result = await get_all_agents_data(user_email)
+    return JSONResponse(status_code=200, content=json.loads(json.dumps({
+        "success": True,
+        "data": result
+    }, default=str)))
+
+async def get_agent(request,slug_name):
+    # body  = await request.json()
+    user_email = request.state.profile.get("userEmail",'')
+    result = await get_agents_data(slug_name, user_email)
+    return JSONResponse(status_code=200, content=json.loads(json.dumps({
+        "success": True,
+        "data": result
+    }, default=str)))

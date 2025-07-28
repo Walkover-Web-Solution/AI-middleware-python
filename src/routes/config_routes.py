@@ -7,8 +7,8 @@ from src.controllers.apicallControllerV2 import creates_api, updates_api
 router = APIRouter()
 
 @router.get('/service/models/{service}',dependencies=[Depends(jwt_middleware)])
-async def get_all_service_models(service: str):
-    return await get_all_service_models_controller(service)
+async def get_all_service_models(service: str, request: Request):
+    return await get_all_service_models_controller(service, request)
 
 @router.get('/service',dependencies=[Depends(jwt_middleware)])
 async def get_all_service():

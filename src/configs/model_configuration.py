@@ -22,7 +22,7 @@ async def init_model_configuration():
 
 async def _async_change_listener():
     """The core async change stream listener."""
-    pipeline = [{"$match": {"operationType": {"$in": ["insert", "update", "replace"]}}}]
+    pipeline = [{"$match": {"operationType": {"$in": ["insert", "update", "replace", "delete"]}}}]
     try:
         async with model_config_model.watch(pipeline) as stream:
             logger.info("MongoDB change stream is now listening for model configuration changes.")

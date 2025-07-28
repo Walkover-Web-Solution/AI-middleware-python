@@ -90,7 +90,7 @@ async def create(dataset, history_params, version_id):
                 'output_tokens': data_object.get('outputTokens', 0),
                 'total_tokens': data_object.get('totalTokens', 0),
                 'apikey_id': data_object.get('apikey_object_id', {}).get(data_object['service'], ''),
-                'created_at': datetime.now(timezone.utc),
+                'created_at': datetime.now(),  # Remove timezone to match database expectations
                 'latency': json.loads(data_object.get('latency', {})).get('over_all_time', 0),
                 'success' : data_object.get('success', False),
                 'cost' : data_object.get('expectedCost', 0),

@@ -26,6 +26,7 @@ from src.routes.rag_routes import router as rag_routes
 from src.routes.Internal_routes import router as Internal_routes
 from src.routes.testcase_routes import router as testcase_routes
 from models.Timescale.connections import init_async_dbservice
+from src.routes.runagents_routes import router as runagents_routes
 from src.configs.model_configuration import init_model_configuration, background_listen_for_changes
 from globals import *
 
@@ -170,10 +171,12 @@ app.include_router(config_router, prefix="/api/v1/config")
 app.include_router(apiCall_router, prefix="/functions")
 app.include_router(bridge_version, prefix="/bridge/versions" )
 app.include_router(image_process_routes, prefix="/image/processing" )
+app.include_router(image_process_routes, prefix="/files" )
 app.include_router(utils_router, prefix="/utils" )
 app.include_router(rag_routes,prefix="/rag")
 app.include_router(Internal_routes,prefix="/internal")
 app.include_router(testcase_routes, prefix='/testcases')
+app.include_router(runagents_routes, prefix='/publicAgent')
 
 
 if __name__ == "__main__":
