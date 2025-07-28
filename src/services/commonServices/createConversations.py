@@ -41,6 +41,9 @@ class ConversationService:
     def createOpenAiResponseConversation(conversation, memory, files):
         try:
             threads = []
+            # Track distinct PDF URLs across the entire conversation
+            seen_pdf_urls = set()
+            
             if memory is not None:
                 threads.append({'role': 'user', 'content': 'provide the summary of the previous conversation stored in the memory?'})
                 threads.append({'role': 'assistant', 'content': f'Summary of previous conversations :  {memory}' })
@@ -58,11 +61,13 @@ class ConversationService:
                                     "type": "input_image",
                                     "image_url": url
                                 })
-                            elif url not in files:
+                            elif url not in files and url not in seen_pdf_urls:
                                 content.append({
                                     "type": "input_file",
                                     "file_url": url
                                 })
+                                # Add to seen URLs to prevent duplicates
+                                seen_pdf_urls.add(url)
                     else:
                         # Default behavior for messages without URLs
                         content = message['content']
@@ -83,6 +88,8 @@ class ConversationService:
             if conversation == None:
                 conversation = []
             threads = []
+            # Track distinct PDF URLs across the entire conversation
+            seen_pdf_urls = set()
             
             if memory is not None:
                 threads.append({'role': 'user', 'content': [{"type": "text", "text": f"GPT-Memory Data:- {memory}"}]})
@@ -123,8 +130,8 @@ class ConversationService:
                 if message.get('urls') and isinstance(message['urls'], list):
                     for url in message['urls']:
                         if url.lower().endswith('.pdf'):
-                            # Only add PDF if not in files array
-                            if files is None or url not in files:
+                            # Only add PDF if not in files array and not seen before
+                            if (files is None or url not in files) and url not in seen_pdf_urls:
                                 content_items.append({
                                     "type": "document",
                                     "source": {
@@ -132,6 +139,8 @@ class ConversationService:
                                         "url": url
                                     }
                                 })
+                                # Add to seen URLs to prevent duplicates
+                                seen_pdf_urls.add(url)
                         else:
                             # For non-PDF files (images), add as image
                             content_items.append({
