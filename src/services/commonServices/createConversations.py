@@ -78,38 +78,6 @@ class ConversationService:
             raise ValueError(e.args[0])
 
     @staticmethod
-    def createGeminiConversation(conversation):
-        try:
-            threads = []
-            previous_role = "model"
-            for message in conversation:
-                chat = {}
-                role = "model" if message['role'] != "model" else message['role']
-                chat['role'] = role
-                chat['parts'] = message['content']
-                if previous_role != role:
-                    threads.append(chat)
-                previous_role = role
-
-            if previous_role == "user":
-                threads.append({
-                    'role': "model",
-                    'parts': ""
-                })
-                
-            return {
-                'success': True,
-                'messages': threads
-            }
-        except Exception as e:
-            logger.error(f"create conversation error=>, {str(e)}")
-            return {
-                'success': False,
-                'error': str(e),
-                'messages': []
-            }
-
-    @staticmethod
     async def createAnthropicConversation(conversation, memory, files):
         try:
             if conversation == None:
