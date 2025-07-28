@@ -16,12 +16,13 @@ class ConversationService:
                     content = [{"type": "text", "text": message['content']}]
                     if 'urls' in message and isinstance(message['urls'], list):
                         for url in message['urls']:
-                            content.append({
-                                "type": "image_url",
-                                "image_url": {
-                                    "url": url
-                                }
-                            })
+                            if not url.lower().endswith('.pdf'):
+                                content.append({
+                                    "type": "image_url",
+                                    "image_url": {
+                                        "url": url
+                                    }
+                                })
                     else:
                         # Default behavior for messages without URLs
                         content = message['content']
@@ -52,10 +53,11 @@ class ConversationService:
                     
                     if 'urls' in message and isinstance(message['urls'], list):
                         for url in message['urls']:
-                            content.append({
-                                "type": "input_image",
-                                "image_url": url
-                            })
+                            if not url.lower().endswith('.pdf'):
+                                content.append({
+                                    "type": "input_image",
+                                    "image_url": url
+                                })
                     else:
                         # Default behavior for messages without URLs
                         content = message['content']
@@ -201,12 +203,13 @@ class ConversationService:
                     content = [{"type": "text", "text": message['content']}]
                     if 'urls' in message and isinstance(message['urls'], list):
                         for url in message['urls']:
-                            content.append({
-                                "type": "image_url",
-                                "image_url": {
-                                    "url": url
-                                }
-                            })
+                            if not url.lower().endswith('.pdf'):
+                                content.append({
+                                    "type": "image_url",
+                                    "image_url": {
+                                        "url": url
+                                    }
+                                })
                     else:
                         # Default behavior for messages without URLs
                         content = message['content']
@@ -233,12 +236,13 @@ class ConversationService:
                     content = [{"type": "text", "text": message['content']}]
                     if 'urls' in message and isinstance(message['urls'], list):
                         for url in message['urls']:
-                            content.append({
-                                "type": "image_url",
-                                "image_url": {
-                                    "url": url
-                                }
-                            })
+                            if not url.lower().endswith('.pdf'):
+                                content.append({
+                                    "type": "image_url",
+                                    "image_url": {
+                                        "url": url
+                                    }
+                                })
                     else:
                         # Default behavior for messages without URLs
                         content = message['content']
@@ -265,12 +269,13 @@ class ConversationService:
                     content = [{"type": "text", "text": message['content']}]
                     if 'urls' in message and isinstance(message['urls'], list):
                         for url in message['urls']:
-                            content.append({
-                                "type": "image_url",
-                                "image_url": {
-                                    "url": url
-                                }
-                            })
+                            if not url.lower().endswith('.pdf'):
+                                content.append({
+                                    "type": "image_url",
+                                    "image_url": {
+                                        "url": url
+                                    }
+                                })
                     else:
                         # Default behavior for messages without URLs
                         content = message['content']
