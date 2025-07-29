@@ -754,20 +754,18 @@ async def save_sub_thread_id(org_id, thread_id, sub_thread_id, display_name, bri
         raise error    
 
 async def get_all_agents_data(user_email):
-    cursor = configurationModel.find({
+    query = {
         "$or": [
             {"page_config.availability": "public"},
             {
-                "$and": [
-                    {"page_config.availability": "private"},
-                    {"page_config.accessible_users": user_email}
-                ]
+                "page_config.availability": "private",
+                "page_config.allowedUsers": user_email
             }
         ]
-    })
-    data = []
-    async for doc in cursor:
-        data.append(doc)
+    }
+    cursor = configurationModel.find(query)
+    data = [doc async for doc in cursor]
+    
     return data
 
 
@@ -784,7 +782,7 @@ async def get_agents_data(slug_name, user_email):
                 "$and": [
                     {"page_config.availability": "private"},
                     {"page_config.url_slugname": slug_name},
-                    {"page_config.accessible_users": user_email}
+                    {"page_config.allowedUsers": user_email}
                 ]
             }
         ]

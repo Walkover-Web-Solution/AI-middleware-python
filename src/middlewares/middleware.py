@@ -17,7 +17,8 @@ async def make_data_if_proxy_token_given(req):
             'id': response_data['data'][0]['id'],
             'name': response_data['data'][0]['name'],
             'is_embedUser': response_data['data'][0]['meta'].get('type') == 'embed',
-            'folder_id': response_data['data'][0]['meta'].get('folder_id' , None)
+            'folder_id': response_data['data'][0]['meta'].get('folder_id' , None),
+            'email': response_data['data'][0]['email']
         },
         'org': {
             'id': response_data['data'][0]['currentCompany']['id'],
