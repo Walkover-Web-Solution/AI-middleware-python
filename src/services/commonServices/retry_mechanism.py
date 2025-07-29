@@ -63,10 +63,12 @@ async def execute_with_retry(
                 print("Second API call completed successfully.")
                 second_result['response']['firstAttemptError'] = firstAttemptError
                 second_result['response']['fallback'] = True
+                second_result['response']['model'] = second_config['model']
                 return second_result
             else:
                 print("Second API call failed with error:", second_result['error'])
                 traceback.print_exc()
+                second_result['response']['model'] = second_config['model']
                 return second_result
 
     except Exception as e:
@@ -79,7 +81,7 @@ async def execute_with_retry(
         }
     
 def check_error_status_code(error_code):
-    if error_code in [401,404,429]:
+    if error_code in [401,429]:
         return True
     return False
 
