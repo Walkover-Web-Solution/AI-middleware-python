@@ -72,9 +72,9 @@ async def Response_formatter(response = {}, service = None, tools={}, type='chat
             }
         }
     elif service == service_name['openai']:
-        images = []
+        image_urls = []
         for image_data in response.get('data', []):
-            images.append({
+            image_urls.append({
                 "revised_prompt": image_data.get('revised_prompt'),
                 "image_url": image_data.get('original_url'),
                 "permanent_url": image_data.get('url')
@@ -82,7 +82,7 @@ async def Response_formatter(response = {}, service = None, tools={}, type='chat
         
         return {
             "data": {
-                "images": images
+                "images": image_urls
             }
         }
     

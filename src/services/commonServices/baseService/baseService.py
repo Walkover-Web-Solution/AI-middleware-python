@@ -250,7 +250,7 @@ class BaseService:
             'chatbot_message' : "",
             'tools_call_data' : self.func_tool_call_data,
             'message_id' : self.message_id,
-            'image_url' : [img.get('url') for img in model_response.get('data', []) if img.get('url')] or model_response.get('data',[{}])[0].get('url', None),
+            'image_urls' : [img.get('url') for img in model_response.get('data', []) if img.get('url')] or model_response.get('data',[{}])[0].get('url', None),
             'revised_prompt' : model_response.get('data',[{}])[0].get('revised_prompt', None),
             'urls' : (self.image_data or []) + (self.files or []),
             'AiConfig' : self.customConfig,
