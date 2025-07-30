@@ -17,9 +17,10 @@ async def send_data_middleware(request: Request, botId: str):
         org_id = request.state.profile['org']['id']
         slugName = body.get("slugName")
         isPublic = 'ispublic' in request.state.profile
-        user_email = request.state.profile.get('user',{}).get('email',None) if isPublic else body.get('state',{}).get("profile",{}).get("user",{}).get("email",'')
-        if isPublic:
-            threadId = str(request.state.profile['user']['id'])
+user_email = request.state.profile.get('user',{}).get('email',None) if isPublic else body.get('state',{}).get("profile",{}).get("user",{}).get("email",'')
+if isPublic and 'user' in request.state.profile:
+    threadId = str(request.state.profile['user']['id'])
+else:
         else:
             threadId = str(body.get("threadId")) if body.get("threadId") is not None else None
         profile = request.state.profile
