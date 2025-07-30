@@ -82,7 +82,7 @@ async def Response_formatter(response = {}, service = None, tools={}, type='chat
         
         return {
             "data": {
-                "images": image_urls
+                "image_urls": image_urls
             }
         }
     
