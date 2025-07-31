@@ -66,15 +66,23 @@ async def Response_formatter(response = {}, service = None, tools={}, type='chat
     elif service == service_name['gemini'] and type == 'image':
         return {
             "data" : {
-                "text_content" : response.get('data')[0].get('text_content'),
-                "image_url" : response.get('data')[0].get('url')
+                "revised_prompt" : response.get('data')[0].get('revised_prompt'),
+                "image_url" : response.get('data')[0].get('original_url'),
+                "permanent_url" :   response.get('data')[0].get('url')
             }
         }
     elif service == service_name['openai']:
+        image_urls = []
+        for image_data in response.get('data', []):
+            image_urls.append({
+                "revised_prompt": image_data.get('revised_prompt'),
+                "image_url": image_data.get('original_url'),
+                "permanent_url": image_data.get('url')
+            })
+        
         return {
-            "data" : {
-                "revised_prompt" : response.get('data')[0].get('revised_prompt'),
-                "image_url" : response.get('data')[0].get('url')
+            "data": {
+                "image_urls": image_urls
             }
         }
     
@@ -124,13 +132,34 @@ async def Response_formatter(response = {}, service = None, tools={}, type='chat
             "data": {
                 "id": response.get("id", None),
                 "content": (
-                    response.get("output", [{}])[0].get("content", [{}])[0].get("text", None)
-                    if response.get("output", [{}])[0].get("type") == "function_call"
-                    else next(
-                        (item.get("content", [{}])[0].get("text", None)
+                    # Check if any item in output is a function call
+                    next(
+                        (f"Function call: {item.get('name', 'unknown')} with arguments: {item.get('arguments', '')}"
                          for item in response.get("output", [])
-                         if item.get("type") == "message" or item.get("type") == "reasoning"),
+                         if item.get("type") == "function_call"),
                         None
+                    )
+                    if any(item.get("type") == "function_call" for item in response.get("output", []))
+                    else (
+                        # Try to get content from multiple types with fallback
+                        next(
+                            (item.get("content", [{}])[0].get("text", None)
+                             for item in response.get("output", [])
+                             if item.get("type") == "message" and item.get("content", [{}])[0].get("text", None) is not None),
+                            None
+                        ) or
+                        next(
+                            (item.get("content", [{}])[0].get("text", None)
+                             for item in response.get("output", [])
+                             if item.get("type") == "output_text" and item.get("content", [{}])[0].get("text", None) is not None),
+                            None
+                        ) or
+                        next(
+                            (item.get("content", [{}])[0].get("text", None)
+                             for item in response.get("output", [])
+                             if item.get("type") == "reasoning" and item.get("content", [{}])[0].get("text", None) is not None),
+                            None
+                        )
                     )
                 ),
                 "model": response.get("model", None),

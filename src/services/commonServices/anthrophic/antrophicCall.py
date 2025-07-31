@@ -13,13 +13,20 @@ class Antrophic(BaseService):
         tools = {}
         conversation = []
         images_input = []
-        conversation = (await ConversationService.createAnthropicConversation(self.configuration.get('conversation'), self.memory)).get('messages', [])        
+        conversation = (await ConversationService.createAnthropicConversation(self.configuration.get('conversation'), self.memory, self.files)).get('messages', [])        
         self.customConfig['system'] = self.configuration.get('prompt')
         if self.image_data:
             images_data = await fetch_images_b64(self.image_data)
             images_input = [{'type': 'image', 'source': {'type': 'base64', 'media_type': image_media_type, 'data': image_data}} for image_data, image_media_type in images_data]
+        elif self.files and len(self.files) > 0:
+            # Handle files (documents) when no images
+            file_content = [{'type': 'document', 'source': {'type': 'url', 'url': file_url}} for file_url in self.files]
+            content = file_content + [{"type": "text", "text": self.user}] if self.user else file_content
+            self.customConfig["messages"] = conversation + [{"role": "user", "content": content}]
         
-        self.customConfig["messages"] = conversation + [{"role": "user", "content": (images_input + [{"type": "text", "text": self.user}] if self.user else images_input)}] if images_input or self.user else conversation
+        # Original image handling logic (only runs if no files or images_input is populated)
+        if not (self.files and len(self.files) > 0):
+            self.customConfig["messages"] = conversation + [{"role": "user", "content": (images_input + [{"type": "text", "text": self.user}] if self.user else images_input)}] if images_input or self.user else conversation
         self.customConfig['tools'] = self.tool_call if self.tool_call and len(self.tool_call) != 0 else []
         self.customConfig = self.service_formatter(self.customConfig, service_name['anthropic'])
         antrophic_response = await self.chats(self.customConfig, self.apikey, service_name['anthropic'])

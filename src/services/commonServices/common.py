@@ -29,7 +29,8 @@ from src.services.utils.common_utils import (
     process_background_tasks_for_error,
     update_usage_metrics,
     create_latency_object,
-    create_history_params
+    create_history_params,
+    add_files_to_parse_data
 )
 from src.services.utils.rich_text_support import process_chatbot_response
 app = FastAPI()
@@ -65,6 +66,10 @@ async def chat(request_body):
 
         # Step 5: Manage Threads
         thread_info = await manage_threads(parsed_data)
+
+        # add Files from cache is Present
+        if len(parsed_data['files']) == 0:
+            parsed_data['files'] = await add_files_to_parse_data(parsed_data['thread_id'], parsed_data['sub_thread_id'], parsed_data['bridge_id'])
 
         # Step 6: Prepare Prompt, Variables and Memory
         memory, missing_vars = await prepare_prompt(parsed_data, thread_info, model_config, custom_config)

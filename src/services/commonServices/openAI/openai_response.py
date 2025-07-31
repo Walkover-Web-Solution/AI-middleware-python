@@ -8,7 +8,7 @@ from src.services.utils.ai_middleware_format import Response_formatter
 class OpenaiResponse(BaseService):
     async def execute(self):
         historyParams, usage, tools = {}, {}, {}
-        conversation = ConversationService.createOpenAiResponseConversation(self.configuration.get('conversation'), self.memory).get('messages', [])
+        conversation = ConversationService.createOpenAiResponseConversation(self.configuration.get('conversation'), self.memory, self.files).get('messages', [])
         
         developer = [{"role": "developer", "content": self.configuration['prompt']}] if not self.reasoning_model else []
         
@@ -16,6 +16,11 @@ class OpenaiResponse(BaseService):
             self.customConfig["input"] = developer + conversation
             image_content = [{"type": "input_image", "image_url": url} for url in self.image_data]
             content = [{"type": "input_text", "text": self.user}] + image_content if self.user else image_content
+            self.customConfig["input"].append({'role': 'user', 'content': content})
+        elif self.files and len(self.files) > 0:
+            self.customConfig["input"] = developer + conversation
+            file_content = [{"type": "input_file", "file_url": file_url} for file_url in self.files]
+            content = [{"type": "input_text", "text": self.user}] + file_content if self.user else file_content
             self.customConfig["input"].append({'role': 'user', 'content': content})
         else:
             user = [{"role": "user", "content": self.user}] if self.user else []
@@ -40,14 +45,22 @@ class OpenaiResponse(BaseService):
                 await self.handle_failure(openAIResponse)
             raise ValueError(openAIResponse.get('error'))
         
-        if any(output.get('type') == 'function_call' for output in modelResponse.get('output', [])):
+        # Check for function calls in multiple possible locations with fallback
+        has_function_call = (
+            any(output.get('type') == 'function_call' for output in modelResponse.get('output', [])) or
+            any(output.get('type') == 'tool_call' for output in modelResponse.get('output', [])) or
+            any('function_call' in str(output) for output in modelResponse.get('output', []) if output.get('type') in ['reasoning', 'message', 'output_text'])
+        )
+        
+        if has_function_call:
             functionCallRes = await self.function_call(self.customConfig, service_name['openai_response'], openAIResponse, 0, {})
             if not functionCallRes.get('success'):
                 await self.handle_failure(functionCallRes)
                 raise ValueError(functionCallRes.get('error'))
             self.update_model_response(modelResponse, functionCallRes)
-            tools = functionCallRes.get("tools", {})
-        response = await Response_formatter(modelResponse, service_name['openai_response'], tools, self.type, self.image_data)
+            response = await Response_formatter(functionCallRes.get("modelResponse", {}), service_name['openai_response'], functionCallRes.get("tools", {}), self.type, self.image_data)
+        else:
+            response = await Response_formatter(modelResponse, service_name['openai_response'], {}, self.type, self.image_data)
         if not self.playground:
             usage = self.token_calculator.calculate_usage(modelResponse)
             historyParams = self.prepare_history_params(response, modelResponse, tools)

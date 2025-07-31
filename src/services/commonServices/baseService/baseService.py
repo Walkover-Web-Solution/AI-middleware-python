@@ -63,6 +63,7 @@ class BaseService:
         self.send_error_to_webhook = params.get('send_error_to_webhook')
         self.built_in_tools = params.get('built_in_tools')
         self.function_time_logs = params.get('function_time_logs')
+        self.files = params.get('files')
 
 
     def aiconfig(self):
@@ -211,9 +212,9 @@ class BaseService:
                 _.set_(model_response, usage_config['prompt_tokens'], self.prompt_tokens)
                 _.set_(model_response, usage_config['completion_tokens'], self.completion_tokens)
 
-            if funcModelResponse:
+            if funcModelResponse and self.service != service_name['openai_response']:
                 _.set_(model_response, self.modelOutputConfig['message'], _.get(funcModelResponse, self.modelOutputConfig['message']))
-                if self.service in [service_name['openai'], service_name['groq'], service_name['openai_response'], service_name['open_router'], service_name['gemini']]:
+                if self.service in [service_name['openai'], service_name['groq'], service_name['open_router'], service_name['gemini']]:
                     _.set_(model_response, self.modelOutputConfig['tools'], _.get(funcModelResponse, self.modelOutputConfig['tools']))
 
     def calculate_usage(self, model_response):
@@ -250,9 +251,9 @@ class BaseService:
             'chatbot_message' : "",
             'tools_call_data' : self.func_tool_call_data,
             'message_id' : self.message_id,
-            'image_url' : model_response.get('data',[{}])[0].get('url', None),
+            'image_urls' : [{'revised_prompt': img.get('revised_prompt'), 'permanent_url': img.get('url')} for img in model_response.get('data', []) if img.get('url')] or [{'revised_prompt': model_response.get('data',[{}])[0].get('revised_prompt', None), 'permanent_url': model_response.get('data',[{}])[0].get('url', None)}] if model_response.get('data',[{}])[0].get('url') else [],
             'revised_prompt' : model_response.get('data',[{}])[0].get('revised_prompt', None),
-            'urls' : self.image_data,
+            'urls' : (self.image_data or []) + (self.files or []),
             'AiConfig' : self.customConfig,
             "firstAttemptError" : model_response.get('firstAttemptError') or '',
             "annotations" : _.get(model_response, self.modelOutputConfig.get('annotations')) or [],

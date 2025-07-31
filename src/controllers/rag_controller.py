@@ -184,8 +184,13 @@ async def get_vectors_and_text(request):
             'org_id': org_id,
             'top_k': top_k
         })
-        return JSONResponse(status_code=200, content={
-            "success": True,
+        
+        # Check if the operation was successful based on status
+        success = text.get('status') == 1
+        status_code = 200 if success else 400
+        
+        return JSONResponse(status_code=status_code, content={
+            "success": success,
             "text": text['response']
         })
         
@@ -298,11 +303,11 @@ async def get_text_from_vectorsQuery(args):
         }
         
     except Exception as error:
-        print(f"Error in get_vectors_and_text: {error}")
-        raise { #This is not how an error is raised. 
+        print(f"Error in get_text_from_vectorsQuery: {error}")
+        return {
             'response': str(error),
             'metadata': {
                 'flowHitId': ''
             },
-            'status': 1
+            'status': 0  # 0 indicates error/failure
         }
