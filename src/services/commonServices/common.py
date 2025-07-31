@@ -271,7 +271,7 @@ async def image(request_body):
     
     except (Exception, ValueError, BadRequestException) as error:
         if not isinstance(error, BadRequestException):
-            logger.error(f'Error in chat service: %s, {str(error)}, {traceback.format_exc()}')
+            logger.error(f'Error in image service: {str(error)}, {traceback.format_exc()}')
         if not parsed_data['is_playground']:
             # Create latency object and update usage metrics
             latency = create_latency_object(timer, params)
