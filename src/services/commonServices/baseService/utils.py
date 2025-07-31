@@ -377,14 +377,14 @@ async def make_request_data(request: Request):
     }
     return result
 
-async def make_request_data_and_publish_sub_queue(parsed_data, result, params, thread_info):
+async def make_request_data_and_publish_sub_queue(parsed_data, result, params, thread_info=None):
     suggestion_content = {'data': {'content': {}}}
     suggestion_content['data']['content'] = result.get('historyParams', {}).get('message') if parsed_data.get('is_rich_text') == True else result.get('modelResponse')
     data = {
         "save_sub_thread_id_and_name" : {
             "org_id" : parsed_data.get('org_id'),
-            "thread_id" : thread_info.get('thread_id'),
-            "sub_thread_id" : thread_info.get('sub_thread_id'),
+            "thread_id" : thread_info.get('thread_id') if thread_info else parsed_data.get('thread_id'),
+            "sub_thread_id" : thread_info.get('sub_thread_id') if thread_info else parsed_data.get('sub_thread_id'),
             "thread_flag" : parsed_data.get('thread_flag'),
             "response_format" : parsed_data.get('response_format'),
             "bridge_id" : parsed_data.get('bridge_id'),

@@ -15,6 +15,7 @@ from ..Google.gemini_modelrun import gemini_modelrun
 from ..openRouter.openRouter_modelrun import openrouter_modelrun
 from ....configs.constant import service_name
 from ..openAI.image_model import OpenAIImageModel
+from ..Google.gemini_image_model import gemini_image_model
 from concurrent.futures import ThreadPoolExecutor
 from globals import *
 
@@ -343,6 +344,8 @@ class BaseService:
             response = {}
             if service == service_name['openai']:
                 response = await OpenAIImageModel(configuration, apikey, self.execution_time_logs, self.timer)
+            if service == service_name['gemini']:
+                response = await gemini_image_model(configuration, apikey, self.execution_time_logs, self.timer)
             if not response['success']:
                 raise ValueError(response['error'])
             return {

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Request, HTTPException
 from fastapi.responses import JSONResponse
 import asyncio
-from src.services.commonServices.common import chat, embedding, batch, run_testcases
+from src.services.commonServices.common import chat, embedding, batch, run_testcases, image
 from src.services.commonServices.baseService.utils import make_request_data
 from ...middlewares.middleware import jwt_middleware
 from ...middlewares.getDataUsingBridgeId import add_configuration_data_to_body
@@ -41,6 +41,10 @@ async def chat_completion(request: Request, db_config: dict = Depends(add_config
         if type == 'embedding':
             loop = asyncio.get_event_loop()
             result = await loop.run_in_executor(executor, lambda: asyncio.run(embedding(data_to_send)))
+            return result
+        if type == 'image':
+            loop = asyncio.get_event_loop()
+            result = await image(data_to_send)
             return result
         loop = asyncio.get_event_loop()
         result = await chat(data_to_send)
