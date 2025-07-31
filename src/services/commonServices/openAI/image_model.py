@@ -40,19 +40,22 @@ async def OpenAIImageModel(configuration, apiKey, execution_time_logs, timer):
         execution_time_logs.append({"step": "OpenAI image Processing time", "time_taken": timer.stop("OpenAI image Processing time")})
         response = chat_completion.to_dict()
         
-        # Get original OpenAI image URL
-        original_image_url = response['data'][0]['url']
+        # Process all images in the response data array
+        for i, image_data in enumerate(response['data']):
+            # Get original OpenAI image URL
+            original_image_url = image_data['url']
+            
+            # Generate predictable GCP URL immediately
+            filename = f"generated-images/{uuid.uuid4()}.png"
+            gcp_url = f"https://resources.gtwy.ai/{filename}"
+            
+            # Add both URLs to response
+            response['data'][i]['original_url'] = original_image_url
+            response['data'][i]['url'] = gcp_url  # Primary URL (GCP)
+            
+            # Start background upload task (fire and forget)
+            asyncio.create_task(upload_to_gcp_background(original_image_url, filename))
         
-        # Generate predictable GCP URL immediately
-        filename = f"generated-images/{uuid.uuid4()}.png"
-        gcp_url = f"https://resources.gtwy.ai/{filename}"
-        
-        # Add both URLs to response
-        response['data'][0]['original_url'] = original_image_url
-        response['data'][0]['url'] = gcp_url  # Primary URL (GCP)
-        
-        # Start background upload task (fire and forget)
-        asyncio.create_task(upload_to_gcp_background(original_image_url, filename))
         return {
             'success': True,
             'response': response
