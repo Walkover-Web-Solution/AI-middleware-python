@@ -243,7 +243,7 @@ class BaseService:
             'message': response.get('data',{}).get('content') or "",
             'org_id': self.org_id,
             'bridge_id': self.bridge_id,
-            'model': self.configuration.get('model'),
+            'model': model_response.get('model') or self.configuration.get('model'),
             'channel': 'chat',
             'type': "assistant" if response.get('data',{}).get('content') else "tool_calls",
             'actor': "user",
