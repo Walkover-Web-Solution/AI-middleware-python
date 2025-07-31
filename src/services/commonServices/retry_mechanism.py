@@ -83,7 +83,7 @@ async def execute_with_retry(
         }
     
 def check_error_status_code(error_code):
-    if error_code in [401,429]:
+    if error_code in [401,404,429]:
         return True
     return False
 
