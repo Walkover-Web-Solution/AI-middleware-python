@@ -68,6 +68,8 @@ async def execute_with_retry(
             else:
                 print("Second API call failed with error:", second_result['error'])
                 traceback.print_exc()
+                if 'response' not in second_result:
+                    second_result['response'] = {}
                 second_result['response']['model'] = second_config['model']
                 return second_result
 
