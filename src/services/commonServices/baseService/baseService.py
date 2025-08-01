@@ -244,7 +244,7 @@ class BaseService:
             'bridge_id': self.bridge_id,
             'model': self.configuration.get('model'),
             'channel': 'chat',
-            'type': "assistant" if response.get('data',{}).get('content') else "tool_calls",
+            'type': "assistant",
             'actor': "user",
             'tools': tools,
             'chatbot_message' : "",
