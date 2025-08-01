@@ -66,8 +66,8 @@ async def Response_formatter(response = {}, service = None, tools={}, type='chat
     elif service == service_name['gemini'] and type == 'image':
         return {
             "data" : {
-                "revised_prompt" : response.get('data')[0].get('revised_prompt'),
-                "image_url" : response.get('data')[0].get('original_url'),
+                "revised_prompt" : response.get('data')[0].get('text_content'),
+                "image_url" : response.get('data')[0].get('url'),
                 "permanent_url" :   response.get('data')[0].get('url')
             }
         }
