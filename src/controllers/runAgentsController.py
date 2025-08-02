@@ -7,8 +7,9 @@ from src.services.commonServices.generateToken import generateToken
 
 async def login_public_user(request: Request):
     try:
-        user_info = request.get('state', {}).get('profile', {}).get('user', {})
-        user_id = user_info.get('id')
+        user_info = request.get('state', {}).get('profile', {}).get('user', {}) 
+        body =  await request.json()
+        user_id = user_info.get('id', None) or body.get('user_id', None)
         user_email = user_info.get('email')
         is_public = not bool(user_email)
 
