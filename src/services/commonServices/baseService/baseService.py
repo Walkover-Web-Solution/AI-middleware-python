@@ -243,7 +243,7 @@ class BaseService:
             'message': response.get('data',{}).get('content') or "",
             'org_id': self.org_id,
             'bridge_id': self.bridge_id,
-            'model': model_response.get('model') or self.configuration.get('model'),
+            'model': self.configuration.get('model'),
             'channel': 'chat',
             'type': "assistant",
             'actor': "user",
@@ -257,6 +257,7 @@ class BaseService:
             'AiConfig' : self.customConfig,
             "firstAttemptError" : model_response.get('firstAttemptError') or '',
             "annotations" : _.get(model_response, self.modelOutputConfig.get('annotations')) or [],
+            "fallback_model" : model_response.get('fallback_model') or '',
         }
     
     def service_formatter(self, configuration : object, service : str ):
