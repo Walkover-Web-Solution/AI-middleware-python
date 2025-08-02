@@ -45,7 +45,7 @@ async def file_processing(request):
     # Extract thread parameters from form data
     thread_id = body.get('thread_id')
     sub_thread_id = body.get('sub_thread_id') 
-    bridge_id = body.get('bridge_id')
+    bridge_id = body.get('agent_id')
     
     file_content = await file.read()
     
