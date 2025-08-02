@@ -32,6 +32,7 @@ class Conversation(Base):
     urls = Column(ARRAY(String), nullable=True)
     AiConfig = Column(JSON, nullable=True)
     annotations = Column(ARRAY(JSON), nullable=True)
+    fallback_model = Column(String, nullable=True)
 
 class RawData(Base):
     __tablename__ = 'raw_data'
