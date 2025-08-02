@@ -267,7 +267,7 @@ async def image(request_body):
         latency = create_latency_object(timer, params)
         if not parsed_data['is_playground']:
             if result.get('response') and result['response'].get('data'):
-                result['response']['data']['message_id'] = parsed_data['message_id']
+                result['response']['data']['id'] = parsed_data['message_id']
             await sendResponse(parsed_data['response_format'], result["response"], success=True, variables=parsed_data.get('variables',{}))
             # Update usage metrics for successful API calls
             update_usage_metrics(parsed_data, params, latency, result=result, success=True)
