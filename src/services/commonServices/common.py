@@ -138,7 +138,9 @@ async def chat(request_body):
             await sendResponse(parsed_data['response_format'], result.get("modelResponse", str(error)), variables=parsed_data['variables']) if parsed_data['response_format']['type'] != 'default' else None
             # Process background tasks for error handling
             await process_background_tasks_for_error(parsed_data, error)
-        raise ValueError(error)
+        # Add support contact information to error message
+        error_message = f"{str(error)}. For more support contact us at support@gtwy.ai"
+        raise ValueError(error_message)
     
 
 async def embedding(request_body):
