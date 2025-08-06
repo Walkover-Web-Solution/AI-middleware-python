@@ -15,6 +15,7 @@ from ..Google.gemini_modelrun import gemini_modelrun
 from ..openRouter.openRouter_modelrun import openrouter_modelrun
 from ....configs.constant import service_name
 from ..openAI.image_model import OpenAIImageModel
+from ..Google.gemini_image_model import gemini_image_model
 from concurrent.futures import ThreadPoolExecutor
 from globals import *
 
@@ -250,12 +251,13 @@ class BaseService:
             'chatbot_message' : "",
             'tools_call_data' : self.func_tool_call_data,
             'message_id' : self.message_id,
-            'image_url' : model_response.get('data',[{}])[0].get('url', None),
+            'image_urls' : [{'revised_prompt': img.get('revised_prompt'), 'permanent_url': img.get('url')} for img in model_response.get('data', []) if img.get('url')] or [{'revised_prompt': model_response.get('data',[{}])[0].get('revised_prompt', None), 'permanent_url': model_response.get('data',[{}])[0].get('url', None)}] if model_response.get('data',[{}])[0].get('url') else [],
             'revised_prompt' : model_response.get('data',[{}])[0].get('revised_prompt', None),
             'urls' : (self.image_data or []) + (self.files or []),
             'AiConfig' : self.customConfig,
             "firstAttemptError" : model_response.get('firstAttemptError') or '',
             "annotations" : _.get(model_response, self.modelOutputConfig.get('annotations')) or [],
+            "fallback_model" : model_response.get('fallback_model') or '',
         }
     
     def service_formatter(self, configuration : object, service : str ):
@@ -343,6 +345,8 @@ class BaseService:
             response = {}
             if service == service_name['openai']:
                 response = await OpenAIImageModel(configuration, apikey, self.execution_time_logs, self.timer)
+            if service == service_name['gemini']:
+                response = await gemini_image_model(configuration, apikey, self.execution_time_logs, self.timer)
             if not response['success']:
                 raise ValueError(response['error'])
             return {

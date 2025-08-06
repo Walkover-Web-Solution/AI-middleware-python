@@ -28,10 +28,11 @@ class Conversation(Base):
     version_id = Column(String)
     sub_thread_id = Column(String, nullable=True)
     revised_prompt = Column(Text, nullable=True)
-    image_url = Column(Text, nullable=True)
+    image_urls = Column(ARRAY(JSON), nullable=True)
     urls = Column(ARRAY(String), nullable=True)
     AiConfig = Column(JSON, nullable=True)
     annotations = Column(ARRAY(JSON), nullable=True)
+    fallback_model = Column(String, nullable=True)
 
 class RawData(Base):
     __tablename__ = 'raw_data'

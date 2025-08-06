@@ -63,10 +63,14 @@ async def execute_with_retry(
                 print("Second API call completed successfully.")
                 second_result['response']['firstAttemptError'] = firstAttemptError
                 second_result['response']['fallback'] = True
+                second_result['response']['fallback_model'] = second_config['model']
                 return second_result
             else:
                 print("Second API call failed with error:", second_result['error'])
                 traceback.print_exc()
+                if 'response' not in second_result:
+                    second_result['response'] = {}
+                second_result['response']['fallback_model'] = second_config['model']
                 return second_result
 
     except Exception as e:

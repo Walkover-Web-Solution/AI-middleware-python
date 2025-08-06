@@ -17,8 +17,8 @@ async def send_data_middleware(request: Request, botId: str):
         org_id = request.state.profile['org']['id']
         slugName = body.get("slugName")
         isPublic = 'ispublic' in request.state.profile
-        user_email = body.get('state',{}).get("profile",{}).get("user",{}).get("email",'')
-        if isPublic:
+        user_email = request.state.profile.get('user',{}).get('email',None) if isPublic else body.get('state',{}).get("profile",{}).get("user",{}).get("email",'')
+        if isPublic and 'user' in request.state.profile:
             threadId = str(request.state.profile['user']['id'])
         else:
             threadId = str(body.get("threadId")) if body.get("threadId") is not None else None
@@ -96,6 +96,7 @@ async def chat_bot_auth(request: Request):
     timer_obj.start()
     # request.state.timer = timer
     request.state.timer = timer_obj.getTime()
+    is_public_agent = request.path_params.get('botId', None) == "Public_Agents"
     token = request.headers.get('Authorization')
     if token:
         token = token.split(' ')[1] if ' ' in token else token
@@ -106,7 +107,7 @@ async def chat_bot_auth(request: Request):
     try:
         decoded_token = jwt.decode(token, options={"verify_signature": False})
         if decoded_token:
-            check_token = jwt.decode(token, Config.CHATBOTSECRETKEY, algorithms=["HS256"])
+            check_token = jwt.decode(token, Config.PUBLIC_CHATBOT_TOKEN if is_public_agent else Config.CHATBOTSECRETKEY, algorithms=["HS256"])
             if check_token:
                 request.state.profile = {
                     "org": {

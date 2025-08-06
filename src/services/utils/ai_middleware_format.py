@@ -66,15 +66,23 @@ async def Response_formatter(response = {}, service = None, tools={}, type='chat
     elif service == service_name['gemini'] and type == 'image':
         return {
             "data" : {
-                "revised_prompt" : response.get('data')[0].get('revised_prompt'),
-                "image_url" : response.get('data')[0].get('url')
+                "revised_prompt" : response.get('data')[0].get('text_content'),
+                "image_url" : response.get('data')[0].get('url'),
+                "permanent_url" :   response.get('data')[0].get('url')
             }
         }
     elif service == service_name['openai']:
+        image_urls = []
+        for image_data in response.get('data', []):
+            image_urls.append({
+                "revised_prompt": image_data.get('revised_prompt'),
+                "image_url": image_data.get('original_url'),
+                "permanent_url": image_data.get('url')
+            })
+        
         return {
-            "data" : {
-                "revised_prompt" : response.get('data')[0].get('revised_prompt'),
-                "image_url" : response.get('data')[0].get('url')
+            "data": {
+                "image_urls": image_urls
             }
         }
     

@@ -28,7 +28,7 @@ async def getThread(thread_id, sub_thread_id, org_id, bridge_id, bridgeType):
         logger.error(f"Error in getting thread:, {str(err)}, {traceback.format_exc()}")
         raise err
 
-async def savehistory(thread_id, sub_thread_id, userMessage, botMessage, org_id, bridge_id, model_name, type, messageBy, userRole="user", tools={}, chatbot_message = "",tools_call_data = [],message_id = None, version_id = None, image_url = None, revised_prompt = None, urls = None, AiConfig = None, annotations = None):
+async def savehistory(thread_id, sub_thread_id, userMessage, botMessage, org_id, bridge_id, model_name, type, messageBy, userRole="user", tools={}, chatbot_message = "",tools_call_data = [],message_id = None, version_id = None, image_url = None, revised_prompt = None, urls = None, AiConfig = None, annotations = None, fallback_model = None):
     try:
         chatToSave = [{
             'thread_id': thread_id,
@@ -43,7 +43,8 @@ async def savehistory(thread_id, sub_thread_id, userMessage, botMessage, org_id,
             'version_id': version_id,
             'revised_prompt' : revised_prompt,
             'urls' : urls,
-            'AiConfig' : AiConfig
+            'AiConfig' : AiConfig,
+            'fallback_model' : fallback_model
         }]
         
         if tools:
@@ -76,9 +77,10 @@ async def savehistory(thread_id, sub_thread_id, userMessage, botMessage, org_id,
                 'chatbot_message' : chatbot_message or "",
                 'message_id' : message_id,
                 'revised_prompt' : revised_prompt,
-                "image_url" : image_url,
+                "image_urls" : image_url,
                 'version_id': version_id,
-                "annotations" : annotations
+                "annotations" : annotations,
+                "fallback_model" : fallback_model
             })
         # sending data through rt layer
         chatbotSaveCopy = copy.deepcopy(chatToSave)

@@ -1,7 +1,7 @@
 import asyncio
 import json
 from config import Config
-from src.services.commonServices.common import chat
+from src.services.commonServices.common import chat, image
 from aio_pika.abc import AbstractIncomingMessage
 from src.services.utils.logger import logger
 from src.services.utils.common_utils import process_background_tasks
@@ -24,7 +24,10 @@ class Queue(BaseQueue):
 
     async def process_messages(self, messages):
         """Implement your batch processing logic here."""
-        loop = asyncio.get_event_loop()
+        type = messages.get("body",{}).get('configuration',{}).get('type')
+        if type == 'image':
+            await image(messages)
+            return
         await chat(messages)
         # return result
 

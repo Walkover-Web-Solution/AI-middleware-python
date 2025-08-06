@@ -12,8 +12,7 @@ from globals import *
 # todo :: to make it more better
 async def get_all_api_calls_by_org_id(org_id, folder_id, user_id, isEmbedUser):
     query = {"org_id": org_id}
-    if folder_id:
-        query["folder_id"] = folder_id
+    query["folder_id"] = folder_id or  None
     if user_id and isEmbedUser:
         query["user_id"] = user_id
     pipeline = [

@@ -138,7 +138,9 @@ async def chat(request_body):
             await sendResponse(parsed_data['response_format'], result.get("modelResponse", str(error)), variables=parsed_data['variables']) if parsed_data['response_format']['type'] != 'default' else None
             # Process background tasks for error handling
             await process_background_tasks_for_error(parsed_data, error)
-        raise ValueError(error)
+        # Add support contact information to error message
+        error_message = f"{str(error)}. For more support contact us at support@gtwy.ai"
+        raise ValueError(error_message)
     
 
 async def embedding(request_body):
@@ -228,3 +230,63 @@ async def run_testcases(request_body):
         logger.error(f'Error in running testcases, {str(error)}, {traceback.format_exc()}')
         return JSONResponse(status_code=400, content={'success': False, 'error': str(error)})
     
+
+async def image(request_body):
+    result ={}
+    class_obj= {}
+    try:
+        # Step 1: Parse and validate request body
+        parsed_data = parse_request_body(request_body)
+
+        # Step 2: Initialize Timer
+        timer = initialize_timer(parsed_data['state'])
+        
+        # Step 3: Load Model Configuration
+        model_config, custom_config, model_output_config = await load_model_configuration(
+            parsed_data['model'], parsed_data['configuration'], parsed_data['service'],
+        )
+        
+        # Step 4: Configure Custom Settings
+        custom_config = await configure_custom_settings(
+            model_config['configuration'], custom_config, parsed_data['service']
+        )
+        # Step 5: Manage Threads
+        thread_info = await manage_threads(parsed_data)
+
+        # Step 5: Execute Service Handler
+        params = build_service_params(
+            parsed_data, custom_config, model_output_config, thread_info, timer, None, send_error_to_webhook
+        )
+        
+        
+        class_obj = await Helper.create_service_handler(params, parsed_data['service'])
+        result = await class_obj.execute()
+            
+        if not result["success"]:
+            raise ValueError(result)
+
+        # Create latency object using utility function
+        latency = create_latency_object(timer, params)
+        if not parsed_data['is_playground']:
+            if result.get('response') and result['response'].get('data'):
+                result['response']['data']['id'] = parsed_data['message_id']
+            await sendResponse(parsed_data['response_format'], result["response"], success=True, variables=parsed_data.get('variables',{}))
+            # Update usage metrics for successful API calls
+            update_usage_metrics(parsed_data, params, latency, result=result, success=True)
+            await process_background_tasks(parsed_data, result, params, None)
+        return JSONResponse(status_code=200, content={"success": True, "response": result["response"]})
+    
+    except (Exception, ValueError, BadRequestException) as error:
+        if not isinstance(error, BadRequestException):
+            logger.error(f'Error in image service: {str(error)}, {traceback.format_exc()}')
+        if not parsed_data['is_playground']:
+            # Create latency object and update usage metrics
+            latency = create_latency_object(timer, params)
+            update_usage_metrics(parsed_data, params, latency, error=error, success=False)
+            
+            # Create history parameters
+            parsed_data['historyParams'] = create_history_params(parsed_data, error, class_obj)
+            await sendResponse(parsed_data['response_format'], result.get("modelResponse", str(error)), variables=parsed_data['variables']) if parsed_data['response_format']['type'] != 'default' else None
+            # Process background tasks for error handling
+            await process_background_tasks_for_error(parsed_data, error)
+        raise ValueError(error)
