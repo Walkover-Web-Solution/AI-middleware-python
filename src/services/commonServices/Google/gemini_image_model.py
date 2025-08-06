@@ -1,6 +1,6 @@
 import traceback
-from google import genai
-from google.genai import types
+from google import generativeai as genai
+from google.generativeai import types
 from google.cloud import storage
 import uuid
 import json

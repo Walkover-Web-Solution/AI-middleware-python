@@ -54,6 +54,19 @@ class Config:
     PUBLIC_CHATBOT_TOKEN = os.getenv('public_chatbot_token')
     LOG_QUEUE_NAME = os.getenv('LOG_QUEUE_NAME')
     ATATUS_LICENSE_KEY = os.getenv('ATATUS_LICENSE_KEY')
+
+
+    #PORTS FOR CACHE DB (REDIS AND QDRANT)
+    REDIS_HOST = os.getenv("REDIS_HOST")
+    REDIS_PORT = os.getenv("REDIS_PORT")
+    REDIS_DB = os.getenv("REDIS_DB")
+
+    QDRANT_HOST = os.getenv("QDRANT_HOST")
+    QDRANT_PORT = os.getenv('QDRANT_PORT')
+    SIMILARITY_THRESHOLD = os.getenv("SIMILARITY_THRESHOLD")    #Minimum similarity limit for cache hit
+    CACHE_TTL_DAYS = os.getenv("CACHE_TTL_DAYS")                #TTL for cached respnoses in days
+    COLLECTION_NAME = os.getenv("COLLECTION_NAME")              #Collection name for qdrant db collection
+
     # DOCSTAR_ACCESS_KEY = os.getenv('DOCSTAR_ACCESS_KEY')
     # DOCSTAR_ORG_ID = os.getenv('DOCSTAR_ORG_ID')
     # DOCSTAR_COLLECTION_ID = os.getenv('DOCSTAR_COLLECTION_ID')
