@@ -376,8 +376,17 @@ def create_latency_object(timer, params):
     Returns:
         Dictionary containing latency metrics
     """
+    # Safely get overall time without overriding original errors
+    over_all_time = ""
+    try:
+        if hasattr(timer, "start_times") and timer.start_times:
+            over_all_time = timer.stop("Api total time")
+    except Exception:
+        # Silently fail to avoid overriding original error
+        pass
+    
     return {
-        "over_all_time": timer.stop("Api total time") if hasattr(timer, "start_times") else "",
+        "over_all_time": over_all_time,
         "model_execution_time": sum([log.get("time_taken", 0) for log in params['execution_time_logs']]) or "",
         "execution_time_logs": params['execution_time_logs'] or {},
         "function_time_logs": params['function_time_logs'] or {}
