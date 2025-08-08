@@ -1,11 +1,16 @@
 from anthropic import AsyncAnthropic
 import traceback
 from ..retry_mechanism import execute_with_retry
+from src.services.utils.unified_token_validator import validate_anthropic_token_limit
 from globals import *
 
 
 async def anthropic_runmodel(configuration, apikey, execution_time_logs, bridge_id, timer, name = "", org_name = "", service = "", count = 0):
     try:
+        # Validate token count before making API call
+        model_name = configuration.get('model')
+        validate_anthropic_token_limit(configuration, model_name, service, apikey)
+        
         # Initialize async client
         anthropic_client = AsyncAnthropic(api_key=apikey)
 

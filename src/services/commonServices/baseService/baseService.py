@@ -303,7 +303,7 @@ class BaseService:
             elif service == service_name['mistral']:
                 response = await mistral_model_run(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer, self.name, self.org_name, service, count)
             elif service == service_name['gemini']:
-                response = await gemini_modelrun(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer, self.name, self.org_name, service, count)
+                response = await gemini_modelrun(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer, self.message_id, self.org_id, self.name, self.org_name, service, count)
             if not response['success']:
                 raise ValueError(response['error'], self.func_tool_call_data)
             return {
