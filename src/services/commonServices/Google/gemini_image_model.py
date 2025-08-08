@@ -1,15 +1,12 @@
 import traceback
 from google import genai
 from google.genai import types
-from google.cloud import storage
 import uuid
-import json
 import time
-from config import Config
-from google.oauth2 import service_account
 from io import BytesIO
 from PIL import Image
 import base64
+from src.services.utils.gcp_upload_service import uploadDoc
 
 async def gemini_image_model(configuration, apikey, execution_time_logs, timer):
     try:
@@ -30,13 +27,8 @@ async def gemini_image_model(configuration, apikey, execution_time_logs, timer):
         
         execution_time_logs.append({"step": "Gemini image Processing time", "time_taken": timer.stop("Gemini image Processing time")})
         
-        # Setup GCP storage
-        credentials_dict = json.loads(Config.GCP_CREDENTIALS)
-        credentials = service_account.Credentials.from_service_account_info(credentials_dict)
-        storage_client = storage.Client(credentials=credentials)
-        bucket = storage_client.bucket('resources.gtwy.ai')
-        
         text_content = []
+        gcp_url = None
         
         for part in response.candidates[0].content.parts:
             if part.text is not None:
@@ -50,13 +42,15 @@ async def gemini_image_model(configuration, apikey, execution_time_logs, timer):
                 image.save(img_buffer, format='PNG')
                 img_buffer.seek(0)
                 
-                # Upload to GCP
-                filename = f"generated-images/{uuid.uuid4()}.png"
-                blob = bucket.blob(filename)
-                blob.upload_from_file(img_buffer, content_type='image/png')
-                
-                # Get the public URL
-                gcp_url = f"https://resources.gtwy.ai/{filename}"
+                # Upload to GCP using common upload function
+                filename = f"{uuid.uuid4()}.png"
+                gcp_url = await uploadDoc(
+                    file=img_buffer,
+                    folder='generated-images',
+                    real_time=True,
+                    filename=filename,
+                    content_type='image/png'
+                )
                 
         # Format response to match expected structure
         response = {

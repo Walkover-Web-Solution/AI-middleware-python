@@ -1,36 +1,10 @@
 import traceback
 from openai import AsyncOpenAI 
-from google.cloud import storage
 import uuid
-import json
 import asyncio
-from config import Config
-from google.oauth2 import service_account
-from src.services.utils.apiservice import fetch
+from src.services.utils.gcp_upload_service import uploadDoc
 
-async def upload_to_gcp_background(image_url: str, filename: str):
-    """
-    Background task to upload image from OpenAI URL to GCP storage
-    """
-    try:
-        
-        # Fetch image content
-        image_content, headers = await fetch(url=image_url, method='GET', image=True)
-        
-        # Setup GCP credentials and client
-        credentials_dict = json.loads(Config.GCP_CREDENTIALS)
-        credentials = service_account.Credentials.from_service_account_info(credentials_dict)
-        storage_client = storage.Client(credentials=credentials)
-        
-        bucket = storage_client.bucket('resources.gtwy.ai')
-        blob = bucket.blob(filename)
-        
-        # Upload the image
-        blob.upload_from_file(image_content, content_type='image/png')
-        
-    except Exception as error:
-        print(f"Background upload failed for {filename}: {str(error)}")
-        traceback.print_exc()
+
 
 async def OpenAIImageModel(configuration, apiKey, execution_time_logs, timer):
     try:
@@ -45,16 +19,19 @@ async def OpenAIImageModel(configuration, apiKey, execution_time_logs, timer):
             # Get original OpenAI image URL
             original_image_url = image_data['url']
             
-            # Generate predictable GCP URL immediately
-            filename = f"generated-images/{uuid.uuid4()}.png"
-            gcp_url = f"https://resources.gtwy.ai/{filename}"
+            # Generate predictable GCP URL immediately and start background upload
+            filename = f"{uuid.uuid4()}.png"
+            gcp_url = await uploadDoc(
+                file=original_image_url,
+                folder='generated-images',
+                real_time=False,
+                filename=filename,
+                content_type='image/png'
+            )
             
             # Add both URLs to response
             response['data'][i]['original_url'] = original_image_url
             response['data'][i]['url'] = gcp_url  # Primary URL (GCP)
-            
-            # Start background upload task (fire and forget)
-            asyncio.create_task(upload_to_gcp_background(original_image_url, filename))
         
         return {
             'success': True,
