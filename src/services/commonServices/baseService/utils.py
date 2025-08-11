@@ -379,7 +379,7 @@ async def make_request_data(request: Request):
 
 async def make_request_data_and_publish_sub_queue(parsed_data, result, params, thread_info=None):
     suggestion_content = {'data': {'content': {}}}
-    suggestion_content['data']['content'] = result.get('historyParams', {}).get('message') if parsed_data.get('is_rich_text') == True else result.get('modelResponse')
+    suggestion_content['data']['content'] = result.get('historyParams', {}).get('message')
     data = {
         "save_sub_thread_id_and_name" : {
             "org_id" : parsed_data.get('org_id'),
