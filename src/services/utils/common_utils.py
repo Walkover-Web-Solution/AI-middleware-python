@@ -13,7 +13,7 @@ from config import Config
 import pydash as _
 import asyncio
 from datetime import datetime, timedelta, timezone
-from src.services.cache_service import make_json_serializable
+from src.services.cache_service import make_json_serializable, find_in_cache
 from src.configs.model_configuration import model_config_document
 from globals import *
 from src.services.utils.send_error_webhook import send_error_to_webhook
@@ -145,9 +145,29 @@ async def manage_threads(parsed_data):
     
     if thread_id:
         thread_id = thread_id.strip()
-        result = await try_catch(getThread, thread_id, sub_thread_id, org_id, bridge_id, bridge_type)
-        if result:
-            parsed_data['configuration']["conversation"] = result or []
+        
+        # Check Redis cache first for conversations
+        version_id = parsed_data.get('version_id', '')
+        redis_key = f"conversation_{version_id}_{thread_id}_{sub_thread_id}"
+        cached_conversations = await find_in_cache(redis_key)
+        
+        if cached_conversations:
+            # Use cached conversations from Redis
+            try:
+                parsed_data['configuration']["conversation"] = json.loads(cached_conversations)
+                result = json.loads(cached_conversations)
+                logger.info(f"Retrieved conversations from Redis cache: {redis_key}")
+            except json.JSONDecodeError:
+                logger.error(f"Failed to parse cached conversations from Redis: {redis_key}")
+                # Fallback to database if cache is corrupted
+                result = await try_catch(getThread, thread_id, sub_thread_id, org_id, bridge_id, bridge_type)
+                if result:
+                    parsed_data['configuration']["conversation"] = result or []
+        else:
+            # Fallback to database if not in cache
+            result = await try_catch(getThread, thread_id, sub_thread_id, org_id, bridge_id, bridge_type)
+            if result:
+                parsed_data['configuration']["conversation"] = result or []
     else:
         thread_id = str(uuid.uuid1())
         sub_thread_id = thread_id
@@ -269,7 +289,7 @@ def build_service_params(parsed_data, custom_config, model_output_config, thread
     }
 
 async def process_background_tasks(parsed_data, result, params, thread_info):
-    asyncio.create_task(create([parsed_data['usage']], result["historyParams"], parsed_data['version_id']))
+    asyncio.create_task(create([parsed_data['usage']], result["historyParams"], parsed_data['version_id'], thread_info))
     data = await make_request_data_and_publish_sub_queue(parsed_data, result, params, thread_info)
     data = make_json_serializable(data)
     await sub_queue_obj.publish_message(data)
