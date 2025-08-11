@@ -36,9 +36,39 @@ from src.services.utils.rich_text_support import process_chatbot_response
 app = FastAPI()
 from src.services.utils.helper import Helper
 from src.services.commonServices.testcases import run_testcases as run_bridge_testcases
+import logger
 from globals import *
 
+# Import cache system
+try:
+    from src.services.commonServices.cache import process_prompt_with_cache
+    CACHE_AVAILABLE = True
+    logger.info("="*20+"Cache available"+"="*20)
+except ImportError as e:
+    logger.warning(f"Cache system not available: {e}")
+    CACHE_AVAILABLE = False
+
 configurationModel = db["configurations"]
+
+# LLM wrapper function for cache integration
+async def execute_llm_logic(parsed_data, params, custom_config):
+    """Execute the original LLM logic when cache misses occur"""
+    try:
+        # Step 9: json_schema service conversion
+        if 'response_type' in custom_config and custom_config['response_type'].get('type') == 'json_schema':
+            custom_config['response_type'] = restructure_json_schema(custom_config['response_type'], parsed_data['service'])
+        
+        # Execute Service Handler
+        class_obj = await Helper.create_service_handler(params, parsed_data['service'])
+        result = await class_obj.execute()
+        
+        if not result["success"]:
+            raise ValueError(result)
+        
+        return result
+    except Exception as e:
+        logger.error(f"Error in LLM execution: {e}")
+        raise e
 
 @app.post("/chat/{bridge_id}")
 @handle_exceptions
@@ -94,9 +124,46 @@ async def chat(request_body):
             custom_config['response_type'] = restructure_json_schema(custom_config['response_type'], parsed_data['service'])
         
         
-        class_obj = await Helper.create_service_handler(params, parsed_data['service'])
-        result = await class_obj.execute()
-            
+        # Step 10: Integrate Cache System
+        # Create wrapper function for LLM call
+        async def llm_function():
+            # Create service handler and execute
+            class_obj = await Helper.create_service_handler(params, parsed_data['service'])
+            llm_result = await class_obj.execute()
+            return llm_result
+        
+        # Extract prompt for cache system
+        prompt_text = parsed_data['body']['message'] if parsed_data.get('body',{}).get('message',{}) else parsed_data['user']
+        
+        src = ''
+        # Process prompt with cache system
+        async def llm_function(prompt):  # Pass prompt explicitly
+            # Create service handler and execute
+            class_obj = await Helper.create_service_handler(params, parsed_data['service'])
+            llm_result = await class_obj.execute()
+            return llm_result
+
+        # Process prompt with cache system
+        if CACHE_AVAILABLE and len(prompt_text)>5:
+            cache_result = await process_prompt_with_cache(
+                prompt_text,
+                llm_function
+            )
+            src = cache_result.get('_cache_info', {}).get('source', '')
+        else:
+            src = 'error'
+        
+        # Handle cache result
+        if src == 'cache' or src == 'llm':
+            # Cache hit - use cached response || Cache miss or personal prompt - use LLM response
+            result = cache_result
+        else:
+            # Error in cache system - fallback to direct LLM call
+            logger.error("Cache system error, falling back to direct LLM call")
+            class_obj = await Helper.create_service_handler(params, parsed_data['service'])
+            result = await class_obj.execute()
+        
+                
         if not result["success"]:
             raise ValueError(result)
         

@@ -1,0 +1,556 @@
+id,prompt,type
+1,What’s the best way to cook a perfect steak at home?,generic
+2,Can you help me plan a budget for my next vacation?,personal
+3,How does the stock market actually work?,generic
+4,What should I wear to my job interview next week?,personal
+5,Why do leaves change color in the fall?,generic
+6,What’s a good workout routine for someone who’s just starting out?,personal
+7,What are the main differences between coffee and tea?,generic
+8,How can I organize my closet more efficiently?,personal
+9,What causes earthquakes and how are they measured?,generic
+10,Can you suggest a meal plan for my busy workweek?,personal
+11,How do solar panels generate electricity?,generic
+12,What’s the best way to save money for my future house?,personal
+13,What is blockchain technology and why does it matter?,generic
+14,How can I improve my public speaking skills for a presentation?,personal
+15,What are the health benefits of drinking water daily?,generic
+16,What gift should I get for my mom’s birthday this year?,personal
+17,How does the human immune system fight off viruses?,generic
+18,Can you help me create a study schedule for my exams?,personal
+19,What’s the history behind the Olympic Games?,generic
+20,How do I deal with feeling overwhelmed by work?,personal
+21,Why is the sky blue during the day?,generic
+22,What’s a good way to start journaling every day?,personal
+23,How do self-driving cars navigate roads safely?,generic
+24,Can you recommend books based on my love for sci-fi?,personal
+25,What are the environmental impacts of plastic waste?,generic
+26,How can I stay motivated to learn a new language?,personal
+27,What is quantum computing and how does it work?,generic
+28,What’s the best way to apologize to a friend I upset?,personal
+29,How do vaccines protect us from diseases?,generic
+30,Can you help me plan a weekend getaway on a budget?,personal
+31,What’s the difference between a comet and an asteroid?,generic
+32,How can I improve my time management skills?,personal
+33,Why do some animals migrate every year?,generic
+34,What’s a good hobby to pick up for stress relief?,personal
+35,How does the internet actually function?,generic
+36,Can you suggest ways to decorate my small apartment?,personal
+37,What are the causes of global warming?,generic
+38,How do I create a savings plan for a big purchase?,personal
+39,What’s the science behind rainbows?,generic
+40,What should I do to prepare for my first marathon?,personal
+41,How do black holes form in space?,generic
+42,Can you help me write a thank-you note for a gift?,personal
+43,What are the benefits of meditation?,generic
+44,How can I improve my relationship with my coworkers?,personal
+45,What is the greenhouse effect and why is it important?,generic
+46,What’s the best way to start a side hustle?,personal
+47,How do plants convert sunlight into energy?,generic
+48,Can you suggest a skincare routine for my skin type?,personal
+49,What’s the history of the internet?,generic
+50,How do I manage stress during a busy week?,personal
+51,What are the main types of renewable energy?,generic
+52,Can you help me plan a dinner party menu?,personal
+53,How does the human brain process emotions?,generic
+54,What’s the best way to ask for a raise at work?,personal
+55,Why do we dream when we sleep?,generic
+56,How can I set up a home office on a budget?,personal
+57,What is the theory of evolution?,generic
+58,Can you recommend podcasts for my daily commute?,personal
+59,How do hurricanes form and why are they dangerous?,generic
+60,What’s a good way to track my fitness progress?,personal
+61,What are the benefits of recycling paper?,generic
+62,How can I improve my sleep quality?,personal
+63,What’s the difference between a virus and a bacteria?,generic
+64,Can you suggest a playlist for my road trip?,personal
+65,How does GPS technology work?,generic
+66,What’s the best way to declutter my home?,personal
+67,What are the main causes of air pollution?,generic
+68,How can I stay productive while working from home?,personal
+69,What is the significance of the periodic table?,generic
+70,Can you help me plan a surprise for my partner?,personal
+71,How do batteries store energy?,generic
+72,What’s a good way to start investing with little money?,personal
+73,What are the different types of clouds?,generic
+74,How can I make my mornings less stressful?,personal
+75,Why do some animals hibernate in winter?,generic
+76,Can you suggest ways to save on my grocery bill?,personal
+77,What is artificial intelligence and how is it used?,generic
+78,How do I create a realistic fitness goal for this year?,personal
+79,What’s the history of chocolate production?,generic
+80,Can you help me write a professional email?,personal
+81,How do ecosystems maintain balance?,generic
+82,What’s the best way to prepare for a big exam?,personal
+83,What are the effects of deforestation?,generic
+84,How can I improve my photography skills?,personal
+85,What is the role of DNA in genetics?,generic
+86,Can you suggest a morning routine for better focus?,personal
+87,How does Wi-Fi actually work?,generic
+88,What’s a good way to plan a family reunion?,personal
+89,What are the benefits of urban green spaces?,generic
+90,How can I reduce my screen time daily?,personal
+91,What’s the science behind lightning?,generic
+92,Can you help me create a budget for holiday gifts?,personal
+93,How do coral reefs support marine life?,generic
+94,What’s the best way to learn a new skill quickly?,personal
+95,What is the history of democracy?,generic
+96,How can I improve my networking skills?,personal
+97,Why do stars twinkle at night?,generic
+98,Can you suggest ways to stay organized at work?,personal
+99,What are the main sources of renewable energy?,generic
+100,How do I create a plan to pay off my debt?,personal
+101,What’s the difference between weather and climate?,generic
+102,Can you help me choose a pet that fits my lifestyle?,personal
+103,How do airplanes stay in the air?,generic
+104,What’s a good way to start a meditation practice?,personal
+105,What are the benefits of composting?,generic
+106,How can I make my home more energy-efficient?,personal
+107,What is the role of the United Nations?,generic
+108,Can you suggest a plan for my weekend hike?,personal
+109,How does the water cycle work?,generic
+110,What’s the best way to improve my writing skills?,personal
+111,What are the causes of ocean pollution?,generic
+112,How can I plan a low-cost birthday party?,personal
+113,What is the significance of the moon’s phases?,generic
+114,Can you help me set up a meal prep routine?,personal
+115,How do wind turbines generate electricity?,generic
+116,What’s a good way to build my confidence?,personal
+117,What are the effects of sleep deprivation?,generic
+118,How can I create a relaxing evening routine?,personal
+119,What is the history of the printing press?,generic
+120,Can you suggest ways to improve my resume?,personal
+121,How do volcanoes form and erupt?,generic
+122,What’s the best way to start a blog?,personal
+123,What are the benefits of eating organic food?,generic
+124,How can I plan a sustainable wedding?,personal
+125,What is the role of enzymes in digestion?,generic
+126,Can you help me find a hobby that suits me?,personal
+127,How does the human heart function?,generic
+128,What’s a good way to save for a car?,personal
+129,What are the causes of biodiversity loss?,generic
+130,How can I improve my listening skills?,personal
+131,What is the science behind tides?,generic
+132,Can you suggest a plan for my home garden?,personal
+133,How do antibiotics work against infections?,generic
+134,What’s the best way to prepare for a job change?,personal
+135,What is the history of space exploration?,generic
+136,How can I reduce my household waste?,personal
+137,What are the benefits of yoga?,generic
+138,Can you help me plan a road trip itinerary?,personal
+139,How does the ozone layer protect Earth?,generic
+140,What’s a good way to stay motivated at work?,personal
+141,What is the theory of plate tectonics?,generic
+142,How can I improve my cooking skills?,personal
+143,What are the effects of overfishing?,generic
+144,Can you suggest ways to balance work and life?,personal
+145,How do satellites stay in orbit?,generic
+146,What’s the best way to start a podcast?,personal
+147,What is the significance of wetlands?,generic
+148,How can I create a plan for my fitness journey?,personal
+149,How does the human eye process light?,generic
+150,Can you help me write a cover letter?,personal
+151,What are the causes of soil erosion?,generic
+152,What’s a good way to learn coding from scratch?,personal
+153,How do electric vehicles reduce emissions?,generic
+154,How can I improve my negotiation skills?,personal
+155,What is the history of the telephone?,generic
+156,Can you suggest a plan for my book club?,personal
+157,What are the benefits of forest conservation?,generic
+158,How do I create a morning workout routine?,personal
+159,How does the brain store memories?,generic
+160,What’s the best way to plan a camping trip?,personal
+161,What is the science behind earthquakes?,generic
+162,Can you help me organize my digital files?,personal
+163,What are the effects of climate change on polar regions?,generic
+164,How can I improve my teamwork skills?,personal
+165,What is the history of the internet?,generic
+166,What’s a good way to start a gratitude journal?,personal
+167,How do ecosystems recover from wildfires?,generic
+168,Can you suggest ways to save for retirement?,personal
+169,What is the role of chlorophyll in plants?,generic
+170,How can I plan a budget-friendly home renovation?,personal
+171,What are the causes of urban heat islands?,generic
+172,What’s the best way to learn guitar?,personal
+173,How does the moon affect Earth’s tides?,generic
+174,Can you help me create a study group plan?,personal
+175,What are the benefits of renewable energy?,generic
+176,How can I improve my email communication?,personal
+177,What is the science behind auroras?,generic
+178,What’s a good way to plan a charity event?,personal
+179,How do wetlands filter water?,generic
+180,Can you suggest a plan for my daily meditation?,personal
+181,What is the history of photography?,generic
+182,How can I create a plan to reduce debt?,personal
+183,What are the effects of plastic pollution on oceans?,generic
+184,What’s the best way to start running regularly?,personal
+185,How does the human body regulate temperature?,generic
+186,Can you help me plan a minimalist lifestyle?,personal
+187,What is the significance of coral reefs?,generic
+188,How can I improve my presentation skills?,personal
+189,What are the causes of desertification?,generic
+190,What’s a good way to start a book collection?,personal
+191,How do stars form in galaxies?,generic
+192,Can you suggest a plan for my home workout?,personal
+193,What are the benefits of urban farming?,generic
+194,How can I improve my conflict resolution skills?,personal
+195,What is the history of the steam engine?,generic
+196,What’s the best way to plan a family vacation?,personal
+197,How do glaciers shape landscapes?,generic
+198,Can you help me create a weekly meal plan?,personal
+199,What are the effects of air pollution on health?,generic
+200,How can I stay focused during long meetings?,personal
+201,What is the science behind photosynthesis?,generic
+202,What’s a good way to start a side business?,personal
+203,How do ocean currents affect climate?,generic
+204,Can you suggest ways to improve my LinkedIn profile?,personal
+205,What are the benefits of biodiversity?,generic
+206,How can I plan a sustainable lifestyle?,personal
+207,What is the history of the airplane?,generic
+208,What’s the best way to organize my bookshelf?,personal
+209,How does the human digestive system work?,generic
+210,Can you help me plan a low-cost date night?,personal
+211,What are the causes of water scarcity?,generic
+212,How can I improve my decision-making skills?,personal
+213,What is the science behind rain?,generic
+214,What’s a good way to start painting as a hobby?,personal
+215,How do forests contribute to carbon storage?,generic
+216,Can you suggest a plan for my morning routine?,personal
+217,What is the history of the light bulb?,generic
+218,How can I improve my financial literacy?,personal
+219,What are the effects of deforestation on wildlife?,generic
+220,What’s the best way to plan a group trip?,personal
+221,How does the human respiratory system work?,generic
+222,Can you help me create a budget for groceries?,personal
+223,What is the significance of renewable energy sources?,generic
+224,How can I improve my time management at home?,personal
+225,What are the causes of coral bleaching?,generic
+226,What’s a good way to start a fitness challenge?,personal
+227,How do planets form in solar systems?,generic
+228,Can you suggest ways to reduce my energy bill?,personal
+229,What are the benefits of clean water access?,generic
+230,How can I plan a productive workday?,personal
+231,What is the history of the automobile?,generic
+232,What’s the best way to start a journal?,personal
+233,How do ecosystems support pollinators?,generic
+234,Can you help me plan a home cleaning schedule?,personal
+235,What are the effects of climate change on agriculture?,generic
+236,How can I improve my leadership skills?,personal
+237,What is the science behind gravity?,generic
+238,What’s a good way to plan a movie night?,personal
+239,How do mangroves protect coastlines?,generic
+240,Can you suggest a plan for my daily exercise?,personal
+241,What is the history of the radio?,generic
+242,How can I create a plan to save for college?,personal
+243,What are the benefits of sustainable farming?,generic
+244,What’s the best way to learn a new language?,personal
+245,How does the human nervous system work?,generic
+246,Can you help me organize my work desk?,personal
+247,What are the causes of ocean acidification?,generic
+248,How can I improve my creativity?,personal
+249,What is the science behind wind energy?,generic
+250,What’s a good way to plan a weekend project?,personal
+251,How do animals adapt to their environments?,generic
+252,Can you suggest ways to improve my study habits?,personal
+253,What are the effects of urbanization on wildlife?,generic
+254,How can I plan a budget for a new hobby?,personal
+255,What is the history of the computer?,generic
+256,What’s the best way to start a yoga practice?,personal
+257,How do rivers shape landscapes?,generic
+258,Can you help me create a plan for my blog?,personal
+259,What are the benefits of green energy?,generic
+260,How can I improve my problem-solving skills?,personal
+261,What is the science behind sound waves?,generic
+262,What’s a good way to plan a family dinner?,personal
+263,How do forests regulate climate?,generic
+264,Can you suggest a plan for my evening routine?,personal
+265,What are the effects of pollution on rivers?,generic
+266,How can I improve my social skills?,personal
+267,What is the history of the telescope?,generic
+268,What’s the best way to start a savings plan?,personal
+269,How do clouds form in the atmosphere?,generic
+270,Can you help me plan a low-cost vacation?,personal
+271,What are the benefits of wildlife conservation?,generic
+272,How can I improve my focus during work?,personal
+273,What is the science behind electricity?,generic
+274,What’s a good way to start a book club?,personal
+275,How do wetlands support biodiversity?,generic
+276,Can you suggest ways to organize my kitchen?,personal
+277,What are the causes of global temperature rise?,generic
+278,How can I plan a productive morning?,personal
+279,What is the history of the camera?,generic
+280,What’s the best way to learn photography?,personal
+281,How do animals communicate in the wild?,generic
+282,Can you help me create a fitness schedule?,personal
+283,What are the effects of climate change on oceans?,generic
+284,How can I improve my writing style?,personal
+285,What is the science behind solar energy?,generic
+286,What’s a good way to plan a charity fundraiser?,personal
+287,How do ecosystems recover from droughts?,generic
+288,Can you suggest ways to reduce my stress?,personal
+289,What are the benefits of clean air?,generic
+290,How can I plan a budget for a new car?,personal
+291,What is the history of the bicycle?,generic
+292,What’s the best way to start a workout plan?,personal
+293,How do mountains form over time?,generic
+294,Can you help me organize my wardrobe?,personal
+295,What are the effects of overpopulation?,generic
+296,How can I improve my public speaking?,personal
+297,What is the science behind magnetism?,generic
+298,What’s a good way to plan a study session?,personal
+299,How do coral reefs support ecosystems?,generic
+300,Can you suggest a plan for my daily routine?,personal
+301,What is the history of the television?,generic
+302,How can I create a plan to save for a house?,personal
+303,What are the benefits of organic farming?,generic
+304,What’s the best way to learn coding?,personal
+305,How do earthquakes affect buildings?,generic
+306,Can you help me plan a low-cost party?,personal
+307,What is the science behind the greenhouse effect?,generic
+308,How can I improve my time management?,personal
+309,What are the effects of deforestation on climate?,generic
+310,What’s a good way to start a meditation routine?,personal
+311,How do stars produce energy?,generic
+312,Can you suggest ways to improve my resume?,personal
+313,What are the benefits of clean energy?,generic
+314,How can I plan a sustainable home?,personal
+315,What is the history of the railroad?,generic
+316,What’s the best way to organize my schedule?,personal
+317,How do oceans regulate climate?,generic
+318,Can you help me create a budget for travel?,personal
+319,What are the causes of habitat loss?,generic
+320,How can I improve my leadership style?,personal
+321,What is the science behind rainbows?,generic
+322,What’s a good way to start a fitness routine?,personal
+323,How do plants support ecosystems?,generic
+324,Can you suggest a plan for my home office?,personal
+325,What are the effects of air pollution on wildlife?,generic
+326,How can I improve my networking skills?,personal
+327,What is the history of the internet?,generic
+328,What’s the best way to plan a weekend getaway?,personal
+329,How do animals survive in extreme climates?,generic
+330,Can you help me create a meal prep plan?,personal
+331,What are the benefits of recycling plastic?,generic
+332,How can I improve my sleep schedule?,personal
+333,What is the science behind wind patterns?,generic
+334,What’s a good way to start a side hustle?,personal
+335,How do forests support biodiversity?,generic
+336,Can you suggest ways to save on utilities?,personal
+337,What are the causes of climate change?,generic
+338,How can I plan a productive week?,personal
+339,What is the history of the typewriter?,generic
+340,What’s the best way to learn a new skill?,personal
+341,How do rivers support ecosystems?,generic
+342,Can you help me organize my garage?,personal
+343,What are the effects of water pollution?,generic
+344,How can I improve my communication skills?,personal
+345,What is the science behind gravity waves?,generic
+346,What’s a good way to plan a date night?,personal
+347,How do mangroves support coastal ecosystems?,generic
+348,Can you suggest a plan for my workout routine?,personal
+349,What are the benefits of sustainable living?,generic
+350,How can I improve my financial planning?,personal
+351,What is the history of the microscope?,generic
+352,What’s the best way to start a blog?,personal
+353,How do ecosystems recover from floods?,generic
+354,Can you help me plan a low-cost wedding?,personal
+355,What are the effects of climate change on forests?,generic
+356,How can I improve my study skills?,personal
+357,What is the science behind electricity generation?,generic
+358,What’s a good way to organize my desk?,personal
+359,How do coral reefs protect coastlines?,generic
+360,Can you suggest ways to reduce my carbon footprint?,personal
+361,What is the history of the compass?,generic
+362,How can I plan a budget for a new pet?,personal
+363,What are the benefits of clean water?,generic
+364,What’s the best way to start a fitness journey?,personal
+365,How do animals adapt to urban environments?,generic
+366,Can you help me create a daily schedule?,personal
+367,What are the effects of soil degradation?,generic
+368,How can I improve my teamwork skills?,personal
+369,What is the science behind solar flares?,generic
+370,What’s a good way to plan a book club meeting?,personal
+371,How do wetlands support wildlife?,generic
+372,Can you suggest a plan for my evening workout?,personal
+373,What are the causes of air quality decline?,generic
+374,How can I improve my writing productivity?,personal
+375,What is the history of the telephone?,generic
+376,What’s the best way to start a podcast?,personal
+377,How do forests regulate water cycles?,generic
+378,Can you help me plan a family reunion?,personal
+379,What are the effects of overfishing on ecosystems?,generic
+380,How can I improve my public speaking confidence?,personal
+381,What is the science behind tides?,generic
+382,What’s a good way to start a savings plan?,personal
+383,How do ecosystems recover from hurricanes?,generic
+384,Can you suggest ways to organize my closet?,personal
+385,What are the benefits of renewable energy sources?,generic
+386,How can I plan a budget for a new hobby?,personal
+387,What is the history of the camera?,generic
+388,What’s the best way to learn photography?,personal
+389,How do animals communicate in groups?,generic
+390,Can you help me create a fitness plan?,personal
+391,What are the effects of climate change on deserts?,generic
+392,How can I improve my time management skills?,personal
+393,What is the science behind wind turbines?,generic
+394,What’s a good way to plan a charity event?,personal
+395,How do coral reefs support marine ecosystems?,generic
+396,Can you suggest a plan for my daily routine?,personal
+397,What is the history of the radio?,generic
+398,How can I improve my financial planning?,personal
+399,What are the causes of urban sprawl?,generic
+400,What’s the best way to start a meditation practice?,personal
+401,How do ecosystems support migratory birds?,generic
+402,Can you help me plan a low-cost vacation?,personal
+403,What are the benefits of clean air initiatives?,generic
+404,How can I improve my leadership skills?,personal
+405,What is the science behind earthquakes?,generic
+406,What’s a good way to start a fitness challenge?,personal
+407,How do forests contribute to soil health?,generic
+408,Can you suggest ways to organize my kitchen?,personal
+409,What are the effects of water scarcity on agriculture?,generic
+410,How can I improve my communication style?,personal
+411,What is the history of the airplane?,generic
+412,What’s the best way to plan a weekend project?,personal
+413,How do oceans support marine biodiversity?,generic
+414,Can you help me create a budget for travel?,personal
+415,What are the causes of deforestation?,generic
+416,How can I improve my problem-solving skills?,personal
+417,What is the science behind rainbows?,generic
+418,What’s a good way to start a book collection?,personal
+419,How do wetlands filter pollutants?,generic
+420,Can you suggest a plan for my home workout?,personal
+421,What are the benefits of sustainable agriculture?,generic
+422,How can I improve my networking skills?,personal
+423,What is the history of the light bulb?,generic
+424,What’s the best way to plan a family dinner?,personal
+425,How do animals survive in deserts?,generic
+426,Can you help me organize my work desk?,personal
+427,What are the effects of climate change on wildlife?,generic
+428,How can I improve my creativity?,personal
+429,What is the science behind solar energy?,generic
+430,What’s a good way to start a side business?,personal
+431,How do ecosystems recover from oil spills?,generic
+432,Can you suggest ways to save on groceries?,personal
+433,What are the benefits of urban green spaces?,generic
+434,How can I plan a productive workday?,personal
+435,What is the history of the telescope?,generic
+436,What’s the best way to learn coding?,personal
+437,How do rivers support biodiversity?,generic
+438,Can you help me plan a low-cost party?,personal
+439,What are the effects of air pollution on ecosystems?,generic
+440,How can I improve my public speaking skills?,personal
+441,What is the science behind gravity?,generic
+442,What’s a good way to start a journal?,personal
+443,How do mangroves protect ecosystems?,generic
+444,Can you suggest a plan for my evening routine?,personal
+445,What are the benefits of clean water access?,generic
+446,How can I improve my financial literacy?,personal
+447,What is the history of the bicycle?,generic
+448,What’s the best way to start a fitness routine?,personal
+449,How do mountains affect weather patterns?,generic
+450,Can you help me create a weekly meal plan?,personal
+451,What are the effects of overpopulation on resources?,generic
+452,How can I improve my decision-making skills?,personal
+453,What is the science behind lightning?,generic
+454,What’s a good way to plan a movie night?,personal
+455,How do coral reefs support fish populations?,generic
+456,Can you suggest ways to reduce my energy bill?,personal
+457,What are the benefits of forest conservation?,generic
+458,How can I plan a budget for a new pet?,personal
+459,What is the history of the computer?,generic
+460,What’s the best way to start a yoga practice?,personal
+461,How do ecosystems recover from floods?,generic
+462,Can you help me organize my wardrobe?,personal
+463,What are the effects of climate change on agriculture?,generic
+464,How can I improve my leadership style?,personal
+465,What is the science behind tides?,generic
+466,What’s a good way to plan a charity fundraiser?,personal
+467,How do forests regulate climate?,generic
+468,Can you suggest a plan for my daily exercise?,personal
+469,What are the causes of water pollution?,generic
+470,How can I improve my social skills?,personal
+471,What is the history of the camera?,generic
+472,What’s the best way to learn photography?,personal
+473,How do animals adapt to climate change?,generic
+474,Can you help me create a fitness schedule?,personal
+475,What are the effects of urbanization on ecosystems?,generic
+476,How can I improve my time management?,personal
+477,What is the science behind wind energy?,generic
+478,What’s a good way to plan a family reunion?,personal
+479,How do wetlands support migratory species?,generic
+480,Can you suggest ways to organize my garage?,personal
+481,What are the benefits of renewable energy?,generic
+482,How can I improve my writing productivity?,personal
+483,What is the history of the radio?,generic
+484,What’s the best way to start a savings plan?,personal
+485,How do oceans regulate temperature?,generic
+486,Can you help me plan a low-cost vacation?,personal
+487,What are the causes of habitat destruction?,generic
+488,How can I improve my communication skills?,personal
+489,What is the science behind solar flares?,generic
+490,What’s a good way to start a book club?,personal
+491,How do ecosystems support pollinators?,generic
+492,Can you suggest a plan for my home office?,personal
+493,What are the effects of air pollution on health?,generic
+494,How can I improve my focus during work?,personal
+495,What is the history of the telephone?,generic
+496,What’s the best way to plan a weekend project?,personal
+497,How do forests contribute to biodiversity?,generic
+498,Can you help me create a budget for travel?,personal
+499,What are the benefits of clean energy?,generic
+500,How can I improve my public speaking confidence?,personal
+501,What is the science behind earthquakes?,generic
+502,What’s a good way to start a fitness challenge?,personal
+503,How do coral reefs protect ecosystems?,generic
+504,Can you suggest ways to reduce my stress?,personal
+505,What are the effects of climate change on oceans?,generic
+506,How can I plan a productive morning?,personal
+507,What is the history of the light bulb?,generic
+508,What’s the best way to organize my kitchen?,personal
+509,How do animals survive in extreme environments?,generic
+510,Can you help me create a daily schedule?,personal
+511,What are the causes of soil erosion?,generic
+512,How can I improve my creativity?,personal
+513,What is the science behind rainbows?,generic
+514,What’s a good way to start a meditation routine?,personal
+515,How do ecosystems recover from wildfires?,generic
+516,Can you suggest a plan for my evening workout?,personal
+517,What are the benefits of sustainable farming?,generic
+518,How can I improve my networking skills?,personal
+519,What is the history of the telescope?,generic
+520,What’s the best way to learn coding?,personal
+521,How do rivers shape ecosystems?,generic
+522,Can you help me plan a low-cost party?,personal
+523,What are the effects of water scarcity?,generic
+524,How can I improve my leadership skills?,personal
+525,What is the science behind gravity waves?,generic
+526,What’s a good way to plan a date night?,personal
+527,How do mangroves support biodiversity?,generic
+528,Can you suggest a plan for my daily routine?,personal
+529,What are the benefits of clean water?,generic
+530,How can I improve my financial planning?,personal
+531,This is my resume please suggest me some job roles,personal
+532,This is my resume, personal
+533,my resume, personal
+534,my car,personal
+535,my home,personal
+536,my house,personal
+537,my castle,personal
+538,my palace,personal
+539,my kingdom,personal
+540,my kitchen,personal
+541,he said this who did he say this to,generic
+542,alexander said where is my horse when did he say this,generic
+543,einstein said this is my resume you can check my qualifications where did this happen,generic
+544,he said,generic
+545,she said,generic
+546,they said,generic
+547,they said this to me what should i do,personal
+548,xyz said he was there when did he say this,generic
+549,he said where is my train,generic
+550,she said where is my book when did she say thi,generic
+551,akhbar said where is my car when,generic
+552,my name is xyz,personal
+553,what is a planet,generic
+554,what are planets,generic
+555,what's a planet,generic
