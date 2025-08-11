@@ -7,7 +7,7 @@ from google.oauth2 import service_account
 from config import Config
 from src.services.utils.apiservice import fetch
 
-async def uploadDoc(file: Union[bytes, str, BinaryIO], folder: str = 'uploads', real_time: bool = False, filename: str = None, content_type: str = None):
+async def uploadDoc(file: Union[bytes, str, BinaryIO], folder: str = 'uploads', real_time: bool = False, content_type: str = None, original_filename: str = None):
     """
     Common function to upload files to GCP storage
     
@@ -16,10 +16,10 @@ async def uploadDoc(file: Union[bytes, str, BinaryIO], folder: str = 'uploads', 
             - bytes: File content as bytes
             - str: URL to fetch file from (for non real-time)
             - BinaryIO: File-like object
-        folder: Folder name in GCP bucket (default: 'rag')
+        folder: Folder name in GCP bucket (default: 'uploads')
         real_time: If True, upload immediately. If False, upload in background
-        filename: Optional custom filename. If None, generates UUID-based name
         content_type: MIME type of the file
+        original_filename: Original filename (used to preserve extension)
     
     Returns:
         str: GCP URL of uploaded file
@@ -32,16 +32,21 @@ async def uploadDoc(file: Union[bytes, str, BinaryIO], folder: str = 'uploads', 
         
         bucket = storage_client.bucket('resources.gtwy.ai')
         
-        # Generate filename if not provided
-        if filename is None:
-            if isinstance(file, str):  # URL case
+        # Auto-generate filename based on context
+        if isinstance(file, str):  # URL case - likely image
+            filename = f"{folder}/{uuid.uuid4()}.png"
+        elif original_filename:  # Has original filename - preserve extension
+            extension = original_filename.split('.')[-1] if '.' in original_filename else ''
+            filename = f"{folder}/{uuid.uuid4()}.{extension}" if extension else f"{folder}/{uuid.uuid4()}"
+        elif content_type:  # Determine extension from content type
+            if 'image' in content_type:
                 filename = f"{folder}/{uuid.uuid4()}.png"
+            elif 'pdf' in content_type:
+                filename = f"{folder}/{uuid.uuid4()}.pdf"
             else:
                 filename = f"{folder}/{uuid.uuid4()}"
         else:
-            # Ensure filename includes folder
-            if not filename.startswith(f"{folder}/"):
-                filename = f"{folder}/{filename}"
+            filename = f"{folder}/{uuid.uuid4()}"
         
         blob = bucket.blob(filename)
         gcp_url = f"https://resources.gtwy.ai/{filename}"

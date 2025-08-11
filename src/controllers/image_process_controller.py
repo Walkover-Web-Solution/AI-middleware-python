@@ -12,13 +12,12 @@ async def image_processing(request):
     
     try:
         # Upload file using common GCP upload function
-        filename = f"{uuid.uuid4()}_{file.filename}"
         image_url = await uploadDoc(
             file=file_content,
             folder='uploads',
             real_time=True,
-            filename=filename,
-            content_type=file.content_type
+            content_type=file.content_type,
+            original_filename=file.filename
         )
         
         return {
@@ -48,13 +47,12 @@ async def file_processing(request):
         is_pdf = file.content_type == 'application/pdf' or file.filename.lower().endswith('.pdf')
         
         # Upload file using common GCP upload function
-        filename = f"{uuid.uuid4()}_{file.filename}"
         file_url = await uploadDoc(
             file=file_content,
             folder='uploads',
             real_time=True,
-            filename=filename,
-            content_type=file.content_type
+            content_type=file.content_type,
+            original_filename=file.filename
         )
 
         # If PDF and thread parameters exist, save to Redis cache

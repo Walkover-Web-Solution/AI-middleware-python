@@ -20,12 +20,10 @@ async def OpenAIImageModel(configuration, apiKey, execution_time_logs, timer):
             original_image_url = image_data['url']
             
             # Generate predictable GCP URL immediately and start background upload
-            filename = f"{uuid.uuid4()}.png"
             gcp_url = await uploadDoc(
                 file=original_image_url,
                 folder='generated-images',
                 real_time=False,
-                filename=filename,
                 content_type='image/png'
             )
             

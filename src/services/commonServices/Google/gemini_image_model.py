@@ -43,12 +43,10 @@ async def gemini_image_model(configuration, apikey, execution_time_logs, timer):
                 img_buffer.seek(0)
                 
                 # Upload to GCP using common upload function
-                filename = f"{uuid.uuid4()}.png"
                 gcp_url = await uploadDoc(
                     file=img_buffer,
                     folder='generated-images',
                     real_time=True,
-                    filename=filename,
                     content_type='image/png'
                 )
                 
