@@ -1,10 +1,8 @@
 import json
 import uuid
-from google.cloud import storage
-from google.oauth2 import service_account
-from config import Config
 from fastapi import HTTPException
 from src.services.cache_service import find_in_cache, store_in_cache, client, REDIS_PREFIX
+from src.services.utils.gcp_upload_service import uploadDoc
 
 async def image_processing(request):
     body = await request.form()
@@ -13,19 +11,14 @@ async def image_processing(request):
     file_content = await file.read()
     
     try:
-        # Set up Google Cloud Storage client
-        credentials_dict = json.loads(Config.GCP_CREDENTIALS)
-        credentials = service_account.Credentials.from_service_account_info(credentials_dict)
-        storage_client = storage.Client(credentials=credentials)
-        
-        # Define the bucket and file path
-        bucket = storage_client.bucket('resources.gtwy.ai')
-        filename = f"uploads/{uuid.uuid4()}_{file.filename}"
-        blob = bucket.blob(filename)
-        
-        # Upload the file to GCP
-        blob.upload_from_string(file_content, content_type=file.content_type)
-        image_url = f"https://resources.gtwy.ai/{filename}"
+        # Upload file using common GCP upload function
+        image_url = await uploadDoc(
+            file=file_content,
+            folder='uploads',
+            real_time=True,
+            content_type=file.content_type,
+            original_filename=file.filename
+        )
         
         return {
             'success': True,
@@ -53,19 +46,14 @@ async def file_processing(request):
         # Check if file is PDF
         is_pdf = file.content_type == 'application/pdf' or file.filename.lower().endswith('.pdf')
         
-        # Set up Google Cloud Storage client
-        credentials_dict = json.loads(Config.GCP_CREDENTIALS)
-        credentials = service_account.Credentials.from_service_account_info(credentials_dict)
-        storage_client = storage.Client(credentials=credentials)
-        
-        # Define the bucket and file path
-        bucket = storage_client.bucket('resources.gtwy.ai')
-        filename = f"uploads/{uuid.uuid4()}_{file.filename}"
-        blob = bucket.blob(filename)
-        
-        # Upload the file to GCP
-        blob.upload_from_string(file_content, content_type=file.content_type)
-        file_url = f"https://resources.gtwy.ai/{filename}"
+        # Upload file using common GCP upload function
+        file_url = await uploadDoc(
+            file=file_content,
+            folder='uploads',
+            real_time=True,
+            content_type=file.content_type,
+            original_filename=file.filename
+        )
 
         # If PDF and thread parameters exist, save to Redis cache
         if is_pdf and thread_id and bridge_id:
