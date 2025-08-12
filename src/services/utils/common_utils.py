@@ -153,16 +153,9 @@ async def manage_threads(parsed_data):
         
         if cached_conversations:
             # Use cached conversations from Redis
-            try:
-                parsed_data['configuration']["conversation"] = json.loads(cached_conversations)
-                result = json.loads(cached_conversations)
-                logger.info(f"Retrieved conversations from Redis cache: {redis_key}")
-            except json.JSONDecodeError:
-                logger.error(f"Failed to parse cached conversations from Redis: {redis_key}")
-                # Fallback to database if cache is corrupted
-                result = await try_catch(getThread, thread_id, sub_thread_id, org_id, bridge_id, bridge_type)
-                if result:
-                    parsed_data['configuration']["conversation"] = result or []
+            parsed_data['configuration']["conversation"] = json.loads(cached_conversations)
+            result = json.loads(cached_conversations)
+            logger.info(f"Retrieved conversations from Redis cache: {redis_key}")
         else:
             # Fallback to database if not in cache
             result = await try_catch(getThread, thread_id, sub_thread_id, org_id, bridge_id, bridge_type)
