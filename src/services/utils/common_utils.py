@@ -165,7 +165,7 @@ async def manage_threads(parsed_data):
         thread_id = str(uuid.uuid1())
         sub_thread_id = thread_id
         parsed_data['gpt_memory'] = False
-        result = {"success": True}
+        result = []
     
     # cache_key = f"{bridge_id}_{thread_id}_{sub_thread_id}"
     # if len(parsed_data['files']) == 0:
