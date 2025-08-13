@@ -121,6 +121,7 @@ async def chat(request_body):
             await sendResponse(parsed_data['response_format'], result["response"], success=True, variables=parsed_data.get('variables',{}))
             # Update usage metrics for successful API calls
             update_usage_metrics(parsed_data, params, latency, result=result, success=True)
+            result['response']['usage']['cost'] = parsed_data['usage'].get('expectedCost', 0)
             await process_background_tasks(parsed_data, result, params, thread_info)
         return JSONResponse(status_code=200, content={"success": True, "response": result["response"]})
     
