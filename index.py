@@ -28,6 +28,7 @@ from src.routes.testcase_routes import router as testcase_routes
 from models.Timescale.connections import init_async_dbservice
 from src.routes.runagents_routes import router as runagents_routes
 from src.configs.model_configuration import init_model_configuration, background_listen_for_changes
+from src.services.redis_notification_cleanup import listen_for_redis_expiration
 from globals import *
 
 
@@ -73,6 +74,9 @@ async def lifespan(app: FastAPI):
     logger.info("Starting MongoDB change stream listener as a background task.")
     change_stream_task = asyncio.create_task(background_listen_for_changes())
     
+    logger.info("Starting Redis expiration notification service as a background task.")
+    redis_expiration_task = asyncio.create_task(listen_for_redis_expiration())
+    
     yield  # Startup logic is complete
     
     # Shutdown logic
@@ -80,6 +84,9 @@ async def lifespan(app: FastAPI):
     
     logger.info("Shutting down MongoDB change stream listener.")
     change_stream_task.cancel()
+    
+    logger.info("Shutting down Redis expiration notification service.")
+    redis_expiration_task.cancel()
 
     if consume_task:
         consume_task.cancel()
@@ -101,6 +108,11 @@ async def lifespan(app: FastAPI):
         await change_stream_task
     except asyncio.CancelledError:
         logger.info("MongoDB change stream listener task successfully cancelled.")
+    
+    try:
+        await redis_expiration_task
+    except asyncio.CancelledError:
+        logger.info("Redis expiration notification service task successfully cancelled.")
 
 # Initialize the FastAPI app
 app = FastAPI(debug=True, lifespan=lifespan)

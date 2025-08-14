@@ -25,7 +25,9 @@ async def save_conversations_to_redis(conversations, version_id, thread_id, sub_
     """
     try:
         # Create Redis key
-        redis_key = f"conversation_{version_id}_{thread_id}_{sub_thread_id}"
+        org_id = history_params['org_id']
+        bridge_id = history_params['bridge_id']
+        redis_key = f"conversation_{org_id}_{bridge_id}_{version_id}_{thread_id}_{sub_thread_id}"
         
         # Start with existing conversations from database
         conversation_list = conversations or []
