@@ -46,12 +46,6 @@ async def call_gtwy_agent(args):
             "variables": args.get('variables') or {}
         }
         
-        # Add thread_id and sub_thread_id if provided
-        if args.get('thread_id'):
-            request_body["thread_id"] = args.get('thread_id')
-        if args.get('sub_thread_id'):
-            request_body["sub_thread_id"] = args.get('sub_thread_id')
-        
         org_id = args.get('org_id')
         token = generate_token({"org":{'id': str(org_id)},"user":{ 'id' : str(org_id)} }, Config.SecretKey)
         url = (
