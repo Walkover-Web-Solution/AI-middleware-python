@@ -27,6 +27,7 @@ async def create_bridges_controller(request):
         folder_id = request.state.folder_id if hasattr(request.state, 'folder_id') else None
         user_id = request.state.user_id
         isEmbedUser = request.state.embed
+        all_bridge = await get_all_bridges_in_org_by_org_id(org_id)
         prompt = None
         if 'templateId' in bridges:
             template_id = bridges['templateId']
@@ -42,6 +43,7 @@ async def create_bridges_controller(request):
         if purpose is not None:
             variables = {
                 "purpose": purpose,
+                 "all_bridge_names": [bridge.get("name") for bridge in all_bridge]
             }
             user = "Generate Bridge Configuration accroding to the given user purpose."
             bridge_data =  await call_ai_middleware(user, bridge_id = bridge_ids['create_bridge_using_ai'], variables = variables)
@@ -55,8 +57,7 @@ async def create_bridges_controller(request):
         else:
             name_next_count = 1
             slug_next_count = 1
-            if isEmbedUser:
-                all_bridge = await get_all_bridges_in_org_by_org_id(org_id)
+            if isEmbedUser and bridges.get('name').startswith("untitled_agent_"):
                 if all_bridge:
                     for bridge in all_bridge:
                         if bridge.get('name') and bridge.get('name').startswith("untitled_agent_"):
@@ -71,9 +72,9 @@ async def create_bridges_controller(request):
                     slug_next_count = slug_next_count + 1
             service = bridges.get('service')
             model = bridges.get('model')
-            name = bridges.get('name') if not bridges.get('name').startswith("untitled_agent_") and not isEmbedUser else f"untitled_agent_{name_next_count}"
+            name = bridges.get('name') if not bridges.get('name').startswith("untitled_agent_") else f"untitled_agent_{name_next_count}"
             type = bridges.get('type')
-            slugName = bridges.get('slugName') if not bridges.get('slugName').startswith("untitled_agent_") and not isEmbedUser else f"untitled_agent_{slug_next_count}"
+            slugName = bridges.get('slugName') if not bridges.get('slugName').startswith("untitled_agent_") else f"untitled_agent_{slug_next_count}"
         bridgeType = bridges.get('bridgeType')
         modelObj = model_config_document[service][model]
         configurations = modelObj['configuration']
