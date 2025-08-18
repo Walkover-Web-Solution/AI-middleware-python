@@ -293,5 +293,6 @@ def add_connected_agents(result, tools, tool_id_and_name_mapping):
         
         tool_id_and_name_mapping[name] = {
             "type": "AGENT",
-            "bridge_id": id
+            "bridge_id": id,
+            "requires_thread_id": bridge_info.get('thread_id', True)
         }
