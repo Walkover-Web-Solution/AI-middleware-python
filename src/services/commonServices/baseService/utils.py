@@ -205,7 +205,7 @@ async def sendResponse(response_format, data, success = False, variables={}):
             return await send_request(**response_format['cred'], method='POST', data=data_to_send)
 
 async def process_data_and_run_tools(codes_mapping, self):
-    try:
+    try: 
         self.timer.start()
         executed_functions = []
         responses = []
