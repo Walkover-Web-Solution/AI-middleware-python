@@ -170,8 +170,7 @@ async def save_sub_thread_id_and_name(thread_id, sub_thread_id, org_id, thread_f
             'bridge_id': bridge_id,
             'thread_id': thread_id,
             'sub_thread_id': sub_thread_id,
-            'display_name': display_name,
-            'cached_at': str(datetime.now())
+            'display_name': display_name
         }
         await store_in_cache(cache_key, cache_data, ttl=172800)  # 48 hours
         
