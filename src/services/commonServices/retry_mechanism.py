@@ -64,6 +64,7 @@ async def execute_with_retry(
                 second_result['response']['firstAttemptError'] = firstAttemptError
                 second_result['response']['fallback'] = True
                 second_result['response']['fallback_model'] = second_config['model']
+                second_result['response']['model'] = second_config['model']
                 return second_result
             else:
                 print("Second API call failed with error:", second_result['error'])
@@ -71,6 +72,7 @@ async def execute_with_retry(
                 if 'response' not in second_result:
                     second_result['response'] = {}
                 second_result['response']['fallback_model'] = second_config['model']
+                second_result['response']['model'] = second_config['model']
                 return second_result
 
     except Exception as e:
