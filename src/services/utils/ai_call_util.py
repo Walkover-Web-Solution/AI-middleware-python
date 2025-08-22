@@ -70,6 +70,7 @@ async def call_gtwy_agent(args):
             extra_tools=request_body.get('extra_tools', []),
             built_in_tools=request_body.get('built_in_tools')
         )
+        db_config['org_id'] = org_id
         
         if not db_config.get("success"):
             raise Exception(db_config.get("error", "Configuration fetch failed"))
