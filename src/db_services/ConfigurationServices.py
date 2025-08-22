@@ -752,7 +752,7 @@ async def save_sub_thread_id(org_id, thread_id, sub_thread_id, display_name, bri
         update_data['$set'] = set_fields
        
         result = await threadsModel.find_one_and_update(
-            {'org_id': org_id, 'sub_thread_id': sub_thread_id},
+            {'org_id': org_id,'thread_id': thread_id, 'sub_thread_id': sub_thread_id, 'bridge_id': bridge_id},
             update_data,
             upsert=True,
             return_document=True
