@@ -38,7 +38,7 @@ def parse_request_body(request_body):
         "configuration": body.get("configuration", {}),
         "thread_id": body.get("thread_id"),
         "sub_thread_id": body.get('sub_thread_id') or body.get("thread_id"),
-        "org_id": state.get('profile', {}).get('org', {}).get('id', '') or body.get('org_id'),
+        "org_id": state.get('profile', {}).get('org', {}).get('id', ''),
         "user": body.get("user"),
         "tools": body.get("configuration", {}).get('tools'),
         "service": body.get("service"),
