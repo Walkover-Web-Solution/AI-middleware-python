@@ -1,6 +1,5 @@
 from .apiservice import fetch
 import json
-from config import Config
 import jwt
 
 def generate_token(payload, accesskey):
@@ -40,32 +39,70 @@ async def call_ai_middleware(user, bridge_id, variables = {}, configuration = No
 
 async def call_gtwy_agent(args):
     try:
-        request_body = {
-            "user": args.get('user'),
-            "bridge_id": args.get('bridge_id'),
-            "variables": args.get('variables') or {}
-        }
+        # Import inside function to avoid circular imports
+        from src.services.commonServices.common import chat
+        from src.services.utils.getConfiguration import getConfiguration
         
         org_id = args.get('org_id')
-        token = generate_token({"org":{'id': str(org_id)},"user":{ 'id' : str(org_id)} }, Config.SecretKey)
-        url = (
-                f"http://localhost:8080/api/v2/model/chat/completion"
-                if Config.ENVIROMENT and Config.ENVIROMENT.upper() == "LOCAL"
-                else f"https://dev-api.gtwy.ai/api/v2/model/chat/completion"
-                if Config.ENVIROMENT and Config.ENVIROMENT.upper() == "TESTING"
-                else f"https://api.gtwy.ai/api/v2/model/chat/completion"
-            )
-        header = {
-                "Content-Type": "application/json",
-                "Authorization": token
-            }
-        response, rs_headers = await fetch(url=url,method="POST",headers=header,json_body=request_body)
-        if not response.get('success', True):
-            raise Exception(response.get('message', 'Unknown error'))
-        result = response.get('response', {}).get('data', {}).get('content', "")
+        bridge_id = args.get('bridge_id')
+        user_message = args.get('user')
+        variables = args.get('variables') or {}
+        
+        # Step 1: Create initial request body
+        request_body = {
+            "user": user_message,
+            "bridge_id": bridge_id,
+            "variables": variables
+        }
+        
+        # Step 2: Call the configuration middleware to enrich the data
+        # This simulates what add_configuration_data_to_body does
+        db_config = await getConfiguration(
+            configuration=request_body.get('configuration'),
+            service=request_body.get('service'),
+            bridge_id=bridge_id,
+            apikey=request_body.get('apikey'),
+            template_id=request_body.get('template_id'),
+            variables=variables,
+            org_id=org_id,
+            variables_path=request_body.get('variables_path'),
+            version_id=request_body.get('version_id'),
+            extra_tools=request_body.get('extra_tools', []),
+            built_in_tools=request_body.get('built_in_tools')
+        )
+        db_config['org_id'] = org_id
+        
+        if not db_config.get("success"):
+            raise Exception(db_config.get("error", "Configuration fetch failed"))
+        
+        # Step 3: Update request body with configuration data (like middleware does)
+        request_body.update(db_config)
+        
+        # Step 4: Create data structure for chat function
+        data_to_send = {
+            "body": request_body
+        }
+        
+        # Step 5: Call the chat function directly
+        response = await chat(data_to_send)
+        
+        # Handle JSONResponse object - extract the actual response data
+        if hasattr(response, 'body'):
+            # For JSONResponse, get the body content
+            import json
+            response_data = json.loads(response.body.decode('utf-8'))
+        else:
+            # If it's already a dict, use it directly
+            response_data = response
+        
+        if not response_data.get('success', True):
+            raise Exception(response_data.get('message', 'Unknown error'))
+        
+        result = response_data.get('response', {}).get('data', {}).get('content', "")
         try:
             return json.loads(result)
         except json.JSONDecodeError:
-            return { "data" : result }
+            return {"data": result}
+            
     except Exception as e:
         raise Exception(f"Error in call_gtwy_agent: {str(e)}")
