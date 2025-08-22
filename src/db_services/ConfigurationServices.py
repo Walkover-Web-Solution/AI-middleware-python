@@ -630,6 +630,19 @@ async def get_all_bridges_in_org(org_id, folder_id, user_id, isEmbedUser):
            
     return bridges_list
 
+async def get_all_bridges_in_org_by_org_id(org_id):
+    query = {"org_id": org_id}
+    bridge_cursor = configurationModel.find(query, {
+        "_id": 1,
+        "name": 1,
+        "slugName":1,
+    })
+    bridges_list = await bridge_cursor.to_list(length=None)
+    for bridge in bridges_list:
+        bridge['_id'] = str(bridge['_id'])
+            
+    return bridges_list
+
 async def get_bridge_by_id(org_id, bridge_id, version_id=None):
     model = version_model if version_id else configurationModel
     id_to_use = ObjectId(version_id) if version_id else ObjectId(bridge_id)

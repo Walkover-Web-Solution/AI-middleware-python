@@ -1,7 +1,7 @@
 from fastapi import HTTPException, status
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
-from src.db_services.ConfigurationServices import create_bridge, get_bridge_by_id, get_all_bridges_in_org, update_bridge, update_bridge_ids_in_api_calls, get_bridges_with_tools, get_apikey_creds, update_apikey_creds, update_built_in_tools, update_agents, get_all_agents_data, get_agents_data
+from src.db_services.ConfigurationServices import create_bridge, get_all_bridges_in_org_by_org_id, get_bridge_by_id, get_all_bridges_in_org, update_bridge, update_bridge_ids_in_api_calls, get_bridges_with_tools, get_apikey_creds, update_apikey_creds, update_built_in_tools, update_agents, get_all_agents_data, get_agents_data
 from src.configs.modelConfiguration import ModelsConfig as model_configuration
 from src.services.utils.helper import Helper
 import json
@@ -26,6 +26,8 @@ async def create_bridges_controller(request):
         org_id = request.state.profile['org']['id']
         folder_id = request.state.folder_id if hasattr(request.state, 'folder_id') else None
         user_id = request.state.user_id
+        isEmbedUser = request.state.embed
+        all_bridge = await get_all_bridges_in_org_by_org_id(org_id)
         prompt = None
         if 'templateId' in bridges:
             template_id = bridges['templateId']
@@ -41,6 +43,7 @@ async def create_bridges_controller(request):
         if purpose is not None:
             variables = {
                 "purpose": purpose,
+                 "all_bridge_names": [bridge.get("name") for bridge in all_bridge]
             }
             user = "Generate Bridge Configuration accroding to the given user purpose."
             bridge_data =  await call_ai_middleware(user, bridge_id = bridge_ids['create_bridge_using_ai'], variables = variables)
@@ -52,11 +55,26 @@ async def create_bridges_controller(request):
             type = bridge_data.get('type')
 
         else:
+            name_next_count = 1
+            slug_next_count = 1
+            if isEmbedUser and bridges.get('name').startswith("untitled_agent_"):
+                if all_bridge:
+                    for bridge in all_bridge:
+                        if bridge.get('name') and bridge.get('name').startswith("untitled_agent_"):
+                            num = int(bridge.get('name').replace("untitled_agent_", ""))
+                            if num > name_next_count:
+                                name_next_count = num
+                        if bridge.get('slugName') and bridge.get('slugName').startswith("untitled_agent_"):
+                            num = int(bridge.get('slugName').replace("untitled_agent_", ""))
+                            if num > slug_next_count:
+                                slug_next_count = num
+                    name_next_count = name_next_count + 1
+                    slug_next_count = slug_next_count + 1
             service = bridges.get('service')
             model = bridges.get('model')
-            name = bridges.get('name')
+            name = bridges.get('name') if not bridges.get('name').startswith("untitled_agent_") else f"untitled_agent_{name_next_count}"
             type = bridges.get('type')
-            slugName = bridges.get('slugName')
+            slugName = bridges.get('slugName') if not bridges.get('slugName').startswith("untitled_agent_") else f"untitled_agent_{slug_next_count}"
         bridgeType = bridges.get('bridgeType')
         modelObj = model_config_document[service][model]
         configurations = modelObj['configuration']
