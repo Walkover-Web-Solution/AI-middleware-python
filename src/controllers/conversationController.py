@@ -1,5 +1,5 @@
 import copy
-import datetime
+from datetime import datetime
 from config import Config
 from ..db_services import conversationDbService as chatbotDbService
 import traceback
@@ -8,6 +8,7 @@ from ..configs.constant import bridge_ids
 from ..services.utils.ai_call_util import call_ai_middleware
 from ..db_services.ConfigurationServices import save_sub_thread_id
 from ..services.commonServices.baseService.utils import sendResponse
+from ..services.cache_service import find_in_cache, store_in_cache
 
 
 
@@ -88,9 +89,9 @@ async def savehistory(thread_id, sub_thread_id, userMessage, botMessage, org_id,
             item["role"] = item.pop("message_by")
             item["content"] = item.pop("message")
             if item.get('created_at') is None:
-                item['created_at'] = str(datetime.datetime.now())
+                item['created_at'] = str(datetime.now())
             if item.get('createdAt') is None:
-                item['createdAt'] = str(datetime.datetime.now())
+                item['createdAt'] = str(datetime.now())
 
         response_format_copy = {
             'cred' : {
@@ -143,15 +144,35 @@ async def add_tool_call_data_in_history(chats):
 
 async def save_sub_thread_id_and_name(thread_id, sub_thread_id, org_id, thread_flag, response_format, bridge_id, user):
     try:
-        if not thread_flag:
+        
+        # Create Redis cache key for the combination
+        cache_key = f"sub_thread_{org_id}_{bridge_id}_{thread_id}_{sub_thread_id}"
+        
+        # Check if already exists in Redis cache
+        cached_result = await find_in_cache(cache_key)
+        if cached_result:
+            logger.info(f"Found cached sub_thread_id for key: {cache_key}")
             return
+        
         variables = {
             'user' : user
         }
         display_name = sub_thread_id
         message  = 'generate description'
-        display_name = await call_ai_middleware(message, bridge_ids['generate_description'], response_type='text', variables=variables)
+        if thread_flag:
+            display_name = await call_ai_middleware(message, bridge_ids['generate_description'], response_type='text', variables=variables)
         await save_sub_thread_id(org_id, thread_id, sub_thread_id, display_name, bridge_id)
+        
+        # Store in Redis cache for 48 hours (172800 seconds)
+        cache_data = {
+            'org_id': org_id,
+            'bridge_id': bridge_id,
+            'thread_id': thread_id,
+            'sub_thread_id': sub_thread_id,
+            'display_name': display_name
+        }
+        await store_in_cache(cache_key, cache_data, ttl=172800)  # 48 hours
+        
         if display_name is not None and display_name != sub_thread_id:
             response = {
                 'data': {
