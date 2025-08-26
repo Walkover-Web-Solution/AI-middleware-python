@@ -22,18 +22,31 @@ class Groq(BaseService):
             raise ValueError(groq_response.get('error'))
         
         if len(model_response.get('choices', [])[0].get('message', {}).get("tool_calls", [])) > 0:
-            functionCallRes = await self.function_call(self.customConfig, service_name['groq'], groq_response, 0, {})
+            # Check for transfer action_type before executing function calls
+            from src.services.utils.transfer_handler import should_skip_function_call
             
-            if not functionCallRes.get('success'):
-                await self.handle_failure(functionCallRes)
-                raise ValueError(functionCallRes.get('error'))
+            has_transfer, transfer_agent_config = should_skip_function_call(model_response, self.customConfig)
             
-            self.update_model_response(model_response, functionCallRes)
-            tools = functionCallRes.get("tools", {}) 
+            # Skip function call execution if transfer found, otherwise execute normally
+            if not has_transfer:
+                functionCallRes = await self.function_call(self.customConfig, service_name['groq'], groq_response, 0, {})
+                
+                if not functionCallRes.get('success'):
+                    await self.handle_failure(functionCallRes)
+                    raise ValueError(functionCallRes.get('error'))
+                
+                self.update_model_response(model_response, functionCallRes)
+                tools = functionCallRes.get("tools", {})
+            else:
+                tools = {} 
             
         response = await Response_formatter(model_response, service_name['groq'], tools, self.type, self.image_data)
         if not self.playground:
             usage = self.token_calculator.calculate_usage(model_response)
             historyParams = self.prepare_history_params(response, model_response, tools)
         
-        return {'success': True, 'modelResponse': model_response, 'historyParams': historyParams, 'usage': usage, 'response': response }
+        # Add transfer_agent_config to return if transfer was detected
+        result = {'success': True, 'modelResponse': model_response, 'historyParams': historyParams, 'usage': usage, 'response': response}
+        if 'transfer_agent_config' in locals() and transfer_agent_config:
+            result['transfer_agent_config'] = transfer_agent_config
+        return result

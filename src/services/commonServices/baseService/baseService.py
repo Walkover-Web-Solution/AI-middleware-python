@@ -127,7 +127,7 @@ class BaseService:
                 configuration['tool_choice'] = {'type': 'auto'}
             else:
                 configuration['tool_choice'] = 'auto'
-        if validate_tool_call(service, model_response) and l <= int(self.tool_call_count):
+        if validate_tool_call(service, model_response) and l <= int(self.tool_call_count or 0):
             l += 1
         else:
             return response
