@@ -30,7 +30,9 @@ from src.services.utils.common_utils import (
     update_usage_metrics,
     create_latency_object,
     create_history_params,
-    add_files_to_parse_data
+    add_files_to_parse_data,
+    orchestrator_agent_chat,
+    orchestrator_flow_handler
 )
 from src.services.utils.rich_text_support import process_chatbot_response
 app = FastAPI()
@@ -140,7 +142,23 @@ async def chat(request_body):
         # Add support contact information to error message
         error_message = f"{str(error)}. For more support contact us at support@gtwy.ai"
         raise ValueError(error_message)
-    
+
+
+
+@handle_exceptions
+async def orchestrator_chat(request_body): 
+    try:
+        body = await request_body.json()
+        # Extract user query from the request
+        user = body.get('user')
+        # Use the new orchestration flow handler
+        response = await orchestrator_flow_handler(body, user)
+        return response
+        
+    except (Exception, ValueError, BadRequestException) as error:
+        print(f"Error in orchestrator_chat: {str(error)}")
+        traceback.print_exc()
+        return JSONResponse(status_code=500, content={"success": False, "error": str(error)})
 
 async def embedding(request_body):
     result = {}

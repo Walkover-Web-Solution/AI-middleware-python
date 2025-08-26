@@ -111,7 +111,7 @@ async def get_orchestrator_by_id(orchestrator_id: str, org_id: str) -> Optional[
             return None
         
         # Find the orchestrator with both ID and org_id for security
-        doc = orchestrator_collection.find_one({
+        doc = await orchestrator_collection.find_one({
             "_id": ObjectId(orchestrator_id),
             "org_id": org_id
         })

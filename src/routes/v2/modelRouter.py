@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Request, HTTPException
 from fastapi.responses import JSONResponse
 import asyncio
-from src.services.commonServices.common import chat, embedding, batch, run_testcases, image
+from src.services.commonServices.common import chat, embedding, batch, run_testcases, image, orchestrator_chat
 from src.services.commonServices.baseService.utils import make_request_data
 from ...middlewares.middleware import jwt_middleware
 from ...middlewares.getDataUsingBridgeId import add_configuration_data_to_body
@@ -24,6 +24,9 @@ async def auth_and_rate_limit(request: Request):
 async def chat_completion(request: Request, db_config: dict = Depends(add_configuration_data_to_body)):
     request.state.is_playground = False
     request.state.version = 2
+    if db_config.get('orchestrator_id'):
+        result = await orchestrator_chat(request)
+        return result
     data_to_send = await make_request_data(request)
     response_format = data_to_send.get('body',{}).get('configuration', {}).get('response_format', {})
     if response_format and response_format.get('type') != 'default':
@@ -55,6 +58,9 @@ async def chat_completion(request: Request, db_config: dict = Depends(add_config
 async def playground_chat_completion(request: Request, db_config: dict = Depends(add_configuration_data_to_body)):
     request.state.is_playground = True
     request.state.version = 2
+    if db_config.get('orchestrator_id'):
+        result = await orchestrator_chat(request)
+        return result
     data_to_send = await make_request_data(request)
     type = data_to_send.get("body",{}).get('configuration',{}).get('type')
     if type == 'embedding':
