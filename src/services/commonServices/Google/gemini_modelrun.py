@@ -5,7 +5,7 @@ from src.services.utils.unified_token_validator import validate_gemini_token_lim
 from globals import *
 
 
-async def gemini_modelrun(configuration, apiKey, execution_time_logs, bridge_id, timer, message_id=None, org_id=None, name = "", org_name= "", service = "", count=0):
+async def gemini_modelrun(configuration, apiKey, execution_time_logs, bridge_id, timer, message_id=None, org_id=None, name = "", org_name= "", service = "", count=0, token_calculator=None):
     try:
         # Validate token count before making API call
         model_name = configuration.get('model')
@@ -50,7 +50,8 @@ async def gemini_modelrun(configuration, apiKey, execution_time_logs, bridge_id,
             name = name,
             org_name = org_name,
             service = service,
-            count = count
+            count = count,
+            token_calculator = token_calculator
         )
 
     except Exception as error:

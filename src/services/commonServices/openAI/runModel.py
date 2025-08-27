@@ -75,7 +75,7 @@ async def openai_test_model(configuration, api_key):
             'status_code': getattr(error, 'status_code', None)
         }
     
-async def openai_response_model(configuration, apiKey, execution_time_logs, bridge_id, timer, message_id=None, org_id=None, name = "", org_name= "", service = "", count = 0):
+async def openai_response_model(configuration, apiKey, execution_time_logs, bridge_id, timer, message_id=None, org_id=None, name = "", org_name= "", service = "", count = 0, token_calculator=None):
     try:
         # Validate token count before making API call (raises exception if invalid)
         model_name = configuration.get('model')
@@ -121,7 +121,8 @@ async def openai_response_model(configuration, apiKey, execution_time_logs, brid
             name = name,
             org_name = org_name,
             service = service,
-            count = count
+            count = count,
+            token_calculator = token_calculator
         )
 
     except Exception as error:

@@ -5,7 +5,7 @@ from src.services.utils.unified_token_validator import validate_anthropic_token_
 from globals import *
 
 
-async def anthropic_runmodel(configuration, apikey, execution_time_logs, bridge_id, timer, name = "", org_name = "", service = "", count = 0):
+async def anthropic_runmodel(configuration, apikey, execution_time_logs, bridge_id, timer, name = "", org_name = "", service = "", count = 0, token_calculator=None):
     try:
         # Validate token count before making API call
         model_name = configuration.get('model')
@@ -49,7 +49,8 @@ async def anthropic_runmodel(configuration, apikey, execution_time_logs, bridge_
             name=name,
             org_name=org_name,
             service = service,
-            count = count
+            count = count,
+            token_calculator = token_calculator
         )
 
     except Exception as e:
