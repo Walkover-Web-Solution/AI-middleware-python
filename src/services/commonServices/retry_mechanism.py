@@ -33,7 +33,6 @@ async def execute_with_retry(
         if first_result['success']:
             first_result['response'] = await check_space_issue(first_result['response'], service)
             execution_time_logs.append({"step": f"{service} Processing time for call :- {count + 1}", "time_taken": timer.stop("API chat completion")})
-            print(first_result['response']['usage'])
             token_calculator.calculate_usage(first_result['response'])
             return first_result
         else:

@@ -7,7 +7,6 @@ from src.services.utils.ai_middleware_format import Response_formatter
 class GeminiHandler(BaseService):
     async def execute(self):
         historyParams = {}
-        usage = {}
         tools = {}
         if self.type == 'image':
             self.customConfig['prompt'] = self.user

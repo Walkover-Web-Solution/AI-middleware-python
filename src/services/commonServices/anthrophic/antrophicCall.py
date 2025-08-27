@@ -9,7 +9,6 @@ from src.services.utils.ai_middleware_format import Response_formatter
 class Antrophic(BaseService):
     async def execute(self):
         historyParams = {}
-        usage = {}
         tools = {}
         conversation = []
         images_input = []

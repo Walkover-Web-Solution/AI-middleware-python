@@ -109,9 +109,7 @@ async def chat(request_body):
                     await process_chatbot_response(result, params, parsed_data, model_output_config, timer, params['execution_time_logs'])
                 except Exception as e:
                     raise RuntimeError(f"error in chatbot : {e}")
-        parsed_data['alert_flag'] = result['modelResponse'].get('alert_flag', False)    
-        # if not parsed_data['is_playground']:
-        #     result['response']['usage'] = params['token_calculator'].get_total_usage()
+        parsed_data['alert_flag'] = result['modelResponse'].get('alert_flag', False)
         if parsed_data.get('type') != 'image':
             parsed_data['tokens'] = params['token_calculator'].calculate_total_cost(parsed_data['model'], parsed_data['service'])
             result['response']['usage']['cost'] = parsed_data['tokens'].get('total_cost') or 0
