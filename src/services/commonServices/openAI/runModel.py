@@ -4,7 +4,7 @@ from ..retry_mechanism import execute_with_retry
 from globals import *
 
 
-async def runModel(configuration, apiKey, execution_time_logs, bridge_id, timer, message_id=None, org_id=None, name = "", org_name= "", service = "", count=0):
+async def runModel(configuration, apiKey, execution_time_logs, bridge_id, timer, message_id=None, org_id=None, name = "", org_name= "", service = "", count=0, token_calculator=None):
     try:
         openAI = AsyncOpenAI(api_key=apiKey)
 
@@ -45,7 +45,8 @@ async def runModel(configuration, apiKey, execution_time_logs, bridge_id, timer,
             name = name,
             org_name = org_name,
             service = service,
-            count = count
+            count = count,
+            token_calculator = token_calculator
         )
 
     except Exception as error:
@@ -69,7 +70,7 @@ async def openai_test_model(configuration, api_key):
             'status_code': getattr(error, 'status_code', None)
         }
     
-async def openai_response_model(configuration, apiKey, execution_time_logs, bridge_id, timer, message_id=None, org_id=None, name = "", org_name= "", service = "", count = 0):
+async def openai_response_model(configuration, apiKey, execution_time_logs, bridge_id, timer, message_id=None, org_id=None, name = "", org_name= "", service = "", count = 0, token_calculator=None):
     try:
         client = AsyncOpenAI(api_key=apiKey)
 
@@ -116,7 +117,8 @@ async def openai_response_model(configuration, apiKey, execution_time_logs, brid
             name = name,
             org_name = org_name,
             service = service,
-            count = count
+            count = count,
+            token_calculator = token_calculator
         )
 
     except Exception as error:

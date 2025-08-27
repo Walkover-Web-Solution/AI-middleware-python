@@ -4,7 +4,7 @@ from ..retry_mechanism import execute_with_retry
 from globals import *
 
 
-async def anthropic_runmodel(configuration, apikey, execution_time_logs, bridge_id, timer, name = "", org_name = "", service = "", count = 0):
+async def anthropic_runmodel(configuration, apikey, execution_time_logs, bridge_id, timer, name = "", org_name = "", service = "", count = 0, token_calculator=None):
     try:
         # Initialize async client
         anthropic_client = AsyncAnthropic(api_key=apikey)
@@ -44,7 +44,8 @@ async def anthropic_runmodel(configuration, apikey, execution_time_logs, bridge_
             name=name,
             org_name=org_name,
             service = service,
-            count = count
+            count = count,
+            token_calculator = token_calculator
         )
 
     except Exception as e:

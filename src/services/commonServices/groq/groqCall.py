@@ -7,7 +7,6 @@ from src.services.utils.ai_middleware_format import Response_formatter
 class Groq(BaseService):
     async def execute(self):
         historyParams = {}
-        usage = {}
         tools = {}
         conversation = ConversationService.createGroqConversation(self.configuration.get('conversation'), self.memory).get('messages', [])
         self.customConfig["messages"] = [{"role": "system", "content": self.configuration['prompt']}] + conversation + ([{"role": "user", "content": self.user}] if self.user else []) 
@@ -33,7 +32,5 @@ class Groq(BaseService):
             
         response = await Response_formatter(model_response, service_name['groq'], tools, self.type, self.image_data)
         if not self.playground:
-            usage = self.token_calculator.calculate_usage(model_response)
             historyParams = self.prepare_history_params(response, model_response, tools)
-        
-        return {'success': True, 'modelResponse': model_response, 'historyParams': historyParams, 'usage': usage, 'response': response }
+        return {'success': True, 'modelResponse': model_response, 'historyParams': historyParams, 'response': response }

@@ -1,4 +1,5 @@
 
+import asyncio
 import copy
 import traceback
 from ..utils.ai_middleware_format import send_alert
@@ -17,7 +18,8 @@ async def execute_with_retry(
     name = "",
     org_name= "",
     service = "",
-    count = 0
+    count = 0,
+    token_calculator = None
 ):
     try:
         # Start timer
@@ -31,6 +33,7 @@ async def execute_with_retry(
         if first_result['success']:
             first_result['response'] = await check_space_issue(first_result['response'], service)
             execution_time_logs.append({"step": f"{service} Processing time for call :- {count + 1}", "time_taken": timer.stop("API chat completion")})
+            token_calculator.calculate_usage(first_result['response'])
             return first_result
         else:
             print("First API call failed with error:", first_result['error'])
@@ -59,6 +62,7 @@ async def execute_with_retry(
 
             execution_time_logs.append({"step": f"{service} Processing time for call :- {count + 1}", "time_taken": timer.stop("API chat completion")})
             if second_result['success']:
+                token_calculator.calculate_usage(second_result['response'])
                 second_result['response'] = await check_space_issue(second_result['response'], service)
                 print("Second API call completed successfully.")
                 second_result['response']['firstAttemptError'] = firstAttemptError
