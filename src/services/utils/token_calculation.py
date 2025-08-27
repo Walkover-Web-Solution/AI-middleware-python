@@ -18,26 +18,43 @@ class TokenCalculator:
     def calculate_usage(self, model_response):
         usage = {}
         match self.service:
-            case 'openai' | 'groq' | 'open_router' | 'mistral' | 'gemini':
+            case 'openai' | 'open_router' | 'mistral':
                 usage["inputTokens"] = model_response['usage']['prompt_tokens']
                 usage["outputTokens"] = model_response['usage']['completion_tokens']
                 usage["totalTokens"] = model_response['usage']['total_tokens']
-                usage["cachedTokens"] = model_response['usage']['prompt_tokens_details']['cached_tokens']
-                usage["reasoningTokens"] = model_response['usage']['completion_tokens_details']['reasoning_tokens']
+                # Handle optional token details with safe access
+                usage["cachedTokens"] = model_response['usage'].get('prompt_tokens_details', {}).get('cached_tokens', 0)
+                usage["reasoningTokens"] = model_response['usage'].get('completion_tokens_details', {}).get('reasoning_tokens', 0)
+            
+            case 'groq':
+                usage["inputTokens"] = model_response['usage']['prompt_tokens']
+                usage["outputTokens"] = model_response['usage']['completion_tokens']
+                usage["totalTokens"] = model_response['usage']['total_tokens']
+                # Groq doesn't have token details, set to 0
+                usage["cachedTokens"] = 0
+                usage["reasoningTokens"] = 0
+            
+            case 'gemini':
+                usage["inputTokens"] = model_response['usage']['prompt_tokens']
+                usage["outputTokens"] = model_response['usage']['completion_tokens']
+                usage["totalTokens"] = model_response['usage']['total_tokens']
+                # Gemini doesn't have cached/reasoning tokens
+                usage["cachedTokens"] = 0
+                usage["reasoningTokens"] = 0
             
             case 'openai_response':
                 usage["inputTokens"] = model_response['usage']['input_tokens']
                 usage["outputTokens"] = model_response['usage']['output_tokens']
                 usage["totalTokens"] = model_response['usage']['total_tokens']
-                usage["cachedTokens"] = model_response['usage']['input_tokens_details']['cached_tokens']
-                usage["reasoningTokens"] = model_response['usage']['output_tokens_details']['reasoning_tokens']
+                usage["cachedTokens"] = model_response['usage'].get('input_tokens_details', {}).get('cached_tokens', 0)
+                usage["reasoningTokens"] = model_response['usage'].get('output_tokens_details', {}).get('reasoning_tokens', 0)
             
             case 'anthropic':
                 usage["inputTokens"] = model_response['usage']['input_tokens']
-                usage["outputTokens"] = model_response['usage']['output_tokens']
+                usage["outputTokens"] = model_response['usage'].get('output_tokens', 0)
                 usage["totalTokens"] = usage["inputTokens"] + usage["outputTokens"]
-                usage['cachingReadTokens'] = model_response['usage']['cache_read_input_tokens']
-                usage['cachingCreationInputTokens'] = model_response['usage']['cache_creation_input_tokens']
+                usage['cachingReadTokens'] = model_response['usage'].get('cache_read_input_tokens', 0)
+                usage['cachingCreationInputTokens'] = model_response['usage'].get('cache_creation_input_tokens', 0)
             
             case _:
                 pass
@@ -89,8 +106,8 @@ class TokenCalculator:
         if self.total_usage["cached_tokens"] and pricing.get("cached_cost"):
             cost["cached_cost"] = (self.total_usage["cached_tokens"] / 1_000_000) * pricing["cached_cost"]
             
-        if self.total_usage["reasoning_tokens"] and pricing.get("reasoning_cost"):
-            cost["reasoning_cost"] = (self.total_usage["reasoning_tokens"] / 1_000_000) * pricing["reasoning_cost"]
+        if self.total_usage["reasoning_tokens"] and pricing.get("output_tokens"):
+            cost["reasoning_cost"] = (self.total_usage["reasoning_tokens"] / 1_000_000) * pricing["output_tokens"]
             
         if self.total_usage["cache_read_input_tokens"] and pricing.get("caching_read_cost"):
             cost["cache_read_cost"] = (self.total_usage["cache_read_input_tokens"] / 1_000_000) * pricing["caching_read_cost"]
