@@ -104,6 +104,7 @@ async def openai_response_model(configuration, apiKey, execution_time_logs, brid
                 config['model'] = 'o3'
             else:
                 config['model'] = 'gpt-4o'
+            config["input"] = [i for i in config["input"] if i.get("type", "") != "reasoning"]
             return config
 
         # Execute with retry
