@@ -4,6 +4,20 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 import uuid
 from models.postgres.pg_connection import Base
+from sqlalchemy import Column, Integer, Text, String, DateTime, func
+from sqlalchemy.dialects.postgresql import ARRAY
+from pgvector.sqlalchemy import Vector
+
+class Document(Base):
+    __tablename__ = 'documents'
+    __table_args__ = {'extend_existing': True}
+    
+    id = Column(Integer, primary_key=True)
+    content = Column(Text, nullable=False)
+    source = Column(String(255))
+    chunk_index = Column(Integer)
+    embedding = Column(Vector(1024))  
+    created_at = Column(DateTime, default=func.now())
 
 class Conversation(Base):
     __tablename__ = 'conversations'

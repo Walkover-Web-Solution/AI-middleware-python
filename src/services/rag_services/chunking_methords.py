@@ -3,8 +3,10 @@ from langchain_experimental.text_splitter import SemanticChunker
 from typing import List, Optional
 from langchain_openai import OpenAIEmbeddings
 from config import Config
-
+from src.services.embeddingService import embedding_model
 apikey = Config.OPENAI_API_KEY
+embedding_model = embedding_model.embedding_model()
+
 async def manual_chunking(text, chunk_size:int = 1000, chunk_overlap:int =  200):
     """
     Split text into chunks manually using character-based splitting
@@ -101,5 +103,33 @@ async def semantic_chunking(text):
         print(f"Error during semantic chunking: {str(e)}")
         raise
 
-
-
+async def chunking(text):
+    try:
+        chunks = []
+        embeddings = []
+        
+        if text and len(text.strip()) > 50:
+            current_chunk = ""
+            sentences = text.split('.')
+            
+            for sentence in sentences:
+                if len(current_chunk + sentence) < 500:
+                    current_chunk += sentence + "."
+                else:
+                    if current_chunk.strip():  # Only add non-empty chunks
+                        chunks.append(current_chunk.strip())
+                        embedding = embedding_model.create_embedding(current_chunk)
+                        embeddings.append(embedding)
+                    current_chunk = sentence + "."
+            
+            # Don't forget the last chunk
+            if current_chunk.strip():
+                chunks.append(current_chunk.strip())
+                embedding = embedding_model.create_embedding(current_chunk)
+                embeddings.append(embedding)
+        
+        return chunks, embeddings
+        
+    except Exception as e:
+        print(f"Error during chunking: {str(e)}")
+        raise

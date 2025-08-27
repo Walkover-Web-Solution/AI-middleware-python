@@ -1,6 +1,6 @@
 import traceback
-from google import genai
-from google.genai import types
+from google import generativeai as genai
+from google.generativeai import types
 import uuid
 import time
 from io import BytesIO

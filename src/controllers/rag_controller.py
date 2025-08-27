@@ -1,6 +1,6 @@
 import requests
 import re
-from ..services.rag_services.chunking_methords import semantic_chunking, manual_chunking, recursive_chunking
+from ..services.rag_services.chunking_methords import semantic_chunking, manual_chunking, recursive_chunking, chunking
 from pinecone import Pinecone
 import uuid
 from config import Config
@@ -13,6 +13,8 @@ from fastapi import HTTPException
 from ..services.utils.rag_utils import extract_pdf_text, extract_csv_text, extract_docx_text
 import traceback
 from ..services.utils.rag_utils import get_csv_query_type
+from models.postgres.rag_pg_service import pg_function
+
 
 rag_model = db["rag_datas"]
 rag_parent_model = db["rag_parent_datas"]
@@ -21,6 +23,8 @@ pc = Pinecone(api_key=Config.PINECONE_APIKEY)
 
 pinecone_index = Config.PINECONE_INDEX
 index = pc.Index(pinecone_index)
+# Initialize the SQLAlchemy-based pg_function
+db_func = pg_function()
 
 # if not pc.index_exists(index_name):
 #     try:
@@ -74,21 +78,28 @@ async def create_vectors(request):
             text = data.get('data')
             doc_id = data.get('doc_id')
         text = str(text)
-        if chunking_type == 'semantic':
-            chunks, embeddings = await semantic_chunking(text=text)
-        elif chunking_type == 'manual': 
-            chunks, embeddings = await manual_chunking(text=text, chunk_size=chunk_size, chunk_overlap=chunk_overlap)
-        elif chunking_type == 'recursive': 
-            chunks, embeddings = await recursive_chunking(text=text, chunk_size=chunk_size, chunk_overlap=chunk_overlap)
-        else:
-            raise HTTPException(status_code=400, detail="Invalid chunking type or method not supported.")
+
+        chunks,embeddings = await chunking(text)
+
+        if not chunks or not embeddings:
+            raise HTTPException(status_code=400, detail="Failed to create chunks or embeddings")
+
+        # if chunking_type == 'semantic':
+        #     chunks, embeddings = await semantic_chunking(text=text)
+        # elif chunking_type == 'manual': 
+        #     chunks, embeddings = await manual_chunking(text=text, chunk_size=chunk_size, chunk_overlap=chunk_overlap)
+        # elif chunking_type == 'recursive': 
+        #     chunks, embeddings = await recursive_chunking(text=text, chunk_size=chunk_size, chunk_overlap=chunk_overlap)
+        # else:
+        #     raise HTTPException(status_code=400, detail="Invalid chunking type or method not supported.")
         return JSONResponse(
             status_code=200,
             content={
                 "name" : name, 
                 "description" : description,
                 'type' : file_extension,
-                **(await store_in_pinecone_and_mongo(embeddings, chunks, org_id, user['id'] if embed else None, name, description, doc_id, file_extension))
+                **(await store_in_pg(embeddings, chunks, org_id, user['id'] if embed else None, name, description, doc_id, file_extension))
+                # **(await store_in_pinecone_and_mongo(embeddings, chunks, org_id, user['id'] if embed else None, name, description, doc_id, file_extension))
             }
         )
 
@@ -101,6 +112,50 @@ async def create_vectors(request):
         print(f"Error in create_vectors: {error}")
         raise HTTPException(status_code=500, detail="An unexpected error occurred.")
 
+
+async def store_in_pg(embeddings, chunks, org_id, user_id, name, description, doc_id, file_extension):
+    try:             
+        # Generate doc_id if not provided
+        if doc_id is None:
+            doc_id = str(uuid.uuid4())
+        
+        # Get embedding dimension from the first embedding
+        embedding_dim = len(embeddings[0]) if embeddings else 1024
+        
+        db_func.delete_table()
+        # Create table (will use the Document model from SQLAlchemy)
+        db_func.create_table(embedding_dim)
+        
+        # Prepare chunks with metadata for PostgreSQL storage
+        pg_chunks = []
+        for i, (embedding, chunk) in enumerate(zip(embeddings, chunks)):
+            chunk_data = {
+                'content': chunk,
+                'source': doc_id,  # Using doc_id as source for namespace
+                'chunk_index': i,
+            }
+            pg_chunks.append(chunk_data)
+        
+        # Store data in PostgreSQL
+        db_func.store_in_db(pg_chunks, embeddings)
+        
+        # Create indexes for better performance
+        db_func.create_normal_index()
+        db_func.create_vector_index()
+        
+        inserted_id = doc_id
+        
+        return {
+            "success": True,
+            "message": "Data stored successfully in PostgreSQL.",
+            "doc_id": doc_id,
+            "_id": str(inserted_id)
+        }
+        
+    except Exception as error:
+        print(f"Error storing data in PostgreSQL: {error}")
+        raise HTTPException(status_code=500, detail=str(error))
+        
 async def get_google_docs_data(url):
     try:
         doc_id = re.search(r'/d/(.*?)/', url).group(1)
@@ -178,12 +233,19 @@ async def get_vectors_and_text(request):
         
         if query is None and doc_id is None:
             raise HTTPException(status_code=400, detail="Query and Doc_id required.")
-        text = await get_text_from_vectorsQuery({
+
+        text = await pg_vector_query({
             'Document_id': doc_id, 
             'query': query, 
             'org_id': org_id,
             'top_k': top_k
         })
+        # text = await get_text_from_vectorsQuery({
+        #     'Document_id': doc_id, 
+        #     'query': query, 
+        #     'org_id': org_id,
+        #     'top_k': top_k
+        # })
         
         # Check if the operation was successful based on status
         success = text.get('status') == 1
@@ -198,11 +260,49 @@ async def get_vectors_and_text(request):
         print(f"Error in get_vectors_and_text: {error}")
         raise HTTPException(status_code=400, detail=error)
 
+async def pg_vector_query(**args):
+    try:
+        doc_id = args.get('Document_id')
+        query = args.get('query')
+        org_id = args.get('org_id')
+        top_k = args.get('top_k', 3)
+        additional_query = {}
+
+        if query is None:
+            raise HTTPException(status_code=400, detail="Query is required.")
+        
+        query_results  = db_func.search_in_db(doc_id, query,org_id,top_k)
+        
+        text = ""
+        for result in query_results:
+            # result format: (id, content, source, chunk_index, similarity)
+            content = result[1]  # Content is at index 1
+            text += content + " "  # Add space between chunks
+        
+        return {
+            'response': text.strip(),  # Remove trailing space
+            'metadata': {
+                'flowHitId': '',
+            },
+            'status': 1
+        }
+        
+    except Exception as error:
+        print(f"Error in get_text_from_vectorsQuery: {error}")
+        return {
+            'response': str(error),
+            'metadata': {
+                'flowHitId': ''
+            },
+            'status': 0  # 0 indicates error/failure
+        }
+
 async def get_all_docs(request):
     try:
         org_id = request.state.profile.get("org", {}).get("id", "")
         user_id = request.state.profile.get("user", {}).get('id')
         embed = request.state.embed
+        
         result = await rag_parent_model.find({
             'org_id' : org_id, 
             'user_id' : user_id if embed else None

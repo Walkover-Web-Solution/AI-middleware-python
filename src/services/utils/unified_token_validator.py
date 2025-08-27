@@ -1,8 +1,8 @@
 import tiktoken
 import json
 import anthropic
-from google import genai
-from google.genai import types
+from google import generativeai as genai
+from google.generativeai import types
 from src.configs.model_configuration import model_config_document
 from src.services.utils.logger import logger
 
