@@ -56,7 +56,6 @@ class GeminiHandler(BaseService):
                 tools = functionCallRes.get("tools", {})
             response = await Response_formatter(model_response, service_name['gemini'], tools, self.type, self.image_data)
             if not self.playground:
-                usage = self.token_calculator.calculate_usage(model_response)
                 historyParams = self.prepare_history_params(response, model_response, tools)
-        return {'success': True, 'modelResponse': model_response, 'historyParams': historyParams, 'usage': usage, 'response': response }
+        return {'success': True, 'modelResponse': model_response, 'historyParams': historyParams, 'response': response }
     

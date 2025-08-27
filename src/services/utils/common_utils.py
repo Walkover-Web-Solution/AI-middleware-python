@@ -430,7 +430,7 @@ def update_usage_metrics(parsed_data, params, latency, result=None, error=None, 
         "latency": json.dumps(latency),
         "success": success,
         "apikey_object_id": params.get('apikey_object_id'),
-        "expectedCost": parsed_data['tokens'].get('expectedCost', 0),
+        "expectedCost": parsed_data['tokens'].get('total_cost', 0),
         "variables": parsed_data.get('variables') or {}
     }
     

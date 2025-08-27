@@ -1,4 +1,5 @@
 import pydash as _
+from src.configs.model_configuration import model_config_document
 
 class TokenCalculator:
     def __init__(self, service, model_output_config):
@@ -10,29 +11,34 @@ class TokenCalculator:
             "output_tokens": 0,
             "cached_tokens":0,
             "cache_read_input_tokens":0,
-            "cache_creation_input_tokens":0
+            "cache_creation_input_tokens":0,
+            "reasoning_tokens": 0
         }
 
     def calculate_usage(self, model_response):
         usage = {}
         match self.service:
             case 'openai' | 'groq' | 'open_router' | 'mistral' | 'gemini':
-                usage["totalTokens"] = _.get(model_response, self.model_output_config['usage'][0]['total_tokens']) or 0
-                usage["inputTokens"] = _.get(model_response, self.model_output_config['usage'][0]['prompt_tokens']) or 0 
-                usage["outputTokens"] = _.get(model_response, self.model_output_config['usage'][0]['completion_tokens']) or 0
-                usage["cachedTokens"] = _.get(model_response, self.model_output_config['usage'][0].get('cached_tokens')) or 0
+                usage["inputTokens"] = model_response['usage']['prompt_tokens']
+                usage["outputTokens"] = model_response['usage']['completion_tokens']
+                usage["totalTokens"] = model_response['usage']['total_tokens']
+                usage["cachedTokens"] = model_response['usage']['prompt_tokens_details']['cached_tokens']
+                usage["reasoningTokens"] = model_response['usage']['completion_tokens_details']['reasoning_tokens']
             
             case 'openai_response':
-                usage["totalTokens"] = _.get(model_response, self.model_output_config['usage'][0]['total_tokens'])
-                usage["cachedTokens"] = _.get(model_response, self.model_output_config['usage'][0].get('cached_tokens')) or 0
+                usage["inputTokens"] = model_response['usage']['input_tokens']
+                usage["outputTokens"] = model_response['usage']['output_tokens']
+                usage["totalTokens"] = model_response['usage']['total_tokens']
+                usage["cachedTokens"] = model_response['usage']['input_tokens_details']['cached_tokens']
+                usage["reasoningTokens"] = model_response['usage']['output_tokens_details']['reasoning_tokens']
             
             case 'anthropic':
-                usage["inputTokens"] = _.get(model_response, self.model_output_config['usage'][0]['prompt_tokens']) or 0
-                usage["outputTokens"] = _.get(model_response, self.model_output_config['usage'][0]['completion_tokens']) or 0
-                usage['cachingReadTokens'] = _.get(model_response, self.model_output_config['usage'][0].get('cache_read_input_tokens')) or 0
-                usage['cachingCreationInputTokens'] = _.get(model_response, self.model_output_config['usage'][0].get('cache_creation_input_tokens')) or 0
+                usage["inputTokens"] = model_response['usage']['input_tokens']
+                usage["outputTokens"] = model_response['usage']['output_tokens']
                 usage["totalTokens"] = usage["inputTokens"] + usage["outputTokens"]
-                
+                usage['cachingReadTokens'] = model_response['usage']['cache_read_input_tokens']
+                usage['cachingCreationInputTokens'] = model_response['usage']['cache_creation_input_tokens']
+            
             case _:
                 pass
 
@@ -46,6 +52,63 @@ class TokenCalculator:
         self.total_usage["cached_tokens"] += usage.get("cachedTokens") or  0
         self.total_usage["cache_read_input_tokens"] += usage.get("cachingReadTokens") or 0
         self.total_usage["cache_creation_input_tokens"] += usage.get("cachingCreationInputTokens") or 0
+        self.total_usage["reasoning_tokens"] += usage.get("reasoningTokens") or 0
+
+
+    def calculate_total_cost(self, model, service):
+        """
+        Calculate total cost in dollars using accumulated total_usage
+        
+        Args:
+            model: model name
+            service: service name
+        
+        Returns:
+            Dictionary with cost breakdown using total_usage
+        """
+        model_obj = model_config_document[service][model]
+        pricing = model_obj['outputConfig']['usage'][0]['total_cost']
+
+        cost = {
+            "input_cost": 0,
+            "output_cost": 0, 
+            "cached_cost": 0,
+            "reasoning_cost": 0,
+            "cache_read_cost": 0,
+            "cache_creation_cost": 0,
+            "total_cost": 0
+        }
+        
+        # Calculate costs per million tokens using total_usage
+        if self.total_usage["input_tokens"] and pricing.get("input_cost"):
+            cost["input_cost"] = (self.total_usage["input_tokens"] / 1_000_000) * pricing["input_cost"]
+            
+        if self.total_usage["output_tokens"] and pricing.get("output_cost"):
+            cost["output_cost"] = (self.total_usage["output_tokens"] / 1_000_000) * pricing["output_cost"]
+            
+        if self.total_usage["cached_tokens"] and pricing.get("cached_cost"):
+            cost["cached_cost"] = (self.total_usage["cached_tokens"] / 1_000_000) * pricing["cached_cost"]
+            
+        if self.total_usage["reasoning_tokens"] and pricing.get("reasoning_cost"):
+            cost["reasoning_cost"] = (self.total_usage["reasoning_tokens"] / 1_000_000) * pricing["reasoning_cost"]
+            
+        if self.total_usage["cache_read_input_tokens"] and pricing.get("caching_read_cost"):
+            cost["cache_read_cost"] = (self.total_usage["cache_read_input_tokens"] / 1_000_000) * pricing["caching_read_cost"]
+            
+        if self.total_usage["cache_creation_input_tokens"] and pricing.get("caching_write_cost"):
+            cost["cache_creation_cost"] = (self.total_usage["cache_creation_input_tokens"] / 1_000_000) * pricing["caching_write_cost"]
+        
+        # Calculate total cost
+        cost["total_cost"] = (
+            cost["input_cost"] + 
+            cost["output_cost"] + 
+            cost["cached_cost"] + 
+            cost["reasoning_cost"] + 
+            cost["cache_read_cost"] + 
+            cost["cache_creation_cost"]
+        )
+        
+        return cost
 
     def get_total_usage(self):
         return self.total_usage
