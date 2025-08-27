@@ -93,13 +93,13 @@ async def openai_response_model(configuration, apiKey, execution_time_logs, brid
                 config['model'] = 'gpt-5'
             elif current_model == 'gpt-4o':
                 config['model'] = 'gpt-4.1'
-            elif current_model in ['gpt-5', 'gpt-5-mini', 'gpt-5-nano', 'o4-mini', 'o3-mini']:
-                config['model'] = 'o3'
+            # elif current_model in ['gpt-5', 'gpt-5-mini', 'gpt-5-nano', 'o4-mini', 'o3-mini']:
+            #     config['model'] = 'o3'
             else:
                 config['model'] = 'gpt-4o'
-            # config["input"] = [i for i in config["input"] if i.get("type", "") != "reasoning"]
-            # if(config.get('reasoning')):
-            #     config.pop('reasoning')
+            config["input"] = [i for i in config["input"] if i.get("type", "") != "reasoning"]
+            if(config.get('reasoning')):
+                config.pop('reasoning')
             return config
 
         # Execute with retry
