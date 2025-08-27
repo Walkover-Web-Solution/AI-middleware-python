@@ -4,7 +4,7 @@ from ..retry_mechanism import execute_with_retry
 from globals import *
 
 
-async def openrouter_modelrun(configuration, apiKey, execution_time_logs, bridge_id, timer, message_id=None, org_id=None, name = "", org_name= "", service = "", count = 0):
+async def openrouter_modelrun(configuration, apiKey, execution_time_logs, bridge_id, timer, message_id=None, org_id=None, name = "", org_name= "", service = "", count = 0, token_calculator=None):
     try:
         openAI = AsyncOpenAI(base_url="https://openrouter.ai/api/v1", api_key=apiKey)
 
@@ -45,7 +45,8 @@ async def openrouter_modelrun(configuration, apiKey, execution_time_logs, bridge
             name = name,
             org_name = org_name,
             service = service,
-            count = count
+            count = count,
+            token_calculator = token_calculator
         )
 
     except Exception as error:

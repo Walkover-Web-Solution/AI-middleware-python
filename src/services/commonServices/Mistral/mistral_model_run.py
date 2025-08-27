@@ -5,7 +5,7 @@ from ..retry_mechanism import execute_with_retry
 from globals import *
 
 
-async def mistral_model_run(configuration, apiKey, execution_time_logs, bridge_id, timer, message_id=None, org_id=None, name = "", org_name= "", service = "", count=0):
+async def mistral_model_run(configuration, apiKey, execution_time_logs, bridge_id, timer, message_id=None, org_id=None, name = "", org_name= "", service = "", count=0, token_calculator=None):
     try:
         mistral = Mistral(api_key=apiKey)
 
@@ -46,7 +46,8 @@ async def mistral_model_run(configuration, apiKey, execution_time_logs, bridge_i
             name = name,
             org_name = org_name,
             service = service,
-            count = count
+            count = count,
+            token_calculator = token_calculator
         )
 
     except Exception as error:

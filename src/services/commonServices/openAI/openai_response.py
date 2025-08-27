@@ -7,7 +7,7 @@ from src.services.utils.ai_middleware_format import Response_formatter
 
 class OpenaiResponse(BaseService):
     async def execute(self):
-        historyParams, usage, tools = {}, {}, {}
+        historyParams, tools = {}, {}
         conversation = ConversationService.createOpenAiResponseConversation(self.configuration.get('conversation'), self.memory, self.files).get('messages', [])
         
         developer = [{"role": "developer", "content": self.configuration['prompt']}] if not self.reasoning_model else []
@@ -62,8 +62,7 @@ class OpenaiResponse(BaseService):
         else:
             response = await Response_formatter(modelResponse, service_name['openai_response'], {}, self.type, self.image_data)
         if not self.playground:
-            usage = self.token_calculator.calculate_usage(modelResponse)
             historyParams = self.prepare_history_params(response, modelResponse, tools)
         
-        return {'success': True, 'modelResponse': modelResponse, 'historyParams': historyParams, 'usage': usage, 'response': response }
+        return {'success': True, 'modelResponse': modelResponse, 'historyParams': historyParams, 'response': response }
     
