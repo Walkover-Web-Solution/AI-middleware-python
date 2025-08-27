@@ -626,6 +626,7 @@ async def orchestrator_agent_chat(agent_config, body=None, user=None):
             agent_config['variables']['user_query'] = user
         
         # Restructure agent config to match chat function format
+        print("agent_config",agent_config)
         request_data = {
             "body": {
                 "configuration": agent_config.get("configuration", {}),
@@ -633,8 +634,13 @@ async def orchestrator_agent_chat(agent_config, body=None, user=None):
                 "service": agent_config.get("service"),
                 "apikey": agent_config.get("apikey"),
                 "bridge_id": agent_config.get("bridge_id"),
+                "version_id": agent_config.get("version_id"),
                 "org_id": body.get("org_id"),
+                "pre_tools": agent_config.get("pre_tools"),
+                "org_name" : agent_config.get("org_name"),
+                "name" : agent_config.get("name"),
                 "variables": agent_config.get("variables", {}),
+                "variables_path": agent_config.get("variables_path", {}),
                 "rag_data": agent_config.get("rag_data", []),
                 "actions": agent_config.get("actions", []),
                 "files": [],
@@ -643,7 +649,14 @@ async def orchestrator_agent_chat(agent_config, body=None, user=None):
                 "sub_thread_id": body.get('sub_thread_id') or body.get('thread_id'),
                 "message_id": f"orchestrator_{agent_config.get('bridge_id', 'unknown')}",
                 "user": user,
-                "tool_id_and_name_mapping": agent_config.get('tool_id_and_name_mapping', {})
+                "tool_id_and_name_mapping": agent_config.get('tool_id_and_name_mapping', {}),
+                "apikey_object_id": agent_config.get("apikey_object_id"),
+                "gpt_memory": agent_config.get("gpt_memory"),
+                "gpt_memory_context": agent_config.get("gpt_memory_context"),
+                "tool_call_count": agent_config.get("tool_call_count"),
+                "RTLayer": agent_config.get("RTLayer"),
+                "user_reference": agent_config.get("user_reference"),
+
             },
             "state": {
                 "profile": {
