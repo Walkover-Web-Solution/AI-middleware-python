@@ -3,7 +3,8 @@ from src.middlewares.middleware import jwt_middleware
 from src.controllers.orchestratorController import (
     create_orchestrator_controller,
     get_all_orchestrators_controller,
-    delete_orchestrator_controller
+    delete_orchestrator_controller,
+    update_orchestrator_controller
 )
 
 router = APIRouter()
@@ -19,3 +20,8 @@ async def get_all_orchestrators(request: Request):
 @router.delete('/{orchestrator_id}', dependencies=[Depends(jwt_middleware)])
 async def delete_orchestrator(orchestrator_id: str, request: Request):
     return await delete_orchestrator_controller(orchestrator_id, request)
+
+@router.put('/{orchestrator_id}', dependencies=[Depends(jwt_middleware)])
+async def update_orchestrator(orchestrator_id: str, request: Request):
+    return await update_orchestrator_controller(orchestrator_id, request)
+

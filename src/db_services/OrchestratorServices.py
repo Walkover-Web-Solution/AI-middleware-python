@@ -129,17 +129,17 @@ async def get_orchestrator_by_id(orchestrator_id: str, org_id: str) -> Optional[
         logger.error(f"Error retrieving orchestrator {orchestrator_id}: {str(e)}")
         return None
 
-async def update_orchestrator(orchestrator_id: str, org_id: str, update_data: Dict) -> bool:
+async def update_orchestrator(orchestrator_id: str, org_id: str, new_data: Dict) -> bool:
     """
-    Update an orchestrator by ID and org_id
+    Replace entire orchestrator data by ID and org_id (complete replacement)
     
     Args:
-        orchestrator_id: ID of the orchestrator to update
+        orchestrator_id: ID of the orchestrator to replace
         org_id: Organization ID for authorization check
-        update_data: Dictionary containing fields to update
+        new_data: Dictionary containing complete new data to replace with
         
     Returns:
-        True if updated successfully, False otherwise
+        True if replaced successfully, False otherwise
     """
     try:
         # Validate ObjectId format
@@ -147,22 +147,32 @@ async def update_orchestrator(orchestrator_id: str, org_id: str, update_data: Di
             logger.error(f"Invalid orchestrator ID format: {orchestrator_id}")
             return False
         
-        # Add updated timestamp
-        update_data['updated_at'] = datetime.utcnow()
+        # Ensure org_id is preserved in the new data
+        new_data['org_id'] = org_id
         
-        # Update the orchestrator with both ID and org_id for security
-        result = orchestrator_collection.update_one(
+        # First check if the orchestrator exists and belongs to the org
+        existing = await orchestrator_collection.find_one({
+            "_id": ObjectId(orchestrator_id),
+            "org_id": org_id
+        })
+        
+        if not existing:
+            logger.warning(f"Orchestrator {orchestrator_id} not found for org_id: {org_id}")
+            return False
+        
+        # Replace the entire document while preserving _id
+        result = await orchestrator_collection.replace_one(
             {"_id": ObjectId(orchestrator_id), "org_id": org_id},
-            {"$set": update_data}
+            new_data
         )
         
         if result.modified_count > 0:
-            logger.info(f"Orchestrator {orchestrator_id} updated successfully for org_id: {org_id}")
+            logger.info(f"Orchestrator {orchestrator_id} replaced successfully for org_id: {org_id}")
             return True
         else:
-            logger.warning(f"Orchestrator {orchestrator_id} not found or no changes made for org_id: {org_id}")
+            logger.warning(f"Orchestrator {orchestrator_id} replacement failed for org_id: {org_id}")
             return False
             
     except Exception as e:
-        logger.error(f"Error updating orchestrator {orchestrator_id}: {str(e)}")
+        logger.error(f"Error replacing orchestrator {orchestrator_id}: {str(e)}")
         return False
