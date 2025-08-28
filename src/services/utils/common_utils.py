@@ -91,7 +91,7 @@ def parse_request_body(request_body):
 
 
 def add_default_template(prompt):
-    prompt += ' \n Additional Information if requied : For current date and time always refer: {{current_time_date_and_current_identifier}}'
+    prompt += ' \n if you need current time in any case (otherwise ignore) - {{current_time_date_and_current_identifier}}'
     return prompt
 
 def add_user_in_varaibles(variables, user):
@@ -240,9 +240,7 @@ async def configure_custom_settings(model_configuration, custom_config, service)
     return await model_config_change(model_configuration, custom_config, service)
 
 def build_service_params(parsed_data, custom_config, model_output_config, thread_info=None, timer=None, memory=None, send_error_to_webhook=None):
-    token_calculator = {}
-    if not parsed_data['is_playground']:
-        token_calculator = TokenCalculator(parsed_data['service'], model_output_config)
+    token_calculator = TokenCalculator(parsed_data['service'], model_output_config)
     
     return {
         "customConfig": custom_config,
@@ -438,8 +436,11 @@ def update_usage_metrics(parsed_data, params, latency, result=None, error=None, 
         "latency": json.dumps(latency),
         "success": success,
         "apikey_object_id": params.get('apikey_object_id'),
-        "expectedCost": parsed_data['tokens'].get('expectedCost', 0),
-        "variables": parsed_data.get('variables') or {}
+        "expectedCost": parsed_data['tokens'].get('total_cost', 0),
+        "variables": parsed_data.get('variables') or {},
+        "outputTokens":result.get('response', {}).get('usage', {}).get('output_tokens', 0) or 0,
+        "inputTokens": result.get('response', {}).get('usage', {}).get('input_tokens', 0) or 0,
+        "total_tokens": result.get('response', {}).get('usage', {}).get('total_tokens', 0) or 0
     }
     
     # Add success-specific fields

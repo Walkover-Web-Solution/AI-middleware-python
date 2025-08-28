@@ -140,9 +140,6 @@ class BaseService:
             l += 1
         else:
             return response
-        
-        if not self.playground:
-            self.token_calculator.calculate_usage(response.get('modelResponse'))
         func_response_data,mapping_response_data, tools_call_data = await self.run_tool(model_response, service)
         self.func_tool_call_data.append(tools_call_data)
         
@@ -203,54 +200,12 @@ class BaseService:
             service_name['mistral'],
             service_name['gemini']
         ]:
-            usage_config = self.modelOutputConfig['usage'][0]
-
-            def get_combined_tokens(key, default=0):
-                return (_.get(model_response, key, default) or 0) + (_.get(funcModelResponse, key, default) or 0)
-
-            if self.service != service_name['openai_response']:
-                self.prompt_tokens = get_combined_tokens(usage_config['prompt_tokens'])
-                self.completion_tokens = get_combined_tokens(usage_config['completion_tokens'])
-                self.total_tokens = self.prompt_tokens + self.completion_tokens
-
-            if self.service in [service_name['openai'], service_name['groq'], service_name['open_router'], service_name['mistral'], service_name['gemini']]:
-                    cached_tokens_key = usage_config.get('cached_tokens', 0)
-                    self.cached_tokens = get_combined_tokens(cached_tokens_key)
-                    _.set_(model_response, cached_tokens_key, self.cached_tokens)
-        
-            if self.service == service_name['anthropic']:
-                self.cache_creation_input_tokens = get_combined_tokens(usage_config.get('cache_creation_input_tokens', 0))
-                self.cache_read_input_tokens = get_combined_tokens(usage_config.get('cache_read_input_tokens', 0))
-                _.set_(model_response, usage_config.get('cache_creation_input_tokens', 0), self.cache_creation_input_tokens)
-                _.set_(model_response, usage_config.get('cache_read_input_tokens', 0), self.cache_read_input_tokens)
-
-            if self.service in [service_name['openai'], service_name['anthropic'], service_name['groq'], service_name['open_router'], service_name['mistral'], service_name['gemini']]:
-                _.set_(model_response, usage_config['prompt_tokens'], self.prompt_tokens)
-                _.set_(model_response, usage_config['completion_tokens'], self.completion_tokens)
 
             if funcModelResponse and self.service != service_name['openai_response']:
                 _.set_(model_response, self.modelOutputConfig['message'], _.get(funcModelResponse, self.modelOutputConfig['message']))
                 if self.service in [service_name['openai'], service_name['groq'], service_name['open_router'], service_name['gemini']]:
                     _.set_(model_response, self.modelOutputConfig['tools'], _.get(funcModelResponse, self.modelOutputConfig['tools']))
 
-    def calculate_usage(self, model_response):
-        match self.service:
-            case 'openai' | 'groq' | 'open_router' | 'mistral' | 'gemini':
-                usage = {}
-                usage["totalTokens"] = _.get(model_response, self.modelOutputConfig['usage'][0]['total_tokens'])
-                usage["inputTokens"] = _.get(model_response, self.modelOutputConfig['usage'][0]['prompt_tokens'])
-                usage["outputTokens"] = _.get(model_response, self.modelOutputConfig['usage'][0]['completion_tokens'])
-                usage["cachedTokens"] = _.get(model_response, self.modelOutputConfig['usage'][0].get('cached_tokens', 0))
-            case 'anthropic':
-                usage = {}
-                usage["inputTokens"] = _.get(model_response, self.modelOutputConfig['usage'][0]['prompt_tokens'])
-                usage["outputTokens"] = _.get(model_response, self.modelOutputConfig['usage'][0]['completion_tokens'])
-                usage['cachingReadTokens'] = _.get(model_response,self.modelOutputConfig['usage'][0].get('cache_read_input_tokens',0))
-                usage['cachedCreationInputTokens'] = _.get(model_response,self.modelOutputConfig['usage'][0].get('cache_creation_input_tokens',0))
-                usage["totalTokens"] = usage["inputTokens"] + usage["outputTokens"]
-            case  _:
-                pass
-        return usage
     def prepare_history_params(self,response, model_response, tools):
         return {
             'thread_id': self.thread_id,
@@ -259,7 +214,7 @@ class BaseService:
             'message': response.get('data',{}).get('content') or "",
             'org_id': self.org_id,
             'bridge_id': self.bridge_id,
-            'model': self.configuration.get('model'),
+            'model': model_response.get('model') or self.configuration.get('model'),
             'channel': 'chat',
             'type': "assistant",
             'actor': "user",
@@ -307,19 +262,19 @@ class BaseService:
             response = {}
             loop = asyncio.get_event_loop()
             if service == service_name['openai']:
-                response = await runModel(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer, self.message_id, self.org_id, self.name, self.org_name, service, count)
+                response = await runModel(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer, self.message_id, self.org_id, self.name, self.org_name, service, count, self.token_calculator)
             if service == service_name['openai_response']:
-                response = await openai_response_model(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer, self.message_id, self.org_id, self.name, self.org_name, service, count)
+                response = await openai_response_model(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer, self.message_id, self.org_id, self.name, self.org_name, service, count, self.token_calculator)
             elif service == service_name['anthropic']:
-                response = await loop.run_in_executor(executor, lambda: asyncio.run(anthropic_runmodel(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer, self.name, self.org_name, service, count)))
+                response = await loop.run_in_executor(executor, lambda: asyncio.run(anthropic_runmodel(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer, self.name, self.org_name, service, count, self.token_calculator)))
             elif service == service_name['groq']:
-                response = await groq_runmodel(configuration, apikey, self.execution_time_logs, self.bridge_id,  self.timer, self.name, self.org_name, service, count)
+                response = await groq_runmodel(configuration, apikey, self.execution_time_logs, self.bridge_id,  self.timer, self.name, self.org_name, service, count, self.token_calculator)
             elif service == service_name['open_router']:
-                response = await openrouter_modelrun(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer, self.message_id, self.org_id, self.name, self.org_name, service, count)
+                response = await openrouter_modelrun(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer, self.message_id, self.org_id, self.name, self.org_name, service, count, self.token_calculator)
             elif service == service_name['mistral']:
-                response = await mistral_model_run(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer, self.name, self.org_name, service, count)
+                response = await mistral_model_run(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer, self.name, self.org_name, service, count, self.token_calculator)
             elif service == service_name['gemini']:
-                response = await gemini_modelrun(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer, self.message_id, self.org_id, self.name, self.org_name, service, count)
+                response = await gemini_modelrun(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer, self.message_id, self.org_id, self.name, self.org_name, service, count, self.token_calculator)
             if not response['success']:
                 raise ValueError(response['error'], self.func_tool_call_data)
             return {

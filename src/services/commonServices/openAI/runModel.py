@@ -5,7 +5,7 @@ from src.services.utils.unified_token_validator import validate_openai_token_lim
 from globals import *
 
 
-async def runModel(configuration, apiKey, execution_time_logs, bridge_id, timer, message_id=None, org_id=None, name = "", org_name= "", service = "", count=0):
+async def runModel(configuration, apiKey, execution_time_logs, bridge_id, timer, message_id=None, org_id=None, name = "", org_name= "", service = "", count=0, token_calculator=None):
     try:
         # Validate token count before making API call (raises exception if invalid)
         model_name = configuration.get('model')
@@ -50,7 +50,8 @@ async def runModel(configuration, apiKey, execution_time_logs, bridge_id, timer,
             name = name,
             org_name = org_name,
             service = service,
-            count = count
+            count = count,
+            token_calculator = token_calculator
         )
 
     except Exception as error:
@@ -74,7 +75,7 @@ async def openai_test_model(configuration, api_key):
             'status_code': getattr(error, 'status_code', None)
         }
     
-async def openai_response_model(configuration, apiKey, execution_time_logs, bridge_id, timer, message_id=None, org_id=None, name = "", org_name= "", service = "", count = 0):
+async def openai_response_model(configuration, apiKey, execution_time_logs, bridge_id, timer, message_id=None, org_id=None, name = "", org_name= "", service = "", count = 0, token_calculator=None):
     try:
         # Validate token count before making API call (raises exception if invalid)
         model_name = configuration.get('model')
@@ -99,11 +100,16 @@ async def openai_response_model(configuration, apiKey, execution_time_logs, brid
         def get_alternative_config(config):
             current_model = config.get('model', '')
             if current_model == 'o3':
-                config['model'] = 'gpt-4o-2024-08-06'
+                config['model'] = 'gpt-5'
             elif current_model == 'gpt-4o':
+                config['model'] = 'gpt-4.1'
+            elif current_model in ['gpt-5', 'gpt-5-mini', 'gpt-5-nano', 'o4-mini', 'o3-mini']:
                 config['model'] = 'o3'
             else:
                 config['model'] = 'gpt-4o'
+            # config["input"] = [i for i in config["input"] if i.get("type", "") != "reasoning"]
+            # if(config.get('reasoning')):
+            #     config.pop('reasoning')
             return config
 
         # Execute with retry
@@ -120,7 +126,8 @@ async def openai_response_model(configuration, apiKey, execution_time_logs, brid
             name = name,
             org_name = org_name,
             service = service,
-            count = count
+            count = count,
+            token_calculator = token_calculator
         )
 
     except Exception as error:

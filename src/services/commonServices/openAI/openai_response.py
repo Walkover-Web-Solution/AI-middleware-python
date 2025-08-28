@@ -7,7 +7,7 @@ from src.services.utils.ai_middleware_format import Response_formatter
 
 class OpenaiResponse(BaseService):
     async def execute(self):
-        historyParams, usage, tools = {}, {}, {}
+        historyParams, tools = {}, {}
         conversation = ConversationService.createOpenAiResponseConversation(self.configuration.get('conversation'), self.memory, self.files).get('messages', [])
         functionCallRes = {}
         developer = [{"role": "developer", "content": self.configuration['prompt']}] if not self.reasoning_model else []
@@ -64,11 +64,10 @@ class OpenaiResponse(BaseService):
             response = await Response_formatter(modelResponse, service_name['openai_response'], {}, self.type, self.image_data)
             tools = {}
         if not self.playground:
-            usage = self.token_calculator.calculate_usage(modelResponse)
             historyParams = self.prepare_history_params(response, modelResponse, tools)
         
         # Add transfer_agent_config to return if transfer was detected
-        result = {'success': True, 'modelResponse': modelResponse, 'historyParams': historyParams, 'usage': usage, 'response': response}
+        result = {'success': True, 'modelResponse': modelResponse, 'historyParams': historyParams, 'response': response}
         if has_function_call and functionCallRes.get('transfer_agent_config'):
             result['transfer_agent_config'] = functionCallRes['transfer_agent_config']
         return result

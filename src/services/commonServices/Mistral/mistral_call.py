@@ -7,7 +7,6 @@ from src.services.utils.ai_middleware_format import Response_formatter
 class Mistral(BaseService):
     async def execute(self):
         historyParams = {}
-        usage = {}
         tools = {}
         functionCallRes = {}
         if self.type == 'image':
@@ -58,10 +57,9 @@ class Mistral(BaseService):
                 tools = {}
             response = await Response_formatter(model_response, service_name['mistral'], tools, self.type, self.image_data)
             if not self.playground:
-                usage = self.token_calculator.calculate_usage(model_response)
                 historyParams = self.prepare_history_params(response, model_response, tools)
         # Add transfer_agent_config to return if transfer was detected
-        result = {'success': True, 'modelResponse': model_response, 'historyParams': historyParams, 'usage': usage, 'response': response}
+        result = {'success': True, 'modelResponse': model_response, 'historyParams': historyParams, 'response': response}
         if functionCallRes.get('transfer_agent_config'):
             result['transfer_agent_config'] = functionCallRes['transfer_agent_config']
         return result

@@ -9,7 +9,6 @@ from src.services.utils.ai_middleware_format import Response_formatter
 class Antrophic(BaseService):
     async def execute(self):
         historyParams = {}
-        usage = {}
         tools = {}
         conversation = []
         images_input = []
@@ -45,10 +44,9 @@ class Antrophic(BaseService):
         tools = functionCallRes.get("tools", {})
         response = await Response_formatter(modelResponse, service_name['anthropic'], tools, self.type, self.image_data)
         if not self.playground:
-            usage = self.token_calculator.calculate_usage(modelResponse)
             historyParams = self.prepare_history_params(response, modelResponse, tools)
         # Add transfer_agent_config to return if transfer was detected
-        result = {'success': True, 'modelResponse': modelResponse, 'historyParams': historyParams, 'usage': usage, 'response': response}
+        result = {'success': True, 'modelResponse': modelResponse, 'historyParams': historyParams, 'response': response}
         if functionCallRes.get('transfer_agent_config'):
             result['transfer_agent_config'] = functionCallRes['transfer_agent_config']
         return result
