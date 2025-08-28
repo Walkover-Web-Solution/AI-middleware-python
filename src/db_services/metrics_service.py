@@ -104,9 +104,11 @@ async def find_one_pg(id):
 
 async def create(dataset, history_params, version_id, thread_info={}):
     try:
-        thread_id = thread_info.get('thread_id')
-        sub_thread_id = thread_info.get('sub_thread_id')
-        conversations = thread_info.get('result', [])
+        conversations = []
+        if thread_info is not None:
+            thread_id = thread_info.get('thread_id')
+            sub_thread_id = thread_info.get('sub_thread_id')
+            conversations = thread_info.get('result', [])
         result = await try_catch (
             savehistory,
             history_params['thread_id'], history_params['sub_thread_id'], history_params['user'], history_params['message'],
@@ -116,8 +118,8 @@ async def create(dataset, history_params, version_id, thread_info={}):
         )
         
         # Save conversations to Redis with TTL of 30 days
-        if 'error' not in dataset[0]:
-            await save_conversations_to_redis(conversations, version_id, thread_id, sub_thread_id, history_params)
+        if 'error' not in dataset[0] and conversations:
+                await save_conversations_to_redis(conversations, version_id, thread_id, sub_thread_id, history_params)
         
         chat_id = result[0]
         dataset[0]['chat_id'] = chat_id
