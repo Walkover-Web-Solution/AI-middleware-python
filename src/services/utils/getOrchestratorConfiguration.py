@@ -1,3 +1,4 @@
+import asyncio
 import src.db_services.ConfigurationServices as ConfigurationService
 import src.db_services.OrchestratorServices as OrchestratorService
 from .helper import Helper
@@ -50,10 +51,9 @@ async def getOrchestratorConfiguration(orchestrator_id, org_id, variables={}, va
                 'error': 'No agents found in orchestrator'
             }
         
-        # Fetch configuration for each agent using the pipeline
-        agent_configurations = {}
-        
-        for agent_id, agent_info in agents.items():
+        # Get agent configurations in parallel
+        async def process_agent(agent_id, agent_info):
+            """Process a single agent configuration"""
             try:
                 # Use the existing pipeline to get bridge data for each agent
                 # The agent_id should be the bridge_id in the database
@@ -73,13 +73,29 @@ async def getOrchestratorConfiguration(orchestrator_id, org_id, variables={}, va
                         'childAgents': agent_info.get('childAgents', [])
                     }
                     
-                    agent_configurations[agent_id] = agent_config
+                    return agent_id, agent_config
                 else:
                     logger.warning(f"Failed to get bridge data for agent {agent_id}: {bridge_result.get('error')}")
+                    return agent_id, None
                     
             except Exception as e:
                 logger.error(f"Error processing agent {agent_id}: {str(e)}")
+                return agent_id, None
+        
+        # Process all agents in parallel
+        agent_tasks = [process_agent(agent_id, agent_info) for agent_id, agent_info in agents.items()]
+        agent_results = await asyncio.gather(*agent_tasks, return_exceptions=True)
+        
+        # Build agent_configurations dict from results
+        agent_configurations = {}
+        for result in agent_results:
+            if isinstance(result, Exception):
+                logger.error(f"Exception in parallel agent processing: {result}")
                 continue
+            
+            agent_id, agent_config = result
+            if agent_config is not None:
+                agent_configurations[agent_id] = agent_config
         
         # Get master agent configuration
         master_agent_config = agent_configurations.get(master_agent_id)

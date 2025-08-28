@@ -10,6 +10,24 @@ from src.services.utils.logger import logger
 import json
 
 async def create_orchestrator_controller(request):
+    """
+    Create a new orchestrator configuration.
+    
+    Request Body Structure:
+    {
+        "agents": {
+            "agent_id_1": {
+                "name": "Agent Name",
+                "description": "Agent Description",
+                "parentAgents": ["parent_agent_id"],
+                "childAgents": ["child_agent_id"]
+            },
+            "agent_id_2": { ... }
+        },
+        "master_agent": "agent_id_1",
+        "status": "publish" | "draft"
+    }
+    """
     try:
         data = await request.json()
         org_id = request.state.profile['org']['id']
@@ -63,6 +81,9 @@ async def create_orchestrator_controller(request):
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 async def get_all_orchestrators_controller(request):
+    """
+    Retrieve all orchestrators for the organization.
+    """
     try:
         # Extract org_id from query parameters
         org_id = request.state.profile['org']['id']
@@ -84,6 +105,9 @@ async def get_all_orchestrators_controller(request):
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 async def delete_orchestrator_controller(orchestrator_id: str, request):
+    """
+    Delete an orchestrator by ID.
+    """
     try:
         # Extract org_id from query parameters for additional validation
         org_id = request.state.profile['org']['id']
@@ -110,6 +134,25 @@ async def delete_orchestrator_controller(orchestrator_id: str, request):
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 async def update_orchestrator_controller(orchestrator_id: str, request):
+    """    
+    Path Parameters:
+    - orchestrator_id: str - The ID of the orchestrator to update
+    
+    Request Body Structure:
+    {
+        "agents": {
+            "agent_id_1": {
+                "name": "Updated Agent Name",
+                "description": "Updated Agent Description",
+                "parentAgents": ["parent_agent_id"],
+                "childAgents": ["child_agent_id"]
+            },
+            "agent_id_2": { ... }
+        },
+        "master_agent": "agent_id_1",
+        "status": "publish" | "draft"
+    }
+    """
     try:
         data = await request.json()
         org_id = request.state.profile['org']['id']
