@@ -39,8 +39,6 @@ class OpenRouter(BaseService):
                 raise ValueError(functionCallRes.get('error'))
             self.update_model_response(modelResponse, functionCallRes)
             tools = functionCallRes.get("tools", {})
-        else:
-            tools = {}
         response = await Response_formatter(modelResponse, service_name['open_router'], tools, self.type, self.image_data)
         if not self.playground:
             historyParams = self.prepare_history_params(response, modelResponse, tools)

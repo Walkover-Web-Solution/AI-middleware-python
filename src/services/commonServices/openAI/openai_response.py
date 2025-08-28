@@ -60,9 +60,7 @@ class OpenaiResponse(BaseService):
             self.update_model_response(modelResponse, functionCallRes)
             response = await Response_formatter(functionCallRes.get("modelResponse", {}), service_name['openai_response'], functionCallRes.get("tools", {}), self.type, self.image_data)
             tools = functionCallRes.get("tools", {})
-        else:
-            response = await Response_formatter(modelResponse, service_name['openai_response'], {}, self.type, self.image_data)
-            tools = {}
+        response = await Response_formatter(modelResponse, service_name['openai_response'], {}, self.type, self.image_data)
         if not self.playground:
             historyParams = self.prepare_history_params(response, modelResponse, tools)
         
