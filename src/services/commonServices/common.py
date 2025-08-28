@@ -31,8 +31,7 @@ from src.services.utils.common_utils import (
     create_latency_object,
     create_history_params,
     add_files_to_parse_data,
-    orchestrator_agent_chat,
-    orchestrator_flow_handler
+    orchestrator_agent_chat
 )
 from src.services.utils.rich_text_support import process_chatbot_response
 app = FastAPI()
@@ -151,8 +150,16 @@ async def orchestrator_chat(request_body):
         body = await request_body.json()
         # Extract user query from the request
         user = body.get('user')
-        # Use the new orchestration flow handler
-        response = await orchestrator_flow_handler(body, user)
+        
+        # Validate master agent configuration
+        master_agent_id = body.get('master_agent_id')
+        master_agent_config = body.get('master_agent_config')
+        
+        if not master_agent_id or not master_agent_config:
+            raise ValueError("Master agent configuration not found")
+        
+        # Call master agent with orchestration capabilities directly
+        response = await orchestrator_agent_chat(master_agent_config, body, user)
         return response
         
     except (Exception, ValueError, BadRequestException) as error:

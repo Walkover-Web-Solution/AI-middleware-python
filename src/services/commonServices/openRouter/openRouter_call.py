@@ -9,6 +9,7 @@ class OpenRouter(BaseService):
         historyParams = {}
         usage = {}
         tools = {}
+        functionCallRes = {}
         conversation = ConversationService.createOpenRouterConversation(self.configuration.get('conversation'), self.memory).get('messages', [])
         if self.reasoning_model:
             self.customConfig["messages"] =  conversation + ([{"role": "user", "content": self.user}] if self.user else []) 
@@ -33,28 +34,21 @@ class OpenRouter(BaseService):
                 await self.handle_failure(openRouterResponse)
             raise ValueError(openRouterResponse.get('error'))
         if len(modelResponse.get('choices', [])[0].get('message', {}).get("tool_calls", [])) > 0:
-            # Check for transfer action_type before executing function calls
-            from src.services.utils.transfer_handler import should_skip_function_call
-            
-            has_transfer, transfer_agent_config = should_skip_function_call(modelResponse, self.customConfig)
-            
-            # Skip function call execution if transfer found, otherwise execute normally
-            if not has_transfer:
-                functionCallRes = await self.function_call(self.customConfig, service_name['open_router'], openRouterResponse, 0, {})
-                if not functionCallRes.get('success'):
-                    await self.handle_failure(functionCallRes)
-                    raise ValueError(functionCallRes.get('error'))
-                self.update_model_response(modelResponse, functionCallRes)
-                tools = functionCallRes.get("tools", {})
-            else:
-                tools = {}
+            functionCallRes = await self.function_call(self.customConfig, service_name['open_router'], openRouterResponse, 0, {})
+            if not functionCallRes.get('success'):
+                await self.handle_failure(functionCallRes)
+                raise ValueError(functionCallRes.get('error'))
+            self.update_model_response(modelResponse, functionCallRes)
+            tools = functionCallRes.get("tools", {})
+        else:
+            tools = {}
         response = await Response_formatter(modelResponse, service_name['open_router'], tools, self.type, self.image_data)
         if not self.playground:
             usage = self.token_calculator.calculate_usage(modelResponse)
             historyParams = self.prepare_history_params(response, modelResponse, tools)
         # Add transfer_agent_config to return if transfer was detected
         result = {'success': True, 'modelResponse': modelResponse, 'historyParams': historyParams, 'usage': usage, 'response': response}
-        if 'transfer_agent_config' in locals() and transfer_agent_config:
-            result['transfer_agent_config'] = transfer_agent_config
+        if functionCallRes.get('transfer_agent_config'):
+            result['transfer_agent_config'] = functionCallRes['transfer_agent_config']
         return result
     

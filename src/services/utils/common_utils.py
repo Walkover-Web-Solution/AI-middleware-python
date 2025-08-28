@@ -525,7 +525,7 @@ def add_child_agents_as_tools(agent_config, orchestrator_data):
         child_info = orchestrator_data.get('agents', {}).get(child_agent_id, {})
         if child_info:
             name = f"call_{child_info.get('name', 'agent').replace(' ', '_').lower()}"
-            description = f"{child_info.get('description', 'Child agent')} (child_agent_id: {child_agent_id})"
+            description = f"{child_info.get('description', 'Connected agent')})"
             
             tool = {
                 "type": "function",
@@ -545,16 +545,9 @@ def add_child_agents_as_tools(agent_config, orchestrator_data):
                         "enum": ["transfer", "conversation"],
                         "required_params": [],
                         "parameter": {}
-                    },
-                    "child_agent_id": {
-                        "description": "The ID of the child agent to call",
-                        "type": "string",
-                        "enum": [],
-                        "required_params": [],
-                        "parameter": {}
                     }
                 },
-                "required": ["user_query", "action_type", "child_agent_id"]
+                "required": ["user_query", "action_type"]
             }
             
             agent_config['configuration']['tools'].append(tool)
@@ -624,9 +617,7 @@ async def orchestrator_agent_chat(agent_config, body=None, user=None):
             if 'variables' not in agent_config:
                 agent_config['variables'] = {}
             agent_config['variables']['user_query'] = user
-        
-        # Restructure agent config to match chat function format
-        print("agent_config",agent_config)
+    
         request_data = {
             "body": {
                 "configuration": agent_config.get("configuration", {}),
@@ -752,8 +743,6 @@ async def orchestrator_agent_chat(agent_config, body=None, user=None):
             # Update usage metrics for successful API calls
             update_usage_metrics(parsed_data, params, latency, result=result, success=True)
             await process_background_tasks(parsed_data, result, params, thread_info)
-            
-        print(f"Agent {agent_config.get('name', 'Unknown')} response: {result['response']}")
         
         # Check if there are tool calls that need orchestration
         if result.get('transfer_agent_config'):
@@ -892,21 +881,3 @@ Based on the child agent's response above, please provide your final answer to t
     return JSONResponse(status_code=200, content={"success": True, "response": result["response"]})
 
 
-async def orchestrator_flow_handler(body, user):
-    try:
-        # Get master agent configuration
-        master_agent_id = body.get('master_agent_id')
-        master_agent_config = body.get('master_agent_config')
-        
-        if not master_agent_id or not master_agent_config:
-            raise ValueError("Master agent configuration not found")
-        
-        # Call master agent with orchestration capabilities
-        response = await orchestrator_agent_chat(master_agent_config, body, user)
-        
-        return response
-        
-    except Exception as error:
-        print(f"Error in orchestrator_flow_handler: {str(error)}")
-        traceback.print_exc()
-        return JSONResponse(status_code=500, content={"success": False, "error": str(error)})

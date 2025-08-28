@@ -9,7 +9,7 @@ class OpenaiResponse(BaseService):
     async def execute(self):
         historyParams, usage, tools = {}, {}, {}
         conversation = ConversationService.createOpenAiResponseConversation(self.configuration.get('conversation'), self.memory, self.files).get('messages', [])
-        
+        functionCallRes = {}
         developer = [{"role": "developer", "content": self.configuration['prompt']}] if not self.reasoning_model else []
         
         if self.image_data and isinstance(self.image_data, list):
@@ -53,24 +53,13 @@ class OpenaiResponse(BaseService):
         )
         
         if has_function_call:
-            print(modelResponse)
-            # Check for transfer action_type before executing function calls
-            from src.services.utils.transfer_handler import should_skip_function_call
-            
-            has_transfer, transfer_agent_config = should_skip_function_call(modelResponse, self.customConfig, 'openai_response')
-            
-            # Skip function call execution if transfer found, otherwise execute normally
-            if not has_transfer:
-                functionCallRes = await self.function_call(self.customConfig, service_name['openai_response'], openAIResponse, 0, {})
-                if not functionCallRes.get('success'):
-                    await self.handle_failure(functionCallRes)
-                    raise ValueError(functionCallRes.get('error'))
-                self.update_model_response(modelResponse, functionCallRes)
-                response = await Response_formatter(functionCallRes.get("modelResponse", {}), service_name['openai_response'], functionCallRes.get("tools", {}), self.type, self.image_data)
-                tools = functionCallRes.get("tools", {})
-            else:
-                response = await Response_formatter(modelResponse, service_name['openai_response'], {}, self.type, self.image_data)
-                tools = {}
+            functionCallRes = await self.function_call(self.customConfig, service_name['openai_response'], openAIResponse, 0, {})
+            if not functionCallRes.get('success'):
+                await self.handle_failure(functionCallRes)
+                raise ValueError(functionCallRes.get('error'))
+            self.update_model_response(modelResponse, functionCallRes)
+            response = await Response_formatter(functionCallRes.get("modelResponse", {}), service_name['openai_response'], functionCallRes.get("tools", {}), self.type, self.image_data)
+            tools = functionCallRes.get("tools", {})
         else:
             response = await Response_formatter(modelResponse, service_name['openai_response'], {}, self.type, self.image_data)
             tools = {}
@@ -80,7 +69,7 @@ class OpenaiResponse(BaseService):
         
         # Add transfer_agent_config to return if transfer was detected
         result = {'success': True, 'modelResponse': modelResponse, 'historyParams': historyParams, 'usage': usage, 'response': response}
-        if 'transfer_agent_config' in locals() and transfer_agent_config:
-            result['transfer_agent_config'] = transfer_agent_config
+        if has_function_call and functionCallRes.get('transfer_agent_config'):
+            result['transfer_agent_config'] = functionCallRes['transfer_agent_config']
         return result
     

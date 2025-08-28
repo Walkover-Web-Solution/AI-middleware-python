@@ -9,6 +9,7 @@ class Mistral(BaseService):
         historyParams = {}
         usage = {}
         tools = {}
+        functionCallRes = {}
         if self.type == 'image':
             self.customConfig['prompt'] = self.user
             openAIResponse = await self.image(self.customConfig, self.apikey, service_name['openai'])
@@ -47,27 +48,20 @@ class Mistral(BaseService):
                 raise ValueError(mistral_response.get('error'))
             tool_calls = model_response.get('choices', [])[0].get('message', {}).get("tool_calls", [])
             if len(tool_calls) > 0 if tool_calls is not None else False:
-                # Check for transfer action_type before executing function calls
-                from src.services.utils.transfer_handler import should_skip_function_call
-                
-                has_transfer, transfer_agent_config = should_skip_function_call(model_response, self.customConfig)
-                
-                # Skip function call execution if transfer found, otherwise execute normally
-                if not has_transfer:
-                    functionCallRes = await self.function_call(self.customConfig, service_name['mistral'], mistral_response, 0, {})
-                    if not functionCallRes.get('success'):
-                        await self.handle_failure(functionCallRes)
-                        raise ValueError(functionCallRes.get('error'))
-                    self.update_model_response(model_response, functionCallRes)
-                    tools = functionCallRes.get("tools", {})
-                else:
-                    tools = {}
+                functionCallRes = await self.function_call(self.customConfig, service_name['mistral'], mistral_response, 0, {})
+                if not functionCallRes.get('success'):
+                    await self.handle_failure(functionCallRes)
+                    raise ValueError(functionCallRes.get('error'))
+                self.update_model_response(model_response, functionCallRes)
+                tools = functionCallRes.get("tools", {})
+            else:
+                tools = {}
             response = await Response_formatter(model_response, service_name['mistral'], tools, self.type, self.image_data)
             if not self.playground:
                 usage = self.token_calculator.calculate_usage(model_response)
                 historyParams = self.prepare_history_params(response, model_response, tools)
         # Add transfer_agent_config to return if transfer was detected
         result = {'success': True, 'modelResponse': model_response, 'historyParams': historyParams, 'usage': usage, 'response': response}
-        if 'transfer_agent_config' in locals() and transfer_agent_config:
-            result['transfer_agent_config'] = transfer_agent_config
+        if functionCallRes.get('transfer_agent_config'):
+            result['transfer_agent_config'] = functionCallRes['transfer_agent_config']
         return result
