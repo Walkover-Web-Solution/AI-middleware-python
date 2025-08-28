@@ -33,7 +33,7 @@ async def create_orchestrator_controller(request):
         org_id = request.state.profile['org']['id']
         
         # Validate required fields
-        required_fields = ['agents', 'master_agent', 'status']
+        required_fields = ['agents', 'master_agent', 'status', 'bridge_type']
         for field in required_fields:
             if field not in data:
                 raise HTTPException(status_code=400, detail=f"Missing required field: {field}")
