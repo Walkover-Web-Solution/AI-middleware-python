@@ -430,9 +430,9 @@ def update_usage_metrics(parsed_data, params, latency, result=None, error=None, 
         "apikey_object_id": params.get('apikey_object_id'),
         "expectedCost": parsed_data['tokens'].get('total_cost', 0),
         "variables": parsed_data.get('variables') or {},
-        "outputTokens":result.get('response', {}).get('usage', {}).get('output_tokens', 0) or 0,
-        "inputTokens": result.get('response', {}).get('usage', {}).get('input_tokens', 0) or 0,
-        "total_tokens": result.get('response', {}).get('usage', {}).get('total_tokens', 0) or 0
+        "outputTokens": result.get('response', {}).get('usage', {}).get('output_tokens', 0) or 0 if result else 0,
+        "inputTokens": result.get('response', {}).get('usage', {}).get('input_tokens', 0) or 0 if result else 0,
+        "total_tokens": result.get('response', {}).get('usage', {}).get('total_tokens', 0) or 0 if result else 0
     }
     
     # Add success-specific fields
