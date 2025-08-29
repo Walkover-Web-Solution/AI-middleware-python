@@ -1,11 +1,16 @@
 from openai import AsyncOpenAI
 import traceback
 from ..retry_mechanism import execute_with_retry
+# from src.services.utils.unified_token_validator import validate_openai_token_limit
 from globals import *
 
 
 async def runModel(configuration, apiKey, execution_time_logs, bridge_id, timer, message_id=None, org_id=None, name = "", org_name= "", service = "", count=0, token_calculator=None):
     try:
+        # # Validate token count before making API call (raises exception if invalid)
+        # model_name = configuration.get('model')
+        # validate_openai_token_limit(configuration, model_name, service)
+        
         openAI = AsyncOpenAI(api_key=apiKey)
 
         # Define the API call function
@@ -72,6 +77,10 @@ async def openai_test_model(configuration, api_key):
     
 async def openai_response_model(configuration, apiKey, execution_time_logs, bridge_id, timer, message_id=None, org_id=None, name = "", org_name= "", service = "", count = 0, token_calculator=None):
     try:
+        # # Validate token count before making API call (raises exception if invalid)
+        # model_name = configuration.get('model')
+        # validate_openai_token_limit(configuration, model_name, 'openai_response')
+        
         client = AsyncOpenAI(api_key=apiKey)
 
         # Define the API call function

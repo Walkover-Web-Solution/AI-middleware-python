@@ -18,6 +18,65 @@ def start_of_today():
     today = datetime.now()
     return datetime(today.year, today.month, today.day, 0, 0, 0, 0)
 
+async def save_conversations_to_redis(conversations, version_id, thread_id, sub_thread_id, history_params):
+    """
+    Save conversations to Redis with conversation management logic.
+    If conversation array has more than 9 items, remove first 2 and add current conversation.
+    """
+    try:
+        # Create Redis key
+        redis_key = f"conversation_{version_id}_{thread_id}_{sub_thread_id}"
+        
+        # Start with existing conversations from database
+        conversation_list = conversations or []
+        
+        # Create current conversation entries (user + assistant)
+        current_time = datetime.now().isoformat() + "+00:00"
+        
+        # User message
+        user_conversation = {
+            "content": history_params['user'],
+            "role": "user", 
+            "createdAt": current_time,
+            "id": int(str(uuid.uuid4().int)[:8]),  # Generate 8-digit ID
+            "function": None,
+            "is_reset": False,
+            "tools_call_data": history_params.get('tools_call_data'),
+            "error": "",
+            "urls": history_params.get('urls', [])
+        }
+        
+        # Assistant message  
+        assistant_conversation = {
+            "content": history_params.get('message', ''),
+            "role": "assistant",
+            "createdAt": current_time, 
+            "id": int(str(uuid.uuid4().int)[:8]),  # Generate 8-digit ID
+            "function": {},
+            "is_reset": False,
+            "tools_call_data": None,
+            "error": None,
+            "urls": []
+        }
+        
+        # Add new conversations first
+        conversation_list.extend([user_conversation, assistant_conversation])
+        
+        # Manage conversation array size - if more than 9, remove first 2
+        if len(conversation_list) > 9:
+            # Remove first 2 conversations
+            conversation_list = conversation_list[2:]
+        
+        # Save to Redis with 30 days TTL (30 * 24 * 60 * 60 = 2592000 seconds)
+        ttl_30_days = 2592000
+        await store_in_cache(redis_key, conversation_list, ttl_30_days)
+        
+        logger.info(f"Saved conversations to Redis with key: {redis_key}")
+        
+    except Exception as error:
+        logger.error(f"Error saving conversations to Redis: {str(error)}")
+        logger.error(traceback.format_exc())
+
 def end_of_today():
     today = datetime.now()
     return datetime(today.year, today.month, today.day, 23, 59, 59, 999)
@@ -43,8 +102,13 @@ async def find_one_pg(id):
     model = postgres.raw_data
     return await model.find_by_pk(id)
 
-async def create(dataset, history_params, version_id):
+async def create(dataset, history_params, version_id, thread_info={}):
     try:
+        conversations = []
+        if thread_info is not None:
+            thread_id = thread_info.get('thread_id')
+            sub_thread_id = thread_info.get('sub_thread_id')
+            conversations = thread_info.get('result', [])
         result = await try_catch (
             savehistory,
             history_params['thread_id'], history_params['sub_thread_id'], history_params['user'], history_params['message'],
@@ -52,6 +116,10 @@ async def create(dataset, history_params, version_id):
             history_params['channel'], history_params['type'], history_params['actor'],
             history_params.get('tools'),history_params.get('chatbot_message'),history_params.get('tools_call_data'),history_params.get('message_id'), version_id, history_params.get('image_urls'), history_params.get('revised_prompt'), history_params.get('urls'), history_params.get('AiConfig'), history_params.get('annotations'), history_params.get('fallback_model')
         )
+        
+        # Save conversations to Redis with TTL of 30 days
+        if 'error' not in dataset[0] and conversations:
+                await save_conversations_to_redis(conversations, version_id, thread_id, sub_thread_id, history_params)
         
         chat_id = result[0]
         dataset[0]['chat_id'] = chat_id
@@ -100,6 +168,7 @@ async def create(dataset, history_params, version_id):
             for data_object in dataset
         ]
         await insertRawData(insert_ai_data_in_pg)
+        
         await timescale_metrics(metrics_data)
         cache_key = f"metrix_bridges{history_params['bridge_id']}"
         oldTotalToken = json.loads(await find_in_cache(cache_key) or '0')
