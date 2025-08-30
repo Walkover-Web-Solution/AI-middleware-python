@@ -41,7 +41,8 @@ class OpenRouter(BaseService):
             tools = functionCallRes.get("tools", {})
         response = await Response_formatter(modelResponse, service_name['open_router'], tools, self.type, self.image_data)
         if not self.playground:
-            historyParams = self.prepare_history_params(response, modelResponse, tools)
+            transfer_config = functionCallRes.get('transfer_agent_config') if functionCallRes else None
+            historyParams = self.prepare_history_params(response, modelResponse, tools, transfer_config)
         # Add transfer_agent_config to return if transfer was detected
         result = {'success': True, 'modelResponse': modelResponse, 'historyParams': historyParams, 'response': response}
         if functionCallRes.get('transfer_agent_config'):
