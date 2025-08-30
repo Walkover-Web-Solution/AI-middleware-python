@@ -9,6 +9,7 @@ from ..utils.ai_middleware_format import Response_formatter
 from ..utils.send_error_webhook import send_error_to_webhook
 from src.handler.executionHandler import handle_exceptions
 from models.mongo_connection import db
+import json
 from src.services.utils.common_utils import (
     parse_request_body,
     initialize_timer,
@@ -38,6 +39,7 @@ app = FastAPI()
 from src.services.utils.helper import Helper
 from src.services.commonServices.testcases import run_testcases as run_bridge_testcases
 from globals import *
+from src.services.cache_service import find_in_cache
 
 configurationModel = db["configurations"]
 
@@ -150,10 +152,23 @@ async def orchestrator_chat(request_body):
         body = await request_body.json()
         # Extract user query from the request
         user = body.get('user')
+        thread_id = body.get('thread_id')
+        sub_thread_id = body.get('sub_thread_id', thread_id)
         
-        # Validate master agent configuration
-        master_agent_id = body.get('master_agent_id')
-        master_agent_config = body.get('master_agent_config')
+        master_agent_id = None
+        master_agent_config = None
+        
+        # First try to find in Redis cache
+        if thread_id and sub_thread_id:
+            cached_agent = await find_in_cache(f"orchestrator_{thread_id}_{sub_thread_id}")
+            if cached_agent:
+                master_agent_id = json.loads(cached_agent)
+                master_agent_config = body.get('agent_configurations', {}).get(master_agent_id)
+        
+        # If not found in cache, get from request body
+        if not master_agent_id or not master_agent_config:
+            master_agent_id = body.get('master_agent_id')
+            master_agent_config = body.get('master_agent_config')
         
         if not master_agent_id or not master_agent_config:
             raise ValueError("Master agent configuration not found")
