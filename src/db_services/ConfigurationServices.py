@@ -622,12 +622,17 @@ async def get_all_bridges_in_org(org_id, folder_id, user_id, isEmbedUser):
         "variables_state" : 1,
         "agent_variables" : 1,
         "bridge_status":1,
-        "versions":1
+        "versions":1,
+        'connected_agents':1,
+        'function_ids':1,
+        'apiCalls':1
     })
     bridges_list = await bridge.to_list(length=None)
     for itr in bridges_list:
-        itr['_id'] = str(itr['_id'])
-           
+        itr["_id"] = str(itr["_id"])
+        if "function_ids" in itr and itr["function_ids"]:
+            # Convert every ObjectId in the list to a string
+            itr["function_ids"] = [str(fid) for fid in itr["function_ids"]]
     return bridges_list
 
 async def get_all_bridges_in_org_by_org_id(org_id):

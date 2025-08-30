@@ -8,6 +8,7 @@ class OpenRouter(BaseService):
     async def execute(self):
         historyParams = {}
         tools = {}
+        functionCallRes = {}
         conversation = ConversationService.createOpenRouterConversation(self.configuration.get('conversation'), self.memory).get('messages', [])
         if self.reasoning_model:
             self.customConfig["messages"] =  conversation + ([{"role": "user", "content": self.user}] if self.user else []) 
@@ -41,5 +42,9 @@ class OpenRouter(BaseService):
         response = await Response_formatter(modelResponse, service_name['open_router'], tools, self.type, self.image_data)
         if not self.playground:
             historyParams = self.prepare_history_params(response, modelResponse, tools)
-        return {'success': True, 'modelResponse': modelResponse, 'historyParams': historyParams, 'response': response }
+        # Add transfer_agent_config to return if transfer was detected
+        result = {'success': True, 'modelResponse': modelResponse, 'historyParams': historyParams, 'response': response}
+        if functionCallRes.get('transfer_agent_config'):
+            result['transfer_agent_config'] = functionCallRes['transfer_agent_config']
+        return result
     

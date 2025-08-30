@@ -74,6 +74,15 @@ class BaseService:
         if not self.playground:
             asyncio.create_task(sendResponse(self.response_format, data = {'function_call': True, 'Name': function_list}, success = True))
         codes_mapping = await self.replace_variables_in_args(codes_mapping)
+        
+        # Check for transfer action in codes_mapping
+        from src.services.utils.transfer_handler import check_transfer_from_codes_mapping
+        has_transfer, transfer_config = check_transfer_from_codes_mapping(codes_mapping, self.tool_id_and_name_mapping)
+        
+        if has_transfer:
+            # Return transfer config instead of processing tools
+            return [], [], {'transfer_agent_config': transfer_config}
+        
         return await process_data_and_run_tools(codes_mapping, self.tool_id_and_name_mapping, self.org_id, self.timer, self.function_time_logs)
 
 
@@ -127,12 +136,19 @@ class BaseService:
                 configuration['tool_choice'] = {'type': 'auto'}
             else:
                 configuration['tool_choice'] = 'auto'
-        if validate_tool_call(service, model_response) and l <= int(self.tool_call_count):
+        if validate_tool_call(service, model_response) and l <= int(self.tool_call_count or 0):
             l += 1
         else:
             return response
         func_response_data,mapping_response_data, tools_call_data = await self.run_tool(model_response, service)
         self.func_tool_call_data.append(tools_call_data)
+        
+        # Check if transfer was detected in run_tool
+        if isinstance(tools_call_data, dict) and 'transfer_agent_config' in tools_call_data:
+            # Return response with transfer config
+            response['transfer_agent_config'] = tools_call_data['transfer_agent_config']
+            return response
+        
         configuration, tools = self.update_configration(model_response, func_response_data, configuration, mapping_response_data, service, tools)
         if not self.playground:
             asyncio.create_task(sendResponse(self.response_format, data = {'function_call': True, 'success': True, 'message': 'Going to GPT'}, success=True))

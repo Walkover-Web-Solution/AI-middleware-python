@@ -227,7 +227,12 @@ async def process_data_and_run_tools(codes_mapping, tool_id_and_name_mapping, or
                 if tool_id_and_name_mapping[name].get('type') == 'RAG':
                     task = get_text_from_vectorsQuery({**tool_data.get("args"), "org_id":org_id}) 
                 elif tool_id_and_name_mapping[name].get('type') == 'AGENT':
-                    task = call_gtwy_agent({"org_id":org_id, "bridge_id": tool_id_and_name_mapping[name].get("bridge_id"), "user": tool_data.get("args").get("user"), "variables": {key: value for key, value in tool_data.get("args").items() if key != "user"}})
+                    bridge_id = tool_id_and_name_mapping[name].get("bridge_id")
+                    agent_id = tool_id_and_name_mapping[name].get("agent_id")
+                    task_args = {key: value for key, value in tool_data.get("args").items() if key != "user"}
+                    task_args = {"org_id":org_id, "user": tool_data.get("args").get("user") or tool_data.get("args").get("user_query"), "variables": task_args}
+                    task_args["bridge_id"] = bridge_id if bridge_id else agent_id
+                    task = call_gtwy_agent(task_args)
                 else: 
                     task = axios_work(tool_data.get("args"), tool_id_and_name_mapping[name])
                 tasks.append((tool_call_key, tool_data, task))
