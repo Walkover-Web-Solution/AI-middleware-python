@@ -46,12 +46,12 @@ class pg_function:
             raise
 
     def create_normal_index(self):
-        """Create normal index on source using SQLAlchemy"""
+        """Create normal index on org_id using SQLAlchemy"""
         try:
             with self.engine.connect() as conn:
-                conn.execute(text("CREATE INDEX IF NOT EXISTS idx_documents_source ON documents(source);"))
+                conn.execute(text("CREATE INDEX IF NOT EXISTS idx_documents_org_id ON documents(org_id);"))
                 conn.commit()
-            print("\n    Indexing done on source")
+            print("\n    Indexing done on org_id")
         except SQLAlchemyError as e:
             print(f"Error creating index: {e}")
             raise
@@ -92,7 +92,7 @@ class pg_function:
                 
                 document = Document(
                     content=chunk['content'],
-                    source=chunk['source'],
+                    org_id=chunk['org_id'],
                     chunk_index=chunk['chunk_index'],
                     embedding=embedding_list
                 )
@@ -112,7 +112,7 @@ class pg_function:
         """Search in database using SQLAlchemy with vector similarity"""
         try:
             # Convert query into a vector
-            embedding = embedding_model()
+            embedding = embedding_model.embedding_model()
             start_time = time.time()
 
             #embed query
@@ -129,11 +129,11 @@ class pg_function:
             # Use raw SQL for vector operations
             query = text("""
                 SELECT 
-                    id, content, source, chunk_index,
-                    1 - (embedding <=> :query_vector::vector) AS similarity
+                    id, content, org_id, chunk_index,
+                    1 - (embedding <=> CAST(:query_vector AS vector)) AS similarity
                 FROM documents
-                WHERE source = :namespace
-                ORDER BY embedding <=> :query_vector::vector
+                WHERE org_id = :namespace
+                ORDER BY embedding <=> CAST(:query_vector AS vector)
                 LIMIT :limit
             """)
             
@@ -141,7 +141,7 @@ class pg_function:
 
             #execute search in db            
             result = self.session.execute(query, {
-                'query_vector': query_vector_list,
+                'query_vector': str(query_vector_list),
                 'namespace': namespace,
                 'limit': limit
             })

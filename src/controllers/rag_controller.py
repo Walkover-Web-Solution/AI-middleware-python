@@ -194,7 +194,7 @@ async def store_in_pg(embeddings, chunks, org_id, user_id, name, description, do
         for i, (embedding, chunk) in enumerate(zip(embeddings, chunks)):
             chunk_data = {
                 'content': chunk,
-                'source': doc_id,  # Using doc_id as source for namespace
+                'org_id': org_id,  # Using org_id as source for namespace
                 'chunk_index': i,
             }
             pg_chunks.append(chunk_data)
@@ -328,12 +328,12 @@ async def get_vectors_and_text_for_pg(request):
         if query is None and doc_id is None:
             raise HTTPException(status_code=400, detail="Query and Doc_id required.")
 
-        text = await pg_vector_query({
-            'Document_id': doc_id, 
-            'query': query, 
-            'org_id': org_id,
-            'top_k': top_k
-        })
+        text = await pg_vector_query(
+            doc_id= doc_id, 
+            query= query, 
+            org_id= org_id,
+            top_k= top_k
+        )
         # text = await get_text_from_vectorsQuery({
         #     'Document_id': doc_id, 
         #     'query': query, 
@@ -356,16 +356,15 @@ async def get_vectors_and_text_for_pg(request):
 
 async def pg_vector_query(**args):
     try:
-        doc_id = args.get('Document_id')
+        doc_id = args.get('doc_id')
         query = args.get('query')
         org_id = args.get('org_id')
         top_k = args.get('top_k', 3)
-        additional_query = {}
 
         if query is None:
             raise HTTPException(status_code=400, detail="Query is required.")
         
-        query_results  = db_func.search_in_db(doc_id, query,org_id,top_k)
+        query_results  = db_func.search_in_db(org_id, query,doc_id,top_k)
         
         text = ""
         for result in query_results:

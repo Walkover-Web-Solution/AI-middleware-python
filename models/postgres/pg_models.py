@@ -14,7 +14,7 @@ class Document(Base):
     
     id = Column(Integer, primary_key=True)
     content = Column(Text, nullable=False)
-    source = Column(String(255))
+    org_id = Column(String(255))
     chunk_index = Column(Integer)
     embedding = Column(Vector(1024))  
     created_at = Column(DateTime, default=func.now())
