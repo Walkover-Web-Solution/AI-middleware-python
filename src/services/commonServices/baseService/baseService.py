@@ -206,12 +206,20 @@ class BaseService:
                 if self.service in [service_name['openai'], service_name['groq'], service_name['open_router'], service_name['gemini']]:
                     _.set_(model_response, self.modelOutputConfig['tools'], _.get(funcModelResponse, self.modelOutputConfig['tools']))
 
-    def prepare_history_params(self,response, model_response, tools):
+    def prepare_history_params(self,response, model_response, tools, transfer_agent_config=None):
+        # Get the original message content
+        original_message = response.get('data',{}).get('content') or ""
+        
+        # If message is empty but we have transfer config, create custom message
+        if not original_message and transfer_agent_config:
+            agent_name = transfer_agent_config.get('tool_name', 'the agent')
+            original_message = f"Query is successfully transferred to agent {agent_name}"
+        
         return {
             'thread_id': self.thread_id,
             'sub_thread_id': self.sub_thread_id,
             'user': self.user if self.user else "",
-            'message': response.get('data',{}).get('content') or "",
+            'message': original_message,
             'org_id': self.org_id,
             'bridge_id': self.bridge_id,
             'model': model_response.get('model') or self.configuration.get('model'),

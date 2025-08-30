@@ -33,7 +33,8 @@ class Groq(BaseService):
             
         response = await Response_formatter(model_response, service_name['groq'], tools, self.type, self.image_data)
         if not self.playground:
-            historyParams = self.prepare_history_params(response, model_response, tools)
+            transfer_config = functionCallRes.get('transfer_agent_config') if functionCallRes else None
+            historyParams = self.prepare_history_params(response, model_response, tools, transfer_config)
         
         # Add transfer_agent_config to return if transfer was detected
         result = {'success': True, 'modelResponse': model_response, 'historyParams': historyParams, 'response': response}
