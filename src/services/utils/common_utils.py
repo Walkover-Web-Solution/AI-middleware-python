@@ -750,7 +750,9 @@ async def orchestrator_agent_chat(agent_config, body=None, user=None):
             return await handle_orchestration_tool_calls(
                 result, agent_config, body, user
             )
-        
+        current_agent_id = agent_config.get('bridge_id')
+        cache_key = f"orchestrator_{parsed_data['thread_id']}_{parsed_data['sub_thread_id']}"
+        await store_in_cache(cache_key, current_agent_id)
         return JSONResponse(status_code=200, content={"success": True, "response": result["response"]})
         
     except (Exception, ValueError, BadRequestException) as error:
