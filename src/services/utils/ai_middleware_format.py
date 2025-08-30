@@ -20,7 +20,6 @@ async def Response_formatter(response = {}, service = None, tools={}, type='chat
                 "content" : response.get("choices", [{}])[0].get("message", {}).get("content", None),
                 "model" : response.get("model", None),
                 "role" : response.get("choices", [{}])[0].get("message", {}).get("role", None),
-                "finish_reason" : response.get("choices", [{}])[0].get("finish_reason", None),
                 "tools_data": tools_data or {},
                 "images" : images,
                 "annotations" : response.get("choices", [{}])[0].get("message", {}).get("annotations", None),
@@ -43,7 +42,6 @@ async def Response_formatter(response = {}, service = None, tools={}, type='chat
                 "content" : response.get("choices", [{}])[0].get("message", {}).get("content", None),
                 "model" : response.get("model", None),
                 "role" : response.get("choices", [{}])[0].get("message", {}).get("role", None),
-                "finish_reason" : response.get("choices", [{}])[0].get("finish_reason", None),
                 "tools_data": tools_data or {},
                 "images" : images,
                 "annotations" : response.get("choices", [{}])[0].get("message", {}).get("annotations", None),
@@ -71,7 +69,6 @@ async def Response_formatter(response = {}, service = None, tools={}, type='chat
                 "revised_prompt" : response.get('data')[0].get('text_content'),
                 "image_url" : response.get('data')[0].get('url'),
                 "permanent_url" :   response.get('data')[0].get('url'),
-                "finish_reason" : finish_reason_mapping(response.get("choices", [{}])[0].get("finish_reason", None))
             }
         }
     elif service == service_name['openai']:
@@ -96,7 +93,6 @@ async def Response_formatter(response = {}, service = None, tools={}, type='chat
                 "content" : response.get("content", [{}])[0].get("text", None),
                 "model" : response.get("model", None),
                 "role" : response.get("role", None),
-                "finish_reason" : response.get("stop_reason", None),
                 "tools_data": tools_data or {},
                 "fall_back" : response.get('fallback') or False,
                 "firstAttemptError" : response.get('firstAttemptError') or '',
@@ -121,7 +117,6 @@ async def Response_formatter(response = {}, service = None, tools={}, type='chat
                 "content" : response.get("choices", [{}])[0].get("message", {}).get("content", None),
                 "model" : response.get("model", None),
                 "role" : response.get("choices", [{}])[0].get("message", {}).get("role", None),
-                "finish_reason" : response.get("choices", [{}])[0].get("finish_reason", None),
                 "tools_data": tools_data or {},
                 "fall_back" : response.get('fallback') or False,
                 "finish_reason" : finish_reason_mapping(response.get("choices", [{}])[0].get("finish_reason", ""))
@@ -169,13 +164,12 @@ async def Response_formatter(response = {}, service = None, tools={}, type='chat
                 ),
                 "model": response.get("model", None),
                 "role": 'assistant',
-                "status": response.get("status", None),
+                "finish_reason":  finish_reason_mapping(response.get("status", "") if response.get("status", None) == "in_progress" or response.get("status", None) == "completed" else finish_reason_mapping(response.get("incomplete_details", {}).get("reason", None))) ,
                 "tools_data": tools_data or {},
                 "images": images,
                 "annotations": response.get("output", [{}])[0].get("content", [{}])[0].get("annotations", None),
                 "fall_back" : response.get('fallback') or False,
-                "firstAttemptError" : response.get('firstAttemptError') or '',
-                "finish_reason" : finish_reason_mapping(response.get("choices", [{}])[0].get("finish_reason", ""))
+                "firstAttemptError" : response.get('firstAttemptError') or ''
             },
             "usage": {
                 "input_tokens": response.get("usage", {}).get("input_tokens", None),
@@ -205,7 +199,6 @@ async def Response_formatter(response = {}, service = None, tools={}, type='chat
                 "content" : response.get("choices", [{}])[0].get("message", {}).get("content", None),
                 "model" : response.get("model", None),
                 "role" : response.get("choices", [{}])[0].get("message", {}).get("role", None),
-                "finish_reason" : response.get("choices", [{}])[0].get("finish_reason", None),
                 "tools_data": tools_data or {},
                 "images" : images,
                 "annotations" : response.get("choices", [{}])[0].get("message", {}).get("annotations", None),
@@ -231,7 +224,6 @@ async def Response_formatter(response = {}, service = None, tools={}, type='chat
                 "content" : response.get("choices", [{}])[0].get("message", {}).get("content", None),
                 "model" : response.get("model", None),
                 "role" : response.get("choices", [{}])[0].get("message", {}).get("role", None),
-                "finish_reason" : response.get("choices", [{}])[0].get("finish_reason", None),
                 "tools_data": tools_data or {},
                 "images" : images,
                 "annotations" : response.get("choices", [{}])[0].get("message", {}).get("annotations", None),
@@ -265,7 +257,7 @@ def finish_reason_mapping(finish_reason):
         "stop": "completed",
         "end_turn": "completed",
         "end": "completed",
-        "finished": "completed",
+        "completed": "completed",
 
         # Truncation due to token limits
         "length": "truncated",
@@ -276,6 +268,7 @@ def finish_reason_mapping(finish_reason):
         "user_quota": "truncated",
         "token_limit": "truncated",
         "token_quota": "truncated",
+        "max_output_tokens": "truncated",
 
         # Tool / function invocation
         "function_call": "tool_call",
@@ -296,6 +289,7 @@ def finish_reason_mapping(finish_reason):
         "null": "no_reason",
         "none": "no_reason",
         "no_reason": "no_reason",
+        "in_progress": "no_reason",
 
         # Generic error / exception
         "error": "failure",
