@@ -57,6 +57,7 @@ class RawData(Base):
     is_present = Column(Boolean, default=False)
     firstAttemptError = Column(Text,  nullable=True)
     # conversation = relationship("Conversation", back_populates="raw_data")
+    finish_reason = Column(String, nullable=True)
 
 class system_prompt_versionings(Base):
     __tablename__ = 'system_prompt_versionings'

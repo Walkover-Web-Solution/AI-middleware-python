@@ -5,6 +5,7 @@ import importlib.util
 import sys
 from config import Config
 from globals import *
+from sqlalchemy import text
 
 Base = declarative_base()
 db = {}
@@ -32,6 +33,18 @@ def init_dbservice():
         logger.error(f'Unable to connect to the database: {str(error)}')
 
 init_dbservice()
+
+#run once to add finish_reason column to raw_data table
+def add_finish_reason_column():
+    with engine.connect() as conn:
+        conn.execute(text("""
+            ALTER TABLE raw_data 
+            ADD COLUMN IF NOT EXISTS finish_reason VARCHAR;
+        """))
+        conn.commit()
+        print("finish_reason column added successfully.")
+
+# add_finish_reason_column()
 
 def load_models():
     current_dir = os.path.dirname(os.path.realpath(__file__))

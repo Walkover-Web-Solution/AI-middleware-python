@@ -102,7 +102,7 @@ async def find_one_pg(id):
     model = postgres.raw_data
     return await model.find_by_pk(id)
 
-async def create(dataset, history_params, version_id, thread_info={}):
+async def create(dataset, history_params, response, version_id, thread_info={}):
     try:
         conversations = []
         if thread_info is not None:
@@ -143,7 +143,8 @@ async def create(dataset, history_params, version_id, thread_info={}):
                 'variables': data_object.get('variables') or {},
                 'is_present': 'prompt' in data_object,
                 'id' : str(uuid.uuid4()),
-                'firstAttemptError' : history_params.get('firstAttemptError')
+                'firstAttemptError' : history_params.get('firstAttemptError'),
+                'finish_reason' : response.get('data', {}).get('finish_reason')
             }
             for data_object in dataset
         ]
