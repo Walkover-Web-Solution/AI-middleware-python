@@ -70,7 +70,8 @@ async def getOrchestratorConfiguration(orchestrator_id, org_id, variables={}, va
                         'name': agent_info.get('name'),
                         'description': agent_info.get('description'),
                         'parentAgents': agent_info.get('parentAgents', []),
-                        'childAgents': agent_info.get('childAgents', [])
+                        'childAgents': agent_info.get('childAgents', []),
+                        'variables': agent_info.get('variables', {})
                     }
                     
                     return agent_id, agent_config
