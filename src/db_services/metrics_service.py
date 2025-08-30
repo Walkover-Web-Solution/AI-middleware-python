@@ -155,22 +155,32 @@ async def create(dataset, history_params, response, version_id, thread_info={}):
                 'version_id' : version_id,
                 'thread_id': history_params['thread_id'],
                 'model': data_object['model'],
-                'input_tokens': data_object.get('inputTokens', 0),
-                'output_tokens': data_object.get('outputTokens', 0),
-                'total_tokens': data_object.get('totalTokens', 0),
+                'input_tokens': float(data_object.get('inputTokens', 0)),
+                'output_tokens': float(data_object.get('outputTokens', 0)),
+                'total_tokens': float(data_object.get('totalTokens', 0)),
                 'apikey_id': data_object.get('apikey_object_id', {}).get(data_object['service'], ''),
                 'created_at': datetime.now(),  # Remove timezone to match database expectations
-                'latency': json.loads(data_object.get('latency', {})).get('over_all_time', 0),
+                'latency': float(json.loads(data_object.get('latency', {})).get('over_all_time', 0)),
                 'success' : data_object.get('success', False),
-                'cost' : data_object.get('expectedCost', 0),
+                'cost' : float(data_object.get('expectedCost', 0)),
                 'time_zone' : 'Asia/Kolkata',
                 'service' : data_object['service']
             }
             for data_object in dataset
         ]
         await insertRawData(insert_ai_data_in_pg)
+        
+        # Create the cache key based on bridge_id (assuming it's always available)
         cache_key = f"metrix_bridges{history_params['bridge_id']}"
-        oldTotalToken = json.loads(await find_in_cache(cache_key) or '0')
+
+        # Safely load the old total token value from the cache
+        cache_value = await find_in_cache(cache_key)
+        try:
+            oldTotalToken = json.loads(cache_value) if cache_value else 0
+        except (json.JSONDecodeError, TypeError):
+            oldTotalToken = 0
+
+        # Calculate the total token sum, using .get() for 'totalTokens' to handle missing keys
         totaltoken = sum(data_object.get('totalTokens', 0) for data_object in dataset) + oldTotalToken
         # await send_error_to_webhook(history_params['bridge_id'], history_params['org_id'],totaltoken , 'metrix_limit_reached')
         await store_in_cache(cache_key, float(totaltoken))
