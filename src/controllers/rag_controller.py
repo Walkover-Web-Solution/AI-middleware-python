@@ -79,6 +79,69 @@ async def create_vectors(request):
             doc_id = data.get('doc_id')
         text = str(text)
 
+        if chunking_type == 'semantic':
+            chunks, embeddings = await semantic_chunking(text=text)
+        elif chunking_type == 'manual': 
+            chunks, embeddings = await manual_chunking(text=text, chunk_size=chunk_size, chunk_overlap=chunk_overlap)
+        elif chunking_type == 'recursive': 
+            chunks, embeddings = await recursive_chunking(text=text, chunk_size=chunk_size, chunk_overlap=chunk_overlap)
+        else:
+            raise HTTPException(status_code=400, detail="Invalid chunking type or method not supported.")
+        return JSONResponse(
+            status_code=200,
+            content={
+                "name" : name, 
+                "description" : description,
+                'type' : file_extension,
+                **(await store_in_pinecone_and_mongo(embeddings, chunks, org_id, user['id'] if embed else None, name, description, doc_id, file_extension))
+            }
+        )
+
+       
+    except HTTPException as http_error:
+        print(f"HTTP error in create_vectors: {http_error.detail}")
+        raise http_error
+    except Exception as error:
+        traceback.print_exc()
+        print(f"Error in create_vectors: {error}")
+        raise HTTPException(status_code=500, detail="An unexpected error occurred.")
+
+async def create_vectors_for_pg(request):
+    try:
+        # Extract the document ID from the URL
+        body = await request.form()
+        file = body.get('file')
+        file_extension = 'url'
+        if file:
+            file_extension = file.filename.split('.')[-1].lower()
+            
+            # Extract text based on file type
+            if file_extension == 'pdf':
+                text = await extract_pdf_text(file)
+            # elif file_extension == 'docx':
+            #     text = await extract_docx_text(file)
+            elif file_extension == 'csv':
+                text = await extract_csv_text(file)
+            else:
+                raise HTTPException(status_code=400, detail="Unsupported file type. Only PDF, and CSV are supported.")
+        org_id = request.state.profile.get("org", {}).get("id", "")
+        user = request.state.profile.get("user", {})
+        embed = request.state.embed
+        url = body.get('doc_url')
+        chunking_type = body.get('chunking_type') or 'recursive'
+        chunk_size = int(body.get('chunk_size', 512))
+        chunk_overlap = int(body.get('chunk_overlap', chunk_size*0.15))
+        name = body.get('name')
+        description = body.get('description')
+        doc_id = None
+        if name is None or description is None:
+            raise HTTPException(status_code=400, detail="Name and description are required.")
+        if url is not None:
+            data = await get_google_docs_data(url)
+            text = data.get('data')
+            doc_id = data.get('doc_id')
+        text = str(text)
+
         chunks,embeddings = await chunking(text)
 
         if not chunks or not embeddings:
@@ -224,6 +287,37 @@ async def store_in_pinecone_and_mongo(embeddings, chunks, org_id, user_id, name,
         raise HTTPException(status_code=500, detail= error)
 
 async def get_vectors_and_text(request):
+    try:
+        body = await request.json()
+        org_id = request.state.profile.get("org", {}).get("id", "")
+        doc_id = body.get('doc_id')
+        query = body.get('query')
+        top_k = body.get('top_k', 2)
+        
+        if query is None and doc_id is None:
+            raise HTTPException(status_code=400, detail="Query and Doc_id required.")
+
+        text = await get_text_from_vectorsQuery({
+            'Document_id': doc_id, 
+            'query': query, 
+            'org_id': org_id,
+            'top_k': top_k
+        })
+        
+        # Check if the operation was successful based on status
+        success = text.get('status') == 1
+        status_code = 200 if success else 400
+        
+        return JSONResponse(status_code=status_code, content={
+            "success": success,
+            "text": text['response']
+        })
+        
+    except Exception as error:
+        print(f"Error in get_vectors_and_text: {error}")
+        raise HTTPException(status_code=400, detail=error)
+        
+async def get_vectors_and_text_for_pg(request):
     try:
         body = await request.json()
         org_id = request.state.profile.get("org", {}).get("id", "")
