@@ -153,21 +153,16 @@ async def orchestrator_chat(request_body):
         # Extract user query from the request
         user = body.get('user')
         thread_id = body.get('thread_id')
-        sub_thread_id = body.get('sub_thread_id')
-        if thread_id is not None and sub_thread_id is None:
-            sub_thread_id = thread_id
+        sub_thread_id = body.get('sub_thread_id', thread_id)
         
-        # Initialize variables
         master_agent_id = None
         master_agent_config = None
         
         # First try to find in Redis cache
         if thread_id and sub_thread_id:
-            cache_key = f"orchestrator_{thread_id}_{sub_thread_id}"
-            current_agent = await find_in_cache(cache_key)
-            if current_agent:
-                current_agent = json.loads(current_agent)
-                master_agent_id = current_agent
+            cached_agent = await find_in_cache(f"orchestrator_{thread_id}_{sub_thread_id}")
+            if cached_agent:
+                master_agent_id = json.loads(cached_agent)
                 master_agent_config = body.get('agent_configurations', {}).get(master_agent_id)
         
         # If not found in cache, get from request body
