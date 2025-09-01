@@ -2,6 +2,7 @@ from sqlalchemy import Column, String, Text, JSON, Enum, Integer, DateTime, Bool
 from sqlalchemy.sql import func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
+from pgvector.sqlalchemy import Vector
 import uuid
 from models.postgres.pg_connection import Base
 
@@ -81,3 +82,41 @@ class user_bridge_config_history(Base):
     type = Column(String, nullable=False)
     time = Column(DateTime, nullable=False, default=func.now())
     version_id = Column(String, nullable=True, default="")
+
+# Single Table Approach - Better for User Isolation
+class RagVectorStore(Base):
+    __tablename__ = 'rag_vector_store'
+    __table_args__ = {'extend_existing': True}
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, nullable=False)
+    
+    # Namespace-like fields (similar to Pinecone)
+    namespace = Column(String, nullable=False)  # Format: "org_id:user_id" or just "org_id"
+    org_id = Column(String, nullable=False)
+    user_id = Column(String, nullable=True)
+    
+    # Document metadata (embedded in same table)
+    doc_id = Column(String, nullable=False)
+    doc_name = Column(String, nullable=False)
+    doc_description = Column(Text)
+    doc_type = Column(String, nullable=False)  # file extension or 'url'
+    
+    # Chunk data
+    chunk_id = Column(String, nullable=False, unique=True)
+    chunk_data = Column(Text, nullable=False)
+    chunk_type = Column(String, nullable=True)  # for CSV query types
+    chunk_index = Column(Integer, nullable=False)  # Order within document
+    
+    # Vector embedding
+    embedding = Column(Vector(1536))  # OpenAI text-embedding-3-small dimension
+    
+    # Timestamps
+    created_at = Column(DateTime, default=func.now())
+    updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
+
+# Placeholder models for imports (not used in single-table approach)
+class RagDocument:
+    pass
+
+class RagChunk:
+    pass
