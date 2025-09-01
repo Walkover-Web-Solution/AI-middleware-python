@@ -1,5 +1,6 @@
 import requests
 import re
+import time
 from ..services.rag_services.chunking_methords import semantic_chunking, manual_chunking, recursive_chunking
 from pinecone import Pinecone
 import uuid
@@ -272,13 +273,16 @@ async def get_text_from_vectorsQuery(args):
             additional_query['chunkType'] = to_search_for
         
         embedding = OpenAIEmbeddings(api_key=Config.OPENAI_API_KEY, model="text-embedding-3-small").embed_documents([query])
-        # Query Pinecone
+        
+        # Query Pinecone with timing
+        start_time = time.time()
         query_response = index.query(
             vector=embedding[0] if isinstance(embedding, list) and len(embedding) == 1 else list(map(float, embedding)),
             namespace=org_id,
             filter={ "docId": doc_id, **additional_query },
             top_k = top_k  # Adjust the number of results as needed
         )
+        print(f"Pinecone query execution time: {time.time() - start_time:.4f} seconds")
         query_response_ids = [result['id'] for result in query_response['matches']]
         
         # Query MongoDB using query_response_ids
