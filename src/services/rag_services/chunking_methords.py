@@ -118,14 +118,14 @@ async def chunking(text):
                 else:
                     if current_chunk.strip():  # Only add non-empty chunks
                         chunks.append(current_chunk.strip())
-                        embedding = embedding_model.create_embedding(current_chunk)
+                        embedding = OpenAIEmbeddings(api_key=apikey).embed_documents([current_chunk])
                         embeddings.append(embedding)
                     current_chunk = sentence + "."
             
             # Don't forget the last chunk
             if current_chunk.strip():
                 chunks.append(current_chunk.strip())
-                embedding = embedding_model.create_embedding(current_chunk)
+                embedding = OpenAIEmbeddings(api_key=apikey).embed_documents([current_chunk])
                 embeddings.append(embedding)
         
         return chunks, embeddings

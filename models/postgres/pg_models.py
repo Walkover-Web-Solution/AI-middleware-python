@@ -16,7 +16,7 @@ class Document(Base):
     content = Column(Text, nullable=False)
     org_id = Column(String(255))
     chunk_index = Column(Integer)
-    embedding = Column(Vector(1024))  
+    embedding = Column(Vector(1536))  
     created_at = Column(DateTime, default=func.now())
 
 class Conversation(Base):

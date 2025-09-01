@@ -6,6 +6,9 @@ from sqlalchemy.exc import SQLAlchemyError
 import numpy as np
 import uuid
 import time
+from langchain_openai import OpenAIEmbeddings
+from config import Config
+apikey = Config.OPENAI_API_KEY
 
 class pg_function:
     def __init__(self) -> None:
@@ -83,12 +86,12 @@ class pg_function:
         try:
             documents = []
             for chunk, embedding in zip(pdf_chunks, embeddings):
-                id = uuid.uuid4
+                
                 # Convert numpy array to list if needed
                 if isinstance(embedding, np.ndarray):
-                    embedding_list = embedding.tolist()
+                    embedding_list = embedding[0].tolist()
                 else:
-                    embedding_list = embedding
+                    embedding_list = embedding[0]
                 
                 document = Document(
                     content=chunk['content'],
@@ -112,11 +115,10 @@ class pg_function:
         """Search in database using SQLAlchemy with vector similarity"""
         try:
             # Convert query into a vector
-            embedding = embedding_model.embedding_model()
             start_time = time.time()
 
             #embed query
-            query_vector = embedding.create_embedding(query)
+            query_vector = OpenAIEmbeddings(api_key=apikey).embed_query(query)
             search_duration = time.time()-start_time
             print(f"Query embedding completed in {search_duration:.3f}s")
 

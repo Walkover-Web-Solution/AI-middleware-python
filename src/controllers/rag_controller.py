@@ -183,7 +183,7 @@ async def store_in_pg(embeddings, chunks, org_id, user_id, name, description, do
             doc_id = str(uuid.uuid4())
         
         # Get embedding dimension from the first embedding
-        embedding_dim = len(embeddings[0]) if embeddings else 1024
+        embedding_dim = len(embeddings[0][0]) if embeddings else 1024
         
         db_func.delete_table()
         # Create table (will use the Document model from SQLAlchemy)
