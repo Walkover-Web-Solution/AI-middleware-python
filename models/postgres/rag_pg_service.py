@@ -1,6 +1,5 @@
 from models.postgres.pg_connection import Session, engine, Base
 from models.postgres.pg_models import Document
-from src.services.embeddingService import embedding_model
 from sqlalchemy import text, Index
 from sqlalchemy.exc import SQLAlchemyError
 import numpy as np

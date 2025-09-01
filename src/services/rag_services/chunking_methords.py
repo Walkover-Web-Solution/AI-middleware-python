@@ -3,9 +3,7 @@ from langchain_experimental.text_splitter import SemanticChunker
 from typing import List, Optional
 from langchain_openai import OpenAIEmbeddings
 from config import Config
-from src.services.embeddingService import embedding_model
 apikey = Config.OPENAI_API_KEY
-embedding_model = embedding_model.embedding_model()
 
 async def manual_chunking(text, chunk_size:int = 1000, chunk_overlap:int =  200):
     """
