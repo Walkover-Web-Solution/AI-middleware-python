@@ -254,64 +254,17 @@ async def send_alert(data):
 def finish_reason_mapping(finish_reason):
     finish_reason_mapping = {
         # Completed / natural stop
-        "stop": "completed",        #openai
+        "stop": "completed",        #openai #open_router #gemini
         "end_turn": "completed",    #anthropic
-        "end": "completed",
         "completed": "completed",   #openai_response
 
         # Truncation due to token limits
-        "length": "truncated",              #openai
+        "length": "truncated",              #openai #open_router #gemini
         "max_tokens": "truncated",          #anthropic
-        "max_tokens_exceeded": "truncated",
-        "max_tokens_limit": "truncated",
-        "user_limit": "truncated",
-        "user_quota": "truncated",
-        "token_limit": "truncated",
-        "token_quota": "truncated",
-        "max_output_tokens": "truncated",
+        "max_output_tokens": "truncated",    #openai_response
 
         # Tool / function invocation
-        "tool_calls": "tool_call",    #openai
+        "tool_calls": "tool_call",    #openai #gemini
         "tool_use": "tool_call",      #anthropic
-        "function_call": "tool_call",
-        "tool_call": "tool_call",
-        "call_function": "tool_call",
-        "invoke_tool": "tool_call",
-
-        # Explicit stop sequence defined by user
-        "stop_sequence": "stop_sequence",
-
-        # Timeout / time limit
-        "timeout": "timeout",
-        "timed_out": "timeout",
-        "time_limit": "timeout",
-
-        # Too-close-to-training-data / recitation prevention
-        "recitation": "recitation_block",
-        "RECITATION": "recitation_block",
-        "plagiarism": "recitation_block",
-        "copyright": "recitation_block",
-
-        # Pause / long-running tool pause (Claude-like pause_turn)
-        "pause_turn": "paused",
-        "paused": "paused",
-        "pause": "paused",
-
-        # Rate limit / throttling
-        "rate_limit": "rate_limited",
-        "rate_limited": "rate_limited",
-        "throttled": "rate_limited",
-        "quota_exceeded": "rate_limited",
-
-        # Backend / server errors
-        "server_error": "server_error",
-        "internal_error": "server_error",
-        "backend_error": "server_error",
-
-        # Cancelled/aborted by client or server
-        "cancelled": "cancelled",
-        "canceled": "cancelled",
-        "abort": "cancelled",
-        "aborted": "cancelled"
     }
     return finish_reason_mapping.get(finish_reason, "other")
