@@ -3,7 +3,7 @@ import traceback
 from ..retry_mechanism import execute_with_retry
 from globals import *
 
-async def groq_runmodel(configuration, apiKey, execution_time_logs, bridge_id, timer, name = "", org_name = "", service = "", count = 0, token_calculator=None):
+async def groq_runmodel(configuration, apiKey, execution_time_logs, bridge_id, timer, message_id, org_id, name = "", org_name = "", service = "", count = 0, token_calculator=None):
     try:
         # Initialize async client
         groq_client = AsyncGroq(api_key=apiKey)
@@ -37,8 +37,8 @@ async def groq_runmodel(configuration, apiKey, execution_time_logs, bridge_id, t
             execution_time_logs=execution_time_logs,
             timer = timer,
             bridge_id = bridge_id,
-            message_id= None,
-            org_id = None,
+            message_id= message_id,
+            org_id = org_id,
             alert_on_retry= False,
             name = name,
             org_name = org_name ,
