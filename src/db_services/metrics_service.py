@@ -103,7 +103,7 @@ async def find_one_pg(id):
     model = postgres.raw_data
     return await model.find_by_pk(id)
 
-async def create(dataset, history_params, response, version_id, thread_info={}):
+async def create(dataset, history_params, version_id, thread_info={}):
     try:
         conversations = []
         if thread_info is not None:
@@ -117,7 +117,8 @@ async def create(dataset, history_params, response, version_id, thread_info={}):
             history_params['channel'], history_params['type'], history_params['actor'],
             history_params.get('tools'),history_params.get('chatbot_message'),history_params.get('tools_call_data'),history_params.get('message_id'), version_id, history_params.get('image_urls'), history_params.get('revised_prompt'), history_params.get('urls'), history_params.get('AiConfig'), history_params.get('annotations'), history_params.get('fallback_model')
         )
-        
+        response = history_params.get('response',{})
+
         # Save conversations to Redis with TTL of 30 days
         if 'error' not in dataset[0] and conversations:
                 await save_conversations_to_redis(conversations, version_id, thread_id, sub_thread_id, history_params)

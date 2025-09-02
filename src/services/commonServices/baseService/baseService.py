@@ -237,6 +237,7 @@ class BaseService:
             "firstAttemptError" : model_response.get('firstAttemptError') or '',
             "annotations" : _.get(model_response, self.modelOutputConfig.get('annotations')) or [],
             "fallback_model" : model_response.get('fallback_model') or '',
+            "response":response, 
         }
     
     def service_formatter(self, configuration : object, service : str ):
