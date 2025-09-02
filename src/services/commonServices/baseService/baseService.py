@@ -278,11 +278,11 @@ class BaseService:
             elif service == service_name['anthropic']:
                 response = await loop.run_in_executor(executor, lambda: asyncio.run(anthropic_runmodel(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer, self.name, self.org_name, service, count, self.token_calculator)))
             elif service == service_name['groq']:
-                response = await groq_runmodel(configuration, apikey, self.execution_time_logs, self.bridge_id,  self.timer, self.name, self.org_name, service, count, self.token_calculator)
+                response = await groq_runmodel(configuration, apikey, self.execution_time_logs, self.bridge_id,  self.timer, self.message_id, self.org_id, self.name, self.org_name, service, count, self.token_calculator)
             elif service == service_name['open_router']:
                 response = await openrouter_modelrun(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer, self.message_id, self.org_id, self.name, self.org_name, service, count, self.token_calculator)
             elif service == service_name['mistral']:
-                response = await mistral_model_run(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer, self.name, self.org_name, service, count, self.token_calculator)
+                response = await mistral_model_run(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer,self.message_id, self.org_id, self.name, self.org_name, service, count, self.token_calculator)
             elif service == service_name['gemini']:
                 response = await gemini_modelrun(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer, self.message_id, self.org_id, self.name, self.org_name, service, count, self.token_calculator)
             elif service == service_name['ai_ml']:
