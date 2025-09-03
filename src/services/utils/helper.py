@@ -20,6 +20,7 @@ from ..commonServices.Mistral.mistral_call import Mistral
 from ...configs.constant import service_name
 from ..commonServices.openAI.openai_embedding_call import OpenaiEmbedding
 from ..commonServices.Google.geminiCall import GeminiHandler
+from ..commonServices.AiMl.ai_ml_call import Ai_Ml
 from ..cache_service import find_in_cache, store_in_cache
 from ..utils.apiservice import fetch
 from datetime import datetime
@@ -190,7 +191,8 @@ class Helper:
             class_obj = OpenRouter(params)
         elif service == service_name['mistral']:
             class_obj = Mistral(params)
-            
+        elif service == service_name['ai_ml']:
+            class_obj = Ai_Ml(params)
         return class_obj
 
     
@@ -202,7 +204,7 @@ class Helper:
         if modelObj is None:
             raise AttributeError(f"Model function '{model}' not found in model_configuration.")
 
-        if service in ['openai', 'groq']:
+        if service in ['openai', 'groq', 'ai_ml']:
             token_cost['input_cost'] = modelObj['outputConfig']['usage'][0]['total_cost'].get('input_cost') or 0
             token_cost['output_cost'] = modelObj['outputConfig']['usage'][0]['total_cost'].get('output_cost') or 0
             token_cost['cache_cost'] = modelObj['outputConfig']['usage'][0]['total_cost'].get('cached_cost') or 0

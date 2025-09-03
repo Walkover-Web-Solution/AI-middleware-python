@@ -16,6 +16,7 @@ from ..openRouter.openRouter_modelrun import openrouter_modelrun
 from ....configs.constant import service_name
 from ..openAI.image_model import OpenAIImageModel
 from ..Google.gemini_image_model import gemini_image_model
+from ..AiMl.ai_ml_model_run import ai_ml_model_run
 from concurrent.futures import ThreadPoolExecutor
 from globals import *
 
@@ -86,7 +87,7 @@ class BaseService:
             tools[function_response['name']] = function_response['content']
         
             match service:
-                case 'openai' | 'groq' | 'open_router' | 'mistral' | 'gemini':
+                case 'openai' | 'groq' | 'open_router' | 'mistral' | 'gemini' | 'ai_ml':
                     assistant_tool_calls = response['choices'][0]['message']['tool_calls'][index]
                     configuration['messages'].append({'role': 'assistant', 'content': None, 'tool_calls': [assistant_tool_calls]})
                     tool_calls_id = assistant_tool_calls['id']
@@ -182,12 +183,13 @@ class BaseService:
             service_name['openai_response'],
             service_name['open_router'],
             service_name['mistral'],
-            service_name['gemini']
+            service_name['gemini'],
+            service_name['ai_ml']
         ]:
 
             if funcModelResponse and self.service != service_name['openai_response']:
                 _.set_(model_response, self.modelOutputConfig['message'], _.get(funcModelResponse, self.modelOutputConfig['message']))
-                if self.service in [service_name['openai'], service_name['groq'], service_name['open_router'], service_name['gemini']]:
+                if self.service in [service_name['openai'], service_name['groq'], service_name['open_router'], service_name['gemini'], service_name['ai_ml']]:
                     _.set_(model_response, self.modelOutputConfig['tools'], _.get(funcModelResponse, self.modelOutputConfig['tools']))
 
     def prepare_history_params(self,response, model_response, tools):
@@ -221,7 +223,7 @@ class BaseService:
             if configuration.get('tools', '') :
                 if service == service_name['anthropic']:
                     new_config['tool_choice'] =  configuration.get('tool_choice', {'type': 'auto'})
-                elif service == service_name['openai'] or service == service_name['groq']:
+                elif service == service_name['openai'] or service == service_name['groq'] or service == service_name['ai_ml']:
                     if configuration.get('tool_choice'):
                         if configuration['tool_choice'] not in ['auto', 'none', 'required', 'default']:
                             new_config['tool_choice'] = {"type": "function", "function": {"name": configuration['tool_choice']}}
@@ -259,6 +261,8 @@ class BaseService:
                 response = await mistral_model_run(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer,self.message_id, self.org_id, self.name, self.org_name, service, count, self.token_calculator)
             elif service == service_name['gemini']:
                 response = await gemini_modelrun(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer, self.message_id, self.org_id, self.name, self.org_name, service, count, self.token_calculator)
+            elif service == service_name['ai_ml']:
+                response = await ai_ml_model_run(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer, self.message_id, self.org_id, self.name, self.org_name, service, count, self.token_calculator)
             if not response['success']:
                 raise ValueError(response['error'], self.func_tool_call_data)
             return {

@@ -283,7 +283,8 @@ async def get_all_service_controller():
             "openai_response": {"model": "gpt-4o"},
             "open_router": {"model": "deepseek/deepseek-chat-v3-0324:free"},
             "mistral": {"model": "mistral-medium-latest"},
-            "gemini" : {"model" : "gemini-2.5-flash"}
+            "gemini" : {"model" : "gemini-2.5-flash"},
+            "ai_ml" : {"model" : "gpt-oss-20b"}
         }
     }
 
