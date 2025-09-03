@@ -164,7 +164,7 @@ async def Response_formatter(response = {}, service = None, tools={}, type='chat
                 ),
                 "model": response.get("model", None),
                 "role": 'assistant',
-                "finish_reason":  finish_reason_mapping(response.get("status", "") if response.get("status", None) == "in_progress" or response.get("status", None) == "completed" else finish_reason_mapping(response.get("incomplete_details", {}).get("reason", None))) ,
+                "finish_reason":  finish_reason_mapping(response.get("status", "")) if response.get("status", None) == "in_progress" or response.get("status", None) == "completed" else finish_reason_mapping(response.get("incomplete_details", {}).get("reason", None)) ,
                 "tools_data": tools_data or {},
                 "images": images,
                 "annotations": response.get("output", [{}])[0].get("content", [{}])[0].get("annotations", None),
@@ -276,95 +276,17 @@ async def send_alert(data):
 def finish_reason_mapping(finish_reason):
     finish_reason_mapping = {
         # Completed / natural stop
-        "stop": "completed",
-        "end_turn": "completed",
-        "end": "completed",
-        "completed": "completed",
+        "stop": "completed",        #openai #open_router #gemini
+        "end_turn": "completed",    #anthropic
+        "completed": "completed",   #openai_response
 
         # Truncation due to token limits
-        "length": "truncated",
-        "max_tokens": "truncated",
-        "max_tokens_exceeded": "truncated",
-        "max_tokens_limit": "truncated",
-        "user_limit": "truncated",
-        "user_quota": "truncated",
-        "token_limit": "truncated",
-        "token_quota": "truncated",
-        "max_output_tokens": "truncated",
+        "length": "truncated",              #openai #open_router #gemini
+        "max_tokens": "truncated",          #anthropic
+        "max_output_tokens": "truncated",    #openai_response
 
         # Tool / function invocation
-        "function_call": "tool_call",
-        "tool_call": "tool_call",
-        "tool_calls": "tool_call",
-        "call_function": "tool_call",
-        "invoke_tool": "tool_call",
-
-        # Safety / moderation / refusal
-        "content_filter": "safety_block",
-        "safety": "safety_block",
-        "refusal": "safety_block",
-        "blocked": "safety_block",
-        "policy_block": "safety_block",
-        "safety_blocked": "safety_block",
-
-        # No explicit reason / streaming intermediate chunk
-        "null": "no_reason",
-        "none": "no_reason",
-        "no_reason": "no_reason",
-        "in_progress": "no_reason",
-
-        # Generic error / exception
-        "error": "failure",
-        "exception": "failure",
-        "failure": "failure",
-
-        # Explicit stop sequence defined by user
-        "stop_sequence": "stop_sequence",
-
-        # Timeout / time limit
-        "timeout": "timeout",
-        "timed_out": "timeout",
-        "time_limit": "timeout",
-
-        # End of provided context
-        "end_of_context": "end_of_context",
-        "context_end": "end_of_context",
-        "context_exhausted": "end_of_context",
-
-        # Too-close-to-training-data / recitation prevention
-        "recitation": "recitation_block",
-        "RECITATION": "recitation_block",
-        "plagiarism": "recitation_block",
-        "copyright": "recitation_block",
-
-        # Catch-all / unknown
-        "other": "other",
-        "unknown": "other",
-
-        # Pause / long-running tool pause (Claude-like pause_turn)
-        "pause_turn": "paused",
-        "paused": "paused",
-        "pause": "paused",
-
-        # EOS token generated
-        "eos_token": "eos",
-        "eos": "eos",
-
-        # Rate limit / throttling
-        "rate_limit": "rate_limited",
-        "rate_limited": "rate_limited",
-        "throttled": "rate_limited",
-        "quota_exceeded": "rate_limited",
-
-        # Backend / server errors
-        "server_error": "server_error",
-        "internal_error": "server_error",
-        "backend_error": "server_error",
-
-        # Cancelled/aborted by client or server
-        "cancelled": "cancelled",
-        "canceled": "cancelled",
-        "abort": "cancelled",
-        "aborted": "cancelled"
+        "tool_calls": "tool_call",    #openai #gemini
+        "tool_use": "tool_call",      #anthropic
     }
     return finish_reason_mapping.get(finish_reason, "other")
