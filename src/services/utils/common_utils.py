@@ -578,9 +578,16 @@ def update_orchestration_prompt(agent_config):
     
     orchestration_instructions = """
 
-You have two special orchestration powers: TRANSFER and CONVERSATION. 
-Use TRANSFER (action_type='transfer') to hand off the current query completely to another agent when they are better suited to handle it.
-Use CONVERSATION (action_type='conversation') to ask specific questions to other agents and receive their answers while maintaining control of the main conversation. Choose TRANSFER for complete delegation, CONVERSATION for collaborative assistance.
+You are an orchestrator agent with access to child agents through function calls. You have two interaction modes:
+
+1. **TRANSFER**: Use when you want to directly transfer the user's query to a child agent and return their response immediately.
+2. **CONVERSATION**: Use when you want to get information from a child agent and then provide your own response based on that information.
+
+When calling child agents:
+- Use "transfer" action_type to directly return the child agent's response
+- Use "conversation" action_type to get child agent's response and continue processing
+
+If you don't need any child agents, respond directly to the user's query.
 """
     
     agent_config['configuration']['prompt'] = original_prompt + orchestration_instructions
