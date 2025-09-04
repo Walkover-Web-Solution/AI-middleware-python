@@ -21,7 +21,8 @@ async def add_configuration_data_to_body(request: Request):
                 orchestrator_id, 
                 org_id, 
                 body.get('variables', {}), 
-                body.get('variables_path')
+                body.get('variables_path'),
+                body.get('playground', False)
             )
         else:
             # Handle regular bridge configuration
