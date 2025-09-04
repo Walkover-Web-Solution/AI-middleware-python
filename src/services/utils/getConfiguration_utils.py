@@ -5,6 +5,7 @@ from models.mongo_connection import db
 from src.services.utils.common_utils import updateVariablesWithTimeZone
 from src.services.commonServices.baseService.utils import makeFunctionName
 from src.services.utils.service_config_utils import tool_choice_function_name_formatter
+from config import Config
 
 apiCallModel = db['apicalls']
 from globals import *
@@ -178,6 +179,9 @@ def setup_api_key(service, result, apikey):
     db_api_key = db_apikeys.get(service)
     if service == 'openai_response':
         db_api_key = db_apikeys.get('openai')
+
+    if service == 'ai_ml' and not apikey and not db_api_key:
+        apikey = Config.AI_ML_APIKEY
     
     # Validate API key existence
     if not (apikey or db_api_key):
