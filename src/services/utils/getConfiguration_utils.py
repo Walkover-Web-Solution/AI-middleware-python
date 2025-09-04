@@ -182,6 +182,7 @@ def setup_api_key(service, result, apikey):
 
     if service == 'ai_ml' and not apikey and not db_api_key:
         apikey = Config.AI_ML_APIKEY
+        print('apikey',apikey)
     
     # Validate API key existence
     if not (apikey or db_api_key):
