@@ -12,22 +12,16 @@ from .getConfiguration_utils import (
 from src.services.utils.logger import logger
 from globals import *
 
-async def getOrchestratorConfiguration(orchestrator_id, org_id, variables={}, variables_path=None):
+async def getOrchestratorConfiguration(orchestrator_id, org_id, variables={}, variables_path=None, playground=False):
     """
     Get configuration for an orchestrator with all agent data and settings.
     
     Args:
-        configuration: Configuration to merge with database configuration
-        service: Service name
         orchestrator_id: Orchestrator ID
-        apikey: API key
-        template_id: Template ID
-        variables: Variables to use
         org_id: Organization ID
+        variables: Variables to use
         variables_path: Variables path
-        version_id: Version ID
-        extra_tools: Extra tools to include
-        built_in_tools: Built-in tools to include
+        playground: If True, extract data from 'data' key in orchestrator_data
         
     Returns:
         Dictionary with orchestrator configuration and all agent data
@@ -40,6 +34,10 @@ async def getOrchestratorConfiguration(orchestrator_id, org_id, variables={}, va
                 'success': False,
                 'error': 'Orchestrator not found'
             }
+        
+        # Handle playground mode - extract data from 'data' key if playground is True
+        if playground:
+            orchestrator_data = orchestrator_data.get('data', orchestrator_data)
         
         # Extract agents from orchestrator
         agents = orchestrator_data.get('agents', {})
