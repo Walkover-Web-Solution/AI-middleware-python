@@ -735,6 +735,13 @@ async def update_apikey_creds(version_id, apikey_object_ids):
     try:
         if isinstance(apikey_object_ids, dict):
             for service, api_key_id in apikey_object_ids.items():
+                # First, remove the version_id from any apikeycredentials documents that contain it
+                await apikeyCredentialsModel.update_many(
+                    {'version_ids': version_id},
+                    {'$pull': {'version_ids': version_id}}
+                )
+                
+                # Then add the version_id to the target document
                 await apikeyCredentialsModel.update_one(
                     {'_id': ObjectId(api_key_id)},
                     {'$addToSet': {'version_ids': version_id}},
