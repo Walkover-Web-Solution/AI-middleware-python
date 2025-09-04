@@ -11,6 +11,7 @@ templateModel = db['templates']
 apikeyCredentialsModel = db['apikeycredentials']
 version_model = db['configuration_versions']
 threadsModel = db['threads']
+foldersModel = db['folders']
 
 async def get_bridges(bridge_id = None, org_id = None, version_id = None):
     try:
@@ -450,7 +451,7 @@ async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None)
     }
 ]
        
-        # Execute the aggregation pipeline
+        # Execute the main aggregation pipeline
         result = await model.aggregate(pipeline).to_list(length=None)
        
         if not result:
@@ -458,11 +459,146 @@ async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None)
                 'success': False,
                 'error': 'No matching records found'
             }
+        
+        bridge_data = result[0]
+        
+        # Check if folder_id is present and fetch folder API keys
+        if bridge_data.get('folder_id'):
+            
+            folder_pipeline = [
+                # Stage 1: Match the folder document
+                {
+                    '$match': {'_id': ObjectId(bridge_data['folder_id'])}
+                },
+                # Stage 2: Convert apikey_object_id to array format
+                {
+                    '$addFields': {
+                        'apikey_object_id_safe': { '$ifNull': ['$apikey_object_id', {}] },
+                        'has_apikeys': { '$cond': [{ '$eq': [{ '$type': '$apikey_object_id' }, 'object'] }, True, False] }
+                    }
+                },
+                {
+                    '$addFields': {
+                        'apikeys_array': { '$cond': [
+                            '$has_apikeys',
+                            { '$objectToArray': '$apikey_object_id_safe' },
+                            []
+                        ]}
+                    }
+                },
+                # Stage 3: Lookup apikeycredentials
+                {
+                    '$lookup': {
+                        'from': 'apikeycredentials',
+                        'let': {
+                            'apikey_ids_object': {
+                                '$cond': [
+                                    { '$gt': [{ '$size': '$apikeys_array' }, 0] },
+                                    {
+                                        '$map': {
+                                            'input': '$apikeys_array.v',
+                                            'as': 'id',
+                                            'in': {
+                                                '$convert': {
+                                                    'input': '$$id',
+                                                    'to': 'objectId',
+                                                    'onError': None,
+                                                    'onNull': None
+                                                }
+                                            }
+                                        }
+                                    },
+                                    []
+                                ]
+                            }
+                        },
+                        'pipeline': [
+                            {
+                                '$match': {
+                                    '$expr': {
+                                        '$in': ['$_id', { '$ifNull': ['$$apikey_ids_object', []] }]
+                                    }
+                                }
+                            }
+                        ],
+                        'as': 'apikeys_docs'
+                    }
+                },
+                # Stage 4: Create folder_apikeys object
+                {
+                    '$addFields': {
+                        'folder_apikeys': {
+                            '$cond': [
+                                { '$gt': [{ '$size': '$apikeys_array' }, 0] },
+                                {
+                                    '$arrayToObject': {
+                                        '$map': {
+                                            'input': '$apikeys_array',
+                                            'as': 'item',
+                                            'in': {
+                                                'k': '$$item.k',
+                                                'v': {
+                                                    '$arrayElemAt': [
+                                                        {
+                                                            '$map': {
+                                                                'input': {
+                                                                    '$filter': {
+                                                                        'input': '$apikeys_docs',
+                                                                        'cond': {
+                                                                            '$eq': [
+                                                                                '$$this._id',
+                                                                                {
+                                                                                    '$convert': {
+                                                                                        'input': '$$item.v',
+                                                                                        'to': 'objectId',
+                                                                                        'onError': None,
+                                                                                        'onNull': None
+                                                                                    }
+                                                                                }
+                                                                            ]
+                                                                        }
+                                                                    }
+                                                                },
+                                                                'as': 'matched_doc',
+                                                                'in': '$$matched_doc.apikey'
+                                                            }
+                                                        },
+                                                        0
+                                                    ]
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                {}
+                            ]
+                        }
+                    }
+                },
+                # Stage 5: Project only folder_apikeys
+                {
+                    '$project': {
+                        'folder_apikeys': 1
+                    }
+                }
+            ]
+            
+            # Execute folder pipeline on folders collection
+            folder_result = await foldersModel.aggregate(folder_pipeline).to_list(length=None)
+            
+            # Append folder_apikeys to bridge_data if found
+            if folder_result and folder_result[0].get('folder_apikeys'):
+                bridge_data['folder_apikeys'] = folder_result[0]['folder_apikeys']
+            else:
+                bridge_data['folder_apikeys'] = {}
+        else:
+            # No folder_id, set empty folder_apikeys
+            bridge_data['folder_apikeys'] = {}
        
-        # Optionally, you can structure the output to include 'apikeys' at the top level
-        response =  {
+        # Structure the final response
+        response = {
             'success': True,
-            'bridges': result[0]
+            'bridges': bridge_data
         }
         await store_in_cache(cache_key, response)
         return response
