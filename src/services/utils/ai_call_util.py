@@ -98,11 +98,25 @@ async def call_gtwy_agent(args):
         if not response_data.get('success', True):
             raise Exception(response_data.get('message', 'Unknown error'))
         
-        result = response_data.get('response', {}).get('data', {}).get('content', "")
+        data_section = response_data.get('response', {}).get('data', {})
+        result = data_section.get('content', "")
+        
+        # Check for image URLs and include them if present
+        image_urls = data_section.get('image_urls')
+        
         try:
-            return json.loads(result)
+            parsed_result = json.loads(result) if result else {}
         except json.JSONDecodeError:
-            return {"data": result}
+            parsed_result = {"data": result}
+        
+        # Add image URLs to the result if they exist
+        if image_urls:
+            if isinstance(parsed_result, dict):
+                parsed_result['image_urls'] = image_urls
+            else:
+                parsed_result = {"data": parsed_result, "image_urls": image_urls}
+        
+        return parsed_result
             
     except Exception as e:
         raise Exception(f"Error in call_gtwy_agent: {str(e)}")
