@@ -34,6 +34,7 @@ from src.services.utils.common_utils import (
     add_files_to_parse_data,
     orchestrator_agent_chat
 )
+from src.services.utils.guardrails_validator import guardrails_check
 from src.services.utils.rich_text_support import process_chatbot_response
 app = FastAPI()
 from src.services.utils.helper import Helper
@@ -51,6 +52,11 @@ async def chat(request_body):
     try:
         # Step 1: Parse and validate request body
         parsed_data = parse_request_body(request_body)
+        if parsed_data.get('guardrails', False):
+            guardrails_result = await guardrails_check(parsed_data)
+            if guardrails_result is not None:
+                # Content was blocked by guardrails, return the blocked response
+                return JSONResponse(status_code=200, content=guardrails_result)
 
         parsed_data['configuration']['prompt'] = add_default_template(parsed_data.get('configuration', {}).get('prompt', ''))
         parsed_data['variables'] = add_user_in_varaibles(parsed_data['variables'], parsed_data['user'])
