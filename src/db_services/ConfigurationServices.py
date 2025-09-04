@@ -11,6 +11,7 @@ templateModel = db['templates']
 apikeyCredentialsModel = db['apikeycredentials']
 version_model = db['configuration_versions']
 threadsModel = db['threads']
+folderModel = db['folders']
 
 async def get_bridges(bridge_id = None, org_id = None, version_id = None):
     try:
@@ -634,6 +635,10 @@ async def get_all_bridges_in_org(org_id, folder_id, user_id, isEmbedUser):
             # Convert every ObjectId in the list to a string
             itr["function_ids"] = [str(fid) for fid in itr["function_ids"]]
     return bridges_list
+
+async def get_all_apikey_object_id_for_embed(folder_id):
+    result = await folderModel.find_one({'_id': ObjectId(folder_id)}, {'apikey_object_id': 1})
+    return result.get('apikey_object_id') if result else None
 
 async def get_all_bridges_in_org_by_org_id(org_id):
     query = {"org_id": org_id}
