@@ -182,8 +182,12 @@ def setup_api_key(service, result, apikey):
 
     if service == 'ai_ml' and not apikey and not db_api_key:
         apikey = Config.AI_ML_APIKEY
-        print('apikey',apikey)
     
+    # Check for folder API keys if folder_id exists
+    folder_api_key = result.get('bridges', {}).get('folder_apikeys', {}).get(service)
+    if folder_api_key:
+        db_api_key = folder_api_key
+        
     # Validate API key existence
     if not (apikey or db_api_key):
         raise Exception('Could not find api key or Agent is not Published')
