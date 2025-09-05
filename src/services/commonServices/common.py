@@ -116,6 +116,7 @@ async def chat(request_body):
         if parsed_data.get('type') != 'image':
             parsed_data['tokens'] = params['token_calculator'].calculate_total_cost(parsed_data['model'], parsed_data['service'])
             result['response']['usage']['cost'] = parsed_data['tokens'].get('total_cost') or 0
+            result['response']['data']['message_id'] = parsed_data['message_id']
         # Create latency object using utility function
         latency = create_latency_object(timer, params)
         if not parsed_data['is_playground']:
