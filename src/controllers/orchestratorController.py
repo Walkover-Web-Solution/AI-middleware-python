@@ -33,30 +33,14 @@ async def create_orchestrator_controller(request):
         org_id = request.state.profile['org']['id']
         
         # Validate required fields
-        required_fields = ['agents', 'master_agent', 'status', 'bridge_type']
+        required_fields = ['status', 'bridge_type', 'flow_name','flow_description']
         for field in required_fields:
             if field not in data:
                 raise HTTPException(status_code=400, detail=f"Missing required field: {field}")
         
         # Validate status
         if data['status'] not in ['publish', 'draft']:
-            raise HTTPException(status_code=400, detail="Status must be 'publish' or 'draft'")
-        
-        # Validate agents structure
-        if not isinstance(data['agents'], dict):
-            raise HTTPException(status_code=400, detail="Agents must be a dictionary")
-        
-        # Validate each agent
-        for agent_id, agent_data in data['agents'].items():
-            required_agent_fields = ['name', 'description', 'parentAgents', 'childAgents']
-            for field in required_agent_fields:
-                if field not in agent_data:
-                    raise HTTPException(status_code=400, detail=f"Agent {agent_id} missing required field: {field}")
-        
-        # Validate master_agent exists in agents
-        if data['master_agent'] not in data['agents']:
-            raise HTTPException(status_code=400, detail="Master agent must exist in agents dictionary")
-        
+            raise HTTPException(status_code=400, detail="Status must be 'publish' or 'draft'")  
         result = await create_orchestrator(data,org_id)
         
         if result:
