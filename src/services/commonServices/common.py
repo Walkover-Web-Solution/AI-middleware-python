@@ -113,6 +113,7 @@ async def chat(request_body):
         if parsed_data.get('type') != 'image':
             parsed_data['tokens'] = params['token_calculator'].calculate_total_cost(parsed_data['model'], parsed_data['service'])
             result['response']['usage']['cost'] = parsed_data['tokens'].get('total_cost') or 0
+            result['response']['data']['message_id'] = parsed_data['message_id']
         # Create latency object using utility function
         latency = create_latency_object(timer, params)
         if not parsed_data['is_playground']:
@@ -121,6 +122,7 @@ async def chat(request_body):
             await sendResponse(parsed_data['response_format'], result["response"], success=True, variables=parsed_data.get('variables',{}))
             # Update usage metrics for successful API calls
             update_usage_metrics(parsed_data, params, latency, result=result, success=True)
+            result['response']['usage']['cost'] = parsed_data['usage'].get('expectedCost', 0)
             await process_background_tasks(parsed_data, result, params, thread_info)
         return JSONResponse(status_code=200, content={"success": True, "response": result["response"]})
     
