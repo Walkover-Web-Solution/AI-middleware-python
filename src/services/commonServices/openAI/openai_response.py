@@ -58,6 +58,7 @@ class OpenaiResponse(BaseService):
                 await self.handle_failure(functionCallRes)
                 raise ValueError(functionCallRes.get('error'))
             self.update_model_response(modelResponse, functionCallRes)
+            tools = functionCallRes.get('tools')
             response = await Response_formatter(functionCallRes.get("modelResponse", {}), service_name['openai_response'], functionCallRes.get("tools", {}), self.type, self.image_data)
         else:
             response = await Response_formatter(modelResponse, service_name['openai_response'], {}, self.type, self.image_data)
