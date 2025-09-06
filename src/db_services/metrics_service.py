@@ -130,7 +130,7 @@ async def create(dataset, history_params, version_id, thread_info={}):
         insert_ai_data_in_pg = [
             {
                 'org_id': data_object['orgId'],
-                'authkey_name': data_object.get('apikey_object_id', {}).get(data_object['service'], ''),
+                'authkey_name': data_object.get('apikey_object_id', {}).get(data_object['service'], '') if data_object.get('apikey_object_id') else '',
                 'latency': data_object.get('latency', 0),
                 'service': data_object['service'],
                 'status': data_object.get('success', False),
@@ -160,7 +160,7 @@ async def create(dataset, history_params, version_id, thread_info={}):
                 'input_tokens': safe_float(data_object.get('inputTokens', 0), 0.0, "inputTokens"),
                 'output_tokens': safe_float(data_object.get('outputTokens', 0), 0.0, "outputTokens"),
                 'total_tokens': safe_float(data_object.get('totalTokens', 0),0.0, "totalTokens"),
-                'apikey_id': data_object.get('apikey_object_id', {}).get(data_object['service'], ''),
+                'apikey_id': data_object.get('apikey_object_id', {}).get(data_object['service'], '') if data_object.get('apikey_object_id') else '',
                 'created_at': datetime.now(),  # Remove timezone to match database expectations
                 'latency': safe_float(json.loads(data_object.get('latency', {})).get('over_all_time', 0),0.0, "over_all_time"),
                 'success' : data_object.get('success', False),
