@@ -5,7 +5,6 @@ from ..db_services.bridge_version_services import create_bridge_version, update_
 from src.services.utils.helper import Helper
 from ..db_services.ConfigurationServices import get_bridges_with_tools, update_bridge, get_bridges_without_tools
 from bson import ObjectId
-from ..configs.models import services
 from src.services.utils.common_utils import get_service_by_model
 from globals import *
 from ..configs.constant import bridge_ids

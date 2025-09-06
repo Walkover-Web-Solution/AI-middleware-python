@@ -1,44 +1,10 @@
 import traceback
-from fastapi import HTTPException
 from ..utils.apiservice import fetch_images_b64
 from globals import *
 
 class ConversationService:
     @staticmethod
-    def createOpenAiConversation(conversation, memory):
-        try:
-            threads = []
-            if memory is not None:
-                threads.append({'role': 'user', 'content': 'provide the summary of the previous conversation stored in the memory?'})
-                threads.append({'role': 'assistant', 'content': f'Summary of previous conversations :  {memory}' })
-            for message in conversation or []:
-                if message['role'] != "tools_call" and message['role'] != "tool":
-                    content = [{"type": "text", "text": message['content']}]
-                    if 'urls' in message and isinstance(message['urls'], list):
-                        for url in message['urls']:
-                            if not url.lower().endswith('.pdf'):
-                                content.append({
-                                    "type": "image_url",
-                                    "image_url": {
-                                        "url": url
-                                    }
-                                })
-                    else:
-                        # Default behavior for messages without URLs
-                        content = message['content']
-                    threads.append({'role': message['role'], 'content': content})
-            
-            return {
-                'success': True, 
-                'messages': threads
-            }
-        except Exception as e:
-            traceback.print_exc()
-            logger.error(f"create conversation error=>, {str(e)}")
-            raise ValueError(e.args[0])
-    
-    @staticmethod
-    def createOpenAiResponseConversation(conversation, memory, files):
+    def createOpenAiConversation(conversation, memory, files):
         try:
             threads = []
             # Track distinct PDF URLs across the entire conversation

@@ -18,7 +18,7 @@ class TokenCalculator:
     def calculate_usage(self, model_response):
         usage = {}
         match self.service:
-            case 'openai' | 'open_router' | 'mistral' | 'ai_ml':
+            case 'open_router' | 'mistral' | 'ai_ml':
                 usage["inputTokens"] = model_response['usage']['prompt_tokens']
                 usage["outputTokens"] = model_response['usage']['completion_tokens']
                 usage["totalTokens"] = model_response['usage']['total_tokens']
@@ -42,7 +42,7 @@ class TokenCalculator:
                 usage["cachedTokens"] = 0
                 usage["reasoningTokens"] = 0
             
-            case 'openai_response':
+            case 'openai':
                 usage["inputTokens"] = model_response['usage']['input_tokens']
                 usage["outputTokens"] = model_response['usage']['output_tokens']
                 usage["totalTokens"] = model_response['usage']['total_tokens']
