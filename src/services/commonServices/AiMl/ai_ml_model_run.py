@@ -23,12 +23,10 @@ async def ai_ml_model_run(configuration, apiKey, execution_time_logs, bridge_id,
         # Define how to get the alternative configuration
         def get_alternative_config(config):
             current_model = config.get('model', '')
-            if current_model == 'o3':
-                config['model'] = 'gpt-4o-2024-08-06'
-            elif current_model == 'gpt-4o':
-                config['model'] = 'o3'
+            if current_model == 'gpt-oss-120b':
+                config['model'] = 'gpt-oss-20b'
             else:
-                config['model'] = 'gpt-4o'
+                config['model'] = 'gpt-oss-120b'
             return config
 
         # Execute with retry
