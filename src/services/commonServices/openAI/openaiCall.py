@@ -8,6 +8,7 @@ class UnifiedOpenAICase(BaseService):
     async def execute(self):
         historyParams = {}
         tools = {}
+        functionCallRes = {}
         if self.type == 'image':
             self.customConfig['prompt'] = self.user
             openAIResponse = await self.image(self.customConfig, self.apikey, service_name['openai'])
@@ -18,7 +19,7 @@ class UnifiedOpenAICase(BaseService):
                 raise ValueError(openAIResponse.get('error'))
             response = await Response_formatter(modelResponse, service_name['openai'], tools, self.type, self.image_data)
             if not self.playground:
-                historyParams = self.prepare_history_params(response, modelResponse, tools)
+                historyParams = self.prepare_history_params(response, modelResponse, tools, None)
                 historyParams['message'] = "image generated successfully"
                 historyParams['type'] = 'assistant'
         else:
@@ -52,9 +53,14 @@ class UnifiedOpenAICase(BaseService):
                     await self.handle_failure(functionCallRes)
                     raise ValueError(functionCallRes.get('error'))
                 self.update_model_response(modelResponse, functionCallRes)
-                tools = functionCallRes.get("tools", {})
+                tools = functionCallRes.get("tools")
             response = await Response_formatter(modelResponse, service_name['openai'], tools, self.type, self.image_data)
             if not self.playground:
-                historyParams = self.prepare_history_params(response, modelResponse, tools)
-        return {'success': True, 'modelResponse': modelResponse, 'historyParams': historyParams, 'response': response }
+                transfer_config = functionCallRes.get('transfer_agent_config') if functionCallRes else None
+                historyParams = self.prepare_history_params(response, modelResponse, tools, transfer_config)
+        # Add transfer_agent_config to return if transfer was detected
+        result = {'success': True, 'modelResponse': modelResponse, 'historyParams': historyParams, 'response': response}
+        if functionCallRes.get('transfer_agent_config'):
+            result['transfer_agent_config'] = functionCallRes['transfer_agent_config']
+        return result
     

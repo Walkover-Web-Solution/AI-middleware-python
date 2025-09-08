@@ -9,7 +9,7 @@ class OpenaiResponse(BaseService):
     async def execute(self):
         historyParams, tools = {}, {}
         conversation = ConversationService.createOpenAiResponseConversation(self.configuration.get('conversation'), self.memory, self.files).get('messages', [])
-        
+        functionCallRes = {}
         developer = [{"role": "developer", "content": self.configuration['prompt']}] if not self.reasoning_model else []
         
         if self.image_data and isinstance(self.image_data, list):
@@ -60,10 +60,15 @@ class OpenaiResponse(BaseService):
             self.update_model_response(modelResponse, functionCallRes)
             tools = functionCallRes.get('tools')
             response = await Response_formatter(functionCallRes.get("modelResponse", {}), service_name['openai_response'], functionCallRes.get("tools", {}), self.type, self.image_data)
-        else:
-            response = await Response_formatter(modelResponse, service_name['openai_response'], {}, self.type, self.image_data)
+            tools = functionCallRes.get("tools", {})
+        response = await Response_formatter(modelResponse, service_name['openai_response'], {}, self.type, self.image_data)
         if not self.playground:
-            historyParams = self.prepare_history_params(response, modelResponse, tools)
+            transfer_config = functionCallRes.get('transfer_agent_config') if has_function_call and functionCallRes else None
+            historyParams = self.prepare_history_params(response, modelResponse, tools, transfer_config)
         
-        return {'success': True, 'modelResponse': modelResponse, 'historyParams': historyParams, 'response': response }
+        # Add transfer_agent_config to return if transfer was detected
+        result = {'success': True, 'modelResponse': modelResponse, 'historyParams': historyParams, 'response': response}
+        if has_function_call and functionCallRes.get('transfer_agent_config'):
+            result['transfer_agent_config'] = functionCallRes['transfer_agent_config']
+        return result
     

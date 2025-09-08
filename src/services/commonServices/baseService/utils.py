@@ -26,7 +26,7 @@ def clean_json(data):
 
 def validate_tool_call(service, response):
     match service: # TODO: Fix validation process.
-        case 'openai' | 'groq' | 'open_router' | 'mistral' | 'gemini':
+        case 'openai' | 'groq' | 'open_router' | 'mistral' | 'gemini'| 'ai_ml':
             tool_calls = response.get('choices', [])[0].get('message', {}).get("tool_calls", [])
             return len(tool_calls) > 0 if tool_calls is not None else False
         case 'openai_response':
@@ -107,7 +107,7 @@ def transform_required_params_to_required(properties, variables={}, variables_pa
     return transformed_properties
 
 def tool_call_formatter(configuration: dict, service: str, variables: dict, variables_path: dict) -> dict:
-    if service == service_name['openai'] or service == service_name['open_router'] or service == service_name['mistral'] or service == service_name['gemini']:
+    if service == service_name['openai'] or service == service_name['open_router'] or service == service_name['mistral'] or service == service_name['gemini'] or service == service_name['ai_ml']:
         data_to_send =  [
             {
                 'type': 'function',
@@ -227,7 +227,12 @@ async def process_data_and_run_tools(codes_mapping, tool_id_and_name_mapping, or
                 if tool_id_and_name_mapping[name].get('type') == 'RAG':
                     task = get_text_from_vectorsQuery({**tool_data.get("args"), "org_id":org_id}) 
                 elif tool_id_and_name_mapping[name].get('type') == 'AGENT':
-                    task = call_gtwy_agent({"org_id":org_id, "bridge_id": tool_id_and_name_mapping[name].get("bridge_id"), "user": tool_data.get("args").get("user"), "variables": {key: value for key, value in tool_data.get("args").items() if key != "user"}})
+                    bridge_id = tool_id_and_name_mapping[name].get("bridge_id")
+                    agent_id = tool_id_and_name_mapping[name].get("agent_id")
+                    task_args = {key: value for key, value in tool_data.get("args").items() if key != "user"}
+                    task_args = {"org_id":org_id, "user": tool_data.get("args").get("user") or tool_data.get("args").get("user_query"), "variables": task_args}
+                    task_args["bridge_id"] = bridge_id if bridge_id else agent_id
+                    task = call_gtwy_agent(task_args)
                 else: 
                     task = axios_work(tool_data.get("args"), tool_id_and_name_mapping[name])
                 tasks.append((tool_call_key, tool_data, task))
@@ -292,7 +297,7 @@ def make_code_mapping_by_service(responses, service):
     codes_mapping = {}
     function_list = []
     match service:
-        case 'openai' | 'groq' | 'open_router' | 'mistral' | 'gemini':
+        case 'openai' | 'groq' | 'open_router' | 'mistral' | 'gemini' | 'ai_ml':
 
             for tool_call in responses['choices'][0]['message']['tool_calls']:
                 name = tool_call['function']['name']
@@ -475,3 +480,12 @@ async def save_files_to_redis(thread_id, sub_thread_id, bridge_id, files):
             await store_in_cache(cache_key, files, 604800)
     else:
         await store_in_cache(cache_key, files, 604800)
+
+
+
+def safe_float(value, default=0.0, keyname= ''):
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        print("error in float conversation of key", keyname)
+        return default

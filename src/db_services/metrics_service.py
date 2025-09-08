@@ -9,6 +9,7 @@ from ..controllers.conversationController import savehistory
 from .conversationDbService import insertRawData, timescale_metrics
 from ..services.cache_service import find_in_cache, store_in_cache
 from globals import *
+from src.services.commonServices.baseService.utils import safe_float
 # from src.services.utils.send_error_webhook import send_error_to_webhook
 
 postgres = combined_models['pg']
@@ -116,7 +117,8 @@ async def create(dataset, history_params, version_id, thread_info={}):
             history_params['channel'], history_params['type'], history_params['actor'],
             history_params.get('tools'),history_params.get('chatbot_message'),history_params.get('tools_call_data'),history_params.get('message_id'), version_id, history_params.get('image_urls'), history_params.get('revised_prompt'), history_params.get('urls'), history_params.get('AiConfig'), history_params.get('annotations'), history_params.get('fallback_model')
         )
-        
+        response = history_params.get('response',{})
+
         # Save conversations to Redis with TTL of 30 days
         if 'error' not in dataset[0] and conversations:
                 await save_conversations_to_redis(conversations, version_id, thread_id, sub_thread_id, history_params)
@@ -128,7 +130,7 @@ async def create(dataset, history_params, version_id, thread_info={}):
         insert_ai_data_in_pg = [
             {
                 'org_id': data_object['orgId'],
-                'authkey_name': data_object.get('apikey_object_id', {}).get(data_object['service'], ''),
+                'authkey_name': data_object.get('apikey_object_id', {}).get(data_object['service'], '') if data_object.get('apikey_object_id') else '',
                 'latency': data_object.get('latency', 0),
                 'service': data_object['service'],
                 'status': data_object.get('success', False),
@@ -143,7 +145,8 @@ async def create(dataset, history_params, version_id, thread_info={}):
                 'variables': data_object.get('variables') or {},
                 'is_present': 'prompt' in data_object,
                 'id' : str(uuid.uuid4()),
-                'firstAttemptError' : history_params.get('firstAttemptError')
+                'firstAttemptError' : history_params.get('firstAttemptError'),
+                'finish_reason' : response.get('data', {}).get('finish_reason')
             }
             for data_object in dataset
         ]
@@ -154,14 +157,14 @@ async def create(dataset, history_params, version_id, thread_info={}):
                 'version_id' : version_id,
                 'thread_id': history_params['thread_id'],
                 'model': data_object['model'],
-                'input_tokens': data_object.get('inputTokens', 0),
-                'output_tokens': data_object.get('outputTokens', 0),
-                'total_tokens': data_object.get('totalTokens', 0),
-                'apikey_id': data_object.get('apikey_object_id', {}).get(data_object['service'], ''),
+                'input_tokens': safe_float(data_object.get('inputTokens', 0), 0.0, "inputTokens"),
+                'output_tokens': safe_float(data_object.get('outputTokens', 0), 0.0, "outputTokens"),
+                'total_tokens': safe_float(data_object.get('totalTokens', 0),0.0, "totalTokens"),
+                'apikey_id': data_object.get('apikey_object_id', {}).get(data_object['service'], '') if data_object.get('apikey_object_id') else '',
                 'created_at': datetime.now(),  # Remove timezone to match database expectations
-                'latency': json.loads(data_object.get('latency', {})).get('over_all_time', 0),
+                'latency': safe_float(json.loads(data_object.get('latency', {})).get('over_all_time', 0),0.0, "over_all_time"),
                 'success' : data_object.get('success', False),
-                'cost' : data_object.get('expectedCost', 0),
+                'cost' : safe_float(data_object.get('expectedCost', 0), 0.0, 'expectedCost'),
                 'time_zone' : 'Asia/Kolkata',
                 'service' : data_object['service']
             }
@@ -169,12 +172,21 @@ async def create(dataset, history_params, version_id, thread_info={}):
         ]
         await insertRawData(insert_ai_data_in_pg)
         
-        await timescale_metrics(metrics_data)
+        # Create the cache key based on bridge_id (assuming it's always available)
         cache_key = f"metrix_bridges{history_params['bridge_id']}"
-        oldTotalToken = json.loads(await find_in_cache(cache_key) or '0')
+
+        # Safely load the old total token value from the cache
+        cache_value = await find_in_cache(cache_key)
+        try:
+            oldTotalToken = json.loads(cache_value) if cache_value else 0
+        except (json.JSONDecodeError, TypeError):
+            oldTotalToken = 0
+
+        # Calculate the total token sum, using .get() for 'totalTokens' to handle missing keys
         totaltoken = sum(data_object.get('totalTokens', 0) for data_object in dataset) + oldTotalToken
         # await send_error_to_webhook(history_params['bridge_id'], history_params['org_id'],totaltoken , 'metrix_limit_reached')
         await store_in_cache(cache_key, float(totaltoken))
+        await timescale_metrics(metrics_data)
     except Exception as error:
         logger.error(f'Error during bulk insert of Ai middleware, {str(error)}')
 

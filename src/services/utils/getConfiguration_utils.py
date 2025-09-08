@@ -5,6 +5,7 @@ from models.mongo_connection import db
 from src.services.utils.common_utils import updateVariablesWithTimeZone
 from src.services.commonServices.baseService.utils import makeFunctionName
 from src.services.utils.service_config_utils import tool_choice_function_name_formatter
+from config import Config
 
 apiCallModel = db['apicalls']
 from globals import *
@@ -178,7 +179,15 @@ def setup_api_key(service, result, apikey):
     db_api_key = db_apikeys.get(service)
     if service == 'openai_response':
         db_api_key = db_apikeys.get('openai')
+
+    if service == 'ai_ml' and not apikey and not db_api_key:
+        apikey = Config.AI_ML_APIKEY
     
+    # Check for folder API keys if folder_id exists
+    folder_api_key = result.get('bridges', {}).get('folder_apikeys', {}).get(service)
+    if folder_api_key:
+        db_api_key = folder_api_key
+        
     # Validate API key existence
     if not (apikey or db_api_key):
         raise Exception('Could not find api key or Agent is not Published')

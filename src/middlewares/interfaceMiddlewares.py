@@ -83,9 +83,9 @@ async def send_data_middleware(request: Request, botId: str):
             "actions" : actions,
             "bridge_summary" : bridges.get('bridge_summary')
         }
-        await add_configuration_data_to_body(request=request)
+        db_config = await add_configuration_data_to_body(request=request)
         
-        return await chat_completion(request=request)
+        return await chat_completion(request=request, db_config=db_config)
     except HTTPException as http_error:
         raise http_error  # Re-raise HTTP exceptions for proper handling
     except Exception as error: 

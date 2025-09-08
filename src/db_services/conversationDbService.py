@@ -206,6 +206,7 @@ async def timescale_metrics(metrics_data):
             session.add_all(raws)
             await session.commit()
         except Exception as e:
+            print("fail in metrics service", e)
             await session.rollback()
             raise e
 

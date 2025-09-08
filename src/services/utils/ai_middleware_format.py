@@ -20,12 +20,12 @@ async def Response_formatter(response = {}, service = None, tools={}, type='chat
                 "content" : response.get("choices", [{}])[0].get("message", {}).get("content", None),
                 "model" : response.get("model", None),
                 "role" : response.get("choices", [{}])[0].get("message", {}).get("role", None),
-                "finish_reason" : response.get("choices", [{}])[0].get("finish_reason", None),
                 "tools_data": tools_data or {},
                 "images" : images,
                 "annotations" : response.get("choices", [{}])[0].get("message", {}).get("annotations", None),
                 "fallback" : response.get('fallback') or False,
-                "firstAttemptError" : response.get('firstAttemptError') or ''
+                "firstAttemptError" : response.get('firstAttemptError') or '',
+                "finish_reason" : finish_reason_mapping(response.get("choices", [{}])[0].get("finish_reason", ""))
             },
             "usage" : {
                 "input_tokens" : response.get("usage", {}).get("prompt_tokens", None),
@@ -42,12 +42,12 @@ async def Response_formatter(response = {}, service = None, tools={}, type='chat
                 "content" : response.get("choices", [{}])[0].get("message", {}).get("content", None),
                 "model" : response.get("model", None),
                 "role" : response.get("choices", [{}])[0].get("message", {}).get("role", None),
-                "finish_reason" : response.get("choices", [{}])[0].get("finish_reason", None),
                 "tools_data": tools_data or {},
                 "images" : images,
                 "annotations" : response.get("choices", [{}])[0].get("message", {}).get("annotations", None),
                 "fallback" : response.get('fallback') or False,
-                "firstAttemptError" : response.get('firstAttemptError') or ''
+                "firstAttemptError" : response.get('firstAttemptError') or '',
+                "finish_reason" : finish_reason_mapping(response.get("choices", [{}])[0].get("finish_reason", ""))
             },
             "usage" : {
                 "input_tokens" : response.get("usage", {}).get("prompt_tokens", None),
@@ -68,7 +68,7 @@ async def Response_formatter(response = {}, service = None, tools={}, type='chat
             "data" : {
                 "revised_prompt" : response.get('data')[0].get('text_content'),
                 "image_url" : response.get('data')[0].get('url'),
-                "permanent_url" :   response.get('data')[0].get('url')
+                "permanent_url" :   response.get('data')[0].get('url'),
             }
         }
     elif service == service_name['openai']:
@@ -93,10 +93,10 @@ async def Response_formatter(response = {}, service = None, tools={}, type='chat
                 "content" : response.get("content", [{}])[0].get("text", None),
                 "model" : response.get("model", None),
                 "role" : response.get("role", None),
-                "finish_reason" : response.get("stop_reason", None),
                 "tools_data": tools_data or {},
                 "fall_back" : response.get('fallback') or False,
-                "firstAttemptError" : response.get('firstAttemptError') or ''
+                "firstAttemptError" : response.get('firstAttemptError') or '',
+                "finish_reason" : finish_reason_mapping(response.get("stop_reason", ""))
             },
             "usage" : {
                 "input_tokens" : response.get("usage", {}).get("input_tokens", None),
@@ -117,9 +117,9 @@ async def Response_formatter(response = {}, service = None, tools={}, type='chat
                 "content" : response.get("choices", [{}])[0].get("message", {}).get("content", None),
                 "model" : response.get("model", None),
                 "role" : response.get("choices", [{}])[0].get("message", {}).get("role", None),
-                "finish_reason" : response.get("choices", [{}])[0].get("finish_reason", None),
                 "tools_data": tools_data or {},
-                "fall_back" : response.get('fallback') or False
+                "fall_back" : response.get('fallback') or False,
+                "finish_reason" : finish_reason_mapping(response.get("choices", [{}])[0].get("finish_reason", ""))
             },
             "usage" : {
                 "input_tokens" : response.get("usage", {}).get("prompt_tokens", None),
@@ -164,7 +164,7 @@ async def Response_formatter(response = {}, service = None, tools={}, type='chat
                 ),
                 "model": response.get("model", None),
                 "role": 'assistant',
-                "status": response.get("status", None),
+                "finish_reason":  finish_reason_mapping(response.get("status", "")) if response.get("status", None) == "in_progress" or response.get("status", None) == "completed" else finish_reason_mapping(response.get("incomplete_details", {}).get("reason", None)) ,
                 "tools_data": tools_data or {},
                 "images": images,
                 "annotations": response.get("output", [{}])[0].get("content", [{}])[0].get("annotations", None),
@@ -199,12 +199,12 @@ async def Response_formatter(response = {}, service = None, tools={}, type='chat
                 "content" : response.get("choices", [{}])[0].get("message", {}).get("content", None),
                 "model" : response.get("model", None),
                 "role" : response.get("choices", [{}])[0].get("message", {}).get("role", None),
-                "finish_reason" : response.get("choices", [{}])[0].get("finish_reason", None),
                 "tools_data": tools_data or {},
                 "images" : images,
                 "annotations" : response.get("choices", [{}])[0].get("message", {}).get("annotations", None),
                 "fallback" : response.get('fallback') or False,
-                "firstAttemptError" : response.get('firstAttemptError') or ''
+                "firstAttemptError" : response.get('firstAttemptError') or '',
+                "finish_reason" : finish_reason_mapping(response.get("choices", [{}])[0].get("finish_reason", ""))
             },
             "usage" : {
                 "input_tokens" : response.get("usage", {}).get("prompt_tokens", None),
@@ -224,12 +224,12 @@ async def Response_formatter(response = {}, service = None, tools={}, type='chat
                 "content" : response.get("choices", [{}])[0].get("message", {}).get("content", None),
                 "model" : response.get("model", None),
                 "role" : response.get("choices", [{}])[0].get("message", {}).get("role", None),
-                "finish_reason" : response.get("choices", [{}])[0].get("finish_reason", None),
                 "tools_data": tools_data or {},
                 "images" : images,
                 "annotations" : response.get("choices", [{}])[0].get("message", {}).get("annotations", None),
                 "fallback" : response.get('fallback') or False,
-                "firstAttemptError" : response.get('firstAttemptError') or ''
+                "firstAttemptError" : response.get('firstAttemptError') or '',
+                "finish_reason" : finish_reason_mapping(response.get("choices", [{}])[0].get("finish_reason", ""))
             },
             "usage" : {
                 "input_tokens" : response.get("usage", {}).get("prompt_tokens", None),
@@ -242,6 +242,28 @@ async def Response_formatter(response = {}, service = None, tools={}, type='chat
 
             }
         }
+    elif service == service_name['ai_ml']:
+        return {
+            "data" : {
+                "id" : response.get("id", None),
+                "content" : response.get("choices", [{}])[0].get("message", {}).get("content", None),
+                "model" : response.get("model", None),
+                "role" : response.get("choices", [{}])[0].get("message", {}).get("role", None),
+                "tools_data": tools_data or {},
+                "images" : images,
+                "annotations" : response.get("choices", [{}])[0].get("message", {}).get("annotations", None),
+                "fallback" : response.get('fallback') or False,
+                "firstAttemptError" : response.get('firstAttemptError') or '',
+                "finish_reason" : finish_reason_mapping(response.get("choices", [{}])[0].get("finish_reason", ""))
+            },
+            "usage" : {
+                "input_tokens" : response.get("usage", {}).get("prompt_tokens", None),
+                "output_tokens" : response.get("usage", {}).get("completion_tokens", None),
+                "total_tokens" : response.get("usage", {}).get("total_tokens", None),
+                "cached_tokens" : response.get("usage", {}).get("prompt_tokens_details",{}).get('cached_tokens')
+
+            }
+        }
 
 async def validateResponse(alert_flag, configration, bridgeId, message_id, org_id):
     if alert_flag:
@@ -250,3 +272,21 @@ async def validateResponse(alert_flag, configration, bridgeId, message_id, org_i
 async def send_alert(data):
     dataTosend = {**data, "ENVIROMENT":Config.ENVIROMENT} if Config.ENVIROMENT else data
     await fetch("https://flow.sokt.io/func/scriYP8m551q",method='POST',json_body=dataTosend)
+
+def finish_reason_mapping(finish_reason):
+    finish_reason_mapping = {
+        # Completed / natural stop
+        "stop": "completed",        #openai #open_router #gemini
+        "end_turn": "completed",    #anthropic
+        "completed": "completed",   #openai_response
+
+        # Truncation due to token limits
+        "length": "truncated",              #openai #open_router #gemini
+        "max_tokens": "truncated",          #anthropic
+        "max_output_tokens": "truncated",    #openai_response
+
+        # Tool / function invocation
+        "tool_calls": "tool_call",    #openai #gemini
+        "tool_use": "tool_call",      #anthropic
+    }
+    return finish_reason_mapping.get(finish_reason, "other")

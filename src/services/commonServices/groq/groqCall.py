@@ -8,6 +8,7 @@ class Groq(BaseService):
     async def execute(self):
         historyParams = {}
         tools = {}
+        functionCallRes = {}
         conversation = ConversationService.createGroqConversation(self.configuration.get('conversation'), self.memory).get('messages', [])
         self.customConfig["messages"] = [{"role": "system", "content": self.configuration['prompt']}] + conversation + ([{"role": "user", "content": self.user}] if self.user else []) 
         self.customConfig =self.service_formatter(self.customConfig, service_name['groq'])
@@ -32,5 +33,11 @@ class Groq(BaseService):
             
         response = await Response_formatter(model_response, service_name['groq'], tools, self.type, self.image_data)
         if not self.playground:
-            historyParams = self.prepare_history_params(response, model_response, tools)
-        return {'success': True, 'modelResponse': model_response, 'historyParams': historyParams, 'response': response }
+            transfer_config = functionCallRes.get('transfer_agent_config') if functionCallRes else None
+            historyParams = self.prepare_history_params(response, model_response, tools, transfer_config)
+        
+        # Add transfer_agent_config to return if transfer was detected
+        result = {'success': True, 'modelResponse': model_response, 'historyParams': historyParams, 'response': response}
+        if functionCallRes.get('transfer_agent_config'):
+            result['transfer_agent_config'] = functionCallRes['transfer_agent_config']
+        return result

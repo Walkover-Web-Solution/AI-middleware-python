@@ -16,6 +16,7 @@ from ..openRouter.openRouter_modelrun import openrouter_modelrun
 from ....configs.constant import service_name
 from ..openAI.image_model import OpenAIImageModel
 from ..Google.gemini_image_model import gemini_image_model
+from ..AiMl.ai_ml_model_run import ai_ml_model_run
 from concurrent.futures import ThreadPoolExecutor
 from globals import *
 
@@ -74,6 +75,15 @@ class BaseService:
         if not self.playground:
             asyncio.create_task(sendResponse(self.response_format, data = {'function_call': True, 'Name': function_list}, success = True))
         codes_mapping = await self.replace_variables_in_args(codes_mapping)
+        
+        # Check for transfer action in codes_mapping
+        from src.services.utils.transfer_handler import check_transfer_from_codes_mapping
+        has_transfer, transfer_config = check_transfer_from_codes_mapping(codes_mapping, self.tool_id_and_name_mapping)
+        
+        if has_transfer:
+            # Return transfer config instead of processing tools
+            return [], [], {'transfer_agent_config': transfer_config}
+        
         return await process_data_and_run_tools(codes_mapping, self.tool_id_and_name_mapping, self.org_id, self.timer, self.function_time_logs)
 
 
@@ -86,7 +96,7 @@ class BaseService:
             tools[function_response['name']] = function_response['content']
         
             match service:
-                case 'openai' | 'groq' | 'open_router' | 'mistral' | 'gemini':
+                case 'openai' | 'groq' | 'open_router' | 'mistral' | 'gemini' | 'ai_ml':
                     assistant_tool_calls = response['choices'][0]['message']['tool_calls'][index]
                     configuration['messages'].append({'role': 'assistant', 'content': None, 'tool_calls': [assistant_tool_calls]})
                     tool_calls_id = assistant_tool_calls['id']
@@ -127,12 +137,19 @@ class BaseService:
                 configuration['tool_choice'] = {'type': 'auto'}
             else:
                 configuration['tool_choice'] = 'auto'
-        if validate_tool_call(service, model_response) and l <= int(self.tool_call_count):
+        if validate_tool_call(service, model_response) and l <= int(self.tool_call_count or 0):
             l += 1
         else:
             return response
         func_response_data,mapping_response_data, tools_call_data = await self.run_tool(model_response, service)
         self.func_tool_call_data.append(tools_call_data)
+        
+        # Check if transfer was detected in run_tool
+        if isinstance(tools_call_data, dict) and 'transfer_agent_config' in tools_call_data:
+            # Return response with transfer config
+            response['transfer_agent_config'] = tools_call_data['transfer_agent_config']
+            return response
+        
         configuration, tools = self.update_configration(model_response, func_response_data, configuration, mapping_response_data, service, tools)
         if not self.playground:
             asyncio.create_task(sendResponse(self.response_format, data = {'function_call': True, 'success': True, 'message': 'Going to GPT'}, success=True))
@@ -182,20 +199,29 @@ class BaseService:
             service_name['openai_response'],
             service_name['open_router'],
             service_name['mistral'],
-            service_name['gemini']
+            service_name['gemini'],
+            service_name['ai_ml']
         ]:
 
             if funcModelResponse and self.service != service_name['openai_response']:
                 _.set_(model_response, self.modelOutputConfig['message'], _.get(funcModelResponse, self.modelOutputConfig['message']))
-                if self.service in [service_name['openai'], service_name['groq'], service_name['open_router'], service_name['gemini']]:
+                if self.service in [service_name['openai'], service_name['groq'], service_name['open_router'], service_name['gemini'], service_name['ai_ml']]:
                     _.set_(model_response, self.modelOutputConfig['tools'], _.get(funcModelResponse, self.modelOutputConfig['tools']))
 
-    def prepare_history_params(self,response, model_response, tools):
+    def prepare_history_params(self,response, model_response, tools, transfer_agent_config=None):
+        # Get the original message content
+        original_message = response.get('data',{}).get('content') or ""
+        
+        # If message is empty but we have transfer config, create custom message
+        if not original_message and transfer_agent_config:
+            agent_name = transfer_agent_config.get('tool_name', 'the agent')
+            original_message = f"Query is successfully transferred to agent {agent_name}"
+        
         return {
             'thread_id': self.thread_id,
             'sub_thread_id': self.sub_thread_id,
             'user': self.user if self.user else "",
-            'message': response.get('data',{}).get('content') or "",
+            'message': original_message,
             'org_id': self.org_id,
             'bridge_id': self.bridge_id,
             'model': model_response.get('model') or self.configuration.get('model'),
@@ -213,6 +239,7 @@ class BaseService:
             "firstAttemptError" : model_response.get('firstAttemptError') or '',
             "annotations" : _.get(model_response, self.modelOutputConfig.get('annotations')) or [],
             "fallback_model" : model_response.get('fallback_model') or '',
+            "response":response, 
         }
     
     def service_formatter(self, configuration : object, service : str ):
@@ -221,7 +248,7 @@ class BaseService:
             if configuration.get('tools', '') :
                 if service == service_name['anthropic']:
                     new_config['tool_choice'] =  configuration.get('tool_choice', {'type': 'auto'})
-                elif service == service_name['openai'] or service == service_name['groq']:
+                elif service == service_name['openai'] or service == service_name['groq'] or service == service_name['ai_ml']:
                     if configuration.get('tool_choice'):
                         if configuration['tool_choice'] not in ['auto', 'none', 'required', 'default']:
                             new_config['tool_choice'] = {"type": "function", "function": {"name": configuration['tool_choice']}}
@@ -259,6 +286,8 @@ class BaseService:
                 response = await mistral_model_run(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer,self.message_id, self.org_id, self.name, self.org_name, service, count, self.token_calculator)
             elif service == service_name['gemini']:
                 response = await gemini_modelrun(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer, self.message_id, self.org_id, self.name, self.org_name, service, count, self.token_calculator)
+            elif service == service_name['ai_ml']:
+                response = await ai_ml_model_run(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer, self.message_id, self.org_id, self.name, self.org_name, service, count, self.token_calculator)
             if not response['success']:
                 raise ValueError(response['error'], self.func_tool_call_data)
             return {

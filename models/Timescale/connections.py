@@ -6,7 +6,7 @@ from config import Config
 from globals import *
 
 # Configuration
-DATABASE_URL = Config.TIMESCALE_SERVICE_URL.replace("postgresql://", "postgresql+asyncpg://")
+DATABASE_URL = Config.TIMESCALE_SERVICE_URL.replace("postgresql://", "postgresql+asyncpg://").replace("?sslmode=require", "")
 
 # Async Engine and session setup
 async_engine = sa_async.create_async_engine(DATABASE_URL, pool_pre_ping=True)
