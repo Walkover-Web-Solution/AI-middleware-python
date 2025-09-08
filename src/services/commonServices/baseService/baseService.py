@@ -289,7 +289,7 @@ class BaseService:
             elif service == service_name['ai_ml']:
                 response = await ai_ml_model_run(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer, self.message_id, self.org_id, self.name, self.org_name, service, count, self.token_calculator)
             if not response['success']:
-                raise ValueError(response['error'], self.func_tool_call_data)
+                raise ValueError(response['error'])
             return {
                 'success': True,
                 'modelResponse': response['response']
