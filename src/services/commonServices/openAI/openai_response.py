@@ -72,3 +72,4 @@ class OpenaiResponse(BaseService):
         if has_function_call and functionCallRes.get('transfer_agent_config'):
             result['transfer_agent_config'] = functionCallRes['transfer_agent_config']
         return result
+    
