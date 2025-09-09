@@ -61,7 +61,8 @@ class OpenaiResponse(BaseService):
             tools = functionCallRes.get('tools')
             response = await Response_formatter(functionCallRes.get("modelResponse", {}), service_name['openai_response'], functionCallRes.get("tools", {}), self.type, self.image_data)
             tools = functionCallRes.get("tools", {})
-        response = await Response_formatter(modelResponse, service_name['openai_response'], {}, self.type, self.image_data)
+        else:
+            response = await Response_formatter(modelResponse, service_name['openai_response'], {}, self.type, self.image_data)
         if not self.playground:
             transfer_config = functionCallRes.get('transfer_agent_config') if has_function_call and functionCallRes else None
             historyParams = self.prepare_history_params(response, modelResponse, tools, transfer_config)
@@ -71,4 +72,3 @@ class OpenaiResponse(BaseService):
         if has_function_call and functionCallRes.get('transfer_agent_config'):
             result['transfer_agent_config'] = functionCallRes['transfer_agent_config']
         return result
-    
