@@ -31,6 +31,8 @@ async def create_orchestrator_controller(request):
     try:
         data = await request.json()
         org_id = request.state.profile['org']['id']
+        folder_id = request.state.folder_id if hasattr(request.state, 'folder_id') else None
+        user_id = request.state.user_id
         
         # Validate required fields
         required_fields = ['status', 'bridge_type', 'flow_name','flow_description']
@@ -41,7 +43,7 @@ async def create_orchestrator_controller(request):
         # Validate status
         if data['status'] not in ['publish', 'draft']:
             raise HTTPException(status_code=400, detail="Status must be 'publish' or 'draft'")  
-        result = await create_orchestrator(data,org_id)
+        result = await create_orchestrator(data,org_id,folder_id,user_id)
         
         if result:
             logger.info(f"Orchestrator created successfully for org_id: {data['org_id']}")
@@ -71,7 +73,9 @@ async def get_all_orchestrators_controller(request):
     try:
         # Extract org_id from query parameters
         org_id = request.state.profile['org']['id']
-        orchestrators = await get_all_orchestrators(org_id)
+        folder_id = request.state.folder_id if hasattr(request.state, 'folder_id') else None
+        user_id = request.state.user_id
+        orchestrators = await get_all_orchestrators(org_id,folder_id,user_id)
         
         logger.info(f"Retrieved {len(orchestrators)} orchestrators for org_id: {org_id}")
         return JSONResponse(

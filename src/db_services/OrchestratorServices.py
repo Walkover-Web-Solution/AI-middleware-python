@@ -6,7 +6,7 @@ from typing import List, Dict, Optional
 
 orchestrator_collection = db["orchestrator"]
 
-async def create_orchestrator(data: Dict, org_id: str) -> Optional[str]:
+async def create_orchestrator(data: Dict, org_id: str,folder_id: str, user_id:str   ) -> Optional[str]:
     """
     Create a new orchestrator in the database
     
@@ -19,6 +19,9 @@ async def create_orchestrator(data: Dict, org_id: str) -> Optional[str]:
     try:
         # Insert the orchestrator, including org_id
         data["org_id"] = org_id
+        if folder_id is not None: 
+            data["folder_id"] = folder_id
+        data['user_id'] = user_id
         result = await orchestrator_collection.insert_one(data)
         
         if result.inserted_id is not None:
@@ -32,7 +35,7 @@ async def create_orchestrator(data: Dict, org_id: str) -> Optional[str]:
         logger.error(f"Error creating orchestrator: {str(e)}")
         return None
 
-async def get_all_orchestrators(org_id: str) -> List[Dict]:
+async def get_all_orchestrators(org_id: str,folder_id: str,user_id: str) -> List[Dict]:
     """
     Get all orchestrators for a specific organization
     
@@ -44,7 +47,7 @@ async def get_all_orchestrators(org_id: str) -> List[Dict]:
     """
     try:
         # Find all orchestrators for the given org_id
-        cursor = orchestrator_collection.find({"org_id": org_id})
+        cursor = orchestrator_collection.find({"org_id": org_id,"folder_id": folder_id,"user_id": user_id})
         orchestrators = []
         
         async for doc in cursor:
