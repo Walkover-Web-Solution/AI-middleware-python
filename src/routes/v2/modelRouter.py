@@ -24,11 +24,25 @@ async def auth_and_rate_limit(request: Request):
 async def chat_completion(request: Request, db_config: dict = Depends(add_configuration_data_to_body)):
     request.state.is_playground = False
     request.state.version = 2
-    if db_config.get('orchestrator_id'):
-        result = await orchestrator_chat(request)
-        return result
     data_to_send = await make_request_data(request)
     response_format = data_to_send.get('body',{}).get('configuration', {}).get('response_format', {})
+    
+    if db_config.get('orchestrator_id'):
+        # If orchestrator_id exists and response_format is non-default, use queue
+        if response_format and response_format.get('type') != 'default':
+            try:
+                # Publish the orchestrator message to the queue
+                await queue_obj.publish_message(data_to_send)
+                return {"success": True, "message": "Your response will be sent through configured means."}
+            except Exception as e:
+                # Log the error and return a meaningful error response
+                logger.error(f"Failed to publish orchestrator message: {str(e)}")
+                raise HTTPException(status_code=500, detail="Failed to publish orchestrator message.")
+        else:
+            # Direct orchestrator call for default response format
+            result = await orchestrator_chat(request)
+            return result
+    
     if response_format and response_format.get('type') != 'default':
         try:
             # Publish the message to the queue
