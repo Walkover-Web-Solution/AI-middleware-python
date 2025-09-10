@@ -6,7 +6,7 @@ from typing import List, Dict, Optional
 
 orchestrator_collection = db["orchestrator"]
 
-async def create_orchestrator(data: Dict, org_id: str) -> Optional[str]:
+async def create_orchestrator(data: Dict, org_id: str,folder_id: str, user_id:str   ) -> Optional[str]:
     """
     Create a new orchestrator in the database
     
@@ -19,6 +19,9 @@ async def create_orchestrator(data: Dict, org_id: str) -> Optional[str]:
     try:
         # Insert the orchestrator, including org_id
         data["org_id"] = org_id
+        if folder_id is not None: 
+            data["folder_id"] = folder_id
+        data['user_id'] = user_id
         result = await orchestrator_collection.insert_one(data)
         
         if result.inserted_id is not None:
@@ -32,7 +35,7 @@ async def create_orchestrator(data: Dict, org_id: str) -> Optional[str]:
         logger.error(f"Error creating orchestrator: {str(e)}")
         return None
 
-async def get_all_orchestrators(org_id: str) -> List[Dict]:
+async def get_all_orchestrators(query: Dict) -> List[Dict]:
     """
     Get all orchestrators for a specific organization
     
@@ -44,7 +47,7 @@ async def get_all_orchestrators(org_id: str) -> List[Dict]:
     """
     try:
         # Find all orchestrators for the given org_id
-        cursor = orchestrator_collection.find({"org_id": org_id})
+        cursor = orchestrator_collection.find(query)
         orchestrators = []
         
         async for doc in cursor:
@@ -52,11 +55,11 @@ async def get_all_orchestrators(org_id: str) -> List[Dict]:
             doc['_id'] = str(doc['_id'])
             orchestrators.append(doc)
         
-        logger.info(f"Retrieved {len(orchestrators)} orchestrators for org_id: {org_id}")
+        logger.info(f"Retrieved {len(orchestrators)} orchestrators for org_id: {query['org_id']}")
         return orchestrators
         
     except Exception as e:
-        logger.error(f"Error retrieving orchestrators for org_id {org_id}: {str(e)}")
+        logger.error(f"Error retrieving orchestrators for org_id {query['org_id']}: {str(e)}")
         return []
 
 async def delete_orchestrator(orchestrator_id: str, org_id: str) -> bool:
@@ -129,7 +132,7 @@ async def get_orchestrator_by_id(orchestrator_id: str, org_id: str) -> Optional[
         logger.error(f"Error retrieving orchestrator {orchestrator_id}: {str(e)}")
         return None
 
-async def update_orchestrator(orchestrator_id: str, org_id: str, new_data: Dict) -> bool:
+async def update_orchestrator(orchestrator_id: str, org_id: str, folder_id: str, user_id: str, new_data: Dict) -> bool:
     """
     Replace entire orchestrator data by ID and org_id (complete replacement)
     
@@ -149,6 +152,10 @@ async def update_orchestrator(orchestrator_id: str, org_id: str, new_data: Dict)
         
         # Ensure org_id is preserved in the new data
         new_data['org_id'] = org_id
+        if folder_id:
+            new_data['folder_id'] = folder_id
+        if user_id:
+            new_data['user_id'] = user_id
         
         # First check if the orchestrator exists and belongs to the org
         existing = await orchestrator_collection.find_one({
