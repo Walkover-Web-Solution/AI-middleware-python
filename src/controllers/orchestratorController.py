@@ -75,7 +75,13 @@ async def get_all_orchestrators_controller(request):
         org_id = request.state.profile['org']['id']
         folder_id = request.state.folder_id if hasattr(request.state, 'folder_id') else None
         user_id = request.state.user_id
-        orchestrators = await get_all_orchestrators(org_id,folder_id,user_id)
+        isEmbedUser = request.state.embed
+        query = {"org_id": org_id}
+        if folder_id:
+            query["folder_id"] = folder_id
+        if user_id and isEmbedUser:
+            query["user_id"] = user_id
+        orchestrators = await get_all_orchestrators(query)
         
         logger.info(f"Retrieved {len(orchestrators)} orchestrators for org_id: {org_id}")
         return JSONResponse(

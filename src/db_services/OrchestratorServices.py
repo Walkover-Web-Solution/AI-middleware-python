@@ -35,7 +35,7 @@ async def create_orchestrator(data: Dict, org_id: str,folder_id: str, user_id:st
         logger.error(f"Error creating orchestrator: {str(e)}")
         return None
 
-async def get_all_orchestrators(org_id: str,folder_id: str,user_id: str) -> List[Dict]:
+async def get_all_orchestrators(query: Dict) -> List[Dict]:
     """
     Get all orchestrators for a specific organization
     
@@ -47,7 +47,7 @@ async def get_all_orchestrators(org_id: str,folder_id: str,user_id: str) -> List
     """
     try:
         # Find all orchestrators for the given org_id
-        cursor = orchestrator_collection.find({"org_id": org_id,"folder_id": folder_id,"user_id": user_id})
+        cursor = orchestrator_collection.find(query)
         orchestrators = []
         
         async for doc in cursor:
@@ -55,11 +55,11 @@ async def get_all_orchestrators(org_id: str,folder_id: str,user_id: str) -> List
             doc['_id'] = str(doc['_id'])
             orchestrators.append(doc)
         
-        logger.info(f"Retrieved {len(orchestrators)} orchestrators for org_id: {org_id}")
+        logger.info(f"Retrieved {len(orchestrators)} orchestrators for org_id: {query['org_id']}")
         return orchestrators
         
     except Exception as e:
-        logger.error(f"Error retrieving orchestrators for org_id {org_id}: {str(e)}")
+        logger.error(f"Error retrieving orchestrators for org_id {query['org_id']}: {str(e)}")
         return []
 
 async def delete_orchestrator(orchestrator_id: str, org_id: str) -> bool:
