@@ -132,7 +132,7 @@ async def get_orchestrator_by_id(orchestrator_id: str, org_id: str) -> Optional[
         logger.error(f"Error retrieving orchestrator {orchestrator_id}: {str(e)}")
         return None
 
-async def update_orchestrator(orchestrator_id: str, org_id: str, new_data: Dict) -> bool:
+async def update_orchestrator(orchestrator_id: str, org_id: str, folder_id: str, user_id: str, new_data: Dict) -> bool:
     """
     Replace entire orchestrator data by ID and org_id (complete replacement)
     
@@ -152,6 +152,10 @@ async def update_orchestrator(orchestrator_id: str, org_id: str, new_data: Dict)
         
         # Ensure org_id is preserved in the new data
         new_data['org_id'] = org_id
+        if folder_id:
+            new_data['folder_id'] = folder_id
+        if user_id:
+            new_data['user_id'] = user_id
         
         # First check if the orchestrator exists and belongs to the org
         existing = await orchestrator_collection.find_one({

@@ -77,8 +77,7 @@ async def get_all_orchestrators_controller(request):
         user_id = request.state.user_id
         isEmbedUser = request.state.embed
         query = {"org_id": org_id}
-        if folder_id:
-            query["folder_id"] = folder_id
+        query["folder_id"] = folder_id
         if user_id and isEmbedUser:
             query["user_id"] = user_id
         orchestrators = await get_all_orchestrators(query)
@@ -150,6 +149,13 @@ async def update_orchestrator_controller(orchestrator_id: str, request):
     try:
         data = await request.json()
         org_id = request.state.profile['org']['id']
+        folder_id = request.state.folder_id if hasattr(request.state, 'folder_id') else None
+        user_id = request.state.user_id
+        
+        if folder_id:
+            data["folder_id"] = folder_id
+        if user_id:
+            data["user_id"] = user_id
         
         # Validate required fields
         required_fields = ['agents', 'master_agent', 'status']
@@ -176,7 +182,7 @@ async def update_orchestrator_controller(orchestrator_id: str, request):
         if data['master_agent'] not in data['agents']:
             raise HTTPException(status_code=400, detail="Master agent must exist in agents dictionary")
         
-        result = await update_orchestrator(orchestrator_id, org_id, data)
+        result = await update_orchestrator(orchestrator_id, org_id,folder_id, user_id, data)
         
         if result:
             logger.info(f"Orchestrator {orchestrator_id} updated successfully for org_id: {org_id}")
