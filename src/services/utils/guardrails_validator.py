@@ -261,14 +261,16 @@ async def guardrails_check(parsed_data: dict) -> dict:
         parsed_data (dict): Parsed request data containing guardrails settings
             Expected format:
             {
-                'guardrails': bool,  # Enable/disable guardrails
-                'guardrails_config': {  # Category configuration
-                    'toxicity': true,
-                    'bias': false,
-                    'hallucination': true,
-                    ...
+                'guardrails': {
+                    'is_enabled': bool,
+                    'guardrails_configuration': {
+                        'toxicity': true,
+                        'bias': false,
+                        'hallucination': true,
+                        ...
+                    },
+                    'guardrails_custom_prompt': str
                 },
-                'guardrails_prompt': str,  # Optional custom prompt
                 'user': str  # User message to validate
             }
         
@@ -276,8 +278,11 @@ async def guardrails_check(parsed_data: dict) -> dict:
         dict: Response indicating if content should be blocked, or None to continue
     """
     try:
+        # Get guardrails configuration
+        guardrails = parsed_data.get('guardrails', {})
+        
         # Check if guardrails is enabled
-        if not parsed_data.get('guardrails', False):
+        if not guardrails.get('is_enabled', False):
             return None  # Skip guardrails check if not enabled
 
         # Get the last user message (current message)
@@ -290,8 +295,8 @@ async def guardrails_check(parsed_data: dict) -> dict:
             return None
 
         # Get guardrails configuration and custom prompt
-        guardrails_config = parsed_data.get('guardrails_config', {})
-        custom_prompt = parsed_data.get('guardrails_prompt')
+        guardrails_config = guardrails.get('guardrails_configuration', {})
+        custom_prompt = guardrails.get('guardrails_custom_prompt', '')
 
         # Perform guardrails validation with category configuration
         validation_result = await validate_with_guardrails(

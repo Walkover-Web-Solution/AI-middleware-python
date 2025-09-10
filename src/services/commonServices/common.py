@@ -52,7 +52,7 @@ async def chat(request_body):
     try:
         # Step 1: Parse and validate request body
         parsed_data = parse_request_body(request_body)
-        if parsed_data.get('guardrails', False):
+        if parsed_data.get('guardrails',{}).get('is_enabled', False):
             guardrails_result = await guardrails_check(parsed_data)
             if guardrails_result is not None:
                 # Content was blocked by guardrails, return the blocked response
