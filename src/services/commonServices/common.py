@@ -151,7 +151,11 @@ async def chat(request_body):
 @handle_exceptions
 async def orchestrator_chat(request_body): 
     try:
-        body = await request_body.json()
+        # Handle both API request (with .json() method) and queue message (dict)
+        if hasattr(request_body, 'json'):
+            body = await request_body.json()
+        else:
+            body = request_body.get('body', {})
         # Extract user query from the request
         user = body.get('user')
         thread_id = body.get('thread_id')

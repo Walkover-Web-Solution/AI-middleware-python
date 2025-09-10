@@ -1,7 +1,7 @@
 import asyncio
 import json
 from config import Config
-from src.services.commonServices.common import chat, image
+from src.services.commonServices.common import chat, image, orchestrator_chat
 from aio_pika.abc import AbstractIncomingMessage
 from src.services.utils.logger import logger
 from src.services.utils.common_utils import process_background_tasks
@@ -24,7 +24,21 @@ class Queue(BaseQueue):
 
     async def process_messages(self, messages):
         """Implement your batch processing logic here."""
-        type = messages.get("body",{}).get('configuration',{}).get('type')
+        # Check if this is an orchestrator request
+        body = messages.get("body", {})
+        
+        # Check for orchestrator indicators in the request
+        has_orchestrator_id = body.get('master_agent_id') or body.get('orchestrator_id')
+        has_agent_configurations = body.get('agent_configurations') or body.get('master_agent_config')
+        
+        # If it looks like an orchestrator request, handle it accordingly
+        if has_orchestrator_id and has_agent_configurations:
+            # Call orchestrator_chat same as chat - both expect messages format
+            await orchestrator_chat(messages)
+            return
+        
+        # Handle regular chat/image requests
+        type = body.get('configuration', {}).get('type')
         if type == 'image':
             await image(messages)
             return
