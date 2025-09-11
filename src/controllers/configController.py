@@ -509,6 +509,12 @@ async def get_all_in_built_tools_controller():
                 "name": 'Web Search',
                 "description": 'Allow models to search the web for the latest information before generating a response.',
                 "value": 'web_search'
+            },
+            {
+                "id": '2',
+                "name" : "image generation",
+                "description": "Allow models to generate images based on the user's input.",
+                "value": 'image_generation'
             }
         ]
     }
