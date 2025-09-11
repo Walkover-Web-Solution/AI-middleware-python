@@ -86,6 +86,7 @@ def parse_request_body(request_body):
         "built_in_tools" : body.get('built_in_tools') or [],
         "thread_flag" : body.get('thread_flag') or False,
         "files" : body.get('files') or [],
+        "fall_back" : body.get('fall_back') or {},
     }
 
 
