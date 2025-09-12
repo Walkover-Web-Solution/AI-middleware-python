@@ -356,7 +356,8 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
             'IsstarterQuestionEnable': lambda v: True,
             'name': lambda v: True,
             'bridgeType': lambda v: True,
-            'meta': lambda v: True
+            'meta': lambda v: True,
+            'guardrails': lambda v: isinstance(v, dict) and 'is_enabled' in v
         }
         
         # Update simple fields if they exist in the request
