@@ -23,25 +23,21 @@ async def execute_with_retry(
 ):
     try:
         # Start timer
-        firstAttemptError = {}
         timer.start()
 
-        # Execute the first API call
-        first_config = copy.deepcopy(configuration)
-        first_result = await api_call(first_config)
+        # Execute single API call (retry handled at higher level)
+        config = copy.deepcopy(configuration)
+        result = await api_call(config)
 
-        if first_result['success']:
-            first_result['response'] = await check_space_issue(first_result['response'], service)
+        if result['success']:
+            result['response'] = await check_space_issue(result['response'], service)
+            token_calculator.calculate_usage(result['response'])
             execution_time_logs.append({"step": f"{service} Processing time for call :- {count + 1}", "time_taken": timer.stop("API chat completion")})
-            token_calculator.calculate_usage(first_result['response'])
-            return first_result
+            return result
         else:
-            print("First API call failed with error:", first_result['error'])
+            print("API call failed with error:", result['error'])
             traceback.print_exc()
-            firstAttemptError = first_result['error']
-            if check_error_status_code(first_result.get('status_code')):
-                return first_result
-
+            
             # Send alert if required
             if alert_on_retry:
                 await send_alert(data={
@@ -51,33 +47,12 @@ async def execute_with_retry(
                     "message_id": message_id,
                     "bridge_id": bridge_id,
                     "org_id": org_id,
-                    "message": "Retry mechanism started due to error",
-                    "error" : first_result.get('error')
+                    "message": "API call failed, will be handled by fallback mechanism",
+                    "error" : result.get('error')
                 })
-
-            # Generate alternative configuration
-            second_config = get_alternative_config(copy.deepcopy(configuration))
-            filter_model_keys(second_config)
-            second_result = await api_call(second_config)
-
+            
             execution_time_logs.append({"step": f"{service} Processing time for call :- {count + 1}", "time_taken": timer.stop("API chat completion")})
-            if second_result['success']:
-                token_calculator.calculate_usage(second_result['response'])
-                second_result['response'] = await check_space_issue(second_result['response'], service)
-                print("Second API call completed successfully.")
-                second_result['response']['firstAttemptError'] = firstAttemptError
-                second_result['response']['fallback'] = True
-                second_result['response']['fallback_model'] = second_config['model']
-                second_result['response']['model'] = second_config['model']
-                return second_result
-            else:
-                print("Second API call failed with error:", second_result['error'])
-                traceback.print_exc()
-                if 'response' not in second_result:
-                    second_result['response'] = {}
-                second_result['response']['fallback_model'] = second_config['model']
-                second_result['response']['model'] = second_config['model']
-                return second_result
+            return result
 
     except Exception as e:
         execution_time_logs.append({"step": f"{service} Processing time for call :- {count + 1}", "time_taken": timer.stop("API chat completion")})
