@@ -280,10 +280,6 @@ async def guardrails_check(parsed_data: dict) -> dict:
     try:
         # Get guardrails configuration
         guardrails = parsed_data.get('guardrails', {})
-        
-        # Check if guardrails is enabled
-        if not guardrails.get('is_enabled', False):
-            return None  # Skip guardrails check if not enabled
 
         # Get the last user message (current message)
         user_message = parsed_data.get('user')
