@@ -10,6 +10,7 @@ class Ai_Ml(BaseService):
         tools = {}
         functionCallRes = {}
         conversation = ConversationService.createOpenAiConversation(self.configuration.get('conversation'), self.memory, self.files).get('messages', [])
+        conversation = [{**message, "content": message["content"] if isinstance(message["content"], str) else [{"type": "text", "text": content["text"]} for content in message["content"]] } for message in conversation]
         if self.reasoning_model:
             self.customConfig["messages"] =  conversation + ([{"role": "user", "content": self.user}] if self.user else []) 
         else:
