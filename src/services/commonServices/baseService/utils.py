@@ -206,9 +206,9 @@ async def sendResponse(response_format, data, success = False, variables={}):
             data_to_send['variables'] = variables
             return await send_request(**response_format['cred'], method='POST', data=data_to_send)
 
-async def process_data_and_run_tools(codes_mapping, tool_id_and_name_mapping, org_id, timer, function_time_logs):
-    try:
-        timer.start()
+async def process_data_and_run_tools(codes_mapping, self):
+    try: 
+        self.timer.start()
         executed_functions = []
         responses = []
         tool_call_logs = {**codes_mapping} 
@@ -219,22 +219,29 @@ async def process_data_and_run_tools(codes_mapping, tool_id_and_name_mapping, or
             name = tool['name']
 
             # Get corresponding function code mapping
-            tool_mapping = {} if tool_id_and_name_mapping[name] else {"error": True, "response": "Wrong Function name"}
+            tool_mapping = {} if self.tool_id_and_name_mapping[name] else {"error": True, "response": "Wrong Function name"}
             tool_data = {**tool, **tool_mapping}
 
             if not tool_data.get("response"):
                 # if function is present in db/NO response, create task for async processing
-                if tool_id_and_name_mapping[name].get('type') == 'RAG':
-                    task = get_text_from_vectorsQuery({**tool_data.get("args"), "org_id":org_id}) 
-                elif tool_id_and_name_mapping[name].get('type') == 'AGENT':
-                    bridge_id = tool_id_and_name_mapping[name].get("bridge_id")
-                    agent_id = tool_id_and_name_mapping[name].get("agent_id")
-                    task_args = {key: value for key, value in tool_data.get("args").items() if key != "user"}
-                    task_args = {"org_id":org_id, "user": tool_data.get("args").get("user") or tool_data.get("args").get("user_query"), "variables": task_args}
-                    task_args["bridge_id"] = bridge_id if bridge_id else agent_id
-                    task = call_gtwy_agent(task_args)
+                if self.tool_id_and_name_mapping[name].get('type') == 'RAG':
+                    task = get_text_from_vectorsQuery({**tool_data.get("args"), "org_id": self.org_id}) 
+                elif self.tool_id_and_name_mapping[name].get('type') == 'AGENT':
+                    agent_args = {
+                        "org_id": self.org_id, 
+                        "bridge_id": self.tool_id_and_name_mapping[name].get("bridge_id"), 
+                        "user": tool_data.get("args").get("user"), 
+                        "variables": {key: value for key, value in tool_data.get("args").items() if key != "user"}
+                    }
+                    
+                    # Add thread_id and sub_thread_id if bridge requires it
+                    if self.tool_id_and_name_mapping[name].get('requires_thread_id', False):
+                        agent_args["thread_id"] = self.thread_id
+                        agent_args["sub_thread_id"] = self.sub_thread_id
+                    
+                    task = call_gtwy_agent(agent_args)
                 else: 
-                    task = axios_work(tool_data.get("args"), tool_id_and_name_mapping[name])
+                    task = axios_work(tool_data.get("args"), self.tool_id_and_name_mapping[name])
                 tasks.append((tool_call_key, tool_data, task))
                 executed_functions.append(name)
             else:
@@ -275,14 +282,14 @@ async def process_data_and_run_tools(codes_mapping, tool_id_and_name_mapping, or
                 })
 
                 # Update tool_call_logs with the response
-                tool_call_logs[tool_call_key] = {**tool_data, **response, "id": tool_id_and_name_mapping[tool_data['name']].get("name")}
+                tool_call_logs[tool_call_key] = {**tool_data, **response, "id": self.tool_id_and_name_mapping[tool_data['name']].get("name")}
 
         # Create mapping by tool_call_id (now tool_call_key) for return
         mapping = {resp['tool_call_id']: resp for resp in responses}
 
         # Record executed function names and timing
         executed_names = ", ".join(executed_functions) if executed_functions else "No functions executed"
-        function_time_logs.append({"step": executed_names, "time_taken": timer.stop("process_data_and_run_tools")})
+        self.function_time_logs.append({"step": executed_names, "time_taken": self.timer.stop("process_data_and_run_tools")})
 
         return responses, mapping, tool_call_logs
 

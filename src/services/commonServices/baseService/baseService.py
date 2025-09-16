@@ -84,7 +84,7 @@ class BaseService:
             # Return transfer config instead of processing tools
             return [], [], {'transfer_agent_config': transfer_config}
         
-        return await process_data_and_run_tools(codes_mapping, self.tool_id_and_name_mapping, self.org_id, self.timer, self.function_time_logs)
+        return await process_data_and_run_tools(codes_mapping, self)
 
 
     def update_configration(self, response, function_responses, configuration, mapping_response_data, service, tools):    
