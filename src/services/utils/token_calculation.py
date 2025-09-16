@@ -23,8 +23,8 @@ class TokenCalculator:
                 usage["outputTokens"] = model_response['usage']['completion_tokens']
                 usage["totalTokens"] = model_response['usage']['total_tokens']
                 # Handle optional token details with safe access
-                usage["cachedTokens"] = model_response['usage'].get('prompt_tokens_details', {}).get('cached_tokens', 0)
-                usage["reasoningTokens"] = model_response['usage'].get('completion_tokens_details', {}).get('reasoning_tokens', 0)
+                usage["cachedTokens"] = (model_response['usage'].get('prompt_tokens_details') or {}).get('cached_tokens', 0)
+                usage["reasoningTokens"] = (model_response['usage'].get('completion_tokens_details') or {}).get('reasoning_tokens', 0)
             
             case 'groq':
                 usage["inputTokens"] = model_response['usage']['prompt_tokens']
@@ -46,8 +46,8 @@ class TokenCalculator:
                 usage["inputTokens"] = model_response['usage']['input_tokens']
                 usage["outputTokens"] = model_response['usage']['output_tokens']
                 usage["totalTokens"] = model_response['usage']['total_tokens']
-                usage["cachedTokens"] = model_response['usage'].get('input_tokens_details', {}).get('cached_tokens', 0)
-                usage["reasoningTokens"] = model_response['usage'].get('output_tokens_details', {}).get('reasoning_tokens', 0)
+                usage["cachedTokens"] = (model_response['usage'].get('input_tokens_details') or {}).get('cached_tokens', 0)
+                usage["reasoningTokens"] = (model_response['usage'].get('output_tokens_details') or {}).get('reasoning_tokens', 0)
             
             case 'anthropic':
                 usage["inputTokens"] = model_response['usage']['input_tokens']
