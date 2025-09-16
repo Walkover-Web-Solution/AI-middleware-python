@@ -15,6 +15,18 @@ def make_conversations_as_per_service(conversations, service):
                 if conversation.get('role') == 'tools_call':
                     id =  f"call_{uuid.uuid4().hex[:6]}"
                     for i, tools in enumerate(conversation.get('content')):
+                        # Handle case where tools might be a string (parse it) or already a list
+                        if isinstance(tools, str):
+                            try:
+                                tools = json.loads(tools)
+                            except json.JSONDecodeError:
+                                print(f"Warning: Could not parse tools content: {tools}")
+                                continue
+                        
+                        # Ensure tools is a list
+                        if not isinstance(tools, list):
+                            tools = [tools]
+                            
                         convers = {
                             "role": "assistant",
                             "content": None,
@@ -23,8 +35,8 @@ def make_conversations_as_per_service(conversations, service):
                                 "id": f"{id}{i}{j}",
                                 "type": "function",
                                 "function": {
-                                "name": tool['name'],
-                                "arguments": json.dumps(tool.get('args', {}))
+                                "name": tool.get('name', '') if isinstance(tool, dict) else str(tool),
+                                "arguments": json.dumps(tool.get('args', {}) if isinstance(tool, dict) else {})
                                 }
                             } for j, tool in enumerate(tools)
                             ]
@@ -34,9 +46,9 @@ def make_conversations_as_per_service(conversations, service):
                             conversResponse = {
                                 "role": "tool",
                                 "content": json.dumps({
-                                        "response": tool['response'],
-                                        "metadata": tool['metadata'],
-                                        "status": tool['status']
+                                        "response": tool.get('response', '') if isinstance(tool, dict) else '',
+                                        "metadata": tool.get('metadata', {}) if isinstance(tool, dict) else {},
+                                        "status": tool.get('status', 'success') if isinstance(tool, dict) else 'success'
                                     }),
                                 "tool_call_id": f"{id}{i}{j}"
                             }
@@ -47,6 +59,18 @@ def make_conversations_as_per_service(conversations, service):
                 if conversation.get('role') == 'tools_call':
                     id =  f"toolu_{uuid.uuid4().hex[:6]}"
                     for i, tools in enumerate(conversation.get('content')):
+                        # Handle case where tools might be a string (parse it) or already a list
+                        if isinstance(tools, str):
+                            try:
+                                tools = json.loads(tools)
+                            except json.JSONDecodeError:
+                                print(f"Warning: Could not parse tools content: {tools}")
+                                continue
+                        
+                        # Ensure tools is a list
+                        if not isinstance(tools, list):
+                            tools = [tools]
+                            
                         convers = {
                                 "role": "assistant",
                                 "content": [
@@ -57,8 +81,8 @@ def make_conversations_as_per_service(conversations, service):
                                     *[{
                                         "id": f"{id}{i}{j}",
                                         "type": "tool_use",
-                                        "name": tool['name'],
-                                        "input": tool.get('args', {})
+                                        "name": tool.get('name', '') if isinstance(tool, dict) else str(tool),
+                                        "input": tool.get('args', {}) if isinstance(tool, dict) else {}
                                     } for j, tool in enumerate(tools)]
                                 ]
                                 }
@@ -70,9 +94,9 @@ def make_conversations_as_per_service(conversations, service):
                                     "tool_use_id": f"{id}{i}{j}",
                                     "type": "tool_result",
                                     "content": json.dumps({
-                                        "response": tool['response'],
-                                        "metadata": tool['metadata'],
-                                        "status": tool['status']
+                                        "response": tool.get('response', '') if isinstance(tool, dict) else '',
+                                        "metadata": tool.get('metadata', {}) if isinstance(tool, dict) else {},
+                                        "status": tool.get('status', 'success') if isinstance(tool, dict) else 'success'
                                     })
                                 } for j, tool in enumerate(tools)
                             ]

@@ -38,7 +38,14 @@ async def run_testcase_for_tools(testcase_data, parsed_data, function_names, giv
             case 'anthropic' : 
                 result = await anthropic_test_model(custom_config, apikey)   
                 
-        return result['response']
+        # Handle both success and error cases
+        if result and result.get('success'):
+            return result['response']
+        else:
+            # Log the error and return None or empty response
+            error_msg = result.get('error', 'Unknown error') if result else 'No result returned'
+            print(f"Test model call failed: {error_msg}")
+            return None
 
 
     except Exception as error:
