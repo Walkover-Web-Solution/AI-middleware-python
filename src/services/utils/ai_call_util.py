@@ -43,6 +43,12 @@ async def call_gtwy_agent(args):
         from src.services.commonServices.common import chat
         from src.services.utils.getConfiguration import getConfiguration
         
+        # Add thread_id and sub_thread_id if provided
+        if args.get('thread_id'):
+            request_body["thread_id"] = args.get('thread_id')
+        if args.get('sub_thread_id'):
+            request_body["sub_thread_id"] = args.get('sub_thread_id')
+        
         org_id = args.get('org_id')
         bridge_id = args.get('bridge_id')
         user_message = args.get('user')
