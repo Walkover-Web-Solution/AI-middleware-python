@@ -42,7 +42,7 @@ async def call_gtwy_agent(args):
         # Import inside function to avoid circular imports
         from src.services.commonServices.common import chat
         from src.services.utils.getConfiguration import getConfiguration
-        
+        request_body = {}
         # Add thread_id and sub_thread_id if provided
         if args.get('thread_id'):
             request_body["thread_id"] = args.get('thread_id')
