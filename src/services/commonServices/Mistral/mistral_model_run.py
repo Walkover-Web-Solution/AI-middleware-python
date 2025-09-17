@@ -58,3 +58,16 @@ async def mistral_model_run(configuration, apiKey, execution_time_logs, bridge_i
             'success': False,
             'error': str(error)
         }
+
+
+async def mistral_test_model(configuration, api_key):
+    mistral = Mistral(api_key=api_key)
+    try:
+        chat_completion = await mistral.chat.complete_async(**configuration)
+        return {'success': True, 'response': chat_completion.model_dump()}
+    except Exception as error:
+        return {
+            'success': False,
+            'error': str(error),
+            'status_code': getattr(error, 'status_code', None)
+        }

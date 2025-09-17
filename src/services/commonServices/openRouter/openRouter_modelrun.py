@@ -62,3 +62,16 @@ async def openrouter_modelrun(configuration, apiKey, execution_time_logs, bridge
             'success': False,
             'error': str(error)
         }
+
+
+async def openrouter_test_model(configuration, api_key):
+    openAI = AsyncOpenAI(base_url="https://openrouter.ai/api/v1", api_key=api_key)
+    try:
+        chat_completion = await openAI.chat.completions.create(**configuration)
+        return {'success': True, 'response': chat_completion.to_dict()}
+    except Exception as error:
+        return {
+            'success': False,
+            'error': str(error),
+            'status_code': getattr(error, 'status_code', None)
+        }

@@ -3,7 +3,12 @@ import json
 import uuid
 
 def add_prompt_and_conversations(custom_config, conversations, service, prompt):
-    custom_config['messages'] = custom_messages(custom_config, make_conversations_as_per_service(conversations, service), service, prompt)
+    messages = custom_messages(custom_config, make_conversations_as_per_service(conversations, service), service, prompt)
+    
+    # For OpenAI, messages are set directly in custom_config['input'], so don't override
+    if service != 'openai' and messages:
+        custom_config['messages'] = messages
+    
     base_service = BaseService({})
     return base_service.service_formatter(custom_config, service)
 
@@ -11,7 +16,12 @@ def make_conversations_as_per_service(conversations, service):
     Newconversations = []
     for conversation in conversations:    
         match service:
-            case 'openai' | 'groq':
+            case 'openai':
+                if conversation.get('role') == 'tools_call':
+                    # For OpenAI new format, skip tool calls as they're not supported in input format
+                    # Tool calls should be handled differently in the new OpenAI format
+                    continue
+            case 'groq' | 'open_router' | 'mistral' | 'gemini' | 'ai_ml':
                 if conversation.get('role') == 'tools_call':
                     id =  f"call_{uuid.uuid4().hex[:6]}"
                     for i, tools in enumerate(conversation.get('content')):
@@ -54,7 +64,11 @@ def make_conversations_as_per_service(conversations, service):
                             }
                             Newconversations.append(conversResponse)
                 else:
-                    Newconversations.append(conversation)
+                    # Ensure content is not null for regular conversations
+                    safe_conversation = conversation.copy()
+                    if safe_conversation.get('content') is None:
+                        safe_conversation['content'] = ""
+                    Newconversations.append(safe_conversation)
             case 'anthropic':
                 if conversation.get('role') == 'tools_call':
                     id =  f"toolu_{uuid.uuid4().hex[:6]}"
@@ -112,11 +126,38 @@ def custom_messages(custom_config, conversations, service, prompt):
     messages = []
     match service:
             case 'openai':
-                messages = [ {"role": "developer", "content": prompt }] + conversations
+                # OpenAI new format uses 'input' with structured content
+                developer = [{"role": "developer", "content": prompt}]
+                
+                # Convert conversations to new OpenAI format
+                formatted_conversations = []
+                for conv in conversations:
+                    # Ensure content is not None/null - provide default empty string
+                    content_text = conv.get('content') or ""
+                    
+                    if conv['role'] == 'assistant':
+                        # Assistant messages use output_text
+                        formatted_conv = {
+                            'role': conv['role'],
+                            'content': [{"type": "output_text", "text": content_text}]
+                        }
+                    else:
+                        # User messages use input_text
+                        formatted_conv = {
+                            'role': conv['role'],
+                            'content': [{"type": "input_text", "text": content_text}]
+                        }
+                    formatted_conversations.append(formatted_conv)
+                
+                messages = developer + formatted_conversations
+                # Set as 'input' for OpenAI new format
+                custom_config['input'] = messages
+                return []  # Return empty since we set custom_config['input']
+                
             case 'anthropic':
                 custom_config['system'] = prompt
                 messages =  conversations
-            case 'groq': 
+            case 'groq' | 'open_router' | 'mistral' | 'gemini' | 'ai_ml': 
                 messages = [{"role": "system", "content": prompt}] + conversations
     return messages
     

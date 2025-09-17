@@ -5,6 +5,10 @@ from src.services.cache_service import make_json_serializable
 from src.services.commonServices.openAI.runModel import openai_test_model
 from src.services.commonServices.anthrophic.antrophicModelRun import anthropic_test_model
 from src.services.commonServices.groq.groqModelRun import groq_test_model
+from src.services.commonServices.openRouter.openRouter_modelrun import openrouter_test_model
+from src.services.commonServices.Mistral.mistral_model_run import mistral_test_model
+from src.services.commonServices.Google.gemini_modelrun import gemini_test_model
+from src.services.commonServices.AiMl.ai_ml_model_run import ai_ml_test_model
 import pydash as _
 from src.services.commonServices.baseService.utils import  makeFunctionName, make_code_mapping_by_service, validate_tool_call
 from src.db_services.apiCallDbService import get_all_api_calls_by_org_id
@@ -36,7 +40,15 @@ async def run_testcase_for_tools(testcase_data, parsed_data, function_names, giv
             case 'groq' : 
                 result = await groq_test_model(custom_config, apikey)  
             case 'anthropic' : 
-                result = await anthropic_test_model(custom_config, apikey)   
+                result = await anthropic_test_model(custom_config, apikey)
+            case 'open_router':
+                result = await openrouter_test_model(custom_config, apikey)
+            case 'mistral':
+                result = await mistral_test_model(custom_config, apikey)
+            case 'gemini':
+                result = await gemini_test_model(custom_config, apikey)
+            case 'ai_ml':
+                result = await ai_ml_test_model(custom_config, apikey)   
                 
         # Handle both success and error cases
         if result and result.get('success'):
@@ -53,7 +65,7 @@ async def run_testcase_for_tools(testcase_data, parsed_data, function_names, giv
         return False
 
 
-async def run_testcases(parsed_data, org_id, bridge_id, chat):
+async def run_testcases(parsed_data, org_id, bridge_id):
     functions = await get_all_api_calls_by_org_id(org_id)
     function_names = {makeFunctionName(func['endpoint_name'] or func['function_name']): func['_id'] for func in functions}
         

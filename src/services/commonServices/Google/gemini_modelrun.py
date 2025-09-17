@@ -62,3 +62,16 @@ async def gemini_modelrun(configuration, apiKey, execution_time_logs, bridge_id,
             'success': False,
             'error': str(error)
         }
+
+
+async def gemini_test_model(configuration, api_key):
+    gemini = AsyncOpenAI(api_key=api_key, base_url="https://generativelanguage.googleapis.com/v1beta/openai/")
+    try:
+        chat_completion = await gemini.chat.completions.create(**configuration)
+        return {'success': True, 'response': chat_completion.to_dict()}
+    except Exception as error:
+        return {
+            'success': False,
+            'error': str(error),
+            'status_code': getattr(error, 'status_code', None)
+        }

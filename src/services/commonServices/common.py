@@ -271,7 +271,7 @@ async def run_testcases(request_body):
     try:
         parsed_data = parse_request_body(request_body)
         org_id = request_body['state']['profile']['org']['id']
-        result = await run_bridge_testcases(parsed_data, org_id, parsed_data['body']['bridge_id'], chat)
+        result = await run_bridge_testcases(parsed_data, org_id, parsed_data['body']['bridge_id'])
         return JSONResponse(content={'success': True, 'response': {'testcases_result': dict(result)}})
     except Exception as error:
         logger.error(f'Error in running testcases, {str(error)}, {traceback.format_exc()}')

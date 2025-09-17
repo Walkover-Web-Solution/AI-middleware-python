@@ -8,7 +8,8 @@ from globals import *
 async def openai_test_model(configuration, api_key):
     openAI = AsyncOpenAI(api_key=api_key)
     try:
-        chat_completion = await openAI.chat.completions.create(**configuration)
+        print(configuration, "\n\n\n")
+        chat_completion = await openAI.responses.create(**configuration)
         return {'success': True, 'response': chat_completion.to_dict()}
     except Exception as error:
         return {
