@@ -159,7 +159,7 @@ async def validation_exception_handler(exc: RequestValidationError):
 async def stream_data():
     async def generate():
         for i in range(100):
-            yield f"data: {i}\n\n"
+            yield f"data: {i}\n\n\n"
             await asyncio.sleep(1)
 
     return StreamingResponse(generate(), media_type="text/event-stream")
