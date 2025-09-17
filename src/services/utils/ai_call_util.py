@@ -54,12 +54,12 @@ async def call_gtwy_agent(args):
         user_message = args.get('user')
         variables = args.get('variables') or {}
         
-        # Step 1: Create initial request body
-        request_body = {
+        # Step 1: Update request body with core data
+        request_body.update({
             "user": user_message,
             "bridge_id": bridge_id,
             "variables": variables
-        }
+        })
         
         # Step 2: Call the configuration middleware to enrich the data
         # This simulates what add_configuration_data_to_body does
