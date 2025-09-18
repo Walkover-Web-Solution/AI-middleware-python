@@ -274,7 +274,8 @@ def add_connected_agents(result, tools, tool_id_and_name_mapping):
         return
     
     for bridge_name, bridge_info in connected_agents.items():
-        id = bridge_info.get('bridge_id', '')
+        bridge_id_value = bridge_info.get('bridge_id', '')
+        version_id_value = bridge_info.get('version_id', '')
         description = bridge_info.get('description', '')
         variables = bridge_info.get('variables', {})
         fields = variables.get('fields', {})
@@ -300,6 +301,7 @@ def add_connected_agents(result, tools, tool_id_and_name_mapping):
         
         tool_id_and_name_mapping[name] = {
             "type": "AGENT",
-            "bridge_id": id,
-            "requires_thread_id": bridge_info.get('thread_id', False)
+            "bridge_id": bridge_id_value,
+            "requires_thread_id": bridge_info.get('thread_id', False),
+            "version_id": version_id_value
         }
