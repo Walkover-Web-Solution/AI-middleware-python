@@ -238,6 +238,8 @@ async def process_data_and_run_tools(codes_mapping, self):
                     if self.tool_id_and_name_mapping[name].get('requires_thread_id', False):
                         agent_args["thread_id"] = self.thread_id
                         agent_args["sub_thread_id"] = self.sub_thread_id
+                    if self.tool_id_and_name_mapping[name].get('version_id', False):
+                        agent_args["version_id"] = self.tool_id_and_name_mapping[name].get('version_id')
                     
                     task = call_gtwy_agent(agent_args)
                 else: 
