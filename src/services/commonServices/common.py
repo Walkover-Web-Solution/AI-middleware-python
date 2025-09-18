@@ -157,12 +157,13 @@ async def chat(request_body):
 @handle_exceptions
 async def orchestrator_chat(request_body): 
     try:
-        body = await request_body.json()
+        body = request_body.get('body',{})
         # Extract user query from the request
         user = body.get('user')
         thread_id = body.get('thread_id')
         sub_thread_id = body.get('sub_thread_id', thread_id)
-        
+        body['state'] = request_body.get('state', {})
+
         master_agent_id = None
         master_agent_config = None
         
