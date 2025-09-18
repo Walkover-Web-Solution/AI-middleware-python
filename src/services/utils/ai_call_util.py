@@ -87,11 +87,6 @@ async def call_gtwy_agent(args):
         
         # Step 3: Update request body with configuration data (like middleware does)
         request_body.update(db_config)
-        # Prefer version_id over agent_id when provided: ensure version_id is set and remove agent_id
-        if version_id:
-            request_body["version_id"] = version_id
-            request_body.pop("agent_id", None)
-            request_body.pop("bridge_id", None)
         
         # Step 4: Create data structure for chat function
         data_to_send = {
