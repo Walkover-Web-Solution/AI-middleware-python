@@ -51,6 +51,7 @@ async def call_gtwy_agent(args):
         
         org_id = args.get('org_id')
         bridge_id = args.get('bridge_id')
+        version_id = args.get('version_id')
         user_message = args.get('user')
         variables = args.get('variables') or {}
         
@@ -60,6 +61,9 @@ async def call_gtwy_agent(args):
             "bridge_id": bridge_id,
             "variables": variables
         })
+        # If version_id is provided, include it in the request body early
+        if version_id:
+            request_body["version_id"] = version_id
         
         # Step 2: Call the configuration middleware to enrich the data
         # This simulates what add_configuration_data_to_body does
@@ -72,7 +76,7 @@ async def call_gtwy_agent(args):
             variables=variables,
             org_id=org_id,
             variables_path=request_body.get('variables_path'),
-            version_id=request_body.get('version_id'),
+            version_id=version_id,
             extra_tools=request_body.get('extra_tools', []),
             built_in_tools=request_body.get('built_in_tools')
         )
