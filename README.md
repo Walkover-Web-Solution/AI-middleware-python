@@ -1,6 +1,6 @@
-# GTWU AI (Python Backend - FastAPI)
+# GTWY AI (Python Backend - FastAPI)
 
-GTWU AI is an open-source project aimed at building intelligent, scalable, and community-driven AI services.  
+GTWY AI is an open-source project aimed at building intelligent, scalable, and community-driven AI services.  
 This repository contains the **Python backend built with FastAPI**, which powers the core APIs.
 
 ## 🚀 Features
@@ -8,8 +8,8 @@ This repository contains the **Python backend built with FastAPI**, which powers
 - Easy-to-extend modular structure
 - Environment-based configuration
 - Open for community-driven extensions
-- RAG implimention 
-- Chatbot implimention
+- RAG implementation 
+- Chatbot implementation
 
 ## 🛠️ Installation
 ```bash
@@ -17,13 +17,13 @@ This repository contains the **Python backend built with FastAPI**, which powers
 git clone https://github.com/Walkover-Web-Solution/AI-middleware-python.git
 cd AI-middleware-python
 
-# Create and activate virtual environment
+# Create and activate a virtual environment
 python -m venv venv
 source venv/bin/activate   # Linux/Mac
 venv\Scripts\activate      # Windows
 
 # Install dependencies
-pip install -r requirements.txt
+pip install -r req.txt
 
 # Run the FastAPI server
 uvicorn app.main:app --reload
