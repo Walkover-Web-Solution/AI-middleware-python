@@ -38,7 +38,7 @@ from src.services.utils.guardrails_validator import guardrails_check
 from src.services.utils.rich_text_support import process_chatbot_response
 app = FastAPI()
 from src.services.utils.helper import Helper
-from src.services.commonServices.testcases import run_testcases as run_bridge_testcases
+from src.services.commonServices.testcases import run_bridge_testcases
 from globals import *
 from src.services.cache_service import find_in_cache
 
@@ -271,7 +271,8 @@ async def run_testcases(request_body):
     try:
         parsed_data = parse_request_body(request_body)
         org_id = request_body['state']['profile']['org']['id']
-        result = await run_bridge_testcases(parsed_data, org_id, parsed_data['body']['bridge_id'])
+        testcase_id = request_body.get('body').get('testcase_id')
+        result = await run_bridge_testcases(parsed_data, org_id, parsed_data['body']['bridge_id'], testcase_id)
         return JSONResponse(content={'success': True, 'response': {'testcases_result': dict(result)}})
     except Exception as error:
         logger.error(f'Error in running testcases, {str(error)}, {traceback.format_exc()}')

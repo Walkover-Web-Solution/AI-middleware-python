@@ -12,7 +12,7 @@ from src.services.commonServices.AiMl.ai_ml_model_run import ai_ml_test_model
 import pydash as _
 from src.services.commonServices.baseService.utils import  makeFunctionName, make_code_mapping_by_service, validate_tool_call
 from src.db_services.apiCallDbService import get_all_api_calls_by_org_id
-from src.db_services.testcase_services import get_testcases, create_testcases_history
+from src.db_services.testcase_services import get_testcases, create_testcases_history, get_testcases_using_id
 from src.services.utils.common_utils import configure_custom_settings, load_model_configuration
 import asyncio
 import traceback
@@ -65,11 +65,13 @@ async def run_testcase_for_tools(testcase_data, parsed_data, function_names, giv
         return False
 
 
-async def run_testcases(parsed_data, org_id, bridge_id):
+async def run_bridge_testcases(parsed_data, org_id, bridge_id, testcase_id = None):
     functions = await get_all_api_calls_by_org_id(org_id)
     function_names = {makeFunctionName(func['endpoint_name'] or func['function_name']): func['_id'] for func in functions}
-        
-    testcases_data = await get_testcases(bridge_id)
+    if testcase_id:
+        testcases_data = await get_testcases_using_id(testcase_id)
+    else:    
+        testcases_data = await get_testcases(bridge_id)
     # version_data = (await get_bridges_with_tools_and_apikeys(None, parsed_data['org_id'], version_id))['bridges']
     model_config, custom_config, model_output_config = await load_model_configuration(
         parsed_data['configuration']['model'], parsed_data['configuration'], parsed_data['service'], 

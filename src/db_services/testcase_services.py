@@ -1,4 +1,5 @@
 from models.mongo_connection import db
+from bson import ObjectId
 configurationModel = db["configurations"]
 from globals import *
 
@@ -8,6 +9,9 @@ testcases_history_model = db['testcases_history']
 
 async def get_testcases(bridge_id): 
     return await testcases_model.find({'bridge_id': bridge_id}).to_list(length = None)
+
+async def get_testcases_using_id(testcase_id):
+    return await testcases_model.find({"_id": ObjectId(testcase_id)}).to_list(length=None)
 
 async def create_testcases_history(data):
     result =  await testcases_history_model.insert_many(data)
