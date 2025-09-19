@@ -69,6 +69,33 @@ async def publish_version(request, version_id):
         return JSONResponse({"success": True, "message": "version published successfully", "version_id": version_id })
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+async def bulk_publish_version(request):
+    try:
+        body = await request.json()
+        org_id = request.state.profile['org']['id']
+        user_id = request.state.user_id
+        version_ids = body.get('version_ids')
+        if not isinstance(version_ids, list) or not version_ids:
+            raise Exception("version_ids must be a non-empty list")
+
+        published = []
+        failed = []
+        for vid in version_ids:
+            try:
+                await publish(org_id, vid, user_id)
+                published.append(vid)
+            except Exception as e:
+                failed.append({"version_id": vid, "error": str(e)})
+
+        return JSONResponse({
+            "success": len(failed) == 0,
+            "message": "Bulk publish completed",
+            "published_version_ids": published,
+            "failed": failed
+        })
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     
 async def check_testcases(request, version_id):
     try:
