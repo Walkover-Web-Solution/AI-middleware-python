@@ -5,12 +5,12 @@ from ..db_services.bridge_version_services import create_bridge_version, update_
 from src.services.utils.helper import Helper
 from ..db_services.ConfigurationServices import get_bridges_with_tools, update_bridge, get_bridges_without_tools
 from bson import ObjectId
-from ..configs.models import services
 from src.services.utils.common_utils import get_service_by_model
 from globals import *
 from ..configs.constant import bridge_ids
 from src.services.utils.ai_call_util import call_ai_middleware
 from src.db_services.ConfigurationServices import update_apikey_creds
+from src.configs.model_configuration import model_config_document
 
 
 with open('src/services/utils/model_features.json', 'r') as file: 
@@ -102,8 +102,8 @@ async def suggest_model(request, version_id):
         if not available_services:
             raise Exception('Please select api key for proceeding further')
         
-        available_models = [{model: model_features[model]} for s in services if s in available_services for model in services[s]['models'] if model in model_features]
-        unavailable_models = [{model: model_features[model]} for s in services if s not in available_services for model in services[s]['models'] if model in model_features]
+        available_models = [{model: model_features[model]} for service in model_config_document if service in available_services for model in model_config_document[service] if model in model_features]
+        unavailable_models = [{model: model_features[model]} for service in model_config_document if service not in available_services for model in model_config_document[service] if model in model_features]
         
         
         prompt = version_data['configuration']['prompt']
