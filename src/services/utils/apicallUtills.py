@@ -134,3 +134,22 @@ async def delete_all_version_and_bridge_ids_from_cache(Id_to_delete):
     for ids in Id_to_delete.get('version_ids', []):
         await delete_in_cache(str(ids))
     
+def validate_required_params(data_to_update):
+    if not isinstance(data_to_update, dict):
+        return data_to_update
+
+    if "required_params" in data_to_update:
+        valid_keys = set()
+
+        if "properties" in data_to_update and isinstance(data_to_update["properties"], dict):
+            valid_keys.update(data_to_update["properties"].keys())
+        if "parameter" in data_to_update and isinstance(data_to_update["parameter"], dict):
+            valid_keys.update(data_to_update["parameter"].keys())
+        
+        data_to_update["required_params"] = [key for key in data_to_update["required_params"] if key in valid_keys]
+
+    for key, value in data_to_update.items():
+        if isinstance(value, dict):
+            data_to_update[key] = validate_required_params(value)
+
+    return data_to_update
