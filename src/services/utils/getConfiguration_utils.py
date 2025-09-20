@@ -30,6 +30,8 @@ async def get_bridge_data(bridge_id, org_id, version_id):
         org_id=org_id, 
         version_id=version_id
     )
+
+    print(result)
     
     bridge_id = bridge_id or result.get('bridges', {}).get('parent_id')
     
@@ -270,18 +272,33 @@ def add_anthropic_json_schema(service, configuration, tools):
 def add_connected_agents(result, tools, tool_id_and_name_mapping):
     """Add connected agents as tools"""
     connected_agents = result.get('bridges', {}).get('connected_agents', {})
+    connected_agent_details = result.get('bridges', {}).get('connected_agent_details', {})
+    
     if not connected_agents:
         return
     
     for bridge_name, bridge_info in connected_agents.items():
         bridge_id_value = bridge_info.get('bridge_id', '')
         version_id_value = bridge_info.get('version_id', '')
-        description = bridge_info.get('description', '')
-        variables = bridge_info.get('variables', {})
-        fields = variables.get('fields', {})
+        
+        # Check if we have detailed info for this bridge_id in connected_agent_details
+        agent_details = connected_agent_details.get(bridge_id_value)
+        
+        if agent_details and agent_details is not None:
+            # Use data from connected_agent_details
+            description = agent_details.get('description', bridge_info.get('description', ''))
+            variables = agent_details.get('agent_variables', {})
+            fields = variables.get('fields', {})
+            required_params = variables.get('required_params', [])
+        else:
+            # Fall back to original connected_agents data
+            description = bridge_info.get('description', '')
+            variables = bridge_info.get('variables', {})
+            fields = variables.get('fields', {})
+            required_params = variables.get('required_params', [])
+        
         name = makeFunctionName(bridge_name)
 
-        
         tools.append({
             "type": "function",
             "name": name,
@@ -296,7 +313,7 @@ def add_connected_agents(result, tools, tool_id_and_name_mapping):
                 },
                 **fields
             },
-            "required": ["user"] + variables.get('required_params', [])
+            "required": ["user"] + required_params
         })
         
         tool_id_and_name_mapping[name] = {

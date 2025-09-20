@@ -439,13 +439,107 @@ async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None)
             'as': 'pre_tools_data'
         }
     },
-    # Stage 8: Remove temporary fields to clean up the output
+    # Stage 8: Extract bridge_ids from connected_agents if it exists
+    {
+        '$addFields': {
+            'connected_agents_bridge_ids': {
+                '$cond': [
+                    { '$and': [
+                        { '$ne': ['$connected_agents', None] },
+                        { '$ne': ['$connected_agents', {}] },
+                        { '$eq': [{ '$type': '$connected_agents' }, 'object'] }
+                    ]},
+                    {
+                        '$map': {
+                            'input': { '$objectToArray': '$connected_agents' },
+                            'as': 'agent',
+                            'in': {
+                                '$convert': {
+                                    'input': '$$agent.v.bridge_id',
+                                    'to': 'objectId',
+                                    'onError': None,
+                                    'onNull': None
+                                }
+                            }
+                        }
+                    },
+                    []
+                ]
+            }
+        }
+    },
+    # Stage 9: Lookup connected_agent_details from configurations collection
+    {
+        '$lookup': {
+            'from': 'configurations',
+            'let': {
+                'bridge_ids': {
+                    '$filter': {
+                        'input': '$connected_agents_bridge_ids',
+                        'as': 'id',
+                        'cond': { '$ne': ['$$id', None] }
+                    }
+                }
+            },
+            'pipeline': [
+                {
+                    '$match': {
+                        '$expr': {
+                            '$and': [
+                                { '$in': ['$_id', '$$bridge_ids'] },
+                                { '$ne': ['$connected_agent_details', None] },
+                                { '$ne': ['$connected_agent_details', {}] }
+                            ]
+                        }
+                    }
+                },
+                {
+                    '$project': {
+                        '_id': 1,
+                        'connected_agent_details': 1
+                    }
+                },
+                {
+                    '$addFields': {
+                        '_id': { '$toString': '$_id' }
+                    }
+                }
+            ],
+            'as': 'agent_details_docs'
+        }
+    },
+    # Stage 10: Create connected_agent_details object with bridge_id as key
+    {
+        '$addFields': {
+            'connected_agent_details': {
+                '$cond': [
+                    { '$gt': [{ '$size': '$agent_details_docs' }, 0] },
+                    {
+                        '$arrayToObject': {
+                            '$map': {
+                                'input': '$agent_details_docs',
+                                'as': 'doc',
+                                'in': [
+                                    '$$doc._id',
+                                    '$$doc.connected_agent_details'
+                                ]
+                            }
+                        }
+                    },
+                    {}
+                ]
+            }
+        }
+    },
+    # Stage 11: Remove temporary fields to clean up the output
     {
         '$project': {
             'apikeys_array': 0,
             'apikeys_docs': 0,
             'apikey_object_id_safe': 0,
-            'has_apikeys': 0
+            'has_apikeys': 0,
+            'connected_agents_bridge_ids': 0,
+            'agent_details_docs': 0
             # Exclude additional temporary fields as needed
         }
     }
