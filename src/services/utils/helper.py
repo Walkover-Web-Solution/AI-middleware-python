@@ -279,7 +279,7 @@ class Helper:
             return cached_result
         else:
             response, _ = await fetch(f"https://routes.msg91.com/api/{Config.PUBLIC_REFERENCEID}/getCompanies?id={org_id}", "GET", {"Authkey": Config.ADMIN_API_KEY}, None, None)
-            await store_in_cache(org_id, response.get('data', {}).get('data', [{}])[0])
+            await store_in_cache(f"timezone_and_org_{org_id}", response.get('data', {}).get('data', [{}])[0])
             return response.get('data', {}).get('data', [{}])[0]
     def sort_bridges(bridges, metrics_data):
         # Create a dictionary to map _id to total tokens

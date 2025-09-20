@@ -57,7 +57,7 @@ async def file_processing(request):
 
         # If PDF and thread parameters exist, save to Redis cache
         if is_pdf and thread_id and bridge_id:
-            cache_key = f"{bridge_id}_{thread_id}_{sub_thread_id or thread_id}"
+            cache_key = f"pdf_url_{bridge_id}_{thread_id}_{sub_thread_id or thread_id}"
             await store_in_cache(cache_key, [file_url], 604800)
         
         return {
