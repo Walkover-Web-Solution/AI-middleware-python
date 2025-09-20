@@ -36,7 +36,7 @@ async def rate_limit(request: Request, key_path: str, points: int = 40, ttl: int
     if not key:
         return
 
-    redis_key = f"rate-limit:{key}"
+    redis_key = f"rate_limit_{key}"
     record = await find_in_cache(redis_key)
 
     if record:
