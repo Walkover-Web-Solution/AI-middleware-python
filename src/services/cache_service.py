@@ -61,9 +61,20 @@ async def clear_cache(request) -> JSONResponse:
     try:
         body = await request.json()
         id = body.get('id')
-        if id:
-            await delete_in_cache(id)
-            return JSONResponse(status_code=200, content={"message": "Redis Key cleared successfully"})
+        ids = body.get('ids')
+        
+        # Handle single id or array of ids
+        if id or ids:
+            identifiers = ids if ids else id
+            await delete_in_cache(identifiers)
+            
+            # Determine response message based on input type
+            if isinstance(identifiers, list):
+                message = f"Redis Keys cleared successfully ({len(identifiers)} keys)"
+            else:
+                message = "Redis Key cleared successfully"
+                
+            return JSONResponse(status_code=200, content={"message": message})
         elif await client.ping():
             # Scan for keys with the specific prefix
             cursor = b'0'
