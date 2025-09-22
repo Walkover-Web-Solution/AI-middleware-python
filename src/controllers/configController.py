@@ -325,6 +325,11 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
         new_configuration = body.get('configuration')
         config_type = new_configuration.get('type') if new_configuration else None
         service = body.get('service')
+
+        #process connected agent data
+        connected_agent_details = body.get('connected_agent_details')
+        if connected_agent_details is not None:
+            update_fields['connected_agent_details'] = connected_agent_details
         
         # Process API key if provided
         apikey_object_id = body.get('apikey_object_id')
