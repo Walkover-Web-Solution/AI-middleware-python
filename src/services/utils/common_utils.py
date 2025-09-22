@@ -657,6 +657,7 @@ async def orchestrator_agent_chat(agent_config, body=None, user=None):
                         "id": body.get("org_id", "")
                     }
                 },
+                "timer":body.get('state', {}).get("timer", []),
                 "isPlayground": False
             },
             "path_params": {}

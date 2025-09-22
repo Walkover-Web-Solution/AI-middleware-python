@@ -24,10 +24,10 @@ async def auth_and_rate_limit(request: Request):
 async def chat_completion(request: Request, db_config: dict = Depends(add_configuration_data_to_body)):
     request.state.is_playground = False
     request.state.version = 2
-    if db_config.get('orchestrator_id'):
-        result = await orchestrator_chat(request)
-        return result
     data_to_send = await make_request_data(request)
+    if db_config.get('orchestrator_id'):
+        result = await orchestrator_chat(data_to_send)
+        return result
     response_format = data_to_send.get('body',{}).get('configuration', {}).get('response_format', {})
     if response_format and response_format.get('type') != 'default':
         try:
