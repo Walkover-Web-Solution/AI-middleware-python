@@ -266,3 +266,45 @@ class ConversationService:
             traceback.print_exc()
             logger.error(f"create conversation error=>, {str(e)}")
             raise ValueError(e.args[0])
+    
+    @staticmethod
+    def createAiMlConversation(conversation, memory, files):
+        try:
+            threads = []
+            # Track distinct PDF URLs across the entire conversation
+            seen_pdf_urls = set()
+            
+            if memory is not None:
+                threads.append({'role': 'user', 'content': 'provide the summary of the previous conversation stored in the memory?'})
+                threads.append({'role': 'assistant', 'content': f'Summary of previous conversations :  {memory}' })
+            for message in conversation or []:
+                if message['role'] != "tools_call" and message['role'] != "tool":
+                    content = [{"type": "text", "text": message['content']}]
+                    
+                    if 'urls' in message and isinstance(message['urls'], list):
+                        for url in message['urls']:
+                            if not url.lower().endswith('.pdf'):
+                                content.append({
+                                    "type": "input_image",
+                                    "image_url": url
+                                })
+                            elif url not in files and url not in seen_pdf_urls:
+                                content.append({
+                                    "type": "input_file",
+                                    "file_url": url
+                                })
+                                # Add to seen URLs to prevent duplicates
+                                seen_pdf_urls.add(url)
+                    else:
+                        # Default behavior for messages without URLs
+                        content = message['content']
+                    threads.append({'role': message['role'], 'content': content})
+            
+            return {
+                'success': True, 
+                'messages': threads
+            }
+        except Exception as e:
+            traceback.print_exc()
+            print("create conversation error=>", e)
+            raise ValueError(e.args[0])
