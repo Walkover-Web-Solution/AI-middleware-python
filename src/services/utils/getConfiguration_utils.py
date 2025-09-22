@@ -63,6 +63,12 @@ def setup_tool_choice(configuration, result, service):
         if api_data['_id'] in tool_choice_ids:
             toolchoice = makeFunctionName(api_data['endpoint_name'] or api_data['function_name'])
             break
+    if not toolchoice:
+        connected_agents = result.get('bridges',{}).get('connected_agents',{})
+        for agent_name, agent_data in connected_agents.items():
+            if tool_choice_ids == agent_data['bridge_id']:
+                toolchoice = agent_name
+                break
     
     # Find choice type
     found_choice = None
