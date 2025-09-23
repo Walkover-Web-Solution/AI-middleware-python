@@ -42,7 +42,7 @@ async def check_batch_status():
                         file_content = None
                     for index, content in enumerate(file_content):
                         response_body = content["response"]["body"]
-                        formatted_content = await Response_formatter(response=response_body, service='openai', tools={}, type='chat', images=None)
+                        formatted_content = await Response_formatter(response=response_body, service='openai', tools={}, type='chat', images=None) # changes
                         file_content[index] = formatted_content
                         
                     await sendResponse(response_format, data=file_content, success = True)
