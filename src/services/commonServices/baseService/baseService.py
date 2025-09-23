@@ -6,7 +6,7 @@ from config import Config
 from ....db_services import metrics_service
 from .utils import validate_tool_call, tool_call_formatter, sendResponse, make_code_mapping_by_service, process_data_and_run_tools
 from src.configs.serviceKeys import ServiceKeys
-from ..openAI.runModel import runModel, openai_response_model
+from ..openAI.runModel import openai_response_model
 from ..anthrophic.antrophicModelRun import anthropic_runmodel
 from ..Mistral.mistral_model_run import mistral_model_run
 from ....configs.constant import service_name
@@ -96,12 +96,12 @@ class BaseService:
             tools[function_response['name']] = function_response['content']
         
             match service:
-                case 'openai' | 'groq' | 'open_router' | 'mistral' | 'gemini' | 'ai_ml':
+                case 'groq' | 'open_router' | 'mistral' | 'gemini' | 'ai_ml':
                     assistant_tool_calls = response['choices'][0]['message']['tool_calls'][index]
                     configuration['messages'].append({'role': 'assistant', 'content': None, 'tool_calls': [assistant_tool_calls]})
                     tool_calls_id = assistant_tool_calls['id']
                     configuration['messages'].append(mapping_response_data[tool_calls_id])
-                case 'openai_response':
+                case 'openai':
                     # First, add all reasoning outputs to the configuration
                     for output in response['output']:
                         if output.get('type') == 'reasoning':
@@ -196,16 +196,15 @@ class BaseService:
             service_name['openai'],
             service_name['groq'],
             service_name['anthropic'],
-            service_name['openai_response'],
             service_name['open_router'],
             service_name['mistral'],
             service_name['gemini'],
             service_name['ai_ml']
         ]:
 
-            if funcModelResponse and self.service != service_name['openai_response']:
+            if funcModelResponse and self.service != service_name['openai']:
                 _.set_(model_response, self.modelOutputConfig['message'], _.get(funcModelResponse, self.modelOutputConfig['message']))
-                if self.service in [service_name['openai'], service_name['groq'], service_name['open_router'], service_name['gemini'], service_name['ai_ml']]:
+                if self.service in [service_name['groq'], service_name['open_router'], service_name['gemini'], service_name['ai_ml']]:
                     _.set_(model_response, self.modelOutputConfig['tools'], _.get(funcModelResponse, self.modelOutputConfig['tools']))
 
     def prepare_history_params(self,response, model_response, tools, transfer_agent_config=None):
@@ -242,13 +241,13 @@ class BaseService:
             "response":response, 
         }
     
-    def service_formatter(self, configuration : object, service : str ):
+    def service_formatter(self, configuration : object, service : str ):  # changes
         try:
             new_config = {ServiceKeys[service].get(self.type, ServiceKeys[service]['default']).get(key, key): value for key, value in configuration.items()}
             if configuration.get('tools', '') :
                 if service == service_name['anthropic']:
                     new_config['tool_choice'] =  configuration.get('tool_choice', {'type': 'auto'})
-                elif service == service_name['openai'] or service == service_name['groq'] or service == service_name['ai_ml']:
+                elif service == service_name['groq'] or service == service_name['ai_ml']:
                     if configuration.get('tool_choice'):
                         if configuration['tool_choice'] not in ['auto', 'none', 'required', 'default']:
                             new_config['tool_choice'] = {"type": "function", "function": {"name": configuration['tool_choice']}}
@@ -260,9 +259,14 @@ class BaseService:
                 del new_config['tool_choice']  
             if 'tools' in new_config and len(new_config['tools']) == 0:
                 del new_config['tools']
-            if service == service_name['openai_response'] and 'text' in new_config:
+            if service == service_name['openai'] and 'text' in new_config:
                 data = new_config['text']
                 new_config['text'] = { "format": data }
+            if service == service_name['openai'] and 'reasoning' in new_config:
+                # Only transform if reasoning has 'key' and 'type' structure
+                if isinstance(new_config['reasoning'], dict) and 'key' in new_config['reasoning'] and 'type' in new_config['reasoning']:
+                    print(f"Transforming reasoning: {new_config['reasoning']}")
+                    new_config['reasoning'] = { new_config['reasoning']['key']: new_config['reasoning']['type'] }
             return new_config
         except Exception as e:
             logger.error(f"An error occurred: {str(e)}")
@@ -273,8 +277,6 @@ class BaseService:
             response = {}
             loop = asyncio.get_event_loop()
             if service == service_name['openai']:
-                response = await runModel(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer, self.message_id, self.org_id, self.name, self.org_name, service, count, self.token_calculator)
-            if service == service_name['openai_response']:
                 response = await openai_response_model(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer, self.message_id, self.org_id, self.name, self.org_name, service, count, self.token_calculator)
             elif service == service_name['anthropic']:
                 response = await loop.run_in_executor(executor, lambda: asyncio.run(anthropic_runmodel(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer, self.name, self.org_name, service, count, self.token_calculator)))

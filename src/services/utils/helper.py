@@ -10,7 +10,6 @@ import operator
 import re
 from src.configs.model_configuration import model_config_document
 import jwt
-from ..commonServices.openAI.openaiCall import UnifiedOpenAICase
 from ..commonServices.openAI.openai_batch import OpenaiBatch
 from ..commonServices.openAI.openai_response import OpenaiResponse
 from ..commonServices.groq.groqCall import Groq
@@ -178,15 +177,13 @@ class Helper:
     
     async def create_service_handler(params, service):
         if service == service_name['openai']:
-            class_obj = UnifiedOpenAICase(params)
+            class_obj = OpenaiResponse(params)
         elif service == service_name['gemini']:
             class_obj = GeminiHandler(params)
         elif service == service_name['anthropic']:
             class_obj = Antrophic(params)
         elif service == service_name['groq']:
             class_obj = Groq(params)
-        elif service == service_name['openai_response']:
-            class_obj = OpenaiResponse(params)
         elif service == service_name['open_router']:
             class_obj = OpenRouter(params)
         elif service == service_name['mistral']:

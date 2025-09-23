@@ -177,8 +177,6 @@ def setup_api_key(service, result, apikey):
     
     # Get API key for the service
     db_api_key = db_apikeys.get(service)
-    if service == 'openai_response':
-        db_api_key = db_apikeys.get('openai')
 
     if service == 'ai_ml' and not apikey and not db_api_key:
         apikey = Config.AI_ML_APIKEY

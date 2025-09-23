@@ -26,10 +26,10 @@ def clean_json(data):
 
 def validate_tool_call(service, response):
     match service: # TODO: Fix validation process.
-        case 'openai' | 'groq' | 'open_router' | 'mistral' | 'gemini'| 'ai_ml':
+        case  'groq' | 'open_router' | 'mistral' | 'gemini'| 'ai_ml':
             tool_calls = response.get('choices', [])[0].get('message', {}).get("tool_calls", [])
             return len(tool_calls) > 0 if tool_calls is not None else False
-        case 'openai_response':
+        case 'openai':
             return any(output.get('type') == 'function_call' for output in response.get('output', []))
         case 'anthropic':
             for item in response.get('content', []):
@@ -106,8 +106,8 @@ def transform_required_params_to_required(properties, variables={}, variables_pa
                 transformed_properties[key]['items']['type'] = 'array'
     return transformed_properties
 
-def tool_call_formatter(configuration: dict, service: str, variables: dict, variables_path: dict) -> dict:
-    if service == service_name['openai'] or service == service_name['open_router'] or service == service_name['mistral'] or service == service_name['gemini'] or service == service_name['ai_ml']:
+def tool_call_formatter(configuration: dict, service: str, variables: dict, variables_path: dict) -> dict: # changes
+    if service == service_name['open_router'] or service == service_name['mistral'] or service == service_name['gemini'] or service == service_name['ai_ml']:
         data_to_send =  [
             {
                 'type': 'function',
@@ -125,7 +125,7 @@ def tool_call_formatter(configuration: dict, service: str, variables: dict, vari
             } for transformed_tool in configuration.get('tools', [])
         ]
         return data_to_send
-    elif service == service_name['openai_response']:
+    elif service == service_name['openai']:
         data_to_send =  [
             {
                 'type': 'function',
@@ -306,7 +306,7 @@ def make_code_mapping_by_service(responses, service):
     codes_mapping = {}
     function_list = []
     match service:
-        case 'openai' | 'groq' | 'open_router' | 'mistral' | 'gemini' | 'ai_ml':
+        case 'groq' | 'open_router' | 'mistral' | 'gemini' | 'ai_ml':
 
             for tool_call in responses['choices'][0]['message']['tool_calls']:
                 name = tool_call['function']['name']
@@ -324,7 +324,7 @@ def make_code_mapping_by_service(responses, service):
                     "error": error
                 }
                 function_list.append(name)
-        case 'openai_response':
+        case 'openai':
 
             for tool_call in [output for output in responses['output'] if output.get('type') == 'function_call']:
                 name = tool_call['name']
