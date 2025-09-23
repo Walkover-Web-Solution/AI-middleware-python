@@ -263,7 +263,10 @@ class BaseService:
                 data = new_config['text']
                 new_config['text'] = { "format": data }
             if service == service_name['openai'] and 'reasoning' in new_config:
-                new_config['reasoning'] = { new_config['reasoning']['key']: new_config['reasoning']['type'] }
+                # Only transform if reasoning has 'key' and 'type' structure
+                if isinstance(new_config['reasoning'], dict) and 'key' in new_config['reasoning'] and 'type' in new_config['reasoning']:
+                    print(f"Transforming reasoning: {new_config['reasoning']}")
+                    new_config['reasoning'] = { new_config['reasoning']['key']: new_config['reasoning']['type'] }
             return new_config
         except Exception as e:
             logger.error(f"An error occurred: {str(e)}")
