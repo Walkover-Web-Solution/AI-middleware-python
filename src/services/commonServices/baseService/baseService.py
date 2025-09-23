@@ -262,6 +262,8 @@ class BaseService:
             if service == service_name['openai'] and 'text' in new_config:
                 data = new_config['text']
                 new_config['text'] = { "format": data }
+            if service == service_name['openai'] and 'reasoning' in new_config:
+                new_config['reasoning'] = { new_config['reasoning']['key']: new_config['reasoning']['type'] }
             return new_config
         except Exception as e:
             logger.error(f"An error occurred: {str(e)}")
