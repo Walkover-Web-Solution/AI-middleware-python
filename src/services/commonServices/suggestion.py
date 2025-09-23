@@ -10,7 +10,7 @@ async def chatbot_suggestions(response_format, assistant, user, bridge_summary, 
     try:
         prompt_summary = bridge_summary
         prompt = configuration['prompt']
-        conversation = ConversationService.createOpenAiConversation(configuration.get('conversation',{}), None, None).get('messages', [])
+        conversation = ConversationService.createOpenAiConversation(configuration.get('conversation',{}), None, []).get('messages', [])
         if conversation is None:
             conversation = []
         conversation.extend([{"role": "user", "content": user}, {"role": "assistant", "content": assistant.get('data', '').get('content')}])
