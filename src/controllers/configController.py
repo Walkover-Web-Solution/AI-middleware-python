@@ -175,7 +175,8 @@ async def get_bridge(request, bridge_id: str):
                 path_variables.append(vars_dict)
         all_variables = variables + path_variables
         bridge.get('bridges')['all_varaibles'] = all_variables
-        return Helper.response_middleware_for_bridge(bridge.get('bridges')['service'], {"succcess": True,"message": "bridge get successfully","bridge":bridge.get("bridges", {})})
+        response = await Helper.response_middleware_for_bridge(bridge.get('bridges')['service'], {"success": True,"message": "bridge get successfully","bridge":bridge.get("bridges", {})})
+        return response
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e,)
 
@@ -491,11 +492,12 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
         
         # Return success response
         if result.get("success"):
-            return Helper.response_middleware_for_bridge(bridge['service'], {
+            response = await Helper.response_middleware_for_bridge(bridge['service'], {
                 "success": True,
                 "message": "Bridge Updated successfully",
                 "bridge": result.get('bridges')
-            })
+            }, True)
+            return response
         
     except ValidationError as e:
         raise HTTPException(status_code=400, detail=f"Validation error: {e.json()}")
