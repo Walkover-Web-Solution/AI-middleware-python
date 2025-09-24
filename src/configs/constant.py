@@ -5,7 +5,8 @@ service_name = {
     'groq': 'groq',
     'open_router': 'open_router',
     'mistral': 'mistral',
-    'ai_ml': 'ai_ml'
+    'ai_ml': 'ai_ml',
+    'openai_completion': 'openai_completion'
 }
 
 bridge_ids = {
