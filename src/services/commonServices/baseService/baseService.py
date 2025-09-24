@@ -6,7 +6,7 @@ from config import Config
 from ....db_services import metrics_service
 from .utils import validate_tool_call, tool_call_formatter, sendResponse, make_code_mapping_by_service, process_data_and_run_tools
 from src.configs.serviceKeys import ServiceKeys
-from ..openAI.runModel import openai_response_model
+from ..openAI.runModel import openai_response_model, openai_completion
 from ..anthrophic.antrophicModelRun import anthropic_runmodel
 from ..Mistral.mistral_model_run import mistral_model_run
 from ....configs.constant import service_name
@@ -272,7 +272,7 @@ class BaseService:
         try:
             response = {}
             loop = asyncio.get_event_loop()
-            if service == service_name['openai'] or service == service_name['openai_completion']:
+            if service == service_name['openai']:
                 response = await openai_response_model(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer, self.message_id, self.org_id, self.name, self.org_name, service, count, self.token_calculator)
             elif service == service_name['anthropic']:
                 response = await loop.run_in_executor(executor, lambda: asyncio.run(anthropic_runmodel(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer, self.name, self.org_name, service, count, self.token_calculator)))
@@ -286,6 +286,8 @@ class BaseService:
                 response = await gemini_modelrun(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer, self.message_id, self.org_id, self.name, self.org_name, service, count, self.token_calculator)
             elif service == service_name['ai_ml']:
                 response = await ai_ml_model_run(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer, self.message_id, self.org_id, self.name, self.org_name, service, count, self.token_calculator)
+            elif service == service_name['openai_completion']:
+                response = await openai_completion(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer, self.message_id, self.org_id, self.name, self.org_name, service, count, self.token_calculator)
             if not response['success']:
                 raise ValueError(response['error'])
             return {
