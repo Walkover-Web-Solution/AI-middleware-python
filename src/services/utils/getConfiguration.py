@@ -7,7 +7,9 @@ from .getConfiguration_utils import (
     setup_tools, setup_api_key, setup_pre_tools, add_rag_tool,
     add_anthropic_json_schema, add_connected_agents
 )
-
+from src.services.cache_service import store_in_cache, find_in_cache, delete_in_cache
+import json
+from fastapi import HTTPException
 apiCallModel = db['apicalls']
 from globals import *
 
@@ -43,6 +45,34 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
     if validation_result:
         return validation_result
     
+    # Get and check Bridge quota limit
+    bridge_cache_key = f"bridge_quota_{bridge_id}"
+    bridge_cache_quota = await find_in_cache(bridge_cache_key)
+    
+    bridge_quota =  bridge_cache_quota if bridge_cache_quota is not None else bridge_data.get('bridge_quota', {})
+
+    # Handle if bridge quota is a bytes object
+    bridge_quota = json.loads(bridge_quota.decode("utf-8")) if isinstance(bridge_quota, bytes) else bridge_quota
+    if bridge_quota and (bridge_quota['limit'] <= bridge_quota['used']):
+        raise HTTPException(status_code=429, detail={"success": False, "error": "Bridge quota limit exceeded"})
+
+    # Get and check API keys quota limit
+    apikey_data = result.get('bridges', {}).get('apikey_object_id', {})
+    if apikey_data and len(apikey_data) > 0:
+        for service, apikey_object_id in apikey_data.items():
+            apikey_cache_key = f"apikey_quota_{apikey_object_id}"
+            apikey_cache_quota = await find_in_cache(apikey_cache_key)
+            apikey_cache_quota = json.loads(apikey_cache_quota.decode("utf-8")) if isinstance(apikey_cache_quota, bytes) else apikey_cache_quota
+            apikey_quota = {} if not apikey_cache_quota else apikey_cache_quota
+            await delete_in_cache(apikey_cache_key)
+            await store_in_cache(apikey_cache_key, apikey_quota) 
+            if apikey_quota.get('limit') and apikey_quota.get('used') and apikey_quota.get('limit') <= apikey_quota.get('used'):
+                raise HTTPException(status_code=429, detail={"success": False, "error": "API key quota limit exceeded"})
+
+    # Store in cache
+    cache_key = f"bridge_quota_{bridge_id}"
+    await store_in_cache(cache_key, bridge_quota) 
+
     # Setup configuration
     configuration, service = setup_configuration(configuration, result, service)
 
