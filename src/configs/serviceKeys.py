@@ -59,7 +59,8 @@ ServiceKeys = {
             "additional_stop_sequences": "stopSequences",
             "best_response_count": "best_of",
             "response_suffix": "suffix",
-            "response_type": "response_format"
+            "response_type": "response_format",
+            "max_tokens" : "max_completion_tokens"
         }
     },
     service_name['open_router']: {
