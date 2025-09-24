@@ -186,6 +186,8 @@ def setup_api_key(service, result, apikey):
 
     if service == 'ai_ml' and not apikey and not db_api_key:
         apikey = Config.AI_ML_APIKEY
+    if service == 'openai_completion':
+        db_api_key = db_apikeys.get('openai')
     
     # Check for folder API keys if folder_id exists
     folder_api_key = result.get('bridges', {}).get('folder_apikeys', {}).get(service)
