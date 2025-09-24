@@ -176,6 +176,7 @@ class Helper:
         return variables
     
     async def create_service_handler(params, service):
+        class_obj = None
         if service == service_name['openai']:
             class_obj = OpenaiResponse(params)
         elif service == service_name['gemini']:
@@ -190,6 +191,8 @@ class Helper:
             class_obj = Mistral(params)
         elif service == service_name['ai_ml']:
             class_obj = Ai_Ml(params)
+        else:
+            raise ValueError(f"Unsupported service: {service}")
         return class_obj
 
     
@@ -244,6 +247,7 @@ class Helper:
         return usage
     
     async def create_service_handler_for_batch(params, service):
+        class_obj = None
         if service == service_name['openai']:
             class_obj = OpenaiBatch(params)
         # elif service == service_name['gemini']:
@@ -252,12 +256,17 @@ class Helper:
         #     class_obj = Antrophic(params)
         # elif service == service_name['groq']:
         #     class_obj = Groq(params)
+        else:
+            raise ValueError(f"Unsupported batch service: {service}")
             
         return class_obj
 
     async def embedding_service_handler(params, service):
+        class_obj = None
         if service == service_name['openai']:
             class_obj = OpenaiEmbedding(params)
+        else:
+            raise ValueError(f"Unsupported embedding service: {service}")
         return class_obj
     
     def add_doc_description_to_prompt(prompt, rag_data):
