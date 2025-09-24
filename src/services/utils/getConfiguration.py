@@ -46,6 +46,9 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
     # Setup configuration
     configuration, service = setup_configuration(configuration, result, service)
 
+    if service == 'openai_response':   
+        service = 'openai'
+
     # Setup API key
     service = service.lower() if service else ""
     apikey = setup_api_key(service, result, apikey)
