@@ -67,22 +67,20 @@ async def get_default_values_controller(service, model, current_configuration, t
             raise HTTPException(status_code=400, detail=f"Invalid model: {model}")
 
         if service == service_name['openai']:
-            return get_default_values(modelObj)
-            
+            return get_default_values(modelObj)  
         elif service == service_name['anthropic']:
             return get_default_values(modelObj)
-        
         elif service == service_name['groq']:
             return get_default_values(modelObj)
-        
         elif service == service_name['open_router']:
             return get_default_values(modelObj)
-        
         elif service == service_name['mistral']:
             return get_default_values(modelObj)
         elif service == service_name['gemini']:
             return get_default_values(modelObj)
         elif service == service_name['ai_ml']:
+            return get_default_values(modelObj)
+        elif service == service_name['openai_completion']:
             return get_default_values(modelObj)
         
         else:
