@@ -279,7 +279,7 @@ async def get_all_service_controller():
         "services": {
             "openai": {"model": "gpt-4o"},
             "anthropic": {"model": "claude-3-7-sonnet-latest"},
-            "groq": {"model": "llama3-70b-8192"},
+            "groq": {"model": "llama-3.3-70b-versatile"},
             "open_router": {"model": "deepseek/deepseek-chat-v3-0324:free"},
             "mistral": {"model": "mistral-medium-latest"},
             "gemini" : {"model" : "gemini-2.5-flash"},
