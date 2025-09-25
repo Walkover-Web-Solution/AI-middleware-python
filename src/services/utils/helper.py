@@ -23,6 +23,7 @@ from ..commonServices.AiMl.ai_ml_call import Ai_Ml
 from ..commonServices.openAI.openai_completion_response import OpenaiCompletion
 from ..cache_service import find_in_cache, store_in_cache
 from ..utils.apiservice import fetch
+from ..commonServices.baseService.utils import sendResponse
 from datetime import datetime
 import pytz
 class Helper:
@@ -139,13 +140,16 @@ class Helper:
     def generate_token(payload, accesskey):
         return jwt.encode(payload, accesskey)
 
-    def response_middleware_for_bridge(service, finalResponse):
+    async def response_middleware_for_bridge (service, finalResponse, isBridgeUpdated = False):
         try:
             response = finalResponse['bridge']
             model = response['configuration']['model']
             modelObj = model_config_document[service][model]
             configurations = modelObj['configuration']
             db_config = response['configuration']
+            org_id = response['org_id']
+            bridge_id = response.get('parent_id') if response.get('parent_id') else response['_id']
+            version_id = None if not response.get('parent_id') else response['_id']
             # if response.get('apikey'):
             #     decryptedApiKey = Helper.decrypt(response['apikey'])
             #     maskedApiKey = Helper.mask_api_key(decryptedApiKey)
@@ -168,6 +172,22 @@ class Helper:
                     config[key] = db_config.get(key, response['configuration'].get(key, ''))
             response['configuration'] = config
             finalResponse['bridge'] = response
+
+            response_format_copy = {
+                'cred' : {
+                    'channel': org_id + bridge_id,
+                    'apikey': Config.RTLAYER_AUTH,
+                    'ttl': '1'
+                },
+                'type' : 'RTLayer'
+            }
+            dataToSend={
+                'type': "agent_updated",
+                'bridge_id': bridge_id,
+                'version_id': version_id
+            }
+            if isBridgeUpdated:
+                await sendResponse(response_format_copy, dataToSend, True)
             return finalResponse
         except json.JSONDecodeError as error:
             return {"success": False, "error": str(error)}
