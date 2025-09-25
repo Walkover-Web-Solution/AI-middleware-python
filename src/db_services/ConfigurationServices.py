@@ -948,3 +948,15 @@ async def get_agents_data(slug_name, user_email):
         ]
     })
     return bridges
+
+async def get_all_model_info(model_name):
+    cursor = configurationModel.find(
+        {"configuration.model": model_name},
+        {"org_id": 1, "name": 1, "_id": 1}  # projection
+    )
+    bridges = await cursor.to_list(length=None)
+    bridges = [
+        {**{k: v for k, v in bridge.items() if k != "_id"}, "bridge_id": str(bridge["_id"])}
+        for bridge in bridges
+    ]
+    return bridges

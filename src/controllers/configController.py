@@ -18,6 +18,7 @@ from src.configs.constant import bridge_ids
 from src.services.utils.ai_call_util import call_ai_middleware
 from src.services.cache_service import find_in_cache
 from src.db_services.templateDbservice import get_template
+from src.db_services.ConfigurationServices import get_all_model_info
 
 async def create_bridges_controller(request):
     try:
@@ -543,3 +544,12 @@ async def get_agent(request,slug_name):
         "success": True,
         "data": result
     }, default=str)))
+
+async def get_model_info_controller(model_name):
+    models = await get_all_model_info(model_name)
+    return {
+        "success": True,
+        "message": "Fetched models and bridges they are used in successfully.",
+        model_name: models
+    }
+    

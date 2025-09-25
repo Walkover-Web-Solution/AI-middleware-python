@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Request
 from ..middlewares.middleware import jwt_middleware
 from validations.validation import Bridge_update as bridge_update_validation
 from ..controllers.configController import create_bridges_controller, get_bridge as get_bridge_controller,  get_all_bridges as get_all_bridges_controller, create_bridges_using_ai_controller
-from ..controllers.configController import get_all_service_models_controller,update_bridge_controller, get_all_service_controller, get_all_in_built_tools_controller
+from ..controllers.configController import get_all_service_models_controller,update_bridge_controller, get_all_service_controller, get_all_in_built_tools_controller, get_model_info_controller
 from src.controllers.apicallControllerV2 import creates_api, updates_api
 router = APIRouter()
 
@@ -45,3 +45,7 @@ async def update_api(bridge_id: str, request: Request):
 @router.get('/inbuilt/tools',dependencies=[Depends(jwt_middleware)])
 async def get_all_tools():
     return await get_all_in_built_tools_controller()
+
+@router.get('/getModelInfo/{model_name}')
+async def get_model_info(model_name: str):
+    return await get_model_info_controller(model_name)
