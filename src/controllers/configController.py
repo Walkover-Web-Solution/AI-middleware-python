@@ -481,13 +481,14 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
         
         # Handle bridge quota
         bridge_quota = body.get('bridge_quota')
+        bridge_id = bridge.get('parent_id') if bridge.get('parent_id') else bridge_id if bridge_id else bridge.get('_id')
         update_quota = {}
         quota_update = None
         if bridge_quota is not None:
             update_quota['bridge_quota'] = bridge_quota
-            quota_update = await update_bridge(bridge_id=bridge.get('parent_id'), update_fields=update_quota)
+            quota_update = await update_bridge(bridge_id=bridge_id, update_fields=update_quota)
             #update in cache
-            cache_key = f"bridge_quota_{bridge.get('parent_id')}"
+            cache_key = f"bridge_quota_{bridge_id}"
             await delete_in_cache(cache_key)    
             await store_in_cache(cache_key, bridge_quota)
 
