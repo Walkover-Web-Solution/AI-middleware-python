@@ -138,4 +138,46 @@ def make_json_serializable(data):
     except (TypeError, OverflowError):
         return str(data)
 
-__all__ = ['delete_in_cache', 'store_in_cache', 'find_in_cache', 'find_in_cache_and_expire', 'store_in_cache_permanent_until_read', 'verify_ttl', 'clear_cache','store_in_cache_for_batch', 'find_in_cache_for_batch', 'delete_in_cache_for_batch']
+
+async def get_redis_cache_with_prefix(prefix: str) -> Union[List[str], None]:
+    if not isinstance(prefix, str):
+        raise ValueError("Prefix must be a string")
+
+    try:
+        # Fetch keys with the prefix
+        keys = await client.keys(f"{REDIS_PREFIX}{prefix}*")
+
+        if not keys:
+            return None
+
+        result = []
+
+        # Get values one by one
+        for key in keys:
+            if isinstance(key, (bytes, str)):
+                key_str = key.decode() if isinstance(key, bytes) else key
+                key_str = key_str.replace(REDIS_PREFIX, '')
+                result.append(key_str)
+
+        return result if result else None
+
+    except Exception as error:
+        print(f"Error searching cache by prefix: {error}")
+        return False
+
+async def delete_with_id_prefix(id):
+    # Check if the id is a prefix or a key if prefix all the keys related to the prefix will be fetched
+    prefix = await get_redis_cache_with_prefix(id)
+    key = await find_in_cache(id)
+    try:
+        if key:
+            await delete_in_cache(key)
+        elif prefix:
+            await  delete_in_cache(prefix)
+        else:
+            return "No data to delete"
+    except Exception as e:
+        logger.error(f"Error deleting cache: {str(e)}")
+        return False
+
+__all__ = ['delete_in_cache', 'store_in_cache', 'find_in_cache', 'find_in_cache_and_expire', 'store_in_cache_permanent_until_read', 'verify_ttl', 'clear_cache','store_in_cache_for_batch', 'find_in_cache_for_batch', 'delete_in_cache_for_batch', 'delete_with_id_prefix']
