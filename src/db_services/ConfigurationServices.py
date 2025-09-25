@@ -949,14 +949,18 @@ async def get_agents_data(slug_name, user_email):
     })
     return bridges
 
-async def get_all_model_info(model_name):
-    cursor = configurationModel.find(
-        {"configuration.model": model_name},
-        {"org_id": 1, "name": 1, "_id": 1}  # projection
-    )
-    bridges = await cursor.to_list(length=None)
-    bridges = [
-        {**{k: v for k, v in bridge.items() if k != "_id"}, "bridge_id": str(bridge["_id"])}
-        for bridge in bridges
-    ]
-    return bridges
+async def get_bridges_and_versions_by_model(model_name):
+    try:
+        cursor = configurationModel.find(
+            {"configuration.model": model_name},
+            {"org_id": 1, "name": 1, "_id": 1,"versions":1}  # projection
+        )
+        bridges = await cursor.to_list(length=None)
+        bridges = [
+            {**{k: v for k, v in bridge.items() if k != "_id"}, "bridge_id": str(bridge["_id"])}
+            for bridge in bridges
+        ]
+        return bridges
+    except Exception as error:
+        logger.error(f'Error in get_bridges_and_versions_by_model: {str(error)}')
+        raise error
