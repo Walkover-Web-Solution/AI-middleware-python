@@ -67,7 +67,7 @@ def setup_tool_choice(configuration, result, service):
         connected_agents = result.get('bridges',{}).get('connected_agents',{})
         for agent_name, agent_data in connected_agents.items():
             if tool_choice_ids == agent_data['bridge_id']:
-                toolchoice = agent_name
+                toolchoice = makeFunctionName(agent_name)
                 break
     
     # Find choice type
