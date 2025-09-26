@@ -9,7 +9,7 @@ class Ai_Ml(BaseService):
         historyParams = {}
         tools = {}
         functionCallRes = {}
-        conversation = ConversationService.createOpenAiConversation(self.configuration.get('conversation'), self.memory, self.files).get('messages', [])
+        conversation = ConversationService.createAiMlConversation(self.configuration.get('conversation'), self.memory, self.files).get('messages', [])
         if self.reasoning_model:
             self.customConfig["messages"] =  conversation + ([{"role": "user", "content": self.user}] if self.user else []) 
         else:
