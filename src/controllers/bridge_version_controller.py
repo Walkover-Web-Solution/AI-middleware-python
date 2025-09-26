@@ -1,4 +1,5 @@
 import json
+import asyncio
 from fastapi import HTTPException, status
 from fastapi.responses import JSONResponse
 from ..db_services.bridge_version_services import create_bridge_version, update_bridges, get_version_with_tools, publish, get_comparison_score
@@ -79,14 +80,28 @@ async def bulk_publish_version(request):
         if not isinstance(version_ids, list) or not version_ids:
             raise Exception("version_ids must be a non-empty list")
 
+        # Create a wrapper function to handle individual publish operations
+        async def publish_single_version(version_id):
+            try:
+                await publish(org_id, version_id, user_id)
+                return {"status": "success", "version_id": version_id}
+            except Exception as e:
+                return {"status": "failed", "version_id": version_id, "error": str(e)}
+
+        # Use asyncio.gather to run all publish operations concurrently
+        results = await asyncio.gather(
+            *[publish_single_version(vid) for vid in version_ids],
+            return_exceptions=False
+        )
+
+        # Separate successful and failed operations
         published = []
         failed = []
-        for vid in version_ids:
-            try:
-                await publish(org_id, vid, user_id)
-                published.append(vid)
-            except Exception as e:
-                failed.append({"version_id": vid, "error": str(e)})
+        for result in results:
+            if result["status"] == "success":
+                published.append(result["version_id"])
+            else:
+                failed.append({"version_id": result["version_id"], "error": result["error"]})
 
         return JSONResponse({
             "success": len(failed) == 0,
