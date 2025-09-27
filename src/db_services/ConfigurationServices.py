@@ -321,7 +321,7 @@ async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None)
                     }
                 },
                 {
-                    '$project': { 'name':1, 'service': 1, 'apikey': 1 , 'apikey_quota':1}
+                    '$project': { 'service': 1, 'apikey': 1 , 'apikey_quota':1}
                 }
             ],
             'as': 'apikeys_docs'

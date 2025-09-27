@@ -6,7 +6,7 @@ from src.configs.modelConfiguration import ModelsConfig as model_configuration
 from src.services.utils.helper import Helper
 import json
 from config import Config
-from ..configs.constant import service_name
+from ..configs.constant import service_name, redis_keys
 from src.db_services.conversationDbService import storeSystemPrompt, add_bulk_user_entries
 from bson import ObjectId
 from src.services.utils.getDefaultValue import get_default_values_controller
@@ -315,7 +315,7 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
         bridge = await get_bridge_by_id(org_id, bridge_id, version_id)
         if bridge is None:
             raise HTTPException(status_code=404, detail="Bridge not found")
-        parent_id = bridge.get('parent_id')
+        parent_id = bridge.get('parent_id') if bridge.get('parent_id') else bridge_id if bridge_id else bridge.get('_id')
         current_configuration = bridge.get('configuration', {})
         current_variables_path = bridge.get('variables_path', {})
         function_ids = bridge.get('function_ids') or []
@@ -480,15 +480,15 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
                 update_fields['version_description'] = version_description
         
         # Handle bridge quota
-        bridge_quota = body.get('bridge_quota')
-        bridge_id = bridge.get('parent_id') if bridge.get('parent_id') else bridge_id if bridge_id else bridge.get('_id')
+        bridge_quota = body.get(redis_keys['bridge_quota'])
+        bridge_id = parent_id
         update_quota = {}
         quota_update = None
         if bridge_quota is not None:
-            update_quota['bridge_quota'] = bridge_quota
+            update_quota[redis_keys['bridge_quota']] = bridge_quota
             quota_update = await update_bridge(bridge_id=bridge_id, update_fields=update_quota)
             #update in cache
-            cache_key = f"bridge_quota_{bridge_id}"
+            cache_key = f"{redis_keys['bridge_quota']}_{bridge_id}"
             await delete_in_cache(cache_key)    
             await store_in_cache(cache_key, bridge_quota)
 
@@ -498,8 +498,8 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
         await add_bulk_user_entries(user_history)
         if apikey_object_id is not None:
             await try_catch(update_apikey_creds, version_id, apikey_object_id)
-        if quota_update.get('success'):
-            result['bridges']['bridge_quota'] = quota_update.get("result", {}).get("bridge_quota")
+        if quota_update.get('success') and quota_update is not None:
+            result['bridges'][redis_keys['bridge_quota']] = quota_update.get("result", {}).get(redis_keys['bridge_quota'])
         # Update service in bridge if it was changed
         if service is not None:
             bridge['service'] = service
