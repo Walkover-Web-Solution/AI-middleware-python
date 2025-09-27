@@ -123,28 +123,6 @@ async def chat(request_body):
             parsed_data['tokens'] = params['token_calculator'].calculate_total_cost(parsed_data['model'], parsed_data['service'])
             result['response']['usage']['cost'] = parsed_data['tokens'].get('total_cost') or 0
             result['response']['data']['message_id'] = parsed_data['message_id']
-
-            # # Update quota in cache
-            # bridge_cache_key = f"{redis_keys['bridge_quota']}_{parsed_data['bridge_id']}"
-            # bridge_quota = await find_in_cache(bridge_cache_key)
-            # bridge_quota = json.loads(bridge_quota.decode("utf-8")) if isinstance(bridge_quota, bytes) else bridge_quota
-            # await delete_in_cache(bridge_cache_key)
-            # if bridge_quota:
-            #     bridge_quota['used'] += parsed_data['tokens'].get('total_cost') or 0
-            #     await store_in_cache(bridge_cache_key, bridge_quota)
-            # result['response']['usage'][redis_keys['bridge_quota']] = bridge_quota
-
-            # service = parsed_data['service']
-            # apikey_object_id = parsed_data['apikey_object_id'][service]
-            # apikey_cache_key = f"{redis_keys['apikey_quota']}_{apikey_object_id}"
-            # apikey_quota = await find_in_cache(apikey_cache_key)
-            # apikey_quota = json.loads(apikey_quota.decode("utf-8")) if isinstance(apikey_quota, bytes) else apikey_quota
-            # await delete_in_cache(apikey_cache_key)
-            # if apikey_quota:
-            #     apikey_quota['used'] += parsed_data['tokens'].get('total_cost') or 0
-            #     await store_in_cache(apikey_cache_key, apikey_quota)
-            # result['response']['usage'][redis_keys['apikey_quota']] = apikey_quota
-            # result['response']['usage']['service'] = service
             
         # Create latency object using utility function
         latency = create_latency_object(timer, params)
