@@ -26,20 +26,10 @@ async def anthropic_runmodel(configuration, apikey, execution_time_logs, bridge_
                     'status_code': getattr(error, 'status_code', None)
                 }
 
-        # Define how to get the alternative configuration
-        def get_alternative_config(config):
-            current_model = config.get('model', '')
-            if current_model == 'claude-3-5-sonnet-latest':
-                config['model'] = 'claude-3-5-sonnet-20241022'
-            else:
-                config['model'] = 'claude-3-5-sonnet-latest'
-            return config
-
-        # Execute with retry
+        # Execute with retry (no fallback)
         return await execute_with_retry(
             configuration=configuration,
             api_call=api_call,
-            get_alternative_config=get_alternative_config,
             execution_time_logs=execution_time_logs,
             timer=timer,
             bridge_id=bridge_id,

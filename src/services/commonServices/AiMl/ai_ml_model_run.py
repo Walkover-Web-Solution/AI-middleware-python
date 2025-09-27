@@ -20,20 +20,10 @@ async def ai_ml_model_run(configuration, apiKey, execution_time_logs, bridge_id,
                     'status_code': getattr(error, 'status_code', None)
                 }
 
-        # Define how to get the alternative configuration
-        def get_alternative_config(config):
-            current_model = config.get('model', '')
-            if current_model == 'gpt-oss-120b':
-                config['model'] = 'gpt-oss-20b'
-            else:
-                config['model'] = 'gpt-oss-120b'
-            return config
-
-        # Execute with retry
+        # Execute with retry (no fallback)
         return await execute_with_retry(
             configuration=configuration,
             api_call=api_call,
-            get_alternative_config=get_alternative_config,
             execution_time_logs=execution_time_logs,
             timer=timer,
             bridge_id=bridge_id,

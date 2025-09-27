@@ -25,22 +25,10 @@ async def gemini_modelrun(configuration, apiKey, execution_time_logs, bridge_id,
                     'status_code': getattr(error, 'status_code', None)
                 }
 
-        # Define how to get the alternative configuration
-        def get_alternative_config(config):
-            current_model = config.get('model', '')
-            if current_model == 'gemini-2.5-flash-lite-preview-06-17':
-                config['model'] = 'gemini-2.5-flash'
-            elif current_model == 'gemini-2.5-flash':
-                config['model'] = 'gemini-2.5-flash-lite-preview-06-17'
-            else:
-                config['model'] = 'gemini-2.5-flash'
-            return config
-
-        # Execute with retry
+        # Execute with retry (no fallback)
         return await execute_with_retry(
             configuration=configuration,
             api_call=api_call,
-            get_alternative_config=get_alternative_config,
             execution_time_logs=execution_time_logs,
             timer=timer,
             bridge_id=bridge_id,

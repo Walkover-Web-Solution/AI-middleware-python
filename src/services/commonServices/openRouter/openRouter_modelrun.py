@@ -25,22 +25,10 @@ async def openrouter_modelrun(configuration, apiKey, execution_time_logs, bridge
                     'status_code': getattr(error, 'status_code', None)
                 }
 
-        # Define how to get the alternative configuration
-        def get_alternative_config(config):
-            current_model = config.get('model', '')
-            if current_model == 'deepseek/deepseek-chat-v3-0324:free':
-                config['model'] = 'openai/gpt-4o'
-            elif current_model == 'openai/gpt-4o':
-                config['model'] = 'deepseek/deepseek-chat-v3-0324:free'
-            else:
-                config['model'] = 'openai/gpt-4o'
-            return config
-
-        # Execute with retry
+        # Execute with retry (no fallback)
         return await execute_with_retry(
             configuration=configuration,
             api_call=api_call,
-            get_alternative_config=get_alternative_config,
             execution_time_logs=execution_time_logs,
             timer=timer,
             bridge_id=bridge_id,

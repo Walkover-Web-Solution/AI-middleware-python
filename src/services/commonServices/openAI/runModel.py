@@ -38,27 +38,10 @@ async def openai_response_model(configuration, apiKey, execution_time_logs, brid
                     'status_code': getattr(error, 'status_code', None)
                 }
 
-        # Define how to get the alternative configuration
-        def get_alternative_config(config):
-            current_model = config.get('model', '')
-            if current_model == 'o3':
-                config['model'] = 'gpt-5'
-            elif current_model == 'gpt-4o':
-                config['model'] = 'gpt-4.1'
-            # elif current_model in ['gpt-5', 'gpt-5-mini', 'gpt-5-nano', 'o4-mini', 'o3-mini']:
-            #     config['model'] = 'o3'
-            else:
-                config['model'] = 'gpt-4o'
-            config["input"] = [i for i in config["input"] if i.get("type", "") != "reasoning"]
-            if(config.get('reasoning')):
-                config.pop('reasoning')
-            return config
-
-        # Execute with retry
+        # Execute with retry (no fallback)
         return await execute_with_retry(
             configuration=configuration,
             api_call=api_call,
-            get_alternative_config=get_alternative_config,
             execution_time_logs=execution_time_logs,
             timer=timer,
             bridge_id=bridge_id,
