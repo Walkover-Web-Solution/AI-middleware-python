@@ -190,6 +190,14 @@ def setup_api_key(service, result, apikey):
     if not (apikey or db_api_key):
         raise Exception('Could not find api key or Agent is not Published')
     
+    # Handle fallback configuration
+    fallback_config = result.get('bridges', {}).get('fall_back')
+    if fallback_config:
+        fallback_service = fallback_config.get('service')
+        fallback_apikey = db_apikeys.get(fallback_service)
+        if fallback_apikey:
+            result['bridges']['fall_back']['apikey'] = Helper.decrypt(fallback_apikey)
+    
     # Use provided API key or decrypt from database
     return apikey if apikey else Helper.decrypt(db_api_key)
 
