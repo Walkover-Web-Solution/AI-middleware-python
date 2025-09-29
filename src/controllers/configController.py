@@ -57,7 +57,7 @@ async def create_bridges_controller(request):
         else:
             name_next_count = 1
             slug_next_count = 1
-            if isEmbedUser and bridges.get('name').startswith("untitled_agent_"):
+            if bridges.get('name').startswith("untitled_agent_"):
                 if all_bridge:
                     for bridge in all_bridge:
                         if bridge.get('name') and bridge.get('name').startswith("untitled_agent_"):
