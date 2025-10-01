@@ -32,6 +32,29 @@ async def get_all_testcases_by_bridge_id(bridge_id):
     """Get all testcases for a specific bridge_id"""
     return await testcases_model.find({'bridge_id': bridge_id}).to_list(length=None)
 
+async def get_testcase_by_id(testcase_id):
+    """Get a testcase by _id"""
+    try:
+        object_id = ObjectId(testcase_id)
+        return await testcases_model.find_one({'_id': object_id})
+    except Exception as e:
+        logger.error(f"Error fetching testcase: {str(e)}")
+        raise e
+
+async def update_testcase_by_id(testcase_id, update_data):
+    """Update a testcase by _id"""
+    try:
+        object_id = ObjectId(testcase_id)
+        update_data['updated_at'] = datetime.datetime.utcnow()
+        result = await testcases_model.update_one(
+            {'_id': object_id}, 
+            {'$set': update_data}
+        )
+        return result
+    except Exception as e:
+        logger.error(f"Error updating testcase: {str(e)}")
+        raise e
+
 async def create_testcases_history(data):
     result =  await testcases_history_model.insert_many(data)
     for obj in data:

@@ -86,7 +86,8 @@ def parse_request_body(request_body):
         "built_in_tools" : body.get('built_in_tools') or [],
         "thread_flag" : body.get('thread_flag') or False,
         "files" : body.get('files') or [],
-        "guardrails" : body.get('bridges', {}).get('guardrails') or {}
+        "guardrails" : body.get('bridges', {}).get('guardrails') or {},
+        "testcase_data" : body.get('testcase_data') or {},
     }
 
 
@@ -884,5 +885,35 @@ Based on the child agent's response above, please provide your final answer to t
     
     # If no agent tool calls found, return original response
     return JSONResponse(status_code=200, content={"success": True, "response": result["response"]})
+
+async def process_background_tasks_for_playground(result, parsed_data):
+    from src.controllers.testcase_controller import handle_playground_testcase
+    
+    try:
+        testcase_data = parsed_data.get('testcase_data', {})
+        
+        # If testcase_id exists, update in background and return immediately
+        if testcase_data.get('testcase_id'):
+            # Add existing testcase_id to response
+            result['response']['testcase_id'] = testcase_data['testcase_id']
+            
+            # Update testcase in background (async task)
+            async def update_testcase_background():
+                try:
+                    await handle_playground_testcase(result, parsed_data)
+                except Exception as e:
+                    logger.error(f"Error updating testcase in background: {str(e)}")
+            
+            asyncio.create_task(update_testcase_background())
+        
+        else:
+            # If no testcase_id, create new testcase synchronously and add to response
+            testcase_id = await handle_playground_testcase(result, parsed_data)
+            if testcase_id:
+                result['response']['testcase_id'] = testcase_id
+                
+    except Exception as e:
+        logger.error(f"Error processing playground testcase: {str(e)}")
+    
 
 

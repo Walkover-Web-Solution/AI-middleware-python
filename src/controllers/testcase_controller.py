@@ -3,7 +3,9 @@ from src.db_services.testcase_services import (
     fetch_testcases_history, 
     create_testcase, 
     delete_testcase_by_id, 
-    get_all_testcases_by_bridge_id
+    get_all_testcases_by_bridge_id,
+    get_testcase_by_id,
+    update_testcase_by_id
 )
 import traceback
 from src.services.cache_service import make_json_serializable
@@ -97,3 +99,58 @@ async def get_all_testcases_controller(bridge_id):
             "success": False,
             "error": str(error)
         })
+
+async def handle_playground_testcase(result, parsed_data):
+    """Handle testcase data from playground - create or update testcase"""
+    try:
+        # Extract expected response from result
+        testcase_data = parsed_data['testcase_data']
+        expected_response = result.get('response', {}).get('data', {}).get('content', '')
+        user = parsed_data['user']
+        
+        # Check if testcase_id is present for update
+        if testcase_data.get('testcase_id'):
+            # Update existing testcase
+            testcase_id = testcase_data['testcase_id']
+            
+            # Get existing testcase
+            existing_testcase = await get_testcase_by_id(testcase_id)
+            if not existing_testcase:
+                return None  # Return None if testcase not found
+            
+            # Prepare update data
+            update_data = {}
+            if 'conversation' in testcase_data:
+                update_data['conversation'] = testcase_data['conversation']
+            if 'type' in testcase_data:
+                update_data['type'] = testcase_data['type']
+            if 'matching_type' in testcase_data:
+                update_data['matching_type'] = testcase_data['matching_type']
+            
+            # Always update expected with current response
+            update_data['expected'] = {"response": expected_response}
+            update_data['conversation'].append({'role' : 'user', 'content' : user})
+            
+            # Update the testcase
+            await update_testcase_by_id(testcase_id, update_data)
+            
+            return testcase_id  # Return existing testcase_id
+        
+        else:
+            # Create new testcase with default values
+            new_testcase = {
+                "bridge_id": parsed_data.get('bridge_id', ''),
+                "conversation": testcase_data.get('conversation', []),
+                "type": testcase_data.get('type', 'response'),
+                "expected": {"response": expected_response},
+                "matching_type": testcase_data.get('matching_type', 'exact')
+            }
+            
+            # Create the testcase
+            result_insert = await create_testcase(new_testcase)
+            
+            return str(result_insert.inserted_id)  # Return new testcase_id
+            
+    except Exception as error:
+        traceback.print_exc()
+        return None  # Return None on error
