@@ -169,6 +169,32 @@ class ConversationService:
             raise ValueError(f"Error while creating conversation: {str(e)}")
 
     @staticmethod
+    def createGrokConversation(conversation, memory):
+        try:
+            threads = []
+
+            if memory is not None:
+                threads.append({'role': 'user', 'content': memory})
+
+            for message in conversation or []:
+                if message['role'] in ["tools_call", "tool"]:
+                    continue
+
+                content = message['content']
+                if message['role'] == 'assistant':
+                    threads.append({'role': message['role'], 'content': content})
+                else:
+                    threads.append({'role': message['role'], 'content': [{"type": "text", "text": content}]})
+
+            return {
+                'success': True,
+                'messages': threads
+            }
+        except Exception as e:
+            logger.error(f"create conversation error=>, {str(e)}, {traceback.format_exc()}")
+            raise ValueError(f"Error while creating conversation: {str(e)}")
+
+    @staticmethod
     def createOpenRouterConversation(conversation, memory):
         try:
             threads = []

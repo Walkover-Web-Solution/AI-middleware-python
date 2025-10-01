@@ -94,9 +94,18 @@ def check_error_status_code(error_code):
     return False
 
 async def check_space_issue(response, service=None):
-    
     content = None
-    if service == service_name['openai_completion'] or service == service_name['groq'] or service == service_name['open_router'] or service == service_name['mistral'] or service == service_name['gemini'] or service == service_name['ai_ml']:
+    text_services = {
+        service_name['openai_completion'],
+        service_name['groq'],
+        service_name['grok'],
+        service_name['open_router'],
+        service_name['mistral'],
+        service_name['gemini'],
+        service_name['ai_ml']
+    }
+
+    if service in text_services:
         content = response.get("choices", [{}])[0].get("message", {}).get("content", None)
     elif service == service_name['anthropic']:
         content = response.get("content", [{}])[0].get("text", None)
@@ -111,16 +120,16 @@ async def check_space_issue(response, service=None):
                 None
             )
         )
-    
+
     if content is None:
         return response
-        
+
     parsed_data = content.replace(" ", "").replace("\n", "")
-    
+
     if parsed_data == '' and content:
         response['alert_flag'] = True
-        text = 'AI is Hallucinating and sending \'\n\' please check your prompt and configurations once'
-        if service == service_name['openai_completion'] or service == service_name['groq'] or service == service_name['open_router'] or service == service_name['mistral'] or service == service_name['gemini'] or service == service_name['ai_ml']:
+        text = "AI is Hallucinating and sending '\n' please check your prompt and configurations once"
+        if service in text_services:
             response["choices"][0]["message"]["content"] = text
         elif service == service_name['anthropic']:
             response["content"][0]["text"] = text
@@ -133,6 +142,7 @@ async def check_space_issue(response, service=None):
                         response["output"][i]["content"][0]["text"] = text
                         break
     return response
+
 
 def filter_model_keys(config): # to be opmized
     if config['model'] == 'o1':

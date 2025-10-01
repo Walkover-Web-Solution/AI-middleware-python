@@ -13,6 +13,7 @@ import jwt
 from ..commonServices.openAI.openai_batch import OpenaiBatch
 from ..commonServices.openAI.openai_response import OpenaiResponse
 from ..commonServices.groq.groqCall import Groq
+from ..commonServices.grok.grokCall import Grok as GrokService
 from ..commonServices.anthrophic.antrophicCall import Antrophic
 from ..commonServices.openRouter.openRouter_call import OpenRouter
 from ..commonServices.Mistral.mistral_call import Mistral
@@ -186,6 +187,8 @@ class Helper:
             class_obj = Antrophic(params)
         elif service == service_name['groq']:
             class_obj = Groq(params)
+        elif service == service_name['grok']:
+            class_obj = GrokService(params)
         elif service == service_name['open_router']:
             class_obj = OpenRouter(params)
         elif service == service_name['mistral']:
@@ -208,7 +211,7 @@ class Helper:
         if modelObj is None:
             raise AttributeError(f"Model function '{model}' not found in model_configuration.")
 
-        if service in ['openai', 'groq', 'ai_ml', 'openai_completion']:
+        if service in ['openai', 'groq', 'grok', 'ai_ml', 'openai_completion']:
             token_cost['input_cost'] = modelObj['outputConfig']['usage'][0]['total_cost'].get('input_cost') or 0
             token_cost['output_cost'] = modelObj['outputConfig']['usage'][0]['total_cost'].get('output_cost') or 0
             token_cost['cache_cost'] = modelObj['outputConfig']['usage'][0]['total_cost'].get('cached_cost') or 0
