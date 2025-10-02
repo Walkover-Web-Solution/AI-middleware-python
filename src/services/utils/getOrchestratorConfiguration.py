@@ -175,7 +175,7 @@ async def transform_agent_configuration(result, variables={}, org_id="", variabl
     variables_path_bridge = bridge.get('variables_path', {})
     
     # Setup tools and tool mappings
-    tools, tool_id_and_name_mapping = setup_tools(result, variables_path_bridge, [])
+    tools, tool_id_and_name_mapping, variables_path_bridge = setup_tools(result, variables_path_bridge, [])
     configuration.pop('tools', None)
     configuration['tools'] = tools
     
