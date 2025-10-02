@@ -155,7 +155,7 @@ def process_extra_tool(tool):
         "type": "function",
         "name": makeFunctionName(tool_name),
         "description": tool.get('description'),
-        "properties": copy.deepcopy(properties),
+        "properties": properties,
         "required": required_params
     }
 
