@@ -60,7 +60,7 @@ This document provides a comprehensive flow of the Completion API from request i
 - `org_id`: Organization ID
 - `variables_path`: Path for variables
 - `version_id`: Version ID for bridge
-- `extra_tools`: Additional tools to include
+- `extra_tools`: Additional tools to include. Each tool supports optional `headers` and `toolAndVariablePath` (or `tool_and_variable_path`) to map tool input fields to values pulled from the request `variables`, preventing those fields from being surfaced to the model.
 - `built_in_tools`: Built-in tools to include
 
 #### Bridge Data Retrieval
