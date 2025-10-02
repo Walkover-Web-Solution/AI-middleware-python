@@ -164,10 +164,12 @@ def process_extra_tool(tool):
         "headers": tool.get("headers", {}),
         "name": tool_name
     }
-
     variable_path = tool.get('tool_and_variable_path', {}) or {}
+    # Remove properties that are filled by gateway
+    for key in variables_fill_by_gtwy:
+        properties.pop(key, None)
 
-    return tool_format, tool_mapping, variable_path
+    return tool_format, tool_mapping, {[tool_name]: variable_path}
 
 def setup_tools(result, variables_path_bridge, extra_tools):
     """Setup tools and tool mappings"""
