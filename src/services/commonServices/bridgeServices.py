@@ -7,6 +7,7 @@ from globals import *
     
 
 async def optimize_prompt_controller(request : Request, bridge_id: str):
+    """Use AI middleware to refine a bridge prompt based on a query."""
     try:
         body = await request.json()
         version_id = body.get('version_id')
@@ -30,6 +31,7 @@ async def optimize_prompt_controller(request : Request, bridge_id: str):
         raise HTTPException(status_code=400, detail={"success": False, "error": "Error in optimizing prompt: "+ str(e)})
     
 async def generate_summary(request):
+    """Generate a bridge summary by calling the dedicated AI bridge."""
     try:
         body = await request.json()
         org_id = request.state.profile.get("org",{}).get("id","")
@@ -56,6 +58,7 @@ async def generate_summary(request):
     except Exception as err:
         logger.error("Error calling function generate_summary =>", err)
 async def function_agrs_using_ai(request):
+    """Request AI-generated function arguments derived from example JSON."""
     try:
         body = await request.json()
         data = body.get('example_json')

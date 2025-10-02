@@ -73,30 +73,35 @@ async def send_error_to_webhook(bridge_id, org_id, error_log, error_type):
         logger.error(f'Error in send_error_to_webhook: %s, {str(error)}')
 
 def create_missing_vars(details):
+    """Build a payload describing missing variables."""
     return {
         "alert" : "variables missing",
         "Variables" : details
     }
 
 def metrix_limit_reached(details):
+    """Build a payload notifying about metric limit exhaustion."""
     return {
         "alert" : "limit_reached",
         "Limit Size" : details
     }
 
 def create_error_payload(details):
+    """Wrap generic error details for webhook delivery."""
     return {
         "alert" : "Unexpected Error",
         "error_message" : details['error_message']
     }
 
 def create_retry_mechanism_payload(details):
+    """Construct payload for retry mechanism alerts."""
     return {
         "alert" : "Retry Mechanism Started due to error.",
         "error_message" : details
     }
 
 def create_response_format(url, headers):
+    """Produce a standard webhook response format descriptor."""
     return {
         "type": "webhook",
         "cred": {

@@ -4,6 +4,7 @@ from globals import *
 modelConfigModel = db["modelconfigurations"]
 
 async def get_model_configurations():
+    """Load all model configuration documents grouped by service and model."""
     try:
         # Remove the projection to allow _id to be included in the results
         configurations = await modelConfigModel.find({}, {"_id": 0}).to_list(length=None)

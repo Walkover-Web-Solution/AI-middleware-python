@@ -8,6 +8,7 @@ from src.services.commonServices.openAI.openai_run_batch import create_batch_fil
 
 class OpenaiBatch(BaseService):
     async def batch_execute(self):
+        """Create a batch job for chat completions and cache its metadata."""
         system_prompt = self.configuration.get('prompt', '')
         results = []
 

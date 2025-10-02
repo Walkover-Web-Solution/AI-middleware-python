@@ -9,6 +9,7 @@ from globals import *
 
 
 async def creates_api(request: Request):
+    """Create, publish, pause, or delete an API definition based on payload status."""
     try:
         body = await request.json()
         org_id = request.state.profile.get("org",{}).get("id","")
@@ -77,6 +78,7 @@ async def creates_api(request: Request):
 
 
 async def updates_api(request: Request, bridge_id: str):
+    """Update tools attached to a bridge and return the refreshed configuration."""
     try:
         body = await request.json()
         version_id = body.get('version_id')
@@ -148,6 +150,7 @@ async def updates_api(request: Request, bridge_id: str):
 #  * })
 #  **/
 def traverse_body(body, path=None, paths=None, fields=None, required_params=None):
+    """Walk the request body to capture field metadata, required params, and value paths."""
     # Initialize default parameters
     if path is None:
         path = []

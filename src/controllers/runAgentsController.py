@@ -6,6 +6,7 @@ from config import Config
 from src.services.commonServices.generateToken import generateToken
 
 async def login_public_user(request: Request):
+    """Issue an agent token, inferring a user id/email or falling back to hashed IP."""
     try:
         user_info = request.get('state', {}).get('profile', {}).get('user', {}) 
         body =  await request.json()

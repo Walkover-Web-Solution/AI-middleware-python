@@ -7,6 +7,7 @@ from src.services.utils.ai_middleware_format import Response_formatter
 
 class OpenaiResponse(BaseService):
     async def execute(self):
+        """Execute OpenAI chat/completions, handling tools, files, and images."""
         historyParams = {}
         tools = {}
         functionCallRes = {}

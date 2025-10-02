@@ -6,6 +6,7 @@ import asyncio
 import base64
 
 async def fetch(url, method="GET", headers=None, params=None, json_body=None, image=None):
+    """Perform an HTTP request with TLS validation and return body plus headers."""
     ssl_context = ssl.create_default_context(cafile=certifi.where())
 
     async with aiohttp.ClientSession() as session:
@@ -22,6 +23,7 @@ async def fetch(url, method="GET", headers=None, params=None, json_body=None, im
             return response_data, response_headers
 
 async def fetch_images_b64(urls):
+    """Download images concurrently and yield base64 payloads with media types."""
     if not urls:
         return []
     images_res, headers = zip(*await asyncio.gather(*(fetch(url, image=True) for url in urls)))

@@ -16,6 +16,7 @@ timescale = models['timescale']
 
     
 def createBulk(conversations_data):
+    """Insert multiple conversation records in a single transaction."""
     session = pg['session']()
     try:
         conversations = [Conversation(**data) for data in conversations_data]
@@ -30,6 +31,7 @@ def createBulk(conversations_data):
 
 
 async def insertRawData(raw_data) : 
+    """Store raw tracing data associated with chatbot messages."""
     session = pg['session']()
     try:
         raws = [RawData(**data) for data in raw_data]
@@ -40,6 +42,7 @@ async def insertRawData(raw_data) :
         raise e
 
 async def find(org_id, thread_id, sub_thread_id, bridge_id):
+    """Fetch the latest conversation history for a thread/sub-thread pair."""
     try:
         session = pg['session']()
         conversations = (
@@ -77,6 +80,7 @@ async def find(org_id, thread_id, sub_thread_id, bridge_id):
     finally:
         session.close()
 async def calculate_average_response_time(org_id, bridge_id):
+    """Compute yesterday's average response latency for a bridge."""
     try:
         session = pg['session']()
         # Get current date and yesterday's date
@@ -118,6 +122,7 @@ async def calculate_average_response_time(org_id, bridge_id):
         session.close()
 
 async def storeSystemPrompt(prompt, org_id, bridge_id):
+    """Persist a versioned copy of a system prompt."""
     session = pg['session']()
     try:
         new_prompt = system_prompt_versionings(
@@ -140,6 +145,7 @@ async def storeSystemPrompt(prompt, org_id, bridge_id):
         session.close()
 
 async def reset_and_mode_chat_history(org_id, bridge_id, thread_id, key, value):
+    """Update the latest conversation row with reset metadata."""
     session = pg['session']()
     try:
         subquery = (
@@ -187,6 +193,7 @@ async def reset_and_mode_chat_history(org_id, bridge_id, thread_id, key, value):
 
 
 async def add_bulk_user_entries(entries):
+    """Log bulk user activity entries for bridge configuration changes."""
     session = pg['session']()
     try:
         user_history = [user_bridge_config_history(**data) for data in entries]
@@ -200,6 +207,7 @@ async def add_bulk_user_entries(entries):
 
 
 async def timescale_metrics(metrics_data):
+    """Insert aggregated metrics into the Timescale store."""
     async with timescale['session']() as session:
         try:
             raws = [Metrics_model(**data) for data in metrics_data]
@@ -213,6 +221,7 @@ async def timescale_metrics(metrics_data):
 
 
 async def get_timescale_data(org_id):
+    """Retrieve cached or fresh usage metrics for an organisation."""
     cache_key = f"metrix_{org_id}"
     # Attempt to retrieve data from Redis cache
 

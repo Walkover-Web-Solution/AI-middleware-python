@@ -12,12 +12,14 @@ class Queue(BaseQueue):
     _instance = None
 
     def __new__(cls):
+        """Enforce singleton behaviour for the worker queue consumer."""
         if cls._instance is None:
             cls._instance = super().__new__(cls)
             cls._instance.__init__()  # Ensure init is called only once
         return cls._instance
 
     def __init__(self):
+        """Initialise the worker queue with environment-specific naming."""
         queue_name = Config.QUEUE_NAME or f"AI-MIDDLEARE-DEFAULT-{Config.ENVIROMENT}"
         super().__init__(queue_name)
         print("Queue Service Initialized")
@@ -32,6 +34,7 @@ class Queue(BaseQueue):
         # return result
 
     async def consume_messages(self):
+        """Continuously consume worker queue messages and dispatch handlers."""
         try:
             if await self.connect():
                 await self.channel.set_qos(prefetch_count=int(self.prefetch_count))

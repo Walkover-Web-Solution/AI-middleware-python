@@ -25,6 +25,7 @@ retry_strategy = {
 
 # Function to sync the database
 def init_dbservice():
+    """Initialise Postgres schema and validate connectivity."""
     try:
         Base.metadata.create_all(engine)
         print('Connected to postgres')
@@ -34,6 +35,7 @@ def init_dbservice():
 init_dbservice()
 
 def load_models():
+    """Dynamically import model definitions and register them in the db map."""
     current_dir = os.path.dirname(os.path.realpath(__file__))
     files = [f for f in os.listdir(current_dir) if os.path.isfile(os.path.join(current_dir, f)) and f.endswith('.py') and f != os.path.basename(__file__)]
 

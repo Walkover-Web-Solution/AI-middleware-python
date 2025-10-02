@@ -4,6 +4,7 @@ import traceback
 from src.services.cache_service import make_json_serializable
 
 async def get_testcases_history(request, bridge_id):
+    """Return testcase runs grouped by version for a given bridge."""
     try:
         testcases = await fetch_testcases_history(bridge_id)
         for testcase in testcases: 

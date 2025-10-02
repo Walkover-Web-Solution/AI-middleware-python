@@ -6,6 +6,7 @@ from globals import *
 
 
 async def openai_test_model(configuration, api_key):
+    """Perform a single OpenAI chat completion to validate credentials."""
     openAI = AsyncOpenAI(api_key=api_key)
     try:
         chat_completion = await openAI.chat.completions.create(**configuration)
@@ -18,6 +19,7 @@ async def openai_test_model(configuration, api_key):
         }
     
 async def openai_response_model(configuration, apiKey, execution_time_logs, bridge_id, timer, message_id=None, org_id=None, name = "", org_name= "", service = "", count = 0, token_calculator=None):
+    """Execute OpenAI Responses API with retry fallbacks."""
     try:
         # # Validate token count before making API call (raises exception if invalid)
         # model_name = configuration.get('model')
@@ -27,6 +29,7 @@ async def openai_response_model(configuration, apiKey, execution_time_logs, brid
 
         # Define the API call function
         async def api_call(config):
+            """Invoke the Responses API and normalize the response."""
             try:
                 responses = await client.responses.create(**config)
                 return {'success': True, 'response': responses.to_dict()}
@@ -40,6 +43,7 @@ async def openai_response_model(configuration, apiKey, execution_time_logs, brid
 
         # Define how to get the alternative configuration
         def get_alternative_config(config):
+            """Adjust configuration to a fallback OpenAI model."""
             current_model = config.get('model', '')
             if current_model == 'o3':
                 config['model'] = 'gpt-5'
@@ -83,12 +87,14 @@ async def openai_response_model(configuration, apiKey, execution_time_logs, brid
 
 
 async def openai_completion(configuration, apiKey, execution_time_logs, bridge_id, timer, message_id=None, org_id=None, name = "", org_name= "", service = "", count=0, token_calculator=None):
+    """Execute a Chat Completions call with retry on alternative models."""
     try:
         
         openAI = AsyncOpenAI(api_key=apiKey)
 
         # Define the API call function
         async def api_call(config):
+            """Call chat.completions.create and wrap errors."""
             try:
                 chat_completion = await openAI.chat.completions.create(**config)
                 return {'success': True, 'response': chat_completion.to_dict()}
@@ -101,6 +107,7 @@ async def openai_completion(configuration, apiKey, execution_time_logs, bridge_i
 
         # Define how to get the alternative configuration
         def get_alternative_config(config):
+            """Cycle between GPT and O-series models for retries."""
             current_model = config.get('model', '')
             if current_model == 'o3':
                 config['model'] = 'gpt-4o-2024-08-06'

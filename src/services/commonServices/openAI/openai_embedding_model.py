@@ -2,6 +2,7 @@ from openai import AsyncOpenAI
 
 
 async def embedding_model(configuration, apiKey):
+    """Call OpenAI embedding endpoint and wrap the response."""
     try:
         openAI = AsyncOpenAI(api_key=apiKey)
         embedding = await openAI.embeddings.create(**configuration)
@@ -13,5 +14,4 @@ async def embedding_model(configuration, apiKey):
             'success': False,
             'error': str(error)
         }
-
 

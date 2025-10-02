@@ -5,6 +5,7 @@ from globals import *
 class ConversationService:
     @staticmethod
     def createOpenAiConversation(conversation, memory, files):
+        """Build OpenAI-style message history including memory and attachments."""
         try:
             threads = []
             # Track distinct PDF URLs across the entire conversation
@@ -50,6 +51,7 @@ class ConversationService:
 
     @staticmethod
     async def createAnthropicConversation(conversation, memory, files):
+        """Construct Anthropic-compatible conversation payload with media support."""
         try:
             if conversation == None:
                 conversation = []
@@ -138,6 +140,7 @@ class ConversationService:
             }
 
     def createGroqConversation(conversation, memory):
+        """Convert conversation history into Groq's expected message schema."""
         try:
             threads = []
             
@@ -170,6 +173,7 @@ class ConversationService:
 
     @staticmethod
     def createOpenRouterConversation(conversation, memory):
+        """Prepare OpenRouter conversation messages including image URLs."""
         try:
             threads = []
             if memory is not None:
@@ -203,6 +207,7 @@ class ConversationService:
 
     @staticmethod
     def create_mistral_ai_conversation(conversation, memory):
+        """Format conversation history for Mistral's chat schema."""
         try:
             threads = []
             if memory is not None:
@@ -236,6 +241,7 @@ class ConversationService:
 
     @staticmethod
     def createGeminiConversation(conversation, memory):
+        """Build a Gemini-compatible conversation payload."""
         try:
             threads = []
             if memory is not None:
@@ -269,6 +275,7 @@ class ConversationService:
 
     @staticmethod
     def createOpenaiCompletionConversation(conversation, memory):
+        """Prepare conversation messages for the OpenAI completion API."""
         try:
             threads = []
             if memory is not None:
@@ -302,6 +309,7 @@ class ConversationService:
     
     @staticmethod
     def createAiMlConversation(conversation, memory, files):
+        """Construct AI-ML conversation history with support for files/images."""
         try:
             threads = []
             # Track distinct PDF URLs across the entire conversation

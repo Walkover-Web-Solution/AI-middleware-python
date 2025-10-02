@@ -6,6 +6,7 @@ from .ai_call_util import call_ai_middleware
 import json
 from globals import *
 async def process_chatbot_response(result, params, data, modelOutputConfig, timer, execution_time_logs):
+    """Transform raw chat output into a rich-text payload using AI middleware."""
 
 
     try:

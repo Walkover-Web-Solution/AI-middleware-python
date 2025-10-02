@@ -6,4 +6,5 @@ router = APIRouter()
 
 @router.get('/{bridge_id}', dependencies=[Depends(jwt_middleware)])
 async def create_vertors(request: Request, bridge_id : str):
+    """Return execution history for testcases linked to `bridge_id`."""
     return await get_testcases_history(request, bridge_id)

@@ -5,6 +5,7 @@ from globals import *
 from src.services.cache_service import store_in_cache
 
 async def handle_gpt_memory(id, user, assistant, purpose, gpt_memory_context):
+    """Decide whether to persist conversational memory via the GPT memory bridge."""
     try:
         variables = {'threadID': id, 'memory' : purpose, "gpt_memory_context": gpt_memory_context}
         content = assistant.get('data', {}).get('content', "")

@@ -12,6 +12,7 @@ REDIS_PREFIX = 'AIMIDDLEWARE_'
 DEFAULT_REDIS_TTL = 172800  # 2 days
 
 async def store_in_cache(identifier: str, data: dict, ttl: int = DEFAULT_REDIS_TTL) -> bool:
+    """Store JSON-serialised data in Redis using the standard prefix."""
     try:
         serialized_data = make_json_serializable(data)
         return await client.set(f"{REDIS_PREFIX}{identifier}", json.dumps(serialized_data), ex=int(ttl))
@@ -20,6 +21,7 @@ async def store_in_cache(identifier: str, data: dict, ttl: int = DEFAULT_REDIS_T
         return False
 
 async def find_in_cache(identifier: str) -> Union[str, None]:
+    """Fetch a cached value by identifier, returning raw JSON text."""
     try:
         return await client.get(f"{REDIS_PREFIX}{identifier}")
     except Exception as e:
@@ -27,6 +29,7 @@ async def find_in_cache(identifier: str) -> Union[str, None]:
         return None
         
 async def delete_in_cache(identifiers: Union[str, List[str]]) -> bool:
+    """Delete one or many prefixed cache keys."""
     if not await client.ping():
         return False
     
@@ -44,6 +47,7 @@ async def delete_in_cache(identifiers: Union[str, List[str]]) -> bool:
         return False
 
 async def verify_ttl(identifier: str) -> int:
+    """Fetch the TTL for a prefixed key, returning negative codes on error."""
     try:
         if await client.ping():
             key = f"{REDIS_PREFIX}{identifier}"
@@ -58,6 +62,7 @@ async def verify_ttl(identifier: str) -> int:
         return -1  # Indicating error
 
 async def clear_cache(request) -> JSONResponse:
+    """Clear specific Redis keys or purge all prefixed entries."""
     try:
         body = await request.json()
         id = body.get('id')
@@ -92,6 +97,7 @@ async def clear_cache(request) -> JSONResponse:
         return JSONResponse(status_code=500, content={"message": f"Error clearing cache: {error}"})
 
 async def store_in_cache_for_batch(identifier: str, data: dict, ttl: int = DEFAULT_REDIS_TTL) -> bool:
+    """Store data for batch operations without applying the standard prefix."""
     try:
         return await client.set(f"{identifier}", json.dumps(data), ex=int(ttl))
     except Exception as e:
@@ -99,6 +105,7 @@ async def store_in_cache_for_batch(identifier: str, data: dict, ttl: int = DEFAU
         return False
 
 async def find_in_cache_with_prefix(prefix: str) -> Union[List[str], None]:
+    """Return all values whose keys start with the given prefix."""
     try:
         pattern = f"{REDIS_PREFIX}{prefix}*"
         keys = await client.keys(pattern)
@@ -110,6 +117,7 @@ async def find_in_cache_with_prefix(prefix: str) -> Union[List[str], None]:
         return None
 
 async def delete_in_cache_for_batch(identifiers: Union[str, List[str]]) -> bool:
+    """Delete batch cache entries that omit the standard prefix."""
     if not await client.ping():
         return False
     

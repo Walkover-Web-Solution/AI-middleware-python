@@ -14,6 +14,7 @@ threadsModel = db['threads']
 foldersModel = db['folders']
 
 async def get_bridges(bridge_id = None, org_id = None, version_id = None):
+    """Fetch a bridge or version document with cleaned identifiers."""
     try:
         model = version_model if version_id else configurationModel
         id_to_use = ObjectId(version_id) if version_id else ObjectId(bridge_id)
@@ -58,6 +59,7 @@ async def get_bridges(bridge_id = None, org_id = None, version_id = None):
         }
 
 async def get_bridges_with_redis(bridge_id = None, org_id = None, version_id = None):
+    """Retrieve bridge data, caching results per id for faster lookups."""
     try:
         cache_key = f"get_{version_id or bridge_id}"
         cached_data = await find_in_cache(cache_key)
@@ -104,6 +106,7 @@ async def get_bridges_with_redis(bridge_id = None, org_id = None, version_id = N
         }
 # todo
 async def get_bridges_without_tools(bridge_id=None, org_id=None, version_id=None):
+    """Return raw bridge data without joining tool definitions."""
     try:
         model = version_model if version_id else configurationModel
         id_to_use = ObjectId(version_id) if version_id else ObjectId(bridge_id)
@@ -124,6 +127,7 @@ async def get_bridges_without_tools(bridge_id=None, org_id=None, version_id=None
 
     
 async def get_bridges_with_tools(bridge_id, org_id, version_id=None):
+    """Fetch a bridge along with expanded tool metadata."""
     try:
         model = version_model if version_id else configurationModel
         id_to_use = ObjectId(version_id) if version_id else ObjectId(bridge_id)
@@ -198,6 +202,7 @@ async def get_bridges_with_tools(bridge_id, org_id, version_id=None):
         raise error    
 
 async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None):
+    """Return a bridge enriched with tool data plus resolved API key secrets."""
     try:
         cache_key = f"{version_id or bridge_id}"
        
@@ -614,6 +619,7 @@ async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None)
     
 
 async def update_bridge_ids_in_api_calls(function_id, bridge_id, add=1):
+    """Sync bridge id membership on an API call document."""
     to_update = {'$set': {'status': 1}}
     if add == 1:
         to_update['$addToSet'] = {'bridge_ids': ObjectId(bridge_id)}
@@ -638,6 +644,7 @@ async def update_bridge_ids_in_api_calls(function_id, bridge_id, add=1):
     return data
 
 async def update_built_in_tools(version_id, tool, add=1):
+    """Toggle a built-in tool flag on a bridge version."""
     to_update = {'$set': {'status': 1}}
     if add == 1:
         to_update['$addToSet'] = {'built_in_tools': tool}
@@ -663,6 +670,7 @@ async def update_built_in_tools(version_id, tool, add=1):
     return data
 
 async def update_agents(version_id, agents, add=1):
+    """Add or remove connected agents on a version document."""
     if add == 1:
         # Add or update the connected agents
         to_update = {'$set': {f'connected_agents.{agent_name}': agent_info for agent_name, agent_info in agents.items()}}
@@ -686,6 +694,7 @@ async def update_agents(version_id, agents, add=1):
     return data
 
 async def update_agents(version_id, agents, add=1):
+    """Maintain connected agent references, raising when updates fail."""
     if add == 1:
         # Add or update the connected agents
         to_update = {'$set': {f'connected_agents.{agent_name}': agent_info for agent_name, agent_info in agents.items()}}
@@ -712,6 +721,7 @@ async def update_agents(version_id, agents, add=1):
     return data
 
 async def get_template_by_id(template_id):
+    """Fetch a template document, caching responses by id."""
     try:
         cache_key = f"template_{template_id}"
         template_content = await find_in_cache(cache_key)
@@ -727,6 +737,7 @@ async def get_template_by_id(template_id):
         return None
     
 async def create_bridge(data):
+    """Insert a new bridge configuration document."""
     try:
         result = await configurationModel.insert_one(data)
         return {
@@ -738,6 +749,7 @@ async def create_bridge(data):
         raise BadRequestException("Failed to create bridge")
 
 async def get_all_bridges_in_org(org_id, folder_id, user_id, isEmbedUser):
+    """List bridges for an organisation, optionally filtered by folder/user."""
     query = {"org_id": org_id}
     query["folder_id"] = folder_id or None
     if user_id and isEmbedUser:
@@ -772,6 +784,7 @@ async def get_all_bridges_in_org(org_id, folder_id, user_id, isEmbedUser):
     return bridges_list
 
 async def get_all_bridges_in_org_by_org_id(org_id):
+    """Return minimal bridge identifiers for naming collision checks."""
     query = {"org_id": org_id}
     bridge_cursor = configurationModel.find(query, {
         "_id": 1,
@@ -785,6 +798,7 @@ async def get_all_bridges_in_org_by_org_id(org_id):
     return bridges_list
 
 async def get_bridge_by_id(org_id, bridge_id, version_id=None):
+    """Retrieve a single bridge or version, normalising object ids."""
     model = version_model if version_id else configurationModel
     id_to_use = ObjectId(version_id) if version_id else ObjectId(bridge_id)
     pipeline = [
@@ -810,6 +824,7 @@ async def get_bridge_by_id(org_id, bridge_id, version_id=None):
     return bridge
 
 async def get_bridge_by_slugname(org_id, slug_name):
+    """Look up a bridge document by its slug name."""
     try:
         bridge =  await configurationModel.find_one({
             'slugName': slug_name,
@@ -833,6 +848,7 @@ async def get_bridge_by_slugname(org_id, slug_name):
 
 
 async def update_bridge(bridge_id = None, update_fields = None, version_id = None):
+    """Apply updates to a bridge or version and invalidate cache."""
     model = version_model if version_id else configurationModel
     id_to_use = ObjectId(version_id) if version_id else ObjectId(bridge_id)
     cache_key = f"{version_id if version_id else bridge_id}"
@@ -859,6 +875,7 @@ async def update_bridge(bridge_id = None, update_fields = None, version_id = Non
 
 
 async def get_apikey_creds(org_id, apikey_object_ids):
+    """Validate that referenced API key documents exist for the organisation."""
     for service, object_id in apikey_object_ids.items():
         apikey_cred = await apikeyCredentialsModel.find_one(
             {'_id': ObjectId(object_id), 'org_id': org_id},
@@ -868,6 +885,7 @@ async def get_apikey_creds(org_id, apikey_object_ids):
             raise BadRequestException(f"Apikey for {service} not found")
     
 async def update_apikey_creds(version_id, apikey_object_ids):
+    """Reconcile version references across API credential documents."""
     try:
         if isinstance(apikey_object_ids, dict):
             # First, remove the version_id from any apikeycredentials documents that contain it
@@ -889,6 +907,7 @@ async def update_apikey_creds(version_id, apikey_object_ids):
         raise error
 
 async def save_sub_thread_id(org_id, thread_id, sub_thread_id, display_name, bridge_id): # bridge_id is now a required parameter
+    """Persist a sub-thread identifier, ensuring uniqueness per bridge."""
     try:
         update_data = {'$setOnInsert': {'thread_id': thread_id}}
         
@@ -914,6 +933,7 @@ async def save_sub_thread_id(org_id, thread_id, sub_thread_id, display_name, bri
         raise error    
 
 async def get_all_agents_data(user_email):
+    """List agent configurations accessible to a user by availability rules."""
     query = {
         "$or": [
             {"page_config.availability": "public"},
@@ -930,6 +950,7 @@ async def get_all_agents_data(user_email):
 
 
 async def get_agents_data(slug_name, user_email):
+    """Fetch a single agent configuration by slug with access controls."""
     bridges = await configurationModel.find_one({
         "$or": [
             {
@@ -950,6 +971,7 @@ async def get_agents_data(slug_name, user_email):
     return bridges
 
 async def get_bridges_and_versions_by_model(model_name):
+    """List bridges using the specified model along with their versions."""
     try:
         cursor = configurationModel.find(
             {"configuration.model": model_name},

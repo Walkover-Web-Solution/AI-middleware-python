@@ -16,6 +16,7 @@ Base = declarative_base()
 
 # Function to test async database connection
 async def init_async_dbservice():
+    """Verify the Timescale DB connection by running a trivial query."""
     try:
         async with async_engine.begin() as conn:
             await conn.execute(text("SELECT 1"))
@@ -25,6 +26,7 @@ async def init_async_dbservice():
 
 # Example async function to fetch data
 async def fetch_data(query):
+    """Execute the given SQLAlchemy query against the Timescale session."""
     async with AsyncSession() as session:
         result = await session.execute(query)
         return result.fetchall()

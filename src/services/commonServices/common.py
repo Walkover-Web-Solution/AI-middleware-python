@@ -47,6 +47,7 @@ configurationModel = db["configurations"]
 @app.post("/chat/{bridge_id}")
 @handle_exceptions
 async def chat(request_body): 
+    """Primary chat handler orchestrating prompt prep, execution, and logging."""
     result ={}
     class_obj= {}
     try:
@@ -156,6 +157,7 @@ async def chat(request_body):
 
 @handle_exceptions
 async def orchestrator_chat(request_body): 
+    """Route orchestrator requests through the master agent pipeline."""
     try:
         body = request_body.get('body',{})
         # Extract user query from the request
@@ -192,6 +194,7 @@ async def orchestrator_chat(request_body):
         return JSONResponse(status_code=500, content={"success": False, "error": str(error)})
 
 async def embedding(request_body):
+    """Handle embedding requests and return formatted output."""
     result = {}
     try:
         body = request_body.get('body')
@@ -231,6 +234,7 @@ async def embedding(request_body):
         raise ValueError(error)
 
 async def batch(request_body):
+    """Schedule a batch completion job and return queue metadata."""
     result ={}
     class_obj= {}
     try:
@@ -269,6 +273,7 @@ async def batch(request_body):
     
     
 async def run_testcases(request_body):
+    """Execute saved bridge testcases and report results."""
     try:
         parsed_data = parse_request_body(request_body)
         org_id = request_body['state']['profile']['org']['id']
@@ -280,6 +285,7 @@ async def run_testcases(request_body):
     
 
 async def image(request_body):
+    """Process image generation requests with configured model handlers."""
     result ={}
     class_obj= {}
     try:

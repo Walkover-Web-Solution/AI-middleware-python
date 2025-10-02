@@ -8,6 +8,7 @@ logging.basicConfig(
     stream=sys.stdout
 )
 def get_logger() -> logging.Logger:
+    """Return the configured application logger instance."""
     logger = logging.getLogger()
     return logger
 

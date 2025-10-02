@@ -4,6 +4,7 @@ from src.services.utils.apiservice import fetch
 from src.configs.constant import service_name
 
 async def Response_formatter(response = {}, service = None, tools={}, type='chat', images = None):
+    """Normalise provider-specific responses into the platform's unified format."""
     tools_data = tools
     if isinstance(tools_data, dict):
                 for key, value in tools_data.items():
@@ -254,14 +255,17 @@ async def Response_formatter(response = {}, service = None, tools={}, type='chat
         }
 
 async def validateResponse(alert_flag, configration, bridgeId, message_id, org_id):
+    """Trigger an alert webhook when response validation flags an issue."""
     if alert_flag:
         await send_alert(data={"response":"\n..\n","configration":configration,"message_id":message_id,"bridge_id":bridgeId, "org_id": org_id, "message": "\n issue occurs"})
 
 async def send_alert(data):
+    """Send alert payloads to the configured Sokt webhook."""
     dataTosend = {**data, "ENVIROMENT":Config.ENVIROMENT} if Config.ENVIROMENT else data
     await fetch("https://flow.sokt.io/func/scriYP8m551q",method='POST',json_body=dataTosend)
 
 def finish_reason_mapping(finish_reason):
+    """Map provider finish reason codes to internal status labels."""
     finish_reason_mapping = {
         # Completed / natural stop
         "stop": "completed",        #openai #open_router #gemini

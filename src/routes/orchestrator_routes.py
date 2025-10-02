@@ -11,17 +11,20 @@ router = APIRouter()
 
 @router.post('/', dependencies=[Depends(jwt_middleware)])
 async def create_orchestrator(request: Request):
+    """Create a new orchestrator pipeline for the authenticated tenant."""
     return await create_orchestrator_controller(request)
 
 @router.get('/all', dependencies=[Depends(jwt_middleware)])
 async def get_all_orchestrators(request: Request):
+    """List every orchestrator configuration accessible to the caller."""
     return await get_all_orchestrators_controller(request)
 
 @router.delete('/{orchestrator_id}', dependencies=[Depends(jwt_middleware)])
 async def delete_orchestrator(orchestrator_id: str, request: Request):
+    """Delete the orchestrator identified by `orchestrator_id`."""
     return await delete_orchestrator_controller(orchestrator_id, request)
 
 @router.put('/{orchestrator_id}', dependencies=[Depends(jwt_middleware)])
 async def update_orchestrator(orchestrator_id: str, request: Request):
+    """Update an existing orchestrator configuration."""
     return await update_orchestrator_controller(orchestrator_id, request)
-

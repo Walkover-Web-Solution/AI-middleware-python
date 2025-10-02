@@ -12,6 +12,7 @@ from ..services.utils.time import Timer
 from src.services.utils.apiservice import fetch
 
 async def send_data_middleware(request: Request, botId: str):
+    """Enrich chatbot messages with bridge context and forward to chat handler."""
     try:
         body = await request.json()
         org_id = request.state.profile['org']['id']
@@ -92,6 +93,7 @@ async def send_data_middleware(request: Request, botId: str):
         return JSONResponse(status_code=400, content={'error': 'Error: ' + str(error)})
 
 async def chat_bot_auth(request: Request):
+    """Validate chatbot JWTs and seed request state for downstream processing."""
     timer_obj = Timer()
     timer_obj.start()
     # request.state.timer = timer
@@ -130,6 +132,7 @@ async def chat_bot_auth(request: Request):
         raise HTTPException(status_code=401, detail="unauthorized user")
 
 async def reset_chatBot(request: Request, botId: str):
+    """Reset chatbot history and notify RTLayer listeners."""
     body = await request.json()
     thread_id = body.get('thread_id')
     sub_thread_id = body.get('sub_thread_id')

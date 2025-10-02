@@ -6,6 +6,7 @@ from src.services.utils.time import Timer
 
 
 async def agents_auth(request: Request):
+        """Authenticate public agent requests using JWT and seed timer state."""
         try:
             timer_obj = Timer()
             timer_obj.start()

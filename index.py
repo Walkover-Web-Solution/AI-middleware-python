@@ -45,9 +45,11 @@ if atatus_client is None and (Config.ENVIROMENT == 'PRODUCTION'):
 
     
 async def consume_messages_in_executor():
+    """Run queue consumer in the current event loop."""
     await queue_obj.consume_messages()
 
 async def consume_sub_messages_in_executor():
+    """Run subscription queue consumer in the current event loop."""
     await sub_queue_obj.consume_messages()
     
 @asynccontextmanager
@@ -121,6 +123,7 @@ app.add_middleware(
 # Healthcheck route
 @app.get("/healthcheck")
 async def healthcheck():
+    """Return a simple health check payload."""
     print("hello from healthcheck")
     return JSONResponse(status_code=200, content={
             "status": "OK running good... v1.2",
@@ -129,8 +132,10 @@ async def healthcheck():
 
 @app.get("/90-sec")
 async def bloking():
+    """Simulate a long-running request for diagnostics."""
     try:
         async def blocking_io_function():
+            """Sleep for 90 seconds to mimic blocking work."""
             await asyncio.sleep(90)  # Sleep for 2 minutes
             # response = await fetch("https://flow.sokt.io/func/scriDLT6j3lB")
             # return response
@@ -149,6 +154,7 @@ async def bloking():
 
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(exc: RequestValidationError):
+    """Convert validation errors into a simplified response format."""
     return JSONResponse(
         status_code=400,
         content={"detail": "Custom error message", "errors": exc.errors()},
@@ -157,7 +163,9 @@ async def validation_exception_handler(exc: RequestValidationError):
 # New route for streaming data
 @app.get("/stream")
 async def stream_data():
+    """Stream incremental integers as server-sent events."""
     async def generate():
+        """Yield incremental counter values with a delay."""
         for i in range(100):
             yield f"data: {i}\n\n\n"
             await asyncio.sleep(1)

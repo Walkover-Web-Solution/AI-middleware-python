@@ -1,6 +1,7 @@
 class ModelsConfig:
     @staticmethod
     def gpt_3_5_turbo():
+        """Return configuration for gpt_3_5_turbo."""
         configuration = {
             "model": {
                 "field": "dropdown",
@@ -116,6 +117,7 @@ class ModelsConfig:
 
     @staticmethod
     def gpt_3_5_turbo_0613():
+        """Return configuration for gpt_3_5_turbo_0613."""
         configuration = {
             "model": {
                 "field": "dropdown",
@@ -220,6 +222,7 @@ class ModelsConfig:
 
     @staticmethod
     def gpt_3_5_turbo_0125():
+        """Return configuration for gpt_3_5_turbo_0125."""
         configuration = {
             "model": {
                 "field": "dropdown",
@@ -343,6 +346,7 @@ class ModelsConfig:
 
     @staticmethod
     def gpt_3_5_turbo_0301():
+        """Return configuration for gpt_3_5_turbo_0301."""
         configuration = {
             "model": {
                 "field": "dropdown",
@@ -466,6 +470,7 @@ class ModelsConfig:
 
     @staticmethod
     def gpt_3_5_turbo_1106():
+        """Return configuration for gpt_3_5_turbo_1106."""
         configuration = {
             "model": {
                 "field": "dropdown",
@@ -589,6 +594,7 @@ class ModelsConfig:
 
     @staticmethod
     def gpt_3_5_turbo_16k():
+        """Return configuration for gpt_3_5_turbo_16k."""
         configuration = {
             "model": {
                 "field": "dropdown",
@@ -712,6 +718,7 @@ class ModelsConfig:
 
     @staticmethod
     def gpt_3_5_turbo_16k_0613():
+        """Return configuration for gpt_3_5_turbo_16k_0613."""
         configuration = {
             "model": {
                 "field": "dropdown",
@@ -836,6 +843,7 @@ class ModelsConfig:
 
     @staticmethod
     def gpt_4():
+        """Return configuration for gpt_4."""
         configuration = {
             "model": {
                 "field": "dropdown",
@@ -957,6 +965,7 @@ class ModelsConfig:
 
     @staticmethod
     def gpt_4_0613():
+        """Return configuration for gpt_4_0613."""
         configuration = {
             "model": {
                 "field": "dropdown",
@@ -1085,6 +1094,7 @@ class ModelsConfig:
 
     @staticmethod
     def gpt_4_1106_preview():
+        """Return configuration for gpt_4_1106_preview."""
         configuration = {
             "model": {
                 "field": "dropdown",
@@ -1207,6 +1217,7 @@ class ModelsConfig:
 
     @staticmethod
     def gpt_4_turbo_preview():
+        """Return configuration for gpt_4_turbo_preview."""
         configuration = {
             "model": {
                 "field": "dropdown",
@@ -1329,6 +1340,7 @@ class ModelsConfig:
 
     @staticmethod
     def gpt_4_0125_preview():
+        """Return configuration for gpt_4_0125_preview."""
         configuration = {
             "model": {
                 "field": "dropdown",
@@ -1451,6 +1463,7 @@ class ModelsConfig:
 
     @staticmethod
     def gpt_4_turbo_2024_04_09():
+        """Return configuration for gpt_4_turbo_2024_04_09."""
         configuration = {
             "model": {
                 "field": "drop",
@@ -1578,6 +1591,7 @@ class ModelsConfig:
 
     @staticmethod
     def gpt_4_turbo():
+        """Return configuration for gpt_4_turbo."""
         configuration = {
             "model": {
                 "field": "drop",
@@ -1714,6 +1728,7 @@ class ModelsConfig:
     
     @staticmethod
     def gpt_4o():
+        """Return configuration for gpt_4o."""
         configuration = {
             "model": {
                 "field": "drop",
@@ -1860,6 +1875,7 @@ class ModelsConfig:
         }
     @staticmethod
     def gpt_4o_search_preview():
+        """Return configuration for gpt_4o_search_preview."""
         configuration = {
             "model": {
                 "field": "drop",
@@ -1934,6 +1950,7 @@ class ModelsConfig:
     
     @staticmethod
     def gpt_4_5_preview():
+        """Return configuration for gpt_4_5_preview."""
         configuration = {
             "model": {
                 "field": "drop",
@@ -2070,6 +2087,7 @@ class ModelsConfig:
     
     @staticmethod
     def gpt_4o_2024_08_06():
+        """Return configuration for gpt_4o_2024_08_06."""
         configuration = {
             "model": {
                 "field": "drop",
@@ -2205,6 +2223,7 @@ class ModelsConfig:
         }
     @staticmethod
     def chatgpt_4o_latest():
+        """Return configuration for chatgpt_4o_latest."""
         configuration = {
             "model": {
                 "field": "drop",
@@ -2336,6 +2355,7 @@ class ModelsConfig:
         }
     @staticmethod
     def gpt_4o_mini():
+        """Return configuration for gpt_4o_mini."""
         configuration = {
             "model": {
                 "field": "dropdown",
@@ -2483,6 +2503,7 @@ class ModelsConfig:
 
     @staticmethod
     def gpt_4o_mini_search_preview():
+        """Return configuration for gpt_4o_mini_search_preview."""
         configuration = {
             "model": {
                 "field": "dropdown",
@@ -2562,6 +2583,7 @@ class ModelsConfig:
     
     @staticmethod
     def gpt_4o_mini_2024_07_18():
+        """Return configuration for gpt_4o_mini_2024_07_18."""
         configuration = {
             "model": {
                 "field": "dropdown",
@@ -2707,6 +2729,7 @@ class ModelsConfig:
     
     @staticmethod
     def o1():
+        """Return configuration for o1."""
         configuration = {
             "model": {
                 "field": "drop",
@@ -2797,6 +2820,7 @@ class ModelsConfig:
     
     @staticmethod
     def o3_mini():
+        """Return configuration for o3_mini."""
         configuration = {
             "model": {
                 "field": "drop",
@@ -2880,6 +2904,7 @@ class ModelsConfig:
     
     @staticmethod
     def o1_preview():
+        """Return configuration for o1_preview."""
         configuration = {
             "model": {
                 "field": "drop",
@@ -2932,6 +2957,7 @@ class ModelsConfig:
 
     @staticmethod
     def o1_mini():
+        """Return configuration for o1_mini."""
         configuration = {
             "model": {
                 "field": "drop",
@@ -2997,6 +3023,7 @@ class ModelsConfig:
     
     @staticmethod
     def gpt_3_5_turbo_instruct():
+        """Return configuration for gpt_3_5_turbo_instruct."""
         configuration = {
             "model": {
                 "field": "drop",
@@ -3137,6 +3164,7 @@ class ModelsConfig:
     
     @staticmethod
     def gemini_1_5_pro():
+        """Return configuration for gemini_1_5_pro."""
         configuration = {
             "model": {
                 "field": "drop",
@@ -3216,6 +3244,7 @@ class ModelsConfig:
     
     @staticmethod
     def gemini_pro():
+        """Return configuration for gemini_pro."""
         configuration = {
             "model": {
                 "field": "drop",
@@ -3294,6 +3323,7 @@ class ModelsConfig:
     
     @staticmethod
     def gemini_1_5_Flash():
+        """Return configuration for gemini_1_5_Flash."""
         configuration = {
             "model": {
                 "field": "drop",
@@ -3372,6 +3402,7 @@ class ModelsConfig:
     
     @staticmethod
     def gemini_1_0_pro():
+        """Return configuration for gemini_1_0_pro."""
         configuration = {
             "model": {
                 "field": "drop",
@@ -3450,6 +3481,7 @@ class ModelsConfig:
     
     @staticmethod
     def gemini_1_0_pro_vision():
+        """Return configuration for gemini_1_0_pro_vision."""
         configuration = {
             "model": {
                 "field": "drop",
@@ -3527,6 +3559,7 @@ class ModelsConfig:
         }
     @staticmethod
     def claude_3_5_sonnet_20241022():
+        """Return configuration for claude_3_5_sonnet_20241022."""
         configuration = {
             "model": {
                 "field": "drop",
@@ -3628,6 +3661,7 @@ class ModelsConfig:
     
     @staticmethod
     def claude_3_5_sonnet_20240620():
+        """Return configuration for claude_3_5_sonnet_20240620."""
         configuration = {
             "model": {
                 "field": "drop",
@@ -3717,6 +3751,7 @@ class ModelsConfig:
     
     @staticmethod
     def claude_3_5_sonnet_latest():
+        """Return configuration for claude_3_5_sonnet_latest."""
         configuration = {
             "model": {
                 "field": "drop",
@@ -3818,6 +3853,7 @@ class ModelsConfig:
         
     @staticmethod
     def claude_3_opus_20240229(): 
+        """Return configuration for claude_3_opus_20240229."""
         configuration = {
             "model": {
                 "field": "drop",
@@ -3918,6 +3954,7 @@ class ModelsConfig:
         }
     @staticmethod
     def claude_3_opus_latest(): 
+        """Return configuration for claude_3_opus_latest."""
         configuration = {
             "model": {
                 "field": "drop",
@@ -4016,6 +4053,7 @@ class ModelsConfig:
         
     @staticmethod
     def claude_3_sonnet_20240229(): 
+        """Return configuration for claude_3_sonnet_20240229."""
         configuration = {
             "model": {
                 "field": "drop",
@@ -4113,6 +4151,7 @@ class ModelsConfig:
     
     @staticmethod
     def claude_3_haiku_20240307(): 
+        """Return configuration for claude_3_haiku_20240307."""
         configuration = {
             "model": {
                 "field": "drop",
@@ -4213,6 +4252,7 @@ class ModelsConfig:
         }
     @staticmethod
     def claude_3_5_haiku_20241022(): 
+        """Return configuration for claude_3_5_haiku_20241022."""
         configuration = {
             "model": {
                 "field": "drop",
@@ -4311,6 +4351,7 @@ class ModelsConfig:
 
     @staticmethod
     def claude_3_7_sonnet_latest(): 
+        """Return configuration for claude_3_7_sonnet_latest."""
         configuration = {
             "model": {
                 "field": "drop",
@@ -4405,6 +4446,7 @@ class ModelsConfig:
 
     @staticmethod
     def llama_3_3_70b_versatile():
+        """Return configuration for llama_3_3_70b_versatile."""
         configuration = {
             "model": {
                 "field": "drop",
@@ -4540,6 +4582,7 @@ class ModelsConfig:
     
     @staticmethod
     def llama_3_1_8b_instant():
+        """Return configuration for llama_3_1_8b_instant."""
         configuration = {
             "model": {
                 "field": "drop",
@@ -4675,6 +4718,7 @@ class ModelsConfig:
     
     @staticmethod
     def llama3_70b_8192():
+        """Return configuration for llama3_70b_8192."""
         configuration = {
             "model": {
                 "field": "drop",
@@ -4798,6 +4842,7 @@ class ModelsConfig:
     
     @staticmethod
     def qwen_2_5_coder_32b():
+        """Return configuration for qwen_2_5_coder_32b."""
         configuration = {
             "model": {
                 "field": "drop",
@@ -4858,6 +4903,7 @@ class ModelsConfig:
     
     @staticmethod
     def qwen_2_5_32b():
+        """Return configuration for qwen_2_5_32b."""
         configuration = {
             "model": {
                 "field": "drop",
@@ -4929,6 +4975,7 @@ class ModelsConfig:
     
     @staticmethod
     def deepseek_r1_distill_qwen_32b():
+        """Return configuration for deepseek_r1_distill_qwen_32b."""
         configuration = {
             "model": {
                 "field": "drop",
@@ -5010,6 +5057,7 @@ class ModelsConfig:
     
     @staticmethod
     def deepseek_r1_distill_llama_70b_specdec():
+        """Return configuration for deepseek_r1_distill_llama_70b_specdec."""
         configuration = {
             "model": {
                 "field": "drop",
@@ -5078,6 +5126,7 @@ class ModelsConfig:
     
     @staticmethod
     def deepseek_r1_distill_llama_70b():
+        """Return configuration for deepseek_r1_distill_llama_70b."""
         configuration = {
             "model": {
                 "field": "drop",
@@ -5149,6 +5198,7 @@ class ModelsConfig:
     
     @staticmethod
     def llama3_8b_8192():
+        """Return configuration for llama3_8b_8192."""
         configuration = {
             "model": {
                 "field": "drop",
@@ -5273,6 +5323,7 @@ class ModelsConfig:
     
     @staticmethod
     def mixtral_8x7b_32768():
+        """Return configuration for mixtral_8x7b_32768."""
         configuration = {
             "model": {
                 "field": "drop",
@@ -5408,6 +5459,7 @@ class ModelsConfig:
     
     @staticmethod
     def gemma2_9b_it():
+        """Return configuration for gemma2_9b_it."""
         configuration = {
             "model": {
                 "field": "drop",
@@ -5542,6 +5594,7 @@ class ModelsConfig:
     
     @staticmethod
     def llama_guard_3_8b():
+        """Return configuration for llama_guard_3_8b."""
         configuration = {
             "model": {
                 "field": "drop",
@@ -5674,6 +5727,7 @@ class ModelsConfig:
     
     @staticmethod
     def dall_e_3():
+        """Return configuration for dall_e_3."""
         configuration = {
             "model": {
                 "field": "drop",
@@ -5739,6 +5793,7 @@ class ModelsConfig:
     
     @staticmethod
     def dall_e_2():
+        """Return configuration for dall_e_2."""
         configuration = {
             "model": {
                 "field": "drop",
@@ -5807,6 +5862,7 @@ class ModelsConfig:
     
     @staticmethod
     def text_embedding_3_large():
+        """Return configuration for text_embedding_3_large."""
         configuration = {
             "model": {
                 "field": "dropdown",
@@ -5857,6 +5913,7 @@ class ModelsConfig:
     
     @staticmethod
     def text_embedding_3_small():
+        """Return configuration for text_embedding_3_small."""
         configuration = {
             "model": {
                 "field": "dropdown",
@@ -5908,6 +5965,7 @@ class ModelsConfig:
     
     @staticmethod
     def text_embedding_ada_002():
+        """Return configuration for text_embedding_ada_002."""
         configuration = {
             "model": {
                 "field": "dropdown",

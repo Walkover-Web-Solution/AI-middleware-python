@@ -5,6 +5,7 @@ import asyncio
 
 
 async def try_catch(fn, *args, **kwargs):
+    """Await a coroutine and swallow exceptions, returning None on failure."""
     try:
         return await fn(*args, **kwargs)
     except Exception as e:

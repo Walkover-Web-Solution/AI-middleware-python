@@ -7,6 +7,7 @@ from src.services.utils.gcp_upload_service import uploadDoc
 
 
 async def OpenAIImageModel(configuration, apiKey, execution_time_logs, timer):
+    """Generate images via OpenAI, upload to GCP, and return URLs."""
     try:
         openai_config = AsyncOpenAI(api_key=apiKey)
         timer.start()

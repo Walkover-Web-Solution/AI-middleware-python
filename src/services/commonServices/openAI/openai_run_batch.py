@@ -4,6 +4,7 @@ from openai import AsyncOpenAI
 import io
 
 async def create_batch_file(data, apiKey):
+    """Upload a newline-delimited batch request file to OpenAI."""
     try:
         file_content = "\n".join(data)
         filelike_obj = io.BytesIO(file_content.encode("utf-8"))
@@ -18,6 +19,7 @@ async def create_batch_file(data, apiKey):
         raise
 
 async def process_batch_file(batch_input_file, apiKey):
+    """Kick off a batch job for the uploaded request file."""
     try:
         openAI = AsyncOpenAI(api_key=apiKey)
         batch_input_file_id = batch_input_file.id
@@ -35,6 +37,7 @@ async def process_batch_file(batch_input_file, apiKey):
 
 
 async def retrieve_batch_status(batch_id, apiKey):
+    """Fetch the latest status for a batch job."""
     try:
         openAI = AsyncOpenAI(api_key=apiKey)
         batch = await openAI.batches.retrieve(batch_id)

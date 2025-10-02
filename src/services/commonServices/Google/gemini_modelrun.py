@@ -6,6 +6,7 @@ from globals import *
 
 
 async def gemini_modelrun(configuration, apiKey, execution_time_logs, bridge_id, timer, message_id=None, org_id=None, name = "", org_name= "", service = "", count=0, token_calculator=None):
+    """Execute a Gemini completion with fallback to alternate models."""
     try:
         # Validate token count before making API call
         # model_name = configuration.get('model')
@@ -15,6 +16,7 @@ async def gemini_modelrun(configuration, apiKey, execution_time_logs, bridge_id,
 
         # Define the API call function
         async def api_call(config):
+            """Invoke Gemini chat completion and capture success/errors."""
             try:
                 chat_completion = await gemini.chat.completions.create(**config)
                 return {'success': True, 'response': chat_completion.to_dict()}
@@ -27,6 +29,7 @@ async def gemini_modelrun(configuration, apiKey, execution_time_logs, bridge_id,
 
         # Define how to get the alternative configuration
         def get_alternative_config(config):
+            """Switch between preferred Gemini flash variants for retries."""
             current_model = config.get('model', '')
             if current_model == 'gemini-2.5-flash-lite-preview-06-17':
                 config['model'] = 'gemini-2.5-flash'

@@ -6,6 +6,7 @@ from globals import *
 
 
 async def anthropic_runmodel(configuration, apikey, execution_time_logs, bridge_id, timer, name = "", org_name = "", service = "", count = 0, token_calculator=None):
+    """Invoke Anthropic messages API with retry and alternate model support."""
     try:
         # # Validate token count before making API call
         # model_name = configuration.get('model')
@@ -16,6 +17,7 @@ async def anthropic_runmodel(configuration, apikey, execution_time_logs, bridge_
 
         # Define the API call function
         async def api_call(config):
+            """Call Anthropic asynchronously and wrap result in a dict."""
             try:
                 response = await anthropic_client.messages.create(**config)
                 return {'success': True, 'response': response.to_dict()}
@@ -28,6 +30,7 @@ async def anthropic_runmodel(configuration, apikey, execution_time_logs, bridge_
 
         # Define how to get the alternative configuration
         def get_alternative_config(config):
+            """Toggle between default and dated Sonnet models."""
             current_model = config.get('model', '')
             if current_model == 'claude-3-5-sonnet-latest':
                 config['model'] = 'claude-3-5-sonnet-20241022'
@@ -63,6 +66,7 @@ async def anthropic_runmodel(configuration, apikey, execution_time_logs, bridge_
         }
         
 async def anthropic_test_model(configuration, api_key) : 
+    """Execute a single Anthropic request for credential validation."""
     anthropic_client = AsyncAnthropic(api_key = api_key)
     try:
         response = await anthropic_client.messages.create(**configuration)

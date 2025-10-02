@@ -5,11 +5,13 @@ from globals import *
 
 
 async def ai_ml_model_run(configuration, apiKey, execution_time_logs, bridge_id, timer, message_id=None, org_id=None, name = "", org_name= "", service = "", count=0, token_calculator=None):
+    """Execute an AI-ML completion with retry and alternate model fallback."""
     try:
         openAI = AsyncOpenAI(api_key=apiKey, base_url='https://backend.ai.ml/openai')
 
         # Define the API call function
         async def api_call(config):
+            """Invoke the AI-ML chat completion endpoint and wrap errors."""
             try:
                 chat_completion = await openAI.chat.completions.create(**config)
                 return {'success': True, 'response': chat_completion.to_dict()}
@@ -22,6 +24,7 @@ async def ai_ml_model_run(configuration, apiKey, execution_time_logs, bridge_id,
 
         # Define how to get the alternative configuration
         def get_alternative_config(config):
+            """Swap between the two available AI-ML OSS models."""
             current_model = config.get('model', '')
             if current_model == 'gpt-oss-120b':
                 config['model'] = 'gpt-oss-20b'

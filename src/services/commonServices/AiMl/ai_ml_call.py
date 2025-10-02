@@ -6,6 +6,7 @@ from src.services.utils.ai_middleware_format import Response_formatter
 
 class Ai_Ml(BaseService):
     async def execute(self):
+        """Execute an AI-ML chat request, including tool calls and history prep."""
         historyParams = {}
         tools = {}
         functionCallRes = {}

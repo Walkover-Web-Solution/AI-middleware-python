@@ -4,6 +4,7 @@ from ..ai_call_util import call_ai_middleware
 from globals import *
 
 async def structured_output_optimizer(request):
+    """Delegate schema optimization requests to the AI middleware bridge."""
     try:
         body = await request.json()
         variables = {'json_schema': body.get('json_schema'),'query':body.get('query')}

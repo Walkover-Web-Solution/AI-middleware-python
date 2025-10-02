@@ -16,12 +16,14 @@ router = APIRouter()
 executor = ThreadPoolExecutor(max_workers= int(Config.max_workers) or 10)
 
 async def auth_and_rate_limit(request: Request):
+    """Ensure JWT authentication and enforce per-bridge/thread quotas."""
     await jwt_middleware(request)
     await rate_limit(request,key_path='body.bridge_id' , points=100)
     await rate_limit(request,key_path='body.thread_id', points=20)
 
 @router.post('/chat/completion', dependencies=[Depends(auth_and_rate_limit)])
 async def chat_completion(request: Request, db_config: dict = Depends(add_configuration_data_to_body)):
+    """Handle primary chat completions, optionally via orchestrator or queue."""
     request.state.is_playground = False
     request.state.version = 2
     data_to_send = await make_request_data(request)
@@ -56,6 +58,7 @@ async def chat_completion(request: Request, db_config: dict = Depends(add_config
 
 @router.post('/playground/chat/completion/{bridge_id}', dependencies=[Depends(auth_and_rate_limit)])
 async def playground_chat_completion(request: Request, db_config: dict = Depends(add_configuration_data_to_body)):
+    """Run chat completions in playground mode for quick experimentation."""
     request.state.is_playground = True
     request.state.version = 2
     if db_config.get('orchestrator_id'):
@@ -72,6 +75,7 @@ async def playground_chat_completion(request: Request, db_config: dict = Depends
 
 @router.post('/batch/chat/completion', dependencies=[Depends(auth_and_rate_limit)])
 async def batch_chat_completion(request: Request, db_config: dict = Depends(add_configuration_data_to_body)):
+    """Submit a batch chat completion job for asynchronous processing."""
     data_to_send = await make_request_data(request)
     result = await batch(data_to_send)
     return result
@@ -79,6 +83,7 @@ async def batch_chat_completion(request: Request, db_config: dict = Depends(add_
 
 @router.post('/testcases/{version_id}', dependencies=[Depends(auth_and_rate_limit)])
 async def playground_chat_completion(request: Request, db_config: dict = Depends(add_configuration_data_to_body)):
+    """Execute configured testcases for the supplied bridge version."""
     data_to_send = await make_request_data(request)
     result = await run_testcases(data_to_send)
     return result

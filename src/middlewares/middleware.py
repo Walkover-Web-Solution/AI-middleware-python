@@ -7,6 +7,7 @@ from src.services.utils.time import Timer
 from globals import *
 
 async def make_data_if_proxy_token_given(req):
+    """Fetch user/org data using a proxy auth token header."""
     headers = {
         'proxy_auth_token': req.headers.get('proxy_auth_token')
     }
@@ -29,6 +30,7 @@ async def make_data_if_proxy_token_given(req):
    
         
 async def jwt_middleware(request: Request):
+        """Authenticate requests via JWT or proxy tokens and seed state."""
         try:
             timer_obj = Timer()
             timer_obj.start()

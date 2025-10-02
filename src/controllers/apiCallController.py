@@ -5,6 +5,7 @@ from globals import *
 from src.services.utils.apicallUtills import validate_required_params
 
 async def get_all_apicalls_controller(request):
+    """Return every stored API function for the user's organisation/folder."""
     try:
         org_id = request.state.profile['org']['id']
         folder_id = request.state.folder_id if hasattr(request.state, 'folder_id') else None
@@ -22,6 +23,7 @@ async def get_all_apicalls_controller(request):
     
 
 async def update_apicalls_controller(request, function_id):
+    """Validate and persist changes to an existing API call."""
     try:
         org_id = request.state.profile['org']['id']
         body = await request.json()  
@@ -49,6 +51,7 @@ async def update_apicalls_controller(request, function_id):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 async def delete_function(request):
+    """Delete an API function by name for the current organisation."""
     try:
         org_id = request.state.profile['org']['id']
         body = await request.json()

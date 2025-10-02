@@ -8,6 +8,7 @@ from src.services.utils.ai_middleware_format import Response_formatter
 
 class Antrophic(BaseService):
     async def execute(self):
+        """Execute an Anthropic Claude request with tool and media support."""
         historyParams = {}
         tools = {}
         conversation = []

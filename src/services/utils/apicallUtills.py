@@ -5,6 +5,7 @@ apiCallModel = db['apicalls']
 from globals import *
 
 async def get_api_data(org_id, function_name, folder_id, user_id, isEmbedUser):
+    """Fetch an API call document scoped by organisation, folder, and user."""
     try:
         query = {"org_id": org_id, "function_name": function_name}
         if folder_id:
@@ -21,6 +22,7 @@ async def get_api_data(org_id, function_name, folder_id, user_id, isEmbedUser):
 
 
 async def save_api(desc, org_id, folder_id, user_id, api_data=None, required_params=None, function_name="", fields=None, endpoint_name="", version="v2"):
+    """Create or update an API call document with merged field metadata."""
     if fields is None:
         fields = []
     if required_params is None:
@@ -80,7 +82,9 @@ async def save_api(desc, org_id, folder_id, user_id, api_data=None, required_par
     
     
 def updateFields(oldFields, newFields, versionCheck):
+    """Merge new field definitions with existing ones, respecting version rules."""
     def update_recursive(old, new):
+        """Recursively merge nested field definitions preserving metadata."""
         # Now update/merge remaining keys
         for key in new:
             if key in old:
@@ -111,6 +115,7 @@ def updateFields(oldFields, newFields, versionCheck):
         return update_recursive(transformed_data, newFields)
 
 async def delete_api(function_name, org_id, status = 0):
+    """Soft-delete an API call by toggling its status flag."""
     try:
         data = await apiCallModel.find_one_and_update({"org_id": org_id, "function_name": function_name}, {"$set": {"status": status}}, return_document=True)
         if data:
@@ -129,12 +134,14 @@ async def delete_api(function_name, org_id, status = 0):
 
 
 async def delete_all_version_and_bridge_ids_from_cache(Id_to_delete):
+    """Evict cached bridge and version entries impacted by an API update."""
     for ids in Id_to_delete.get('bridge_ids', []):
         await delete_in_cache(str(ids))
     for ids in Id_to_delete.get('version_ids', []):
         await delete_in_cache(str(ids))
     
 def validate_required_params(data_to_update):
+    """Ensure required params only reference existing properties or parameters."""
     if not isinstance(data_to_update, dict):
         return data_to_update
 

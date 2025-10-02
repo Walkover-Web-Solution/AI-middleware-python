@@ -5,6 +5,7 @@ from src.services.cache_service import find_in_cache, store_in_cache, client, RE
 from src.services.utils.gcp_upload_service import uploadDoc
 
 async def image_processing(request):
+    """Upload an image from form data and return its public URL."""
     body = await request.form()
     file = body.get('image')
     
@@ -30,6 +31,7 @@ async def image_processing(request):
 
 
 async def file_processing(request):
+    """Upload a file, caching PDF urls against thread identifiers when provided."""
     body = await request.form()
     file = body.get('file')
     if file is None:

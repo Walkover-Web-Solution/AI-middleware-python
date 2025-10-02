@@ -20,6 +20,7 @@ version_model = db['configuration_versions']
 
 
 async def get_version(org_id, version_id):
+    """Fetch a specific bridge version document for the given org."""
     try:
         bridge = await version_model.find_one({'_id' : ObjectId(version_id), 'org_id' : org_id})
         return bridge
@@ -28,6 +29,7 @@ async def get_version(org_id, version_id):
         return None
 
 async def create_bridge_version(bridge_data, parent_id=None):
+    """Clone bridge data into a draft version and return its id."""
     bridge_version_data = bridge_data.copy()
     keys_to_remove = ['name', 'slugName', 'bridgeType', 'status']
     for key in keys_to_remove:
@@ -40,6 +42,7 @@ async def create_bridge_version(bridge_data, parent_id=None):
     return str(bridge_version_data['_id'])
 
 async def update_bridges(bridge_id, update_fields):
+    """Update a bridge record, merging version lists and other fields."""
     update_query = {}
 
     # Handle 'versions' separately with $addToSet
@@ -68,6 +71,7 @@ async def update_bridges(bridge_id, update_fields):
     return updated_bridge
     
 async def get_version_with_tools(bridge_id, org_id):
+    """Retrieve a version and expand function references into API call objects."""
     pipeline = [
         {
             '$match': {'_id': ObjectId(bridge_id), "org_id": org_id}
@@ -131,6 +135,7 @@ async def get_version_with_tools(bridge_id, org_id):
     }
     
 async def publish(org_id, version_id, user_id):
+    """Publish a version to the parent bridge while updating audit logs."""
     get_version_data = (await get_bridges_with_tools(bridge_id = None, org_id = org_id, version_id = version_id)).get('bridges')
     if not get_version_data:
         raise BadRequestException('version data not found')
@@ -185,6 +190,7 @@ async def publish(org_id, version_id, user_id):
         "message": "Configuration updated successfully", 
     }
 async def makeQuestion(parent_id, prompt, functions, save = False):
+    """Generate starter questions from a prompt, optionally persisting them."""
     if functions: 
         filtered_functions = {
             function['endpoint_name']: function['description'] for function in functions.values()
@@ -205,6 +211,7 @@ async def makeQuestion(parent_id, prompt, functions, save = False):
     
 
 async def get_comparison_score(org_id, version_id):
+    """Compare a version's answers to historical expectations and score overlap."""
     version_data = (await get_bridges_with_tools_and_apikeys(None, org_id, version_id))['bridges']
     published_version = (await get_bridges_without_tools(version_data['parent_id']))['bridges']
     

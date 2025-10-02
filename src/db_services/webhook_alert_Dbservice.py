@@ -4,6 +4,7 @@ from globals import *
 alertModel = db['alerts']
 
 async def get_webhook_data(org_id):
+    """Fetch stored webhook alert configurations for an organisation."""
     try:
         webhook_data = await alertModel.find({
             'org_id': org_id
@@ -17,4 +18,3 @@ async def get_webhook_data(org_id):
             'success': False,
             'error': error
         }
-

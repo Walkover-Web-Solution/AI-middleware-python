@@ -10,6 +10,7 @@ from config import Config
 rag_parent_model = db["rag_parent_datas"]
 
 async def create_semantic_chuncking(request,id):
+    """Generate semantic text chunks for a stored document using OpenAI embeddings."""
     try:
         apikey =  Config.OPENAI_API_KEY
         result = await rag_parent_model.find({

@@ -13,6 +13,7 @@ from ..services.cache_service import find_in_cache, store_in_cache
 
 
 async def getThread(thread_id, sub_thread_id, org_id, bridge_id, bridgeType):
+    """Fetch chat history for a thread/sub-thread, filtering resets when needed."""
     try:
         chats = await chatbotDbService.find(org_id, thread_id, sub_thread_id, bridge_id)
         if bridgeType:
@@ -30,6 +31,7 @@ async def getThread(thread_id, sub_thread_id, org_id, bridge_id, bridgeType):
         raise err
 
 async def savehistory(thread_id, sub_thread_id, userMessage, botMessage, org_id, bridge_id, model_name, type, messageBy, userRole="user", tools={}, chatbot_message = "",tools_call_data = [],message_id = None, version_id = None, image_url = None, revised_prompt = None, urls = None, AiConfig = None, annotations = None, fallback_model = None):
+    """Persist messages, tool calls, and RTLayer updates for a conversation turn."""
     try:
         chatToSave = [{
             'thread_id': thread_id,
@@ -118,31 +120,32 @@ async def savehistory(thread_id, sub_thread_id, userMessage, botMessage, org_id,
         raise error
 
 async def add_tool_call_data_in_history(chats):
-        tools_call_indices = []
-    
-        for i in range(len(chats)):
-            current_chat = chats[i]
-            if current_chat['role'] == 'tools_call':
-                if i > 0 and (i + 1) < len(chats):
-                    prev_chat = chats[i - 1]
-                    next_chat = chats[i + 1]
-                    if prev_chat['role'] == 'user' and next_chat['role'] == 'assistant':
-                        tools_call_data = current_chat.get('tools_call_data', [])
-                        messages = []
-                        for call_data in tools_call_data:
-                            call_info = next(iter(call_data.values()))
-                            name = call_info.get('name', '')
-                            messages.append(f"{name}")
-                        if messages:
-                            combined_message = "tool_call has been done function name:-  " +  ', '.join(messages)
-                            if next_chat['content']:
-                                next_chat['content'] += '\n' + combined_message
-                        tools_call_indices.append(i)
-        
-        processed_chats = [chat for idx, chat in enumerate(chats) if idx not in tools_call_indices]
-        return processed_chats
+    """Append tool-call summaries to adjacent assistant messages and prune markers."""
+    tools_call_indices = []
+    for i in range(len(chats)):
+        current_chat = chats[i]
+        if current_chat['role'] == 'tools_call':
+            if i > 0 and (i + 1) < len(chats):
+                prev_chat = chats[i - 1]
+                next_chat = chats[i + 1]
+                if prev_chat['role'] == 'user' and next_chat['role'] == 'assistant':
+                    tools_call_data = current_chat.get('tools_call_data', [])
+                    messages = []
+                    for call_data in tools_call_data:
+                        call_info = next(iter(call_data.values()))
+                        name = call_info.get('name', '')
+                        messages.append(f"{name}")
+                    if messages:
+                        combined_message = "tool_call has been done function name:-  " +  ', '.join(messages)
+                        if next_chat['content']:
+                            next_chat['content'] += '\n' + combined_message
+                    tools_call_indices.append(i)
+
+    processed_chats = [chat for idx, chat in enumerate(chats) if idx not in tools_call_indices]
+    return processed_chats
 
 async def save_sub_thread_id_and_name(thread_id, sub_thread_id, org_id, thread_flag, response_format, bridge_id, user):
+    """Persist and cache a sub-thread identifier, generating display names when needed."""
     try:
         
         # Create Redis cache key for the combination

@@ -8,8 +8,10 @@ from src.services.utils.send_error_webhook import send_error_to_webhook
 import asyncio
 
 def handle_exceptions(func):
+    """Decorator to standardise error handling and webhook reporting."""
     @wraps(func)
     async def wrapper(request_body, *args, **kwargs):
+        """Execute the wrapped handler and capture exceptions for logging/webhooks."""
         try:
             body = request_body.get('body', {})
             return await func(request_body, *args, **kwargs)
@@ -51,4 +53,3 @@ def handle_exceptions(func):
             )
     
     return wrapper
-

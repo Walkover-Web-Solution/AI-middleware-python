@@ -4,10 +4,12 @@ from fastapi import HTTPException
 from src.configs.model_configuration import model_config_document
 
 async def get_default_values_controller(service, model, current_configuration, type):
+    """Compute default configuration values for a model based on current settings."""
     try:
         service = service.lower()
         
         def get_default_values(config):
+            """Traverse config metadata to derive fallback values."""
             default_values = {}
             config_items = config.get('configuration', {})
             

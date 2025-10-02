@@ -3,9 +3,11 @@ import json
 import jwt
 
 def generate_token(payload, accesskey):
+        """Sign a JWT payload with the provided access key."""
         return jwt.encode(payload, accesskey)
 
 async def call_ai_middleware(user, bridge_id, variables = {}, configuration = None, response_type = None, thread_id = None):
+    """Proxy a request to the public AI middleware endpoint and parse the response."""
     request_body = {
         "user": user,
         "bridge_id": bridge_id,
@@ -38,6 +40,7 @@ async def call_ai_middleware(user, bridge_id, variables = {}, configuration = No
     return result
 
 async def call_gtwy_agent(args):
+    """Invoke GTWY chat directly after enriching input with configuration data."""
     try:
         # Import inside function to avoid circular imports
         from src.services.commonServices.common import chat

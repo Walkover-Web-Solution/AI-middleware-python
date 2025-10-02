@@ -4,12 +4,14 @@ from ..retry_mechanism import execute_with_retry
 from globals import *
 
 async def groq_runmodel(configuration, apiKey, execution_time_logs, bridge_id, timer, message_id, org_id, name = "", org_name = "", service = "", count = 0, token_calculator=None):
+    """Run a Groq completion with simple model fallback retry."""
     try:
         # Initialize async client
         groq_client = AsyncGroq(api_key=apiKey)
 
         # Define the API call function
         async def api_call(config):
+            """Invoke Groq chat completion and normalise response."""
             try:
                 response = await groq_client.chat.completions.create(**config)
                 return {'success': True, 'response': response.to_dict()}
@@ -22,6 +24,7 @@ async def groq_runmodel(configuration, apiKey, execution_time_logs, bridge_id, t
 
         # Define how to get the alternative configuration
         def get_alternative_config(config):
+            """Flip between 8B and 70B Groq models for retries."""
             current_model = config.get('model', '')
             if current_model == 'llama3-8b-8192':
                 config['model'] = 'llama3-70b-8192'
@@ -57,6 +60,7 @@ async def groq_runmodel(configuration, apiKey, execution_time_logs, bridge_id, t
         }
 
 async def groq_test_model(configuration, api_key): 
+    """Perform a simple Groq call to validate credentials."""
     groq_client = AsyncGroq(api_key = api_key)
     try:
         response = await groq_client.chat.completions.create(**configuration)

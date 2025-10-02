@@ -17,6 +17,7 @@ with open('src/services/utils/model_features.json', 'r') as file:
     model_features = json.load(file)
 
 async def create_version(request):
+   """Create a new bridge version, cloning the latest config and metadata."""
    try:
       body = await request.json()
       version_id = body.get('version_id')
@@ -40,6 +41,7 @@ async def create_version(request):
        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail= "Error creating version: " + str(e))
 
 async def get_version(request, version_id: str):
+    """Return a bridge version with derived metadata and variable tracking."""
     try:
         org_id = request.state.profile.get("org",{}).get("id","")
         bridge = await get_version_with_tools(version_id, org_id)
@@ -63,6 +65,7 @@ async def get_version(request, version_id: str):
     
 
 async def publish_version(request, version_id):
+    """Mark the given version as published for the current organisation."""
     try:
         org_id = request.state.profile['org']['id']
         user_id = request.state.user_id
@@ -72,6 +75,7 @@ async def publish_version(request, version_id):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 async def bulk_publish_version(request):
+    """Publish multiple versions in one call, reporting successes and failures."""
     try:
         body = await request.json()
         org_id = request.state.profile['org']['id']
@@ -99,6 +103,7 @@ async def bulk_publish_version(request):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     
 async def check_testcases(request, version_id):
+    """Fetch automated comparison scores for a version's testcases."""
     try:
         org_id = request.state.profile['org']['id']
         score = await get_comparison_score(org_id, version_id)
@@ -108,6 +113,7 @@ async def check_testcases(request, version_id):
 
 
 async def discard_version(request, version_id):
+    """Revert draft changes for a version by restoring persisted bridge data."""
     org_id = request.state.profile['org']['id']
     body = await request.json()
     bridge_id = body.get('bridge_id')
@@ -123,6 +129,7 @@ async def discard_version(request, version_id):
     return result
     
 async def suggest_model(request, version_id):
+    """Suggest the best-fit model for a version using AI heuristics and availability."""
     try: 
         org_id = request.state.profile['org']['id']
         version_data = (await get_version_with_tools(version_id, org_id))['bridges']

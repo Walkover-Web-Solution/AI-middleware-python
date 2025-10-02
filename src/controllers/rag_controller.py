@@ -41,6 +41,7 @@ index = pc.Index(pinecone_index)
 #     pinecone_index = pc.get_index(index_name)
 
 async def create_vectors(request):
+    """Ingest a document, chunk it, embed it, and store metadata."""
     try:
         # Extract the document ID from the URL
         body = await request.form()
@@ -103,6 +104,7 @@ async def create_vectors(request):
         raise HTTPException(status_code=500, detail="An unexpected error occurred.")
 
 async def get_google_docs_data(url):
+    """Download the plain-text contents of a Google Doc by URL."""
     try:
         doc_id = re.search(r'/d/(.*?)/', url).group(1)
         
@@ -126,6 +128,7 @@ async def get_google_docs_data(url):
         raise HTTPException(status_code=500, detail= error)
 
 async def store_in_pinecone_and_mongo(embeddings, chunks, org_id, user_id, name, description, doc_id, file_extension):
+    """Persist chunk embeddings to Pinecone and chunk metadata to MongoDB."""
     try:
         index = pc.Index(pinecone_index)
         chunks_array = []
@@ -170,6 +173,7 @@ async def store_in_pinecone_and_mongo(embeddings, chunks, org_id, user_id, name,
         raise HTTPException(status_code=500, detail= error)
 
 async def get_vectors_and_text(request):
+    """Retrieve top matching chunks for a query or document identifier."""
     try:
         body = await request.json()
         org_id = request.state.profile.get("org", {}).get("id", "")
@@ -200,6 +204,7 @@ async def get_vectors_and_text(request):
         raise HTTPException(status_code=400, detail=error)
 
 async def get_all_docs(request):
+    """List all stored documents for the organisation (scoped by embed user)."""
     try:
         org_id = request.state.profile.get("org", {}).get("id", "")
         user_id = request.state.profile.get("user", {}).get('id')
@@ -223,6 +228,7 @@ async def get_all_docs(request):
         raise HTTPException(status_code=500, detail=error)
 
 async def delete_doc(request):
+    """Delete a document and its associated chunks from Pinecone and Mongo."""
     try:
         body = await request.json()
         index = pc.Index(pinecone_index)
@@ -251,6 +257,7 @@ async def delete_doc(request):
     
 
 async def get_text_from_vectorsQuery(args):
+    """Run a vector similarity query and stitch together the matched text."""
     try:
         doc_id = args.get('Document_id')
         query = args.get('query')

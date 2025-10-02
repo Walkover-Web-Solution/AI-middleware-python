@@ -6,6 +6,7 @@ from src.services.utils.ai_middleware_format import Response_formatter
 
 class GeminiHandler(BaseService):
     async def execute(self):
+        """Execute a Gemini request, handling chat/image flows and tool calls."""
         historyParams = {}
         tools = {}
         functionCallRes = {}

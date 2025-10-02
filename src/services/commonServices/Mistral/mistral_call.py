@@ -6,6 +6,7 @@ from src.services.utils.ai_middleware_format import Response_formatter
 
 class Mistral(BaseService):
     async def execute(self):
+        """Execute a Mistral chat or image request with optional tool calls."""
         historyParams = {}
         tools = {}
         functionCallRes = {}

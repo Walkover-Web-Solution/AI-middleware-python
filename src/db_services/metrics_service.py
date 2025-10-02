@@ -16,6 +16,7 @@ postgres = combined_models['pg']
 timescale = combined_models['timescale']
 
 def start_of_today():
+    """Return a datetime representing midnight today."""
     today = datetime.now()
     return datetime(today.year, today.month, today.day, 0, 0, 0, 0)
 
@@ -79,10 +80,12 @@ async def save_conversations_to_redis(conversations, version_id, thread_id, sub_
         logger.error(traceback.format_exc())
 
 def end_of_today():
+    """Return a datetime representing the final microsecond of today."""
     today = datetime.now()
     return datetime(today.year, today.month, today.day, 23, 59, 59, 999)
 
 async def find(org_id, start_time=None, end_time=None, limit=None, offset=None):
+    """Query metrics data for an org, defaulting to today's window."""
     date_filter = and_(start_time, end_time) if start_time and end_time else and_(start_of_today(), end_of_today())
     query_options = {
         'where': {
@@ -96,14 +99,17 @@ async def find(org_id, start_time=None, end_time=None, limit=None, offset=None):
     return await model.find_all(**query_options)
 
 async def find_one(id):
+    """Fetch a single timescale raw-data record by primary key."""
     model = timescale.raw_data
     return await model.find_by_pk(id)
 
 async def find_one_pg(id):
+    """Fetch a single postgres raw-data record by primary key."""
     model = postgres.raw_data
     return await model.find_by_pk(id)
 
 async def create(dataset, history_params, version_id, thread_info={}):
+    """Persist metrics, raw data, and cached totals for an AI call batch."""
     try:
         conversations = []
         if thread_info is not None:

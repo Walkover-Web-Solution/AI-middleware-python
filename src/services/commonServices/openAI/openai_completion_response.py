@@ -6,6 +6,7 @@ from src.services.utils.ai_middleware_format import Response_formatter
 
 class OpenaiCompletion(BaseService):
     async def execute(self):
+        """Execute OpenAI completion requests with optional tool handling."""
         historyParams = {}
         tools = {}
         functionCallRes = {}

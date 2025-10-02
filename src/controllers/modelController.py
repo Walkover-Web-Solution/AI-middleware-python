@@ -13,6 +13,7 @@ executor = ThreadPoolExecutor(max_workers= int(Config.max_workers) or 10)
 
 @router.post('/chat/completion')
 async def chat_completion(request: Request):
+    """Inform callers that the v1 chat completion route is deprecated."""
     return JSONResponse(
         status_code=410,
         content={
@@ -22,6 +23,7 @@ async def chat_completion(request: Request):
     )
 @router.post('/playground/chat/completion/{bridge_id}', dependencies=[Depends(jwt_middleware)])
 async def playground_chat_completion(request: Request, db_config: dict = Depends(add_configuration_data_to_body)):
+    """Handle v1 playground chat completions for backward compatibility."""
     # Mark the request as coming from playground
     request.state.is_playground = True
     request.state.version = 1

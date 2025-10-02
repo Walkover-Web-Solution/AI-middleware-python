@@ -6,11 +6,13 @@ from globals import *
 
 
 async def mistral_model_run(configuration, apiKey, execution_time_logs, bridge_id, timer, message_id=None, org_id=None, name = "", org_name= "", service = "", count=0, token_calculator=None):
+    """Execute a Mistral completion with retry fallback models."""
     try:
         mistral = Mistral(api_key=apiKey)
 
         # Define the API call function
         async def api_call(config):
+            """Invoke the async Mistral chat completion API."""
             try:
                 chat_completion = await mistral.chat.complete_async(**config)
                 return {'success': True, 'response': chat_completion.model_dump()}
@@ -23,6 +25,7 @@ async def mistral_model_run(configuration, apiKey, execution_time_logs, bridge_i
 
         # Define how to get the alternative configuration
         def get_alternative_config(config):
+            """Swap between primary and magistral variants for retries."""
             current_model = config.get('model', '')
             if current_model == 'mistral-small-2506':
                 config['model'] = 'magistral-small-2506'

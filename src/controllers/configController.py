@@ -20,6 +20,7 @@ from src.services.cache_service import find_in_cache
 from src.db_services.templateDbservice import get_template
 
 async def create_bridges_controller(request):
+    """Create a new bridge, seeding defaults from templates or AI suggestions."""
     try:
         bridges = await request.json()
         purpose = bridges.get('purpose')
@@ -134,6 +135,7 @@ async def create_bridges_controller(request):
         raise HTTPException(status_code=400, detail= "Error in creating bridge: "+ str(e))   
      
 async def create_bridges_using_ai_controller(request):
+    """Delegate bridge creation to the AI middleware using the provided purpose."""
     try:
         body = await request.json()
         purpose = body.get('purpose')
@@ -158,6 +160,7 @@ async def create_bridges_using_ai_controller(request):
 
 
 async def get_bridge(request, bridge_id: str):
+    """Fetch a bridge with tools and enrich it with variable metadata."""
     try:
         bridge = await get_bridges_with_tools(bridge_id,request.state.profile['org']['id'])
         if(bridge.get('bridges') is None):
@@ -181,6 +184,7 @@ async def get_bridge(request, bridge_id: str):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e,)
 
 async def get_all_bridges(request):
+    """Return every bridge for the tenant along with embed tokens and metrics."""
     try:
         org_id = request.state.profile['org']['id']
         folder_id = request.state.folder_id if hasattr(request.state, 'folder_id') else None
@@ -218,11 +222,13 @@ async def get_all_bridges(request):
         raise HTTPException(status_code=500, detail=str(e))
 
 async def get_all_service_models_controller(service, request):
+    """List available models for a service, tailored to the caller's organisation."""
     try:
         service = service.lower()
         org_id = request.state.profile['org']['id']
         
         def restructure_configuration(config):
+            """Flatten model config into client-friendly configuration metadata."""
             model_field = config.get("configuration", {}).get("model", "")
             additional_parameters = config.get("configuration", {})
             
@@ -277,6 +283,7 @@ async def get_all_service_models_controller(service, request):
         return {}
 
 async def get_all_service_controller():
+    """Provide a static map of enabled services and their default models."""
     return {
         "success": True,
         "message": "Get all service successfully",
@@ -507,6 +514,7 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
         raise HTTPException(status_code=500, detail=str(e))
     
 async def get_all_in_built_tools_controller():
+    """List the built-in tools users can toggle on their bridges."""
     return {
         "success": True,
         "message": "Get all inbuilt tools successfully",
@@ -527,6 +535,7 @@ async def get_all_in_built_tools_controller():
     }
 
 async def get_all_agents(request):
+    """Return agent definitions the user has access to via their email."""
     # body  = await request.json()
     user_email = request.state.profile.get("userEmail", '')
     result = await get_all_agents_data(user_email)
@@ -536,6 +545,7 @@ async def get_all_agents(request):
     }, default=str)))
 
 async def get_agent(request,slug_name):
+    """Fetch details for a specific agent resolved by `slug_name`."""
     # body  = await request.json()
     user_email = request.state.profile.get("userEmail",'')
     result = await get_agents_data(slug_name, user_email)
@@ -545,6 +555,7 @@ async def get_agent(request,slug_name):
     }, default=str)))
 
 async def get_bridges_and_versions_by_model_controller(model_name):
+    """List bridges and versions where the supplied model is in use."""
     models = await get_bridges_and_versions_by_model(model_name)
     return {
         "success": True,

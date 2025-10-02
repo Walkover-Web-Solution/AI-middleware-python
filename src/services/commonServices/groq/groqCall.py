@@ -6,6 +6,7 @@ from src.services.utils.ai_middleware_format import Response_formatter
 
 class Groq(BaseService):
     async def execute(self):
+        """Execute a Groq chat request with optional tool invocation."""
         historyParams = {}
         tools = {}
         functionCallRes = {}

@@ -32,6 +32,7 @@ async def get_nested_value(request: Request, path):
     return obj
 
 async def rate_limit(request: Request, key_path: str, points: int = 40, ttl: int = 60):
+    """Increment a rate-limit counter derived from the request state."""
     key = await get_nested_value(request, key_path)
     if not key:
         return
@@ -54,4 +55,3 @@ async def rate_limit(request: Request, key_path: str, points: int = 40, ttl: int
         data = {'count': 1}
 
     await store_in_cache(redis_key, data, ttl)
-

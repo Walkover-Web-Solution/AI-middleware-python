@@ -21,6 +21,7 @@ async def execute_with_retry(
     count = 0,
     token_calculator = None
 ):
+    """Execute API call with a fallback configuration if the first attempt fails."""
     try:
         # Start timer
         firstAttemptError = {}
@@ -89,11 +90,13 @@ async def execute_with_retry(
         }
     
 def check_error_status_code(error_code):
+    """Return True when the error code should skip retries."""
     if error_code in [401,404,429]:
         return True
     return False
 
 async def check_space_issue(response, service=None):
+    """Detect hallucinated blank outputs and mark responses for alerting."""
     
     content = None
     if service == service_name['openai_completion'] or service == service_name['groq'] or service == service_name['open_router'] or service == service_name['mistral'] or service == service_name['gemini'] or service == service_name['ai_ml']:
@@ -135,6 +138,7 @@ async def check_space_issue(response, service=None):
     return response
 
 def filter_model_keys(config): # to be opmized
+    """Remove unsupported configuration keys for specific models."""
     if config['model'] == 'o1':
         keys_to_remove = ['temperature', 'top_p', 'frequency_penalty', 'presence_penalty', 'logprobs', 'echo', 'topK', 'n', 'stopSequences', 'best_of', 'suffix', 'parallel_tool_calls']
         for key in keys_to_remove:

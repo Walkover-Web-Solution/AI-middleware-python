@@ -5,6 +5,7 @@ from bson import ObjectId
 configurationModel = db["templates"]
 
 async def get_template(template_id: str):
+    """Retrieve a template document, accepting either string or ObjectId inputs."""
     try:
         # Handle potential ObjectId conversion if your template_id is stored as ObjectId
         template_query = {"_id": template_id}

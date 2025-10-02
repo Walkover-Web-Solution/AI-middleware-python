@@ -6,7 +6,7 @@ vectorizer = TfidfVectorizer()
 
 
 def compute_cosine_similarity(text1, text2):
+    """Compute cosine similarity between two strings using TF-IDF vectors."""
     tfidf_matrix = vectorizer.fit_transform([text1, text2])
     similarity = cosine_similarity(tfidf_matrix[0], tfidf_matrix[1])
     return float(similarity[0][0])
-

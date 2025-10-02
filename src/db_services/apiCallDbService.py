@@ -11,6 +11,7 @@ from globals import *
 
 # todo :: to make it more better
 async def get_all_api_calls_by_org_id(org_id, folder_id, user_id, isEmbedUser):
+    """Return API call definitions for an org, normalising ids and timestamps."""
     query = {"org_id": org_id}
     query["folder_id"] = folder_id or  None
     if user_id and isEmbedUser:
@@ -62,6 +63,7 @@ async def get_all_api_calls_by_org_id(org_id, folder_id, user_id, isEmbedUser):
 
 
 async def update_api_call_by_function_id(org_id, function_id, data_to_update):
+    """Apply updates to an API call and evict cached bridge/version refs."""
     updated_document = await apiCallModel.find_one_and_update(
         {
             '_id': ObjectId(function_id),  
@@ -90,6 +92,7 @@ async def update_api_call_by_function_id(org_id, function_id, data_to_update):
     }
 
 async def get_function_by_id(function_id):
+    """Fetch a single API call document by its id."""
     try:
         db_data = await apiCallModel.find_one({"_id": ObjectId(function_id)})
         if not db_data:
@@ -104,6 +107,7 @@ async def get_function_by_id(function_id):
 
 
 async def delete_function_from_apicalls_db(org_id, function_name): # This function is throwing error because result is not defined. 
+    """Remove an API call and detach it from any referencing bridges/versions."""
     bridge_data = await apiCallModel.find_one(
         {'org_id': org_id, 'function_name': function_name},
         {'bridge_ids': 1,'version_ids' : 1, '_id': 1}

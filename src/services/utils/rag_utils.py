@@ -8,6 +8,7 @@ from .ai_call_util import call_ai_middleware
 from src.configs.constant import bridge_ids
 
 async def extract_pdf_text(file: UploadFile) -> str:
+    """Read an uploaded PDF file and return concatenated page text."""
     pdf_reader = PyPDF2.PdfReader(io.BytesIO(await file.read()))
     text = ""
     for page in pdf_reader.pages:
@@ -16,6 +17,7 @@ async def extract_pdf_text(file: UploadFile) -> str:
 
 # Function to extract text from DOCX file
 async def extract_docx_text(file: UploadFile) -> str:
+    """Read a DOCX upload and return paragraph text with newlines."""
     doc = docx.Document(io.BytesIO(await file.read()))
     text = ""
     for para in doc.paragraphs:
@@ -24,14 +26,17 @@ async def extract_docx_text(file: UploadFile) -> str:
 
 # Function to extract text from CSV file
 async def extract_csv_text(file: UploadFile) -> str:
+    """Convert a CSV upload into a list of readable row strings."""
     df = pd.read_csv(io.BytesIO(await file.read()))
     def row_to_string(row):
+        """Render a dataframe row as a comma-separated key/value string."""
         return ', '.join([f"{col}: {value}" for col, value in row.items()])
 
     data = df.apply(row_to_string, axis=1).tolist()
     return data
 
 async def get_csv_query_type(doc_data, query):
+    """Determine whether a CSV search should be row- or column-centric."""
     content = doc_data.get('content', {})
     
     if not {'rowWiseData', 'columnWiseData'}.issubset(content):

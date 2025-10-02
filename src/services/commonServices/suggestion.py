@@ -7,6 +7,7 @@ from src.configs.constant import bridge_ids
 from globals import *
 
 async def chatbot_suggestions(response_format, assistant, user, bridge_summary, thread_id, sub_thread_id, configuration):
+    """Generate and dispatch follow-up suggestions based on recent dialogue."""
     try:
         prompt_summary = bridge_summary
         prompt = configuration['prompt']

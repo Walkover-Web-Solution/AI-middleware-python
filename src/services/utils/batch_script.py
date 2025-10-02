@@ -8,6 +8,7 @@ from .ai_middleware_format import Response_formatter
 from globals import *
 
 async def repeat_function():
+    """Poll batch statuses on a fixed interval."""
     while True:
         await check_batch_status()
         await asyncio.sleep(900)
@@ -15,6 +16,7 @@ async def repeat_function():
 
 
 async def check_batch_status():
+    """Inspect queued OpenAI batches, emit results, and clear cache entries."""
     try:
         print("Batch Script running...")
         batch_ids = await find_in_cache_with_prefix('batch_')

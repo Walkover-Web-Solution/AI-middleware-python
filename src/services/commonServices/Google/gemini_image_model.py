@@ -9,6 +9,7 @@ import base64
 from src.services.utils.gcp_upload_service import uploadDoc
 
 async def gemini_image_model(configuration, apikey, execution_time_logs, timer):
+    """Generate Gemini image output, upload it, and return structured data."""
     try:
         # Initialize the Gemini client
         client = genai.Client(api_key=apikey)

@@ -17,12 +17,14 @@ class Queue2(BaseQueue):
     _instance = None
 
     def __new__(cls):
+        """Ensure a singleton instance for the log queue consumer."""
         if cls._instance is None:
             cls._instance = super().__new__(cls)
             cls._instance.__init__()
         return cls._instance
 
     def __init__(self):
+        """Initialise the log queue with environment-specific naming."""
         queue_name = Config.LOG_QUEUE_NAME or f"AI-MIDDLEARE-DATA-QUEUE-{Config.ENVIROMENT}"
         super().__init__(queue_name)
         print("Queue2 Service Initialized")
@@ -46,6 +48,7 @@ class Queue2(BaseQueue):
 
 
     async def consume_messages(self):
+        """Continuously consume log messages and pass them to the handler."""
         try:
             if await self.connect():
                 await self.channel.set_qos(prefetch_count=int(self.prefetch_count))

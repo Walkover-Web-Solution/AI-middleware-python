@@ -5,6 +5,7 @@ from globals import *
 from src.configs.model_configuration import model_config_document
 
 async def add_configuration_data_to_body(request: Request):
+    """Augment request payloads with bridge or orchestrator configuration data."""
 
     try:
         body = await request.json()
@@ -69,4 +70,3 @@ async def add_configuration_data_to_body(request: Request):
         logger.error(f"Error in get_data: {str(e)}, {traceback.format_exc()}")
         raise HTTPException(status_code=400, detail={"success": False, "error": "Error in getting data: "+ str(e)})
     
-

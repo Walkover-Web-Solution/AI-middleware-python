@@ -6,6 +6,7 @@ from src.services.utils.ai_middleware_format import Response_formatter
 
 class OpenRouter(BaseService):
     async def execute(self):
+        """Execute an OpenRouter request, handling media and tool calls."""
         historyParams = {}
         tools = {}
         functionCallRes = {}

@@ -142,6 +142,7 @@ ServiceKeys = {
 }
 
 async def model_config_change(modelConfiguration, custom_config, service):
+    """Normalize user-specified model overrides against configuration bounds."""
     new_custom_config = custom_config.copy()
     for key, value in custom_config.items():
         if value == 'default':

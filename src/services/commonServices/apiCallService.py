@@ -11,6 +11,7 @@ from globals import *
 
 
 async def creates_api(request: Request):
+    """Create or update API definitions based on status flags."""
     try:
         body = await request.json()
         org_id = request.state.profile.get("org",{}).get("id","")
@@ -80,6 +81,7 @@ async def creates_api(request: Request):
 
 
 async def updates_api(request: Request, bridge_id: str):
+    """Update bridge pre-tool configuration via API call payload."""
     try:
         body = await request.json()
         org_id = request.state.org_id if hasattr(request.state, 'org_id') else None
@@ -114,6 +116,7 @@ async def updates_api(request: Request, bridge_id: str):
 
 
 def traverse_body(body, required_params=None, path="", paths=None):
+    """Recursively locate required placeholders within a payload template."""
     if required_params is None:
         required_params = []
     if paths is None:

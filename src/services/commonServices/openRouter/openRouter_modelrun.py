@@ -6,6 +6,7 @@ from globals import *
 
 
 async def openrouter_modelrun(configuration, apiKey, execution_time_logs, bridge_id, timer, message_id=None, org_id=None, name = "", org_name= "", service = "", count = 0, token_calculator=None):
+    """Execute an OpenRouter completion with fallback providers."""
     try:
         # Validate token count before making API call (raises exception if invalid)
         # model_name = configuration.get('model')
@@ -15,6 +16,7 @@ async def openrouter_modelrun(configuration, apiKey, execution_time_logs, bridge
 
         # Define the API call function
         async def api_call(config):
+            """Send a chat completion request via OpenRouter."""
             try:
                 chat_completion = await openAI.chat.completions.create(**config)
                 return {'success': True, 'response': chat_completion.to_dict()}
@@ -27,6 +29,7 @@ async def openrouter_modelrun(configuration, apiKey, execution_time_logs, bridge
 
         # Define how to get the alternative configuration
         def get_alternative_config(config):
+            """Toggle between default OpenRouter models for retries."""
             current_model = config.get('model', '')
             if current_model == 'deepseek/deepseek-chat-v3-0324:free':
                 config['model'] = 'openai/gpt-4o'
