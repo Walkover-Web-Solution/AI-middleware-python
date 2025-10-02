@@ -170,8 +170,31 @@ async def publish(org_id, version_id, user_id):
         {'_id': ObjectId(parent_id)},
         {'$set': updated_configuration}
     )
-    await version_model.update_one({'_id': ObjectId(prev_published_version_id)}, {'$set': {'is_drafted': True}})
-    await version_model.update_one({'_id': ObjectId(published_version_id)}, {'$set': {'is_drafted': False}})
+    # Use transaction for version updates with parallel execution and error handling
+    async with await db.client.start_session() as session:
+        async with session.start_transaction():
+            try:
+                # Execute version updates in parallel within transaction
+                await asyncio.gather(
+                    version_model.update_one(
+                        {'_id': ObjectId(prev_published_version_id)}, 
+                        {'$set': {'is_drafted': True}},
+                        session=session
+                    ),
+                    version_model.update_one(
+                        {'_id': ObjectId(published_version_id)}, 
+                        {'$set': {'is_drafted': False}},
+                        session=session
+                    )
+                )
+                
+                # Check if any operation failed
+                
+                        
+            except Exception as e:
+                # Transaction will automatically rollback on exception
+                logger.error(f"Version update transaction failed: {str(e)}, {traceback.format_exc()}")
+                raise Exception(f"Failed to update version states: {str(e)}")
     await add_bulk_user_entries([{
                 'user_id': user_id,
                 'org_id': org_id,
