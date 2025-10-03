@@ -91,6 +91,17 @@ async def get_all_testcases_controller(bridge_id):
         # Get merged data from both testcases and testcases_history collections
         merged_testcases = await get_merged_testcases_and_history_by_bridge_id(bridge_id)
         
+        # Group history by version_id for each testcase
+        for testcase in merged_testcases:
+            testcase['version_history'] = {}
+            for history in testcase['history']:
+                version_id = history['version_id']
+                if not testcase['version_history'].get(version_id):
+                    testcase['version_history'][version_id] = []
+                testcase['version_history'][version_id].append(history)
+            # Remove the original history array as it's now organized by version_id
+            del testcase['history']
+        
         return JSONResponse(content={
             "success": True,
             "data": make_json_serializable(merged_testcases)
