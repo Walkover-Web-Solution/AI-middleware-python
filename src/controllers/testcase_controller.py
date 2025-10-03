@@ -5,7 +5,8 @@ from src.db_services.testcase_services import (
     delete_testcase_by_id, 
     get_all_testcases_by_bridge_id,
     get_testcase_by_id,
-    update_testcase_by_id
+    update_testcase_by_id,
+    get_merged_testcases_and_history_by_bridge_id
 )
 import traceback
 from src.services.cache_service import make_json_serializable
@@ -85,13 +86,14 @@ async def delete_testcase_controller(testcase_id):
         })
 
 async def get_all_testcases_controller(bridge_id):
-    """Get all testcases for a specific bridge_id"""
+    """Get all testcases with their history merged for a specific bridge_id"""
     try:
-        testcases = await get_all_testcases_by_bridge_id(bridge_id)
+        # Get merged data from both testcases and testcases_history collections
+        merged_testcases = await get_merged_testcases_and_history_by_bridge_id(bridge_id)
         
         return JSONResponse(content={
             "success": True,
-            "data": make_json_serializable(testcases)
+            "data": make_json_serializable(merged_testcases)
         })
     except Exception as error:
         traceback.print_exc()

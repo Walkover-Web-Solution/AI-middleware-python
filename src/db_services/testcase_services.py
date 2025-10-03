@@ -78,6 +78,29 @@ async def fetch_testcases_history(bridge_id):
     result = await cursor.to_list(length=None)
     return result
 
+async def get_merged_testcases_and_history_by_bridge_id(bridge_id):
+    """Get all testcases with their history merged for a specific bridge_id"""
+    try:
+        # Use aggregation pipeline to merge testcases with their history
+        pipeline = [
+            {"$match": {"bridge_id": bridge_id}},
+            {"$lookup": {
+                "from": "testcases_history",
+                "let": {"testcaseIdStr": {"$toString": "$_id"}},
+                "pipeline": [
+                    {"$match": {"$expr": {"$eq": ["$testcase_id", "$$testcaseIdStr"]}}}
+                ],
+                "as": "history"
+            }}
+        ]
+        
+        cursor = testcases_model.aggregate(pipeline)
+        result = await cursor.to_list(length=None)
+        return result
+    except Exception as e:
+        logger.error(f"Error fetching merged testcases and history: {str(e)}")
+        raise e
+
 async def delete_current_testcase_history(version_id):
     try:
         
