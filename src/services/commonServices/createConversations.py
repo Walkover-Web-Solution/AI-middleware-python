@@ -73,6 +73,10 @@ class ConversationService:
                 if message['role'] not in ['assistant', 'user']:
                     continue  # Skip invalid roles
                 
+                # Skip messages with empty content
+                if not message.get('content') or message['content'].strip() == '':
+                    continue
+                
                 # If role doesn't match expected, skip this message
                 if message['role'] != expected_role:
                     continue
@@ -124,7 +128,7 @@ class ConversationService:
                     'role': message['role'],
                     'content': content_items
                 })
-            
+            print(threads)
             return {
                 'success': True,
                 'messages': threads
