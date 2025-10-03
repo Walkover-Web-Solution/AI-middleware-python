@@ -52,7 +52,7 @@ def parse_request_body(request_body):
         "response_format": body.get("configuration", {}).get("response_format"),
         "response_type": body.get("configuration", {}).get("response_type"),
         "model": body.get("configuration", {}).get('model'),
-        "is_playground": state.get('is_playground', False),
+        "is_playground": state.get('is_playground') or body.get('is_playground') or False,
         "bridge": body.get('bridge'),
         "pre_tools": body.get('pre_tools'),
         "version": state.get('version'),

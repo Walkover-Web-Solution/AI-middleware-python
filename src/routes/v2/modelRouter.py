@@ -9,6 +9,7 @@ from concurrent.futures import ThreadPoolExecutor
 from config import Config
 from src.services.commonServices.queueService.queueService import queue_obj
 from src.middlewares.ratelimitMiddleware import rate_limit
+from models.mongo_connection import db
 from globals import *
 
 router = APIRouter()
@@ -55,7 +56,7 @@ async def chat_completion(request: Request, db_config: dict = Depends(add_config
 
 
 @router.post('/playground/chat/completion/{bridge_id}', dependencies=[Depends(auth_and_rate_limit)])
-async def playground_chat_completion(request: Request, db_config: dict = Depends(add_configuration_data_to_body)):
+async def playground_chat_completion_bridge(request: Request, db_config: dict = Depends(add_configuration_data_to_body)):
     request.state.is_playground = True
     request.state.version = 2
     if db_config.get('orchestrator_id'):
@@ -77,8 +78,138 @@ async def batch_chat_completion(request: Request, db_config: dict = Depends(add_
     return result
 
 
-@router.post('/testcases/{version_id}', dependencies=[Depends(auth_and_rate_limit)])
-async def playground_chat_completion(request: Request, db_config: dict = Depends(add_configuration_data_to_body)):
-    data_to_send = await make_request_data(request)
-    result = await run_testcases(data_to_send)
-    return result
+@router.post('/testcases', dependencies=[Depends(auth_and_rate_limit)])
+async def run_testcases_route(request: Request):
+    request.state.is_playground = True
+    request.state.version = 2
+    
+    try:
+        # Get request body
+        body = await request.json()
+        bridge_id = body.get('bridge_id')
+        version_id = body.get('version_id')
+        testcase_id = body.get('testcase_id')
+        
+        if not bridge_id:
+            raise HTTPException(status_code=400, detail={"success": False, "error": "bridge_id is required"})
+        
+        if not version_id:
+            raise HTTPException(status_code=400, detail={"success": False, "error": "version_id is required"})
+        
+        # Fetch testcases from MongoDB
+        testcases_collection = db['testcases']
+        
+        if testcase_id:
+            # Fetch specific testcase by _id
+            from bson import ObjectId
+            testcase = await testcases_collection.find_one({"_id": ObjectId(testcase_id)})
+            if not testcase:
+                return {"success": False, "message": "No testcase found for the given testcase_id", "results": []}
+            testcases = [testcase]
+        else:
+            # Fetch all testcases with the given bridge_id
+            testcases = await testcases_collection.find({"bridge_id": bridge_id}).to_list(length=None)
+            if not testcases:
+                return {"success": True, "message": "No testcases found for the given bridge_id", "results": []}
+        
+        # Manually call the configuration service to get the configuration
+        from src.services.utils.getConfiguration import getConfiguration
+        
+        org_id = request.state.profile['org']['id']
+        db_config = await getConfiguration(
+            None,
+            None,
+            bridge_id, 
+            None,
+            None,
+            {},
+            org_id, 
+            None,
+            version_id=version_id, 
+            extra_tools=[], 
+            built_in_tools=None,
+            guardrails=None
+        )
+        
+        if not db_config.get("success"):
+            raise HTTPException(status_code=400, detail={"success": False, "error": db_config.get("error", "Failed to get configuration")})
+        
+        # Process all testcases in parallel
+        async def process_testcase(testcase):
+            try:
+                # Create request data for this testcase
+                # Set conversation in db_config
+                db_config['configuration']['conversation'] = testcase.get('conversation', [])
+                
+                testcase_request_data = {
+                    "body": {
+                        "user": testcase.get('conversation', [])[-1].get('content', '') if testcase.get('conversation') else '',
+                        "testcase_data": {
+                            "matching_type": testcase.get('matching_type') or 'cosine',
+                            "run_testcase": True,
+                            "_id": testcase.get('_id'),
+                            "expected": testcase.get('expected'),
+                            "type": testcase.get('type', 'response')
+                        },
+                        **db_config
+                        
+                    },
+                    "state": {
+                        "is_playground": True,
+                        "version": 2
+                    }
+                }
+                
+                # Call chat function
+                result = await chat(testcase_request_data)
+                
+                # Extract data from JSONResponse object
+                if hasattr(result, 'body'):
+                    import json
+                    result_data = json.loads(result.body.decode('utf-8'))
+                else:
+                    result_data = result
+                
+                print("Result data:", result_data)
+                
+                # Extract testcase result with score if available
+                testcase_result = result_data.get('response', {}).get('testcase_result', {}) if isinstance(result_data, dict) else {}
+                
+                return {
+                    "testcase_id": str(testcase.get('_id')),
+                    "bridge_id": testcase.get('bridge_id'),
+                    "expected": testcase.get('expected'),
+                    "actual_result": result_data.get('response', {}).get('data', {}).get('content', '') if isinstance(result_data, dict) else str(result_data),
+                    "score": testcase_result.get('score'),
+                    "matching_type": testcase.get('matching_type', ''),
+                    "success": True
+                }
+            except Exception as e:
+                logger.error(f"Error processing testcase {testcase.get('_id')}: {str(e)}")
+                return {
+                    "testcase_id": str(testcase.get('_id')),
+                    "bridge_id": testcase.get('bridge_id'),
+                    "expected": testcase.get('expected'),
+                    "actual_result": None,
+                    "score": 0,
+                    "matching_type": testcase.get('matching_type', 'cosine'),
+                    "error": str(e),
+                    "success": False
+                }
+        
+        # Run all testcases in parallel
+        results = await asyncio.gather(*[process_testcase(testcase) for testcase in testcases])
+        
+        return {
+            "success": True,
+            "bridge_id": bridge_id,
+            "version_id": version_id,
+            "total_testcases": len(testcases),
+            "results": results
+        }
+        
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        logger.error(f"Error in run_testcases_route: {str(e)}")
+        raise HTTPException(status_code=500, detail={"success": False, "error": f"Internal server error: {str(e)}"})
