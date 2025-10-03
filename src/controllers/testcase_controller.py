@@ -120,10 +120,8 @@ async def handle_playground_testcase(result, parsed_data):
             
             # Prepare update data
             update_data = {}
-            if 'conversation' in testcase_data:
-                update_data['conversation'] = testcase_data['conversation']
-            if 'type' in testcase_data:
-                update_data['type'] = testcase_data['type']
+            if 'conversation' in parsed_data['configuration']:
+                update_data['conversation'] = parsed_data['configuration']['conversation']
             if 'matching_type' in testcase_data:
                 update_data['matching_type'] = testcase_data['matching_type']
             

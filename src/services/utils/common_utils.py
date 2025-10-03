@@ -894,9 +894,6 @@ async def process_background_tasks_for_playground(result, parsed_data):
         
         # If testcase_id exists, update in background and return immediately
         if testcase_data.get('testcase_id'):
-            # Add existing testcase_id to response
-            result['response']['testcase_id'] = testcase_data['testcase_id']
-            
             # Update testcase in background (async task)
             async def update_testcase_background():
                 try:
