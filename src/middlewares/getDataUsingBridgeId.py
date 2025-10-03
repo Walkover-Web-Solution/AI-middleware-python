@@ -42,8 +42,7 @@ async def add_configuration_data_to_body(request: Request):
                 version_id=version_id, 
                 extra_tools=body.get('extra_tools', []), 
                 built_in_tools=body.get('built_in_tools'),
-                guardrails=body.get('guardrails'),
-                testcases_id=testcases_id
+                guardrails=body.get('guardrails')
             )
         if not db_config.get("success"):
                 raise HTTPException(status_code=400, detail={"success": False, "error": db_config["error"]}) 
