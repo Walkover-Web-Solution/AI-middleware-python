@@ -12,8 +12,7 @@ from src.services.utils.ai_call_util import call_ai_middleware
 from src.db_services.ConfigurationServices import update_apikey_creds
 from src.configs.model_configuration import model_config_document
 from models.mongo_connection import db
-
-foldersModel = db['folders']
+from ..db_services.folder_service import get_folder_data
 
 with open('src/services/utils/model_features.json', 'r') as file: 
     model_features = json.load(file)
@@ -105,7 +104,7 @@ async def suggest_model(request, version_id):
         version_data = (await get_version_with_tools(version_id, org_id))['bridges']
         available_services = version_data.get('apikey_object_id', {}).keys()
         if folder_id:
-            api_key_object_ids = (await foldersModel.find_one({'_id': ObjectId(folder_id)}))['apikey_object_id']
+            api_key_object_ids = (await get_folder_data(folder_id))['apikey_object_id']
             available_services = api_key_object_ids.keys()
         if not available_services:
             raise Exception('Please select api key for proceeding further')
