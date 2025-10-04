@@ -131,28 +131,45 @@ def process_api_call_tool(api_data, variables_path_bridge):
 def process_extra_tool(tool):
     """Process an extra tool and convert it to tool format"""
     if not isinstance(tool, dict) or not tool.get("url"):
-        return None, None
-    
+        return None, None, {}
+
+    tool_name = tool.get('name')
+    if not tool_name:
+        return None, None, {}
+
+    properties = tool.get('fields', {}) or {}
+    if not isinstance(properties, dict):
+        properties = {}
+
+    required_params = tool.get("required_params", []) or []
+    if not isinstance(required_params, list):
+        required_params = []
+
     tool_format = {
         "type": "function",
-        "name": makeFunctionName(tool.get('name')),
+        "name": makeFunctionName(tool_name),
         "description": tool.get('description'),
-        "properties": tool.get('fields', {}),
-        "required": tool.get("required_params", [])
+        "properties": properties,
+        "required": required_params
     }
-    
+
     tool_mapping = {
         "url": tool.get("url"),
-        "headers": tool.get("headers", {})
+        "headers": tool.get("headers", {}),
+        "name": tool_name
     }
-    
-    return tool_format, tool_mapping
+    variable_path = tool.get('tool_and_variable_path', {}) or {}
+    # Remove properties that are filled by gateway
+    for key in variable_path:
+        properties.pop(key, None)
+
+    return tool_format, tool_mapping, {tool_name: variable_path}
 
 def setup_tools(result, variables_path_bridge, extra_tools):
     """Setup tools and tool mappings"""
     tools = []
     tool_id_and_name_mapping = {}
-    
+    variable_path ={}
     # Process API calls
     for _, api_data in result.get('bridges', {}).get('apiCalls', {}).items():
         tool_format, tool_mapping = process_api_call_tool(api_data, variables_path_bridge)
@@ -160,16 +177,14 @@ def setup_tools(result, variables_path_bridge, extra_tools):
             name_of_function = tool_format["name"]
             tools.append(tool_format)
             tool_id_and_name_mapping[name_of_function] = tool_mapping
-    
     # Process extra tools
     for tool in extra_tools:
-        tool_format, tool_mapping = process_extra_tool(tool)
+        tool_format, tool_mapping, variable_path = process_extra_tool(tool)
         if tool_format:
             name_of_function = tool_format["name"]
             tools.append(tool_format)
             tool_id_and_name_mapping[name_of_function] = tool_mapping
-    
-    return tools, tool_id_and_name_mapping
+    return tools, tool_id_and_name_mapping, {**variables_path_bridge, **variable_path}
 
 def setup_api_key(service, result, apikey):
     """Setup API key for the service"""
