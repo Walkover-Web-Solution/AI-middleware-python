@@ -1,7 +1,7 @@
 from fastapi import HTTPException, status
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
-from src.db_services.ConfigurationServices import create_bridge, get_all_bridges_in_org_by_org_id, get_bridge_by_id, get_all_bridges_in_org, update_bridge, update_bridge_ids_in_api_calls, get_bridges_with_tools, get_apikey_creds, update_apikey_creds, update_built_in_tools, update_agents, get_all_agents_data, get_agents_data
+from src.db_services.ConfigurationServices import create_bridge, get_all_bridges_in_org_by_org_id, get_bridge_by_id, get_all_bridges_in_org, update_bridge, update_bridge_ids_in_api_calls, get_bridges_with_tools, get_apikey_creds, update_apikey_creds, update_built_in_tools, update_agents, get_all_agents_data, get_agents_data, get_bridges_and_versions_by_model
 from src.configs.modelConfiguration import ModelsConfig as model_configuration
 from src.services.utils.helper import Helper
 import json
@@ -57,7 +57,7 @@ async def create_bridges_controller(request):
         else:
             name_next_count = 1
             slug_next_count = 1
-            if isEmbedUser and bridges.get('name').startswith("untitled_agent_"):
+            if bridges.get('name').startswith("untitled_agent_"):
                 if all_bridge:
                     for bridge in all_bridge:
                         if bridge.get('name') and bridge.get('name').startswith("untitled_agent_"):
@@ -175,7 +175,8 @@ async def get_bridge(request, bridge_id: str):
                 path_variables.append(vars_dict)
         all_variables = variables + path_variables
         bridge.get('bridges')['all_varaibles'] = all_variables
-        return Helper.response_middleware_for_bridge(bridge.get('bridges')['service'], {"succcess": True,"message": "bridge get successfully","bridge":bridge.get("bridges", {})})
+        response = await Helper.response_middleware_for_bridge(bridge.get('bridges')['service'], {"success": True,"message": "bridge get successfully","bridge":bridge.get("bridges", {})})
+        return response
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e,)
 
@@ -185,10 +186,13 @@ async def get_all_bridges(request):
         folder_id = request.state.folder_id if hasattr(request.state, 'folder_id') else None
         user_id = request.state.user_id if hasattr(request.state, 'user_id') else None
         isEmbedUser = request.state.embed
+        viasocket_embed_user_id = org_id
+        if user_id and isEmbedUser and folder_id:
+            viasocket_embed_user_id += "_" + folder_id + "_" + user_id
         bridges = await get_all_bridges_in_org(org_id, folder_id, user_id, isEmbedUser)
-        embed_token = Helper.generate_token({ "org_id": Config.ORG_ID, "project_id": Config.PROJECT_ID, "user_id": org_id },Config.Access_key )
-        alerting_embed_token = Helper.generate_token({ "org_id": Config.ORG_ID, "project_id": Config.ALERTING_PROJECT_ID, "user_id": org_id },Config.Access_key )
-        trigger_embed_token = Helper.generate_token({ "org_id": Config.ORG_ID, "project_id": Config.TRIGGER_PROJECT_ID, "user_id": org_id },Config.Access_key )
+        embed_token = Helper.generate_token({ "org_id": Config.ORG_ID, "project_id": Config.PROJECT_ID, "user_id": viasocket_embed_user_id },Config.Access_key )
+        alerting_embed_token = Helper.generate_token({ "org_id": Config.ORG_ID, "project_id": Config.ALERTING_PROJECT_ID, "user_id": viasocket_embed_user_id },Config.Access_key )
+        trigger_embed_token = Helper.generate_token({ "org_id": Config.ORG_ID, "project_id": Config.TRIGGER_PROJECT_ID, "user_id": viasocket_embed_user_id },Config.Access_key )
         history_page_chatbot_token = Helper.generate_token({ "org_id": "11202", "chatbot_id": "67286d4083e482fd5b466b69", "user_id": org_id },Config.CHATBOT_ACCESS_KEY )
         doctstar_embed_token = Helper.generate_token({ "org_id": Config.DOCSTAR_ORG_ID, "collection_id": Config.DOCSTAR_COLLECTION_ID, "user_id": org_id },Config.DOCSTAR_ACCESS_KEY )
         # metrics_data = await get_timescale_data(org_id)
@@ -279,11 +283,12 @@ async def get_all_service_controller():
         "services": {
             "openai": {"model": "gpt-4o"},
             "anthropic": {"model": "claude-3-7-sonnet-latest"},
-            "groq": {"model": "llama3-70b-8192"},
+            "groq": {"model": "llama-3.3-70b-versatile"},
             "open_router": {"model": "deepseek/deepseek-chat-v3-0324:free"},
             "mistral": {"model": "mistral-medium-latest"},
             "gemini" : {"model" : "gemini-2.5-flash"},
-            "ai_ml" : {"model" : "gpt-oss-20b"}
+            "ai_ml" : {"model" : "gpt-oss-20b"},
+            "openai_completion" : {"model" : "gpt-4o"}
         }
     }
 
@@ -357,7 +362,8 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
             'name': lambda v: True,
             'bridgeType': lambda v: True,
             'meta': lambda v: True,
-            'fall_back': lambda v: True
+            'fall_back': lambda v: True,
+            'guardrails': lambda v: isinstance(v, dict) and 'is_enabled' in v
         }
         
         # Update simple fields if they exist in the request
@@ -488,11 +494,12 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
         
         # Return success response
         if result.get("success"):
-            return Helper.response_middleware_for_bridge(bridge['service'], {
+            response = await Helper.response_middleware_for_bridge(bridge['service'], {
                 "success": True,
                 "message": "Bridge Updated successfully",
                 "bridge": result.get('bridges')
-            })
+            }, True)
+            return response
         
     except ValidationError as e:
         raise HTTPException(status_code=400, detail=f"Validation error: {e.json()}")
@@ -510,6 +517,12 @@ async def get_all_in_built_tools_controller():
                 "name": 'Web Search',
                 "description": 'Allow models to search the web for the latest information before generating a response.',
                 "value": 'web_search'
+            },
+            {
+                "id": '2',
+                "name" : "image generation",
+                "description": "Allow models to generate images based on the user's input.",
+                "value": 'image_generation'
             }
         ]
     }
@@ -531,3 +544,12 @@ async def get_agent(request,slug_name):
         "success": True,
         "data": result
     }, default=str)))
+
+async def get_bridges_and_versions_by_model_controller(model_name):
+    models = await get_bridges_and_versions_by_model(model_name)
+    return {
+        "success": True,
+        "message": "Fetched models and bridges they are used in successfully.",
+        model_name: models
+    }
+    

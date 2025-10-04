@@ -870,13 +870,13 @@ async def get_apikey_creds(org_id, apikey_object_ids):
 async def update_apikey_creds(version_id, apikey_object_ids):
     try:
         if isinstance(apikey_object_ids, dict):
+            # First, remove the version_id from any apikeycredentials documents that contain it
+            await apikeyCredentialsModel.update_many(
+                {'version_ids': version_id},
+                {'$pull': {'version_ids': version_id}}
+            )
+            
             for service, api_key_id in apikey_object_ids.items():
-                # First, remove the version_id from any apikeycredentials documents that contain it
-                await apikeyCredentialsModel.update_many(
-                    {'version_ids': version_id},
-                    {'$pull': {'version_ids': version_id}}
-                )
-                
                 # Then add the version_id to the target document
                 await apikeyCredentialsModel.update_one(
                     {'_id': ObjectId(api_key_id)},
@@ -948,3 +948,19 @@ async def get_agents_data(slug_name, user_email):
         ]
     })
     return bridges
+
+async def get_bridges_and_versions_by_model(model_name):
+    try:
+        cursor = configurationModel.find(
+            {"configuration.model": model_name},
+            {"org_id": 1, "name": 1, "_id": 1,"versions":1}  # projection
+        )
+        bridges = await cursor.to_list(length=None)
+        bridges = [
+            {**{k: v for k, v in bridge.items() if k != "_id"}, "bridge_id": str(bridge["_id"])}
+            for bridge in bridges
+        ]
+        return bridges
+    except Exception as error:
+        logger.error(f'Error in get_bridges_and_versions_by_model: {str(error)}')
+        raise error

@@ -12,7 +12,7 @@ apiCallModel = db['apicalls']
 from globals import *
 
 async def getConfiguration(configuration, service, bridge_id, apikey, template_id=None, variables={}, 
-                           org_id="", variables_path=None, version_id=None, extra_tools=[], built_in_tools=[]):
+                           org_id="", variables_path=None, version_id=None, extra_tools=[], built_in_tools=[], guardrails={}):
     """
     Get configuration for a bridge with all necessary tools and settings.
     
@@ -46,6 +46,11 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
     # Setup configuration
     configuration, service = setup_configuration(configuration, result, service)
 
+    if service == 'openai_response':   
+        service = 'openai'
+    if bridge_data.get('bridges', {}).get('openai_completion'):
+        service = 'openai_completion'     
+
     # Setup API key
     service = service.lower() if service else ""
     apikey = setup_api_key(service, result, apikey)
@@ -72,7 +77,7 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
     variables_path_bridge = bridge.get('variables_path', {})
     
     # Setup tools and tool mappings
-    tools, tool_id_and_name_mapping = setup_tools(result, variables_path_bridge, extra_tools)
+    tools, tool_id_and_name_mapping, variables_path_bridge = setup_tools(result, variables_path_bridge, extra_tools)
     configuration.pop('tools', None)
     configuration['tools'] = tools
     
@@ -112,7 +117,7 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
     
     # Add connected agents
     add_connected_agents(result, tools, tool_id_and_name_mapping)
-    
+
     # Return final configuration
     return {
         'success': True,
@@ -139,4 +144,6 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
         "variables_state": result.get("bridges", {}).get("variables_state", {}),
         "built_in_tools": built_in_tools or result.get("bridges", {}).get("built_in_tools"),
         "fall_back" : result.get("bridges", {}).get("fall_back") or {},
+        "guardrails" : guardrails if guardrails is not None else (result.get("bridges", {}).get("guardrails") or {}),
     }
+

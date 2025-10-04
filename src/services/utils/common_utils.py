@@ -87,6 +87,7 @@ def parse_request_body(request_body):
         "thread_flag" : body.get('thread_flag') or False,
         "files" : body.get('files') or [],
         "fall_back" : body.get('fall_back') or {},
+        "guardrails" : body.get('bridges', {}).get('guardrails') or {}
     }
 
 
@@ -657,6 +658,7 @@ async def orchestrator_agent_chat(agent_config, body=None, user=None):
                         "id": body.get("org_id", "")
                     }
                 },
+                "timer":body.get('state', {}).get("timer", []),
                 "isPlayground": False
             },
             "path_params": {}

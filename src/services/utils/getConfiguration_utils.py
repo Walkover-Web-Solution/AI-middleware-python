@@ -63,6 +63,12 @@ def setup_tool_choice(configuration, result, service):
         if api_data['_id'] in tool_choice_ids:
             toolchoice = makeFunctionName(api_data['endpoint_name'] or api_data['function_name'])
             break
+    if not toolchoice:
+        connected_agents = result.get('bridges',{}).get('connected_agents',{})
+        for agent_name, agent_data in connected_agents.items():
+            if tool_choice_ids == agent_data['bridge_id']:
+                toolchoice = makeFunctionName(agent_name)
+                break
     
     # Find choice type
     found_choice = None
@@ -131,28 +137,45 @@ def process_api_call_tool(api_data, variables_path_bridge):
 def process_extra_tool(tool):
     """Process an extra tool and convert it to tool format"""
     if not isinstance(tool, dict) or not tool.get("url"):
-        return None, None
-    
+        return None, None, {}
+
+    tool_name = tool.get('name')
+    if not tool_name:
+        return None, None, {}
+
+    properties = tool.get('fields', {}) or {}
+    if not isinstance(properties, dict):
+        properties = {}
+
+    required_params = tool.get("required_params", []) or []
+    if not isinstance(required_params, list):
+        required_params = []
+
     tool_format = {
         "type": "function",
-        "name": makeFunctionName(tool.get('name')),
+        "name": makeFunctionName(tool_name),
         "description": tool.get('description'),
-        "properties": tool.get('fields', {}),
-        "required": tool.get("required_params", [])
+        "properties": properties,
+        "required": required_params
     }
-    
+
     tool_mapping = {
         "url": tool.get("url"),
-        "headers": tool.get("headers", {})
+        "headers": tool.get("headers", {}),
+        "name": tool_name
     }
-    
-    return tool_format, tool_mapping
+    variable_path = tool.get('tool_and_variable_path', {}) or {}
+    # Remove properties that are filled by gateway
+    for key in variable_path:
+        properties.pop(key, None)
+
+    return tool_format, tool_mapping, {tool_name: variable_path}
 
 def setup_tools(result, variables_path_bridge, extra_tools):
     """Setup tools and tool mappings"""
     tools = []
     tool_id_and_name_mapping = {}
-    
+    variable_path ={}
     # Process API calls
     for _, api_data in result.get('bridges', {}).get('apiCalls', {}).items():
         tool_format, tool_mapping = process_api_call_tool(api_data, variables_path_bridge)
@@ -160,16 +183,14 @@ def setup_tools(result, variables_path_bridge, extra_tools):
             name_of_function = tool_format["name"]
             tools.append(tool_format)
             tool_id_and_name_mapping[name_of_function] = tool_mapping
-    
     # Process extra tools
     for tool in extra_tools:
-        tool_format, tool_mapping = process_extra_tool(tool)
+        tool_format, tool_mapping, variable_path = process_extra_tool(tool)
         if tool_format:
             name_of_function = tool_format["name"]
             tools.append(tool_format)
             tool_id_and_name_mapping[name_of_function] = tool_mapping
-    
-    return tools, tool_id_and_name_mapping
+    return tools, tool_id_and_name_mapping, {**variables_path_bridge, **variable_path}
 
 def setup_api_key(service, result, apikey):
     """Setup API key for the service"""
@@ -180,6 +201,8 @@ def setup_api_key(service, result, apikey):
 
     if service == 'ai_ml' and not apikey and not db_api_key:
         apikey = Config.AI_ML_APIKEY
+    if service == 'openai_completion':
+        db_api_key = db_apikeys.get('openai')
     
     # Check for folder API keys if folder_id exists
     folder_api_key = result.get('bridges', {}).get('folder_apikeys', {}).get(service)
@@ -282,7 +305,8 @@ def add_connected_agents(result, tools, tool_id_and_name_mapping):
         return
     
     for bridge_name, bridge_info in connected_agents.items():
-        id = bridge_info.get('bridge_id', '')
+        bridge_id_value = bridge_info.get('bridge_id', '')
+        version_id_value = bridge_info.get('version_id', '')
         description = bridge_info.get('description', '')
         variables = bridge_info.get('variables', {})
         fields = variables.get('fields', {})
@@ -308,5 +332,7 @@ def add_connected_agents(result, tools, tool_id_and_name_mapping):
         
         tool_id_and_name_mapping[name] = {
             "type": "AGENT",
-            "bridge_id": id
+            "bridge_id": bridge_id_value,
+            "requires_thread_id": bridge_info.get('thread_id', False),
+            "version_id": version_id_value
         }

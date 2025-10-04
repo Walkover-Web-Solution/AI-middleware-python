@@ -20,8 +20,10 @@ from ...configs.constant import service_name
 from ..commonServices.openAI.openai_embedding_call import OpenaiEmbedding
 from ..commonServices.Google.geminiCall import GeminiHandler
 from ..commonServices.AiMl.ai_ml_call import Ai_Ml
+from ..commonServices.openAI.openai_completion_response import OpenaiCompletion
 from ..cache_service import find_in_cache, store_in_cache
 from ..utils.apiservice import fetch
+from ..commonServices.baseService.utils import sendResponse
 from datetime import datetime
 import pytz
 class Helper:
@@ -138,13 +140,16 @@ class Helper:
     def generate_token(payload, accesskey):
         return jwt.encode(payload, accesskey)
 
-    def response_middleware_for_bridge(service, finalResponse):
+    async def response_middleware_for_bridge (service, finalResponse, isBridgeUpdated = False):
         try:
             response = finalResponse['bridge']
             model = response['configuration']['model']
             modelObj = model_config_document[service][model]
             configurations = modelObj['configuration']
             db_config = response['configuration']
+            org_id = response['org_id']
+            bridge_id = response.get('parent_id') if response.get('parent_id') else response['_id']
+            version_id = None if not response.get('parent_id') else response['_id']
             # if response.get('apikey'):
             #     decryptedApiKey = Helper.decrypt(response['apikey'])
             #     maskedApiKey = Helper.mask_api_key(decryptedApiKey)
@@ -167,6 +172,22 @@ class Helper:
                     config[key] = db_config.get(key, response['configuration'].get(key, ''))
             response['configuration'] = config
             finalResponse['bridge'] = response
+
+            response_format_copy = {
+                'cred' : {
+                    'channel': org_id + bridge_id,
+                    'apikey': Config.RTLAYER_AUTH,
+                    'ttl': '1'
+                },
+                'type' : 'RTLayer'
+            }
+            dataToSend={
+                'type': "agent_updated",
+                'bridge_id': bridge_id,
+                'version_id': version_id
+            }
+            if isBridgeUpdated:
+                await sendResponse(response_format_copy, dataToSend, True)
             return finalResponse
         except json.JSONDecodeError as error:
             return {"success": False, "error": str(error)}
@@ -176,6 +197,7 @@ class Helper:
         return variables
     
     async def create_service_handler(params, service):
+        class_obj = None
         if service == service_name['openai']:
             class_obj = OpenaiResponse(params)
         elif service == service_name['gemini']:
@@ -190,6 +212,11 @@ class Helper:
             class_obj = Mistral(params)
         elif service == service_name['ai_ml']:
             class_obj = Ai_Ml(params)
+        elif service == service_name['openai_completion']:
+            class_obj = OpenaiCompletion(params)
+        else:
+            raise ValueError(f"Unsupported service: {service}")
+        
         return class_obj
 
     
@@ -201,7 +228,7 @@ class Helper:
         if modelObj is None:
             raise AttributeError(f"Model function '{model}' not found in model_configuration.")
 
-        if service in ['openai', 'groq', 'ai_ml']:
+        if service in ['openai', 'groq', 'ai_ml', 'openai_completion']:
             token_cost['input_cost'] = modelObj['outputConfig']['usage'][0]['total_cost'].get('input_cost') or 0
             token_cost['output_cost'] = modelObj['outputConfig']['usage'][0]['total_cost'].get('output_cost') or 0
             token_cost['cache_cost'] = modelObj['outputConfig']['usage'][0]['total_cost'].get('cached_cost') or 0
@@ -244,6 +271,7 @@ class Helper:
         return usage
     
     async def create_service_handler_for_batch(params, service):
+        class_obj = None
         if service == service_name['openai']:
             class_obj = OpenaiBatch(params)
         # elif service == service_name['gemini']:
@@ -252,12 +280,17 @@ class Helper:
         #     class_obj = Antrophic(params)
         # elif service == service_name['groq']:
         #     class_obj = Groq(params)
+        else:
+            raise ValueError(f"Unsupported batch service: {service}")
             
         return class_obj
 
     async def embedding_service_handler(params, service):
+        class_obj = None
         if service == service_name['openai']:
             class_obj = OpenaiEmbedding(params)
+        else:
+            raise ValueError(f"Unsupported embedding service: {service}")
         return class_obj
     
     def add_doc_description_to_prompt(prompt, rag_data):

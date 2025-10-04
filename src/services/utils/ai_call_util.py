@@ -42,18 +42,28 @@ async def call_gtwy_agent(args):
         # Import inside function to avoid circular imports
         from src.services.commonServices.common import chat
         from src.services.utils.getConfiguration import getConfiguration
+        request_body = {}
+        # Add thread_id and sub_thread_id if provided
+        if args.get('thread_id'):
+            request_body["thread_id"] = args.get('thread_id')
+        if args.get('sub_thread_id'):
+            request_body["sub_thread_id"] = args.get('sub_thread_id')
         
         org_id = args.get('org_id')
         bridge_id = args.get('bridge_id')
+        version_id = args.get('version_id')
         user_message = args.get('user')
         variables = args.get('variables') or {}
         
-        # Step 1: Create initial request body
-        request_body = {
+        # Step 1: Update request body with core data
+        request_body.update({
             "user": user_message,
             "bridge_id": bridge_id,
             "variables": variables
-        }
+        })
+        # If version_id is provided, include it in the request body early
+        if version_id:
+            request_body["version_id"] = version_id
         
         # Step 2: Call the configuration middleware to enrich the data
         # This simulates what add_configuration_data_to_body does
@@ -66,7 +76,7 @@ async def call_gtwy_agent(args):
             variables=variables,
             org_id=org_id,
             variables_path=request_body.get('variables_path'),
-            version_id=request_body.get('version_id'),
+            version_id=version_id,
             extra_tools=request_body.get('extra_tools', []),
             built_in_tools=request_body.get('built_in_tools')
         )
