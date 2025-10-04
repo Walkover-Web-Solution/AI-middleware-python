@@ -144,7 +144,8 @@ async def chat(request_body):
                     parsed_data
                 )
                 result['response']['testcase_result'] = testcase_result
-            await process_background_tasks_for_playground(result, parsed_data)
+            else:
+                await process_background_tasks_for_playground(result, parsed_data)
         return JSONResponse(status_code=200, content={"success": True, "response": result["response"]})
     
     except (Exception, ValueError, BadRequestException) as error:
