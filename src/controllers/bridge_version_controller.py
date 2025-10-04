@@ -56,7 +56,8 @@ async def get_version(request, version_id: str):
                 path_variables.append(vars_dict)
         all_variables = variables + path_variables
         bridge.get('bridges')['all_varaibles'] = all_variables
-        return Helper.response_middleware_for_bridge(bridge.get('bridges')['service'],{"success": True,"message": "bridge get successfully","bridge":bridge.get("bridges", {})})
+        response = await Helper.response_middleware_for_bridge(bridge.get('bridges')['service'],{"success": True,"message": "bridge get successfully","bridge":bridge.get("bridges", {})})
+        return response
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e,)
     
