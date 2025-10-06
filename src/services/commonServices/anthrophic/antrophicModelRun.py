@@ -1,7 +1,7 @@
 from anthropic import AsyncAnthropic
 import traceback
 import json
-from ..retry_mechanism import execute_with_retry
+from ..api_executor import execute_api_call
 # from src.services.utils.unified_token_validator import validate_anthropic_token_limit
 from globals import *
 
@@ -122,8 +122,8 @@ async def anthropic_runmodel(configuration, apikey, execution_time_logs, bridge_
                     'status_code': getattr(error, 'status_code', None)
                 }
 
-        # Execute with retry (no fallback)
-        return await execute_with_retry(
+        # Execute API call with monitoring
+        return await execute_api_call(
             configuration=configuration,
             api_call=api_call,
             execution_time_logs=execution_time_logs,

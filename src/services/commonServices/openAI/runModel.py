@@ -1,6 +1,6 @@
 from openai import AsyncOpenAI
 import traceback
-from ..retry_mechanism import execute_with_retry
+from ..api_executor import execute_api_call
 # from src.services.utils.unified_token_validator import validate_openai_token_limit
 from globals import *
 
@@ -38,8 +38,8 @@ async def openai_response_model(configuration, apiKey, execution_time_logs, brid
                     'status_code': getattr(error, 'status_code', None)
                 }
 
-        # Execute with retry (no fallback)
-        return await execute_with_retry(
+        # Execute API call with monitoring
+        return await execute_api_call(
             configuration=configuration,
             api_call=api_call,
             execution_time_logs=execution_time_logs,
@@ -93,8 +93,8 @@ async def openai_completion(configuration, apiKey, execution_time_logs, bridge_i
                 config['model'] = 'gpt-4o'
             return config
 
-        # Execute with retry
-        return await execute_with_retry(
+        # Execute API call with monitoring
+        return await execute_api_call(
             configuration=configuration,
             api_call=api_call,
             get_alternative_config=get_alternative_config,

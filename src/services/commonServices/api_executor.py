@@ -1,11 +1,10 @@
-
 import asyncio
 import copy
 import traceback
 from ..utils.ai_middleware_format import send_alert
 from src.configs.constant import service_name
 
-async def execute_with_retry(
+async def execute_api_call(
     configuration,
     api_call,
     execution_time_logs,
@@ -56,7 +55,7 @@ async def execute_with_retry(
 
     except Exception as e:
         execution_time_logs.append({"step": f"{service} Processing time for call :- {count + 1}", "time_taken": timer.stop("API chat completion")})
-        print("execute_with_retry error=>", e)
+        print("execute_api_call error=>", e)
         traceback.print_exc()
         return {
             'success': False,
@@ -69,7 +68,12 @@ async def check_space_issue(response, service=None):
     if service == service_name['openai_completion'] or service == service_name['groq'] or service == service_name['open_router'] or service == service_name['mistral'] or service == service_name['gemini'] or service == service_name['ai_ml']:
         content = response.get("choices", [{}])[0].get("message", {}).get("content", None)
     elif service == service_name['anthropic']:
-        content = response.get("content", [{}])[0].get("text", None)
+        # Handle streaming responses with multiple content blocks
+        content_blocks = response.get("content", [])
+        for block in content_blocks:
+            if block.get("type") == "text":
+                content = block.get("text", None)
+                break
     elif service == service_name['openai']:
         content = (
             response.get("output", [{}])[0].get("content", [{}])[0].get("text", None)
@@ -93,7 +97,12 @@ async def check_space_issue(response, service=None):
         if service == service_name['openai_completion'] or service == service_name['groq'] or service == service_name['open_router'] or service == service_name['mistral'] or service == service_name['gemini'] or service == service_name['ai_ml']:
             response["choices"][0]["message"]["content"] = text
         elif service == service_name['anthropic']:
-            response["content"][0]["text"] = text
+            # Handle streaming responses - update the first text block
+            content_blocks = response.get("content", [])
+            for block in content_blocks:
+                if block.get("type") == "text":
+                    block["text"] = text
+                    break
         elif service == service_name['openai']:
             if response.get("output", [{}])[0].get("type") == "function_call":
                 response["output"][0]["content"][0]["text"] = text
@@ -102,11 +111,5 @@ async def check_space_issue(response, service=None):
                     if item.get("type") == "message":
                         response["output"][i]["content"][0]["text"] = text
                         break
+    
     return response
-
-def filter_model_keys(config): # to be opmized
-    if config['model'] == 'o1':
-        keys_to_remove = ['temperature', 'top_p', 'frequency_penalty', 'presence_penalty', 'logprobs', 'echo', 'topK', 'n', 'stopSequences', 'best_of', 'suffix', 'parallel_tool_calls']
-        for key in keys_to_remove:
-            if key in config:
-                del config[key]

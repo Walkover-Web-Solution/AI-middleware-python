@@ -1,6 +1,6 @@
 from openai import AsyncOpenAI
 import traceback
-from ..retry_mechanism import execute_with_retry
+from ..api_executor import execute_api_call
 from globals import *
 
 
@@ -20,8 +20,8 @@ async def ai_ml_model_run(configuration, apiKey, execution_time_logs, bridge_id,
                     'status_code': getattr(error, 'status_code', None)
                 }
 
-        # Execute with retry (no fallback)
-        return await execute_with_retry(
+        # Execute API call with monitoring
+        return await execute_api_call(
             configuration=configuration,
             api_call=api_call,
             execution_time_logs=execution_time_logs,
