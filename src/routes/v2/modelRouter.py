@@ -9,6 +9,7 @@ from concurrent.futures import ThreadPoolExecutor
 from config import Config
 from src.services.commonServices.queueService.queueService import queue_obj
 from src.middlewares.ratelimitMiddleware import rate_limit
+from models.mongo_connection import db
 from globals import *
 
 router = APIRouter()
@@ -55,7 +56,7 @@ async def chat_completion(request: Request, db_config: dict = Depends(add_config
 
 
 @router.post('/playground/chat/completion/{bridge_id}', dependencies=[Depends(auth_and_rate_limit)])
-async def playground_chat_completion(request: Request, db_config: dict = Depends(add_configuration_data_to_body)):
+async def playground_chat_completion_bridge(request: Request, db_config: dict = Depends(add_configuration_data_to_body)):
     request.state.is_playground = True
     request.state.version = 2
     if db_config.get('orchestrator_id'):
@@ -77,8 +78,41 @@ async def batch_chat_completion(request: Request, db_config: dict = Depends(add_
     return result
 
 
-@router.post('/testcases/{version_id}', dependencies=[Depends(auth_and_rate_limit)])
-async def playground_chat_completion(request: Request, db_config: dict = Depends(add_configuration_data_to_body)):
-    data_to_send = await make_request_data(request)
-    result = await run_testcases(data_to_send)
-    return result
+@router.post('/testcases', dependencies=[Depends(auth_and_rate_limit)])
+async def run_testcases_route(request: Request):
+    """
+    Execute testcases either from direct input or MongoDB
+    
+    This route handles testcase execution with support for:
+    - Direct testcase data in request body
+    - Fetching testcases from MongoDB by bridge_id or testcase_id
+    - Parallel processing of multiple testcases
+    - Automatic scoring and history saving
+    """
+    request.state.is_playground = True
+    request.state.version = 2
+    
+    try:
+        # Get request body
+        body = await request.json()
+        org_id = request.state.profile['org']['id']
+        
+        # Execute testcases using the service
+        from src.services.testcase_service import execute_testcases, TestcaseValidationError, TestcaseNotFoundError
+        
+        result = await execute_testcases(body, org_id)
+        return result
+        
+    except TestcaseValidationError as ve:
+        raise HTTPException(status_code=400, detail={"success": False, "error": str(ve)})
+    except TestcaseNotFoundError as nfe:
+        # Handle not found cases gracefully
+        if "No testcase found for the given testcase_id" in str(nfe):
+            return {"success": False, "message": str(nfe), "results": []}
+        else:
+            return {"success": True, "message": str(nfe), "results": []}
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        logger.error(f"Error in run_testcases_route: {str(e)}")
+        raise HTTPException(status_code=500, detail={"success": False, "error": f"Internal server error: {str(e)}"})
