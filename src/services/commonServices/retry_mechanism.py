@@ -95,22 +95,37 @@ def check_error_status_code(error_code):
 
 async def check_space_issue(response, service=None):
     
+    
     content = None
     if service == service_name['openai_completion'] or service == service_name['groq'] or service == service_name['open_router'] or service == service_name['mistral'] or service == service_name['gemini'] or service == service_name['ai_ml']:
         content = response.get("choices", [{}])[0].get("message", {}).get("content", None)
     elif service == service_name['anthropic']:
-        content = response.get("content", [{}])[0].get("text", None)
+        # Handle empty content array
+        content_list = response.get("content", [])
+        if content_list:
+            # Iterate through content blocks to find the first "text" type block
+            for content_block in content_list:
+                if isinstance(content_block, dict) and content_block.get("type") == "text":
+                    content = content_block.get("text", None)
+                    break
+        else:
+            content = None
     elif service == service_name['openai']:
-        content = (
-            response.get("output", [{}])[0].get("content", [{}])[0].get("text", None)
-            if response.get("output", [{}])[0].get("type") == "function_call"
-            else next(
-                (item.get("content", [{}])[0].get("text", None)
-                 for item in response.get("output", [])
-                 if item.get("type") == "message"),
-                None
-            )
-        )
+        output_list = response.get("output", [])
+        if output_list:
+            first_output = output_list[0]
+            if first_output.get("type") == "function_call":
+                content_list = first_output.get("content", [])
+                content = content_list[0].get("text", None) if content_list else None
+            else:
+                # Find first message type item
+                for item in output_list:
+                    if item.get("type") == "message":
+                        content_list = item.get("content", [])
+                        content = content_list[0].get("text", None) if content_list else None
+                        break
+        else:
+            content = None
     
     if content is None:
         return response
@@ -123,15 +138,40 @@ async def check_space_issue(response, service=None):
         if service == service_name['openai_completion'] or service == service_name['groq'] or service == service_name['open_router'] or service == service_name['mistral'] or service == service_name['gemini'] or service == service_name['ai_ml']:
             response["choices"][0]["message"]["content"] = text
         elif service == service_name['anthropic']:
-            response["content"][0]["text"] = text
-        elif service == service_name['openai']:
-            if response.get("output", [{}])[0].get("type") == "function_call":
-                response["output"][0]["content"][0]["text"] = text
-            else:
-                for i, item in enumerate(response.get("output", [])):
-                    if item.get("type") == "message":
-                        response["output"][i]["content"][0]["text"] = text
+            # Handle empty content array for anthropic
+            content_list = response.get("content", [])
+            if content_list:
+                # Find the first text block and update it
+                for i, content_block in enumerate(content_list):
+                    if isinstance(content_block, dict) and content_block.get("type") == "text":
+                        response["content"][i]["text"] = text
                         break
+                else:
+                    # If no text block found, create one
+                    response["content"].append({"type": "text", "text": text})
+            else:
+                # If content array is empty, create it with a text block
+                response["content"] = [{"type": "text", "text": text}]
+        elif service == service_name['openai']:
+            output_list = response.get("output", [])
+            if output_list:
+                first_output = output_list[0]
+                if first_output.get("type") == "function_call":
+                    content_list = first_output.get("content", [])
+                    if content_list:
+                        response["output"][0]["content"][0]["text"] = text
+                    else:
+                        response["output"][0]["content"] = [{"text": text}]
+                else:
+                    # Find first message type item and update it
+                    for i, item in enumerate(output_list):
+                        if item.get("type") == "message":
+                            content_list = item.get("content", [])
+                            if content_list:
+                                response["output"][i]["content"][0]["text"] = text
+                            else:
+                                response["output"][i]["content"] = [{"text": text}]
+                            break
     return response
 
 def filter_model_keys(config): # to be opmized
