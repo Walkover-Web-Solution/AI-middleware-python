@@ -321,7 +321,7 @@ async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None)
                     }
                 },
                 {
-                    '$project': { 'service': 1, 'apikey': 1 }
+                    '$project': { 'service': 1, 'apikey': 1 , 'apikey_quota':1}
                 }
             ],
             'as': 'apikeys_docs'
@@ -761,7 +761,8 @@ async def get_all_bridges_in_org(org_id, folder_id, user_id, isEmbedUser):
         "versions":1,
         'connected_agents':1,
         'function_ids':1,
-        'apiCalls':1
+        'apiCalls':1,
+        'bridge_quota':1
     })
     bridges_list = await bridge.to_list(length=None)
     for itr in bridges_list:

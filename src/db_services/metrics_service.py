@@ -7,9 +7,11 @@ from models.index import combined_models
 from sqlalchemy import and_
 from ..controllers.conversationController import savehistory
 from .conversationDbService import insertRawData, timescale_metrics
-from ..services.cache_service import find_in_cache, store_in_cache
+from ..services.cache_service import find_in_cache, store_in_cache, delete_in_cache
 from globals import *
 from src.services.commonServices.baseService.utils import safe_float
+from src.configs.constant import redis_keys, service_name
+from fastapi import HTTPException
 # from src.services.utils.send_error_webhook import send_error_to_webhook
 
 postgres = combined_models['pg']
@@ -184,11 +186,50 @@ async def create(dataset, history_params, version_id, thread_info={}):
 
         # Calculate the total token sum, using .get() for 'totalTokens' to handle missing keys
         totaltoken = sum(data_object.get('totalTokens', 0) for data_object in dataset) + oldTotalToken
+        await check_and_handle_quota(dataset, metrics_data[0])
         # await send_error_to_webhook(history_params['bridge_id'], history_params['org_id'],totaltoken , 'metrix_limit_reached')
         await store_in_cache(cache_key, float(totaltoken))
         await timescale_metrics(metrics_data)
     except Exception as error:
         logger.error(f'Error during bulk insert of Ai middleware, {str(error)}')
+
+async def check_and_handle_quota(dataset, metrics_data):
+    try:
+        bridge_cache_key = f"{redis_keys['bridge_quota']}_{metrics_data['bridge_id']}"
+        bridge_quota = await find_in_cache(bridge_cache_key)
+        bridge_quota = json.loads(bridge_quota.decode("utf-8")) if isinstance(bridge_quota, bytes) else bridge_quota
+        bridge_quota = bridge_quota if bridge_quota is not None else bridge_data.get('bridge_quota', {})
+        if bridge_quota and 'limit' in bridge_quota and 'used' in bridge_quota:
+            bridge_quota['used'] = metrics_data.get('total_cost', 0) + bridge_quota.get("used",0)
+            if bridge_quota['limit'] <= bridge_quota['used']:
+                raise HTTPException(status_code=429, detail="Bridge quota limit reached for the bridge.")
+            await store_in_cache(bridge_cache_key, bridge_quota)
+        
+    except HTTPException as e:
+        logger.error(f'Bridge quota limit reached for the bridge.')
+        raise e
+    
+    except Exception as e:
+        logger.error(f'Error in handling bridge quota {e}')
+        
+
+    try:
+        apikey_object_id = metrics_data['apikey_id']
+        apikey_cache_key = f"{redis_keys['apikey_quota']}_{apikey_object_id}"
+        apikey_quota = await find_in_cache(apikey_cache_key)
+        apikey_quota = json.loads(apikey_quota.decode("utf-8")) if isinstance(apikey_quota, bytes) else apikey_quota
+        if apikey_quota and 'limit' in apikey_quota and 'used' in apikey_quota:
+            apikey_quota['used'] = metrics_data.get('cost', 0) + apikey_quota.get("used",0)
+            if apikey_quota['limit'] <= apikey_quota['used']:
+                raise HTTPException(status_code=429, detail="API key quota limit reached for the API key used.")
+            await store_in_cache(apikey_cache_key, apikey_quota)
+
+    except HTTPException as e:
+        logger.error(f'API key quota limit reached for the API key used.')
+        raise e
+    except Exception as e:
+        logger.error(f'Error in handling API key quota {e}')
+        
 
 # Exporting functions
 __all__ = ["find", "create", "find_one", "find_one_pg"]

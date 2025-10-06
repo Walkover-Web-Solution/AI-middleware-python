@@ -26,4 +26,9 @@ bridge_ids = {
     'generate_description' : '6800d48f7dfc8ddcc495f918'
 }
 
-__all__ = ['service_name', 'bridge_ids']
+redis_keys = {
+    'bridge_quota': 'bridge_quota',
+    'apikey_quota': 'apikey_quota'
+}
+
+__all__ = ['service_name', 'bridge_ids', 'redis_keys']

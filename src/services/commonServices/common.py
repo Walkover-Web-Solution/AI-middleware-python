@@ -40,7 +40,7 @@ app = FastAPI()
 from src.services.utils.helper import Helper
 from src.services.commonServices.testcases import run_testcases as run_bridge_testcases
 from globals import *
-from src.services.cache_service import find_in_cache
+from src.services.cache_service import find_in_cache, store_in_cache, delete_in_cache
 
 configurationModel = db["configurations"]
 
@@ -123,6 +123,7 @@ async def chat(request_body):
             parsed_data['tokens'] = params['token_calculator'].calculate_total_cost(parsed_data['model'], parsed_data['service'])
             result['response']['usage']['cost'] = parsed_data['tokens'].get('total_cost') or 0
             result['response']['data']['message_id'] = parsed_data['message_id']
+            
         # Create latency object using utility function
         latency = create_latency_object(timer, params)
         if not parsed_data['is_playground']:
