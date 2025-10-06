@@ -64,27 +64,28 @@ async def execute_api_call(
 
 async def check_space_issue(response, service=None):
     
+    
     content = None
     if service == service_name['openai_completion'] or service == service_name['groq'] or service == service_name['open_router'] or service == service_name['mistral'] or service == service_name['gemini'] or service == service_name['ai_ml']:
         content = response.get("choices", [{}])[0].get("message", {}).get("content", None)
     elif service == service_name['anthropic']:
-        # Handle streaming responses with multiple content blocks
-        content_blocks = response.get("content", [])
-        for block in content_blocks:
-            if block.get("type") == "text":
-                content = block.get("text", None)
-                break
+        content = response.get("content", [{}])[0].get("text", None)
     elif service == service_name['openai']:
-        content = (
-            response.get("output", [{}])[0].get("content", [{}])[0].get("text", None)
-            if response.get("output", [{}])[0].get("type") == "function_call"
-            else next(
-                (item.get("content", [{}])[0].get("text", None)
-                 for item in response.get("output", [])
-                 if item.get("type") == "message"),
-                None
-            )
-        )
+        output_list = response.get("output", [])
+        if output_list:
+            first_output = output_list[0]
+            if first_output.get("type") == "function_call":
+                content_list = first_output.get("content", [])
+                content = content_list[0].get("text", None) if content_list else None
+            else:
+                # Find first message type item
+                for item in output_list:
+                    if item.get("type") == "message":
+                        content_list = item.get("content", [])
+                        content = content_list[0].get("text", None) if content_list else None
+                        break
+        else:
+            content = None
     
     if content is None:
         return response
@@ -97,12 +98,7 @@ async def check_space_issue(response, service=None):
         if service == service_name['openai_completion'] or service == service_name['groq'] or service == service_name['open_router'] or service == service_name['mistral'] or service == service_name['gemini'] or service == service_name['ai_ml']:
             response["choices"][0]["message"]["content"] = text
         elif service == service_name['anthropic']:
-            # Handle streaming responses - update the first text block
-            content_blocks = response.get("content", [])
-            for block in content_blocks:
-                if block.get("type") == "text":
-                    block["text"] = text
-                    break
+            response["content"][0]["text"] = text
         elif service == service_name['openai']:
             if response.get("output", [{}])[0].get("type") == "function_call":
                 response["output"][0]["content"][0]["text"] = text
@@ -111,5 +107,4 @@ async def check_space_issue(response, service=None):
                     if item.get("type") == "message":
                         response["output"][i]["content"][0]["text"] = text
                         break
-    
     return response
