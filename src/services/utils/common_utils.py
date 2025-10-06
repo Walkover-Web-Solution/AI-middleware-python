@@ -52,7 +52,7 @@ def parse_request_body(request_body):
         "response_format": body.get("configuration", {}).get("response_format"),
         "response_type": body.get("configuration", {}).get("response_type"),
         "model": body.get("configuration", {}).get('model'),
-        "is_playground": state.get('is_playground', False),
+        "is_playground": state.get('is_playground') or body.get('is_playground') or False,
         "bridge": body.get('bridge'),
         "pre_tools": body.get('pre_tools'),
         "version": state.get('version'),
@@ -87,7 +87,8 @@ def parse_request_body(request_body):
         "thread_flag" : body.get('thread_flag') or False,
         "files" : body.get('files') or [],
         "fall_back" : body.get('fall_back') or {},
-        "guardrails" : body.get('bridges', {}).get('guardrails') or {}
+        "guardrails" : body.get('bridges', {}).get('guardrails') or {},
+        "testcase_data" : body.get('testcase_data') or {}
     }
 
 
@@ -885,5 +886,46 @@ Based on the child agent's response above, please provide your final answer to t
     
     # If no agent tool calls found, return original response
     return JSONResponse(status_code=200, content={"success": True, "response": result["response"]})
+
+async def process_background_tasks_for_playground(result, parsed_data):
+    from src.controllers.testcase_controller import handle_playground_testcase
+    from bson import ObjectId
+    
+    try:
+        testcase_data = parsed_data.get('testcase_data', {})
+        
+        # If testcase_id exists, update in background and return immediately
+        if testcase_data.get('testcase_id'):
+            Flag = False
+            # Update testcase in background (async task)
+            async def update_testcase_background():
+                try:
+                    await handle_playground_testcase(result, parsed_data, Flag)
+                except Exception as e:
+                    logger.error(f"Error updating testcase in background: {str(e)}")
+            
+            asyncio.create_task(update_testcase_background())
+        
+        else:
+            # Generate testcase_id immediately and add to response
+            new_testcase_id = str(ObjectId())
+            result['response']['testcase_id'] = new_testcase_id
+            
+            # Add the generated ID to testcase_data for the background task
+            parsed_data['testcase_data']['testcase_id'] = new_testcase_id
+            
+            # Save testcase data in background using the same function
+            async def create_testcase_background():
+                try:
+                    Flag = True
+                    await handle_playground_testcase(result, parsed_data, Flag)
+                except Exception as e:
+                    logger.error(f"Error creating testcase in background: {str(e)}")
+            
+            asyncio.create_task(create_testcase_background())
+                
+    except Exception as e:
+        logger.error(f"Error processing playground testcase: {str(e)}")
+    
 
 

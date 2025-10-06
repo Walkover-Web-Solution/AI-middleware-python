@@ -32,7 +32,8 @@ from src.services.utils.common_utils import (
     create_latency_object,
     create_history_params,
     add_files_to_parse_data,
-    orchestrator_agent_chat
+    orchestrator_agent_chat,
+    process_background_tasks_for_playground
 )
 from src.services.utils.guardrails_validator import guardrails_check
 from src.services.utils.rich_text_support import process_chatbot_response
@@ -208,6 +209,18 @@ async def chat(request_body):
             update_usage_metrics(parsed_data, params, latency, result=result, success=True)
             result['response']['usage']['cost'] = parsed_data['usage'].get('expectedCost', 0)
             await process_background_tasks(parsed_data, result, params, thread_info)
+        else:
+            if parsed_data.get('testcase_data',{}).get('run_testcase', False):
+                from src.services.commonServices.testcases import process_single_testcase_result
+                # Process testcase result and add score to response
+                testcase_result = await process_single_testcase_result(
+                    parsed_data.get('testcase_data', {}), 
+                    result, 
+                    parsed_data
+                )
+                result['response']['testcase_result'] = testcase_result
+            else:
+                await process_background_tasks_for_playground(result, parsed_data)
         return JSONResponse(status_code=200, content={"success": True, "response": result["response"]})
     
     except (Exception, ValueError, BadRequestException) as error:
