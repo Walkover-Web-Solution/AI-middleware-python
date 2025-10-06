@@ -895,10 +895,11 @@ async def process_background_tasks_for_playground(result, parsed_data):
         
         # If testcase_id exists, update in background and return immediately
         if testcase_data.get('testcase_id'):
+            Flag = False
             # Update testcase in background (async task)
             async def update_testcase_background():
                 try:
-                    await handle_playground_testcase(result, parsed_data)
+                    await handle_playground_testcase(result, parsed_data, Flag)
                 except Exception as e:
                     logger.error(f"Error updating testcase in background: {str(e)}")
             
@@ -915,7 +916,8 @@ async def process_background_tasks_for_playground(result, parsed_data):
             # Save testcase data in background using the same function
             async def create_testcase_background():
                 try:
-                    await handle_playground_testcase(result, parsed_data)
+                    Flag = True
+                    await handle_playground_testcase(result, parsed_data, Flag)
                 except Exception as e:
                     logger.error(f"Error creating testcase in background: {str(e)}")
             
