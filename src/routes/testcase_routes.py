@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Request, Depends
 from ..middlewares.middleware import jwt_middleware
 from src.controllers.testcase_controller import (
-    get_testcases_history,
     create_testcase_controller,
     delete_testcase_controller,
     get_all_testcases_controller
@@ -23,8 +22,3 @@ async def delete_testcase(testcase_id: str):
 @router.get('/{bridge_id}', dependencies=[Depends(jwt_middleware)])
 async def get_all_testcases(bridge_id: str):
     return await get_all_testcases_controller(bridge_id)
-
-# Get testcases history (existing endpoint)
-@router.get('/history/{bridge_id}', dependencies=[Depends(jwt_middleware)])
-async def get_testcases_history_endpoint(request: Request, bridge_id: str):
-    return await get_testcases_history(request, bridge_id)

@@ -80,165 +80,37 @@ async def batch_chat_completion(request: Request, db_config: dict = Depends(add_
 
 @router.post('/testcases', dependencies=[Depends(auth_and_rate_limit)])
 async def run_testcases_route(request: Request):
+    """
+    Execute testcases either from direct input or MongoDB
+    
+    This route handles testcase execution with support for:
+    - Direct testcase data in request body
+    - Fetching testcases from MongoDB by bridge_id or testcase_id
+    - Parallel processing of multiple testcases
+    - Automatic scoring and history saving
+    """
     request.state.is_playground = True
     request.state.version = 2
     
     try:
         # Get request body
         body = await request.json()
-        bridge_id = body.get('bridge_id')
-        version_id = body.get('version_id')
-        testcase_id = body.get('testcase_id')
-        testcases_flag = body.get('testcases', False)
-        testcase_data = body.get('testcase_data')
-        
-        if not version_id:
-            raise HTTPException(status_code=400, detail={"success": False, "error": "version_id is required"})
-        
-        # Check if testcase data is provided directly in the request body
-        if testcases_flag and testcase_data:
-            # Validate required fields in testcase_data
-            if 'conversation' not in testcase_data:
-                raise HTTPException(status_code=400, detail={"success": False, "error": "conversation is required in testcase_data"})
-            if 'expected' not in testcase_data:
-                raise HTTPException(status_code=400, detail={"success": False, "error": "expected is required in testcase_data"})
-            if 'matching_type' not in testcase_data:
-                raise HTTPException(status_code=400, detail={"success": False, "error": "matching_type is required in testcase_data"})
-            
-            # Use testcase data from request body instead of MongoDB
-            conversation = testcase_data.get('conversation', [])
-            expected = testcase_data.get('expected', {})
-            matching_type = testcase_data.get('matching_type', 'cosine')
-            
-            # Create a single testcase object from the provided data
-            testcases = [{
-                '_id': 'direct_testcase',  # Use a placeholder ID for direct testcases
-                'bridge_id': bridge_id,
-                'conversation': conversation,
-                'expected': expected,
-                'matching_type': matching_type,
-                'type': 'response'
-            }]
-        else:
-            # Original MongoDB logic
-            if not bridge_id:
-                raise HTTPException(status_code=400, detail={"success": False, "error": "bridge_id is required"})
-            
-            # Fetch testcases from MongoDB
-            testcases_collection = db['testcases']
-            
-            if testcase_id:
-                # Fetch specific testcase by _id
-                from bson import ObjectId
-                testcase = await testcases_collection.find_one({"_id": ObjectId(testcase_id)})
-                if not testcase:
-                    return {"success": False, "message": "No testcase found for the given testcase_id", "results": []}
-                testcases = [testcase]
-            else:
-                # Fetch all testcases with the given bridge_id
-                testcases = await testcases_collection.find({"bridge_id": bridge_id}).to_list(length=None)
-                if not testcases:
-                    return {"success": True, "message": "No testcases found for the given bridge_id", "results": []}
-        
-        # Manually call the configuration service to get the configuration
-        from src.services.utils.getConfiguration import getConfiguration
-        
         org_id = request.state.profile['org']['id']
         
-        # For direct testcase data, bridge_id might be None, so we need to handle that
-        config_bridge_id = bridge_id if not (testcases_flag and testcase_data) else None
+        # Execute testcases using the service
+        from src.services.testcase_service import execute_testcases, TestcaseValidationError, TestcaseNotFoundError
         
-        db_config = await getConfiguration(
-            None,
-            None,
-            config_bridge_id, 
-            None,
-            None,
-            {},
-            org_id, 
-            None,
-            version_id=version_id, 
-            extra_tools=[], 
-            built_in_tools=None,
-            guardrails=None
-        )
+        result = await execute_testcases(body, org_id)
+        return result
         
-        if not db_config.get("success"):
-            raise HTTPException(status_code=400, detail={"success": False, "error": db_config.get("error", "Failed to get configuration")})
-        
-        # Process all testcases in parallel
-        async def process_testcase(testcase):
-            try:
-                # Create request data for this testcase
-                # Set conversation in db_config
-                db_config['configuration']['conversation'] = testcase.get('conversation', [])
-                
-                testcase_request_data = {
-                    "body": {
-                        "user": testcase.get('conversation', [])[-1].get('content', '') if testcase.get('conversation') else '',
-                        "testcase_data": {
-                            "matching_type": testcase.get('matching_type') or 'cosine',
-                            "run_testcase": True,
-                            "_id": testcase.get('_id'),
-                            "expected": testcase.get('expected'),
-                            "type": testcase.get('type', 'response')
-                        },
-                        **db_config
-                        
-                    },
-                    "state": {
-                        "is_playground": True,
-                        "version": 2
-                    }
-                }
-                
-                # Call chat function
-                result = await chat(testcase_request_data)
-                
-                # Extract data from JSONResponse object
-                if hasattr(result, 'body'):
-                    import json
-                    result_data = json.loads(result.body.decode('utf-8'))
-                else:
-                    result_data = result
-                
-                # Extract testcase result with score if available
-                testcase_result = result_data.get('response', {}).get('testcase_result', {}) if isinstance(result_data, dict) else {}
-                
-                return {
-                    "testcase_id": str(testcase.get('_id')) if testcase.get('_id') != 'direct_testcase' else 'direct_testcase',
-                    "bridge_id": testcase.get('bridge_id'),
-                    "expected": testcase.get('expected'),
-                    "actual_result": result_data.get('response', {}).get('data', {}).get('content', '') if isinstance(result_data, dict) else str(result_data),
-                    "score": testcase_result.get('score'),
-                    "matching_type": testcase.get('matching_type', ''),
-                    "success": True
-                }
-            except Exception as e:
-                logger.error(f"Error processing testcase {testcase.get('_id')}: {str(e)}")
-                return {
-                    "testcase_id": str(testcase.get('_id')) if testcase.get('_id') != 'direct_testcase' else 'direct_testcase',
-                    "bridge_id": testcase.get('bridge_id'),
-                    "expected": testcase.get('expected'),
-                    "actual_result": None,
-                    "score": 0,
-                    "matching_type": testcase.get('matching_type', 'cosine'),
-                    "error": str(e),
-                    "success": False
-                }
-        
-        # Run all testcases in parallel
-        results = await asyncio.gather(*[process_testcase(testcase) for testcase in testcases])
-        
-        return {
-            "success": True,
-            "bridge_id": bridge_id,
-            "version_id": version_id,
-            "total_testcases": len(testcases),
-            "results": results,
-            "testcase_source": "direct" if (testcases_flag and testcase_data) else "mongodb"
-        }
-        
+    except TestcaseValidationError as ve:
+        raise HTTPException(status_code=400, detail={"success": False, "error": str(ve)})
+    except TestcaseNotFoundError as nfe:
+        # Handle not found cases gracefully
+        if "No testcase found for the given testcase_id" in str(nfe):
+            return {"success": False, "message": str(nfe), "results": []}
+        else:
+            return {"success": True, "message": str(nfe), "results": []}
     except HTTPException as he:
         raise he
     except Exception as e:

@@ -888,6 +888,7 @@ Based on the child agent's response above, please provide your final answer to t
 
 async def process_background_tasks_for_playground(result, parsed_data):
     from src.controllers.testcase_controller import handle_playground_testcase
+    from bson import ObjectId
     
     try:
         testcase_data = parsed_data.get('testcase_data', {})
@@ -904,10 +905,21 @@ async def process_background_tasks_for_playground(result, parsed_data):
             asyncio.create_task(update_testcase_background())
         
         else:
-            # If no testcase_id, create new testcase synchronously and add to response
-            testcase_id = await handle_playground_testcase(result, parsed_data)
-            if testcase_id:
-                result['response']['testcase_id'] = testcase_id
+            # Generate testcase_id immediately and add to response
+            new_testcase_id = str(ObjectId())
+            result['response']['testcase_id'] = new_testcase_id
+            
+            # Add the generated ID to testcase_data for the background task
+            parsed_data['testcase_data']['testcase_id'] = new_testcase_id
+            
+            # Save testcase data in background using the same function
+            async def create_testcase_background():
+                try:
+                    await handle_playground_testcase(result, parsed_data)
+                except Exception as e:
+                    logger.error(f"Error creating testcase in background: {str(e)}")
+            
+            asyncio.create_task(create_testcase_background())
                 
     except Exception as e:
         logger.error(f"Error processing playground testcase: {str(e)}")

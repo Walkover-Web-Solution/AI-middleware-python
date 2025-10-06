@@ -1,6 +1,5 @@
 from fastapi.responses import JSONResponse, Response
 from src.db_services.testcase_services import (
-    fetch_testcases_history, 
     create_testcase, 
     delete_testcase_by_id, 
     get_all_testcases_by_bridge_id,
@@ -11,27 +10,6 @@ from src.db_services.testcase_services import (
 import traceback
 from src.services.cache_service import make_json_serializable
 
-async def get_testcases_history(request, bridge_id):
-    try:
-        testcases = await fetch_testcases_history(bridge_id)
-        for testcase in testcases: 
-            testcase['version_history'] = {}
-            for history in testcase['history']:
-                if not testcase['version_history'].get(history['version_id']):
-                    testcase['version_history'][history['version_id']] = []
-                testcase['version_history'][history['version_id']].append(history)
-            del testcase['history']
-            
-        return JSONResponse(content = {
-            "success": True,
-            "data" : make_json_serializable(testcases)
-        })
-    except Exception as error :
-        traceback.print_exc()
-        return JSONResponse(status_code = 400, content = {
-            "success": False,
-            "error": str(error)
-        })
 
 async def create_testcase_controller(request):
     """Create a new testcase"""
@@ -157,10 +135,16 @@ async def handle_playground_testcase(result, parsed_data):
                 "matching_type": testcase_data.get('matching_type', 'exact')
             }
             
-            # Create the testcase
-            result_insert = await create_testcase(new_testcase)
-            
-            return str(result_insert.inserted_id)  # Return new testcase_id
+            # If testcase_id is provided in testcase_data (for pre-generated IDs), use it
+            if 'testcase_id' in testcase_data and testcase_data['testcase_id']:
+                from bson import ObjectId
+                new_testcase['_id'] = ObjectId(testcase_data['testcase_id'])
+                await create_testcase(new_testcase)
+                return testcase_data['testcase_id']
+            else:
+                # Create the testcase without specific ID (MongoDB will auto-generate)
+                result_insert = await create_testcase(new_testcase)
+                return str(result_insert.inserted_id)
             
     except Exception as error:
         traceback.print_exc()

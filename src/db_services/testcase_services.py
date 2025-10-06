@@ -12,9 +12,6 @@ async def get_testcases(bridge_id):
     return await testcases_model.find({'bridge_id': bridge_id}).to_list(length = None)
 
 async def create_testcase(testcase_data):
-    """Create a new testcase"""
-    testcase_data['created_at'] = datetime.datetime.utcnow()
-    testcase_data['updated_at'] = datetime.datetime.utcnow()
     result = await testcases_model.insert_one(testcase_data)
     return result
 
@@ -61,22 +58,6 @@ async def create_testcases_history(data):
         obj['_id'] = str(obj['_id'])
     return result
 
-async def fetch_testcases_history(bridge_id):
-    pipeline = [
-        {"$match": {"bridge_id": bridge_id}},
-        {"$lookup": {
-            "from": "testcases_history",
-            "let": {"testcaseIdStr": {"$toString": "$_id"}},
-            "pipeline": [
-                {"$match": {"$expr": {"$eq": ["$testcase_id", "$$testcaseIdStr"]}}}
-            ],
-            "as": "history"
-        }}
-    ]
-    
-    cursor = testcases_model.aggregate(pipeline)
-    result = await cursor.to_list(length=None)
-    return result
 
 async def get_merged_testcases_and_history_by_bridge_id(bridge_id):
     """Get all testcases with their history merged for a specific bridge_id"""
