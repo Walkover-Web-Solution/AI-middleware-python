@@ -1,7 +1,7 @@
 from fastapi import HTTPException, status
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
-from src.db_services.ConfigurationServices import create_bridge, get_all_bridges_in_org_by_org_id, get_bridge_by_id, get_all_bridges_in_org, update_bridge, update_bridge_ids_in_api_calls, get_bridges_with_tools, get_apikey_creds, update_apikey_creds, update_built_in_tools, update_agents, get_all_agents_data, get_agents_data
+from src.db_services.ConfigurationServices import create_bridge, get_all_bridges_in_org_by_org_id, get_bridge_by_id, get_all_bridges_in_org, update_bridge, update_bridge_ids_in_api_calls, get_bridges_with_tools, get_apikey_creds, update_apikey_creds, update_built_in_tools, update_agents, get_all_agents_data, get_agents_data, get_bridges_and_versions_by_model
 from src.configs.modelConfiguration import ModelsConfig as model_configuration
 from src.services.utils.helper import Helper
 import json
@@ -57,7 +57,7 @@ async def create_bridges_controller(request):
         else:
             name_next_count = 1
             slug_next_count = 1
-            if isEmbedUser and bridges.get('name').startswith("untitled_agent_"):
+            if bridges.get('name').startswith("untitled_agent_"):
                 if all_bridge:
                     for bridge in all_bridge:
                         if bridge.get('name') and bridge.get('name').startswith("untitled_agent_"):
@@ -175,7 +175,8 @@ async def get_bridge(request, bridge_id: str):
                 path_variables.append(vars_dict)
         all_variables = variables + path_variables
         bridge.get('bridges')['all_varaibles'] = all_variables
-        return Helper.response_middleware_for_bridge(bridge.get('bridges')['service'], {"succcess": True,"message": "bridge get successfully","bridge":bridge.get("bridges", {})})
+        response = await Helper.response_middleware_for_bridge(bridge.get('bridges')['service'], {"success": True,"message": "bridge get successfully","bridge":bridge.get("bridges", {})})
+        return response
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e,)
 
@@ -506,11 +507,12 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
         
         # Return success response
         if result.get("success"):
-            return Helper.response_middleware_for_bridge(bridge['service'], {
+            response = await Helper.response_middleware_for_bridge(bridge['service'], {
                 "success": True,
                 "message": "Bridge Updated successfully",
                 "bridge": result.get('bridges')
-            })
+            }, True)
+            return response
         
     except ValidationError as e:
         raise HTTPException(status_code=400, detail=f"Validation error: {e.json()}")
@@ -555,3 +557,12 @@ async def get_agent(request,slug_name):
         "success": True,
         "data": result
     }, default=str)))
+
+async def get_bridges_and_versions_by_model_controller(model_name):
+    models = await get_bridges_and_versions_by_model(model_name)
+    return {
+        "success": True,
+        "message": "Fetched models and bridges they are used in successfully.",
+        model_name: models
+    }
+    

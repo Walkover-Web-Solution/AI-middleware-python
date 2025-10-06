@@ -108,7 +108,7 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
     variables_path_bridge = bridge.get('variables_path', {})
     
     # Setup tools and tool mappings
-    tools, tool_id_and_name_mapping = setup_tools(result, variables_path_bridge, extra_tools)
+    tools, tool_id_and_name_mapping, variables_path_bridge = setup_tools(result, variables_path_bridge, extra_tools)
     configuration.pop('tools', None)
     configuration['tools'] = tools
     
@@ -148,6 +148,7 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
     
     # Add connected agents
     add_connected_agents(result, tools, tool_id_and_name_mapping)
+
     # Return final configuration
     return {
         'success': True,
@@ -175,3 +176,4 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
         "built_in_tools": built_in_tools or result.get("bridges", {}).get("built_in_tools"),
         "guardrails" : guardrails if guardrails is not None else (result.get("bridges", {}).get("guardrails") or {}),
     }
+
