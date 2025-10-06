@@ -91,7 +91,7 @@ async def get_all_testcases_controller(bridge_id):
             "error": str(error)
         })
 
-async def handle_playground_testcase(result, parsed_data):
+async def handle_playground_testcase(result, parsed_data, Flag):
     """Handle testcase data from playground - create or update testcase"""
     try:
         # Extract expected response from result
@@ -100,7 +100,7 @@ async def handle_playground_testcase(result, parsed_data):
         user = parsed_data['user']
         
         # Check if testcase_id is present for update
-        if testcase_data.get('testcase_id'):
+        if testcase_data.get('testcase_id') and Flag == False:
             # Update existing testcase
             testcase_id = testcase_data['testcase_id']
             
