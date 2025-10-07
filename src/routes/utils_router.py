@@ -21,3 +21,7 @@ async def structured_output(request: Request):
 @router.get('/gpt-memory', dependencies=[Depends(jwt_middleware)])
 async def retrieve_gpt_memory(request: Request):
     return await retrieve_gpt_memory(request)
+    
+@router.post('/improve_prompt')
+async def improve_prompt(request: Request):
+    return await improve_prompt_optimizer(request)
