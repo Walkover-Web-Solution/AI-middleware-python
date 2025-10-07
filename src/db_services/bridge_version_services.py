@@ -167,6 +167,7 @@ async def publish(org_id, version_id, user_id):
         updated_configuration['function_ids'] = [ObjectId(fid) for fid in updated_configuration['function_ids']]
     updated_configuration['agent_variables'] = agent_variables
     updated_configuration['connected_agent_details'] = {
+        **updated_configuration.get('connected_agent_details', {}), 
         'agent_variables' : {
             'fields' : transformed_agent_variables['fields'],
             'required_params' : transformed_agent_variables['required_params']
