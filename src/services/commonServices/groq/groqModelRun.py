@@ -1,6 +1,6 @@
 from groq import AsyncGroq
 import traceback
-from ..retry_mechanism import execute_with_retry
+from ..api_executor import execute_api_call
 from globals import *
 
 async def groq_runmodel(configuration, apiKey, execution_time_logs, bridge_id, timer, message_id, org_id, name = "", org_name = "", service = "", count = 0, token_calculator=None):
@@ -20,20 +20,10 @@ async def groq_runmodel(configuration, apiKey, execution_time_logs, bridge_id, t
                     'status_code': getattr(error, 'status_code', None)
                 }
 
-        # Define how to get the alternative configuration
-        def get_alternative_config(config):
-            current_model = config.get('model', '')
-            if current_model == 'llama3-8b-8192':
-                config['model'] = 'llama3-70b-8192'
-            else:
-                config['model'] = 'llama3-8b-8192'
-            return config
-
-        # Execute with retry
-        return await execute_with_retry(
+        # Execute API call with monitoring
+        return await execute_api_call(
             configuration = configuration,
             api_call= api_call,
-            get_alternative_config = get_alternative_config,
             execution_time_logs=execution_time_logs,
             timer = timer,
             bridge_id = bridge_id,

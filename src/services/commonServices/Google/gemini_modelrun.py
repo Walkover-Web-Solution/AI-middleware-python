@@ -1,6 +1,6 @@
 from openai import AsyncOpenAI
 import traceback
-from ..retry_mechanism import execute_with_retry
+from ..api_executor import execute_api_call
 # from src.services.utils.unified_token_validator import validate_gemini_token_limit
 from globals import *
 
@@ -25,22 +25,10 @@ async def gemini_modelrun(configuration, apiKey, execution_time_logs, bridge_id,
                     'status_code': getattr(error, 'status_code', None)
                 }
 
-        # Define how to get the alternative configuration
-        def get_alternative_config(config):
-            current_model = config.get('model', '')
-            if current_model == 'gemini-2.5-flash-lite-preview-06-17':
-                config['model'] = 'gemini-2.5-flash'
-            elif current_model == 'gemini-2.5-flash':
-                config['model'] = 'gemini-2.5-flash-lite-preview-06-17'
-            else:
-                config['model'] = 'gemini-2.5-flash'
-            return config
-
-        # Execute with retry
-        return await execute_with_retry(
+        # Execute API call with monitoring
+        return await execute_api_call(
             configuration=configuration,
             api_call=api_call,
-            get_alternative_config=get_alternative_config,
             execution_time_logs=execution_time_logs,
             timer=timer,
             bridge_id=bridge_id,
