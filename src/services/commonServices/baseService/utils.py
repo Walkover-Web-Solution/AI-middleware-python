@@ -221,6 +221,11 @@ async def process_data_and_run_tools(codes_mapping, self):
             # Get corresponding function code mapping
             tool_mapping = {} if self.tool_id_and_name_mapping[name] else {"error": True, "response": "Wrong Function name"}
             tool_data = {**tool, **tool_mapping}
+            
+            # Add bridge_id and version_id to tool_data for AGENT type tools only
+            if self.tool_id_and_name_mapping.get(name) and self.tool_id_and_name_mapping[name].get('type') == 'AGENT':
+                tool_data['bridge_id'] = self.tool_id_and_name_mapping[name].get('bridge_id')
+                tool_data['version_id'] = self.tool_id_and_name_mapping[name].get('version_id')
 
             if not tool_data.get("response"):
                 # if function is present in db/NO response, create task for async processing
@@ -255,7 +260,7 @@ async def process_data_and_run_tools(codes_mapping, self):
                     'content': json.dumps(tool_data['response'])
                 })
                 # Update tool_call_logs with existing response
-                tool_call_logs[tool_call_key] = {**tool, "response": tool_data['response']}
+                tool_call_logs[tool_call_key] = {**tool_data, "response": tool_data['response']}
 
         # Execute all tasks concurrently if any exist
         if tasks:
