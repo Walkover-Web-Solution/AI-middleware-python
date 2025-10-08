@@ -123,7 +123,7 @@ async def chat(request_body):
             }
         
         # Retry mechanism with fallback configuration
-        if execution_failed and parsed_data.get('fall_back'):
+        if execution_failed and parsed_data.get('fall_back') and parsed_data['fall_back'].get('is_enable', False):
             try:
                 # Store original configuration
                 fallback_config = parsed_data['fall_back']
@@ -173,7 +173,7 @@ async def chat(request_body):
                 
                 # Mark that this was a retry attempt and store original error
                 if result["success"]:
-                    result['modelResponse']['firstAttemptError'] = f"Original attempt failed with {original_service}/{original_model}: {original_error}. Retried with {parsed_data['service']}/{parsed_data['model']}"
+                    result['response']['firstAttemptError'] = f"Original attempt failed with {original_service}/{original_model}: {original_error}. Retried with {parsed_data['service']}/{parsed_data['model']}"
                 
             except Exception as retry_error:
                 # If retry also fails, restore original configuration and continue with original error
@@ -185,8 +185,8 @@ async def chat(request_body):
         if not result["success"]:
             raise ValueError(result)
         
-        if result['modelResponse'].get('firstAttemptError'):
-            send_error(parsed_data['bridge_id'], parsed_data['org_id'], result['modelResponse']['firstAttemptError'], error_type='retry_mechanism')
+        if original_error:
+            send_error(parsed_data['bridge_id'], parsed_data['org_id'], original_error, error_type='retry_mechanism')
         
         if parsed_data['configuration']['type'] == 'chat':
             if parsed_data['is_rich_text'] and parsed_data['bridgeType'] and parsed_data['reasoning_model'] == False:
