@@ -28,10 +28,4 @@ bridge_ids = {
 
 __all__ = ['service_name', 'bridge_ids']
 
-prebuilt_prompt_bridge_id = {
-    'optimze_prompt': '6843d832aab19264b8967f3b',
-    'gpt_memory': '6752d9fc232e8659b2b65f0d',
-    'structured_output_optimizer': '67766c4eec020b944b3e0670',
-    'chatbot_suggestions': '674710c9141fcdaeb820aeb8',
-    'generate_summary': '679ca9520a9b42277fd2a3c1'
-}
+prebuilt_prompt_bridge_id = ['optimze_prompt', 'gpt_memory', 'structured_output_optimizer', 'chatbot_suggestions', 'generate_summary']
