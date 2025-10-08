@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Depends, Request
+from src.middlewares.middleware import jwt_middleware
 from src.services.cache_service import clear_cache, find_in_cache
 from ..services.utils.formatter.ai_middleware_chat_api import structured_output_optimizer
 
