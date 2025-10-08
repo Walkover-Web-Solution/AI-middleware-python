@@ -1,12 +1,11 @@
 from fastapi import HTTPException, status
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
-from src.db_services.ConfigurationServices import create_bridge, get_all_bridges_in_org_by_org_id, get_bridge_by_id, get_all_bridges_in_org, update_bridge, update_bridge_ids_in_api_calls, get_bridges_with_tools, get_apikey_creds, update_apikey_creds, update_built_in_tools, update_agents, get_all_agents_data, get_agents_data, get_bridges_and_versions_by_model
+from src.db_services.ConfigurationServices import create_bridge, get_all_bridges_in_org_by_org_id, get_bridge_by_id, get_all_bridges_in_org, update_bridge, update_bridge_ids_in_api_calls, get_bridges_with_tools, get_apikey_creds, update_apikey_creds, update_built_in_tools, update_agents, get_all_agents_data, get_agents_data, get_bridges_and_versions_by_model, update_apikey_quota
 from src.configs.modelConfiguration import ModelsConfig as model_configuration
 from src.services.utils.helper import Helper
 import json
 from config import Config
-from ..configs.constant import service_name, redis_keys
 from ..configs.constant import service_name, redis_keys
 from src.db_services.conversationDbService import storeSystemPrompt, add_bulk_user_entries
 from bson import ObjectId
@@ -17,7 +16,6 @@ from src.configs.model_configuration import model_config_document
 from globals import *
 from src.configs.constant import bridge_ids
 from src.services.utils.ai_call_util import call_ai_middleware
-from src.services.cache_service import find_in_cache, store_in_cache, delete_in_cache
 from src.services.cache_service import find_in_cache, store_in_cache, delete_in_cache
 from src.db_services.templateDbservice import get_template
 
@@ -325,7 +323,6 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
         if bridge is None:
             raise HTTPException(status_code=404, detail="Bridge not found")
         parent_id = bridge.get('parent_id') if bridge.get('parent_id') else bridge_id if bridge_id else bridge.get('_id')
-        parent_id = bridge.get('parent_id') if bridge.get('parent_id') else bridge_id if bridge_id else bridge.get('_id')
         current_configuration = bridge.get('configuration', {})
         current_variables_path = bridge.get('variables_path', {})
         function_ids = bridge.get('function_ids') or []
@@ -491,31 +488,34 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
                 update_fields['version_description'] = version_description
         
         # Handle bridge quota
-        bridge_quota = body.get(redis_keys['bridge_quota'])
         bridge_id = parent_id
-        update_quota = {}
+        bridge_quota = body.get(redis_keys['bridge_quota'])
         quota_update = None
         if bridge_quota is not None:
-            update_quota[redis_keys['bridge_quota']] = bridge_quota
-            quota_update = await update_bridge(bridge_id=bridge_id, update_fields=update_quota)
+            quota_update = await update_bridge(bridge_id=bridge_id, update_fields={redis_keys['bridge_quota']: bridge_quota})
             #update in cache
             cache_key = f"{redis_keys['bridge_quota']}_{bridge_id}"
             await delete_in_cache(cache_key)    
             await store_in_cache(cache_key, bridge_quota)
 
-        
-        # Handle bridge quota
-        bridge_quota = body.get(redis_keys['bridge_quota'])
-        bridge_id = parent_id
-        update_quota = {}
-        quota_update = None
-        if bridge_quota is not None:
-            update_quota[redis_keys['bridge_quota']] = bridge_quota
-            quota_update = await update_bridge(bridge_id=bridge_id, update_fields=update_quota)
-            #update in cache
-            cache_key = f"{redis_keys['bridge_quota']}_{bridge_id}"
-            await delete_in_cache(cache_key)    
-            await store_in_cache(cache_key, bridge_quota)
+        # Handle apikey_quota
+        apikey_quota = body.get(redis_keys['apikey_quota'])
+        apikey_quota_update = None
+
+        # Ensure we have the apikey_object_id, either from the body or the existing bridge doc
+        effective_apikey_object_id = apikey_object_id or bridge.get('apikey_object_id')
+
+        if apikey_quota is not None and effective_apikey_object_id:
+            key_id_to_update = ""
+            if isinstance(effective_apikey_object_id, dict):
+                key_id_to_update = next(iter(effective_apikey_object_id.values()), None)
+            elif isinstance(effective_apikey_object_id, str):
+                key_id_to_update = effective_apikey_object_id
+            if key_id_to_update:
+                apikey_quota_update = await update_apikey_quota(key_id_to_update, apikey_quota)
+                cache_key = f"{redis_keys['apikey_quota']}_{key_id_to_update}"
+                await delete_in_cache(cache_key)
+                await store_in_cache(cache_key, apikey_quota)
 
         # Perform database updates
         await update_bridge(bridge_id=bridge_id, update_fields=update_fields, version_id=version_id)
@@ -523,8 +523,15 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
         await add_bulk_user_entries(user_history)
         if apikey_object_id is not None:
             await try_catch(update_apikey_creds, version_id, apikey_object_id)
+        # Add quotas to the response if they were updated
         if quota_update is not None and quota_update.get('success'):
-            result['bridges'][redis_keys['bridge_quota']] = quota_update.get("result", {}).get(redis_keys['bridge_quota'])
+            result['bridges'][redis_keys['bridge_quota']] = body.get(redis_keys['bridge_quota'])
+
+        # Always include the apikey_quota in the response if it exists
+        if effective_apikey_object_id:
+            apikey_doc = await get_apikey_creds(org_id, effective_apikey_object_id)
+            if apikey_doc and redis_keys['apikey_quota'] in apikey_doc:
+                result['bridges'][redis_keys['apikey_quota']] = apikey_doc[redis_keys['apikey_quota']]
         # Update service in bridge if it was changed
         if service is not None:
             bridge['service'] = service

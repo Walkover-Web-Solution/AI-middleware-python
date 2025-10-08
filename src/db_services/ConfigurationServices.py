@@ -858,33 +858,50 @@ async def update_bridge(bridge_id = None, update_fields = None, version_id = Non
         'result': updated_bridge
     }
 
-
-async def get_apikey_creds(org_id, apikey_object_ids):
-    for service, object_id in apikey_object_ids.items():
-        apikey_cred = await apikeyCredentialsModel.find_one(
-            {'_id': ObjectId(object_id), 'org_id': org_id},
-            {'apikey': 1}
+async def update_apikey_quota(apikey_id, quota_data):
+    try:
+        result = await apikeyCredentialsModel.update_one(
+            {'_id': ObjectId(apikey_id)},
+            {'$set': {'apikey_quota': quota_data}}
         )
-        if not apikey_cred:
-            raise BadRequestException(f"Apikey for {service} not found")
+        return result.modified_count > 0
+    except Exception as e:
+        logger.error(f"Error updating API key quota: {e}")
+        return False
+
+async def get_apikey_creds(org_id, apikey_object_id):
+    if isinstance(apikey_object_id, str):
+        return await apikeyCredentialsModel.find_one(
+            {'_id': ObjectId(apikey_object_id), 'org_id': org_id}
+        )
     
+    if isinstance(apikey_object_id, dict):
+        # This handles the legacy case where a dict is passed, returning the first found credential.
+        # Note: This will not support multiple keys in the future.
+        for service, object_id in apikey_object_id.items():
+            apikey_cred = await apikeyCredentialsModel.find_one(
+                {'_id': ObjectId(object_id), 'org_id': org_id}
+            )
+            if apikey_cred:
+                return apikey_cred # Return the first one found
+    
+    return None
+
 async def update_apikey_creds(version_id, apikey_object_ids):
     try:
-        if isinstance(apikey_object_ids, dict):
-            # First, remove the version_id from any apikeycredentials documents that contain it
-            await apikeyCredentialsModel.update_many(
-                {'version_ids': version_id},
-                {'$pull': {'version_ids': version_id}}
+        # First, remove the version_id from all documents that currently have it
+        await apikeyCredentialsModel.update_many(
+            {'version_ids': version_id},
+            {'$pull': {'version_ids': version_id}}
+        )
+        
+        for service, api_key_id in apikey_object_ids.items():
+            # Then add the version_id to the target document
+            await apikeyCredentialsModel.update_one(
+                {'_id': ObjectId(api_key_id)},
+                {'$addToSet': {'version_ids': version_id}},
+                upsert=True
             )
-            
-            for service, api_key_id in apikey_object_ids.items():
-                # Then add the version_id to the target document
-                await apikeyCredentialsModel.update_one(
-                    {'_id': ObjectId(api_key_id)},
-                    {'$addToSet': {'version_ids': version_id}},
-                    upsert=True
-                )
-        return True
     except Exception as error:
         logger.error(f"Error in update_apikey_creds: {str(error)}")
         raise error

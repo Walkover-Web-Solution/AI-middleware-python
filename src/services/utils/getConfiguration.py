@@ -10,9 +10,6 @@ from .getConfiguration_utils import (
 from src.services.cache_service import store_in_cache, find_in_cache, delete_in_cache
 import json
 from fastapi import HTTPException
-from src.services.cache_service import store_in_cache, find_in_cache, delete_in_cache
-import json
-from fastapi import HTTPException
 apiCallModel = db['apicalls']
 from globals import *
 from src.configs.constant import redis_keys
@@ -62,21 +59,38 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
         raise HTTPException(status_code=429, detail="Bridge quota limit reached for the bridge.")
     
     # Get and check API keys quota limit
-    apikey_data = result.get('bridges', {}).get('apikey_object_id', {})
-    if apikey_data and len(apikey_data) > 0:
-        service_name = []
-        for service, apikey_object_id in apikey_data.items():
-            apikey_cache_key = f"{redis_keys['apikey_quota']}_{apikey_object_id}"
-            apikey_cache_quota = await find_in_cache(apikey_cache_key)
-            apikey_cache_quota = json.loads(apikey_cache_quota.decode("utf-8")) if isinstance(apikey_cache_quota, bytes) else apikey_cache_quota
-            apikey_quota = apikey_cache_quota if apikey_cache_quota is not None else bridge_data.get(f'{redis_keys['apikey_quota']}', {})
-            if apikey_quota is not None and len(apikey_quota) > 0:
-                await store_in_cache(apikey_cache_key, apikey_quota) 
-            if apikey_quota and 'limit' in apikey_quota and 'used' in apikey_quota and (int(apikey_quota['limit']) <= int(apikey_quota['used'])):
-                service_name.append(service)
-        if len(service_name) > 0:
-            # Returns the name of the all services for which the API key quota limit is reached used in the agent and not other API keys.
-            raise HTTPException(status_code=429, detail=f"API key quota limit reached for the API key used of service/s: {', '.join(service_name)}")
+    bridge_doc = result.get('bridges')
+    if bridge_doc:
+        apikey_data = bridge_doc.get('apikey_object_id')
+        if apikey_data:
+            service_name = []
+            items_to_iterate = []
+            if isinstance(apikey_data, dict):
+                items_to_iterate = apikey_data.items()
+            elif isinstance(apikey_data, str):
+                primary_service = bridge_doc.get('service')
+                if primary_service:
+                    items_to_iterate = [(primary_service, apikey_data)]
+
+            for service, apikey_object_id in items_to_iterate:
+                if not apikey_object_id: continue
+
+                apikey_cache_key = f"{redis_keys['apikey_quota']}_{apikey_object_id}"
+                apikey_cache_quota = await find_in_cache(apikey_cache_key)
+                apikey_cache_quota = json.loads(apikey_cache_quota.decode("utf-8")) if isinstance(apikey_cache_quota, bytes) else apikey_cache_quota
+                
+                if apikey_cache_quota is not None:
+                    apikey_quota = apikey_cache_quota
+                else:
+                    apikey_doc = await ConfigurationService.get_apikey_creds(org_id, apikey_object_id)
+                    apikey_quota = apikey_doc.get(redis_keys['apikey_quota'], {}) if apikey_doc else {}
+                if apikey_quota:
+                    await store_in_cache(apikey_cache_key, apikey_quota)
+                    if 'limit' in apikey_quota and 'used' in apikey_quota and (int(apikey_quota['limit']) <= int(apikey_quota['used'])):
+                        service_name.append(service)
+
+            if len(service_name) > 0:
+                raise HTTPException(status_code=429, detail=f"API key quota limit reached for the API key used of service/s: {', '.join(service_name)}")
     # Setup configuration
     configuration, service = setup_configuration(configuration, result, service)
 
