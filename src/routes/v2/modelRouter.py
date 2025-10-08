@@ -59,10 +59,10 @@ async def chat_completion(request: Request, db_config: dict = Depends(add_config
 async def playground_chat_completion_bridge(request: Request, db_config: dict = Depends(add_configuration_data_to_body)):
     request.state.is_playground = True
     request.state.version = 2
-    if db_config.get('orchestrator_id'):
-        result = await orchestrator_chat(request)
-        return result
     data_to_send = await make_request_data(request)
+    if db_config.get('orchestrator_id'):
+        result = await orchestrator_chat(data_to_send)
+        return result
     type = data_to_send.get("body",{}).get('configuration',{}).get('type')
     if type == 'embedding':
             result =  await embedding(data_to_send)
