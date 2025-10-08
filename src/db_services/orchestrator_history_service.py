@@ -25,9 +25,11 @@ class OrchestratorHistoryService:
             orchestrator_record = OrchestratorHistory(
                 org_id=data.get('org_id'),
                 thread_id=data.get('thread_id'),
+                sub_thread_id=data.get('sub_thread_id', data.get('thread_id')),
                 model_name=data.get('model_name', {}),
                 orchestrator_id=data.get('orchestrator_id'),
                 messages=data.get('messages', {}),
+                response=data.get('response', {}),
                 tool_call_data=data.get('tool_call_data', {}),
                 latency=data.get('latency', {}),
                 tokens=data.get('tokens', {}),
@@ -64,9 +66,11 @@ class OrchestratorDataCollector:
             self._data[thread_id] = {
                 'org_id': org_id,
                 'thread_id': thread_id,
+                'sub_thread_id': thread_id,
                 'orchestrator_id': orchestrator_id,
                 'model_name': {},
                 'messages': {},
+                'response': {},
                 'tool_call_data': {},
                 'latency': {},
                 'tokens': {},
@@ -90,6 +94,9 @@ class OrchestratorDataCollector:
         
         if 'messages' in data:
             session_data['messages'][bridge_id] = data['messages']
+        
+        if 'response' in data:
+            session_data['response'][bridge_id] = data['response']
         
         if 'tool_call_data' in data:
             session_data['tool_call_data'][bridge_id] = data['tool_call_data']

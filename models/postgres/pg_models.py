@@ -89,9 +89,11 @@ class OrchestratorHistory(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     org_id = Column(String, nullable=False)
     thread_id = Column(String, nullable=False)
+    sub_thread_id = Column(String, nullable=False)
     model_name = Column(JSON, nullable=False)  # {"bridge_id": "model_name"}
     orchestrator_id = Column(String, nullable=False)
     messages = Column(JSON, nullable=False)  # {"bridge_id": [messages]}
+    response = Column(JSON, nullable=True)  # {"bridge_id": response_json}
     tool_call_data = Column(JSON, nullable=True)  # {"bridge_id": tool_call_json}
     createdAt = Column(DateTime, nullable=False, default=func.now())
     latency = Column(JSON, nullable=True)  # {"bridge_id": latency_json}

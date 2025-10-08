@@ -769,22 +769,15 @@ async def orchestrator_agent_chat(agent_config, body=None, user=None):
             # Extract data from result and parsed_data
             orchestrator_data_to_store = {
                 'model_name': parsed_data.get('model'),
-                'messages': [
-                    {'role': 'user', 'content': user or ''},
-                    {'role': 'assistant', 'content': result.get('response', {}).get('data', {}).get('message', '')}
-                ],
-                'tool_call_data': None,
+                'messages': user,
+                'response': result.get('response', {}).get('data', {}).get('content', ''),
+                'tool_call_data': result.get('response', {}).get('data', {}).get('tool_data', ''),
                 'latency': latency if 'latency' in locals() else None,
                 'tokens': parsed_data.get('tokens'),
                 'error': {'status': False, 'message': None},
                 'variables': parsed_data.get('variables', {}),
                 'image_urls': parsed_data.get('files', []) if parsed_data.get('files') else [],
-                'ai_config': {
-                    'parallel_tool_calls': parsed_data.get('configuration', {}).get('parallel_tool_calls', False),
-                    'tools': parsed_data.get('configuration', {}).get('tools', []),
-                    'temperature': parsed_data.get('configuration', {}).get('temperature', 1.0),
-                    'top_p': parsed_data.get('configuration', {}).get('top_p', 1.0)
-                }
+                'ai_config': params.get('custom_config', {})
             }
             
             # Extract tool call data if present
