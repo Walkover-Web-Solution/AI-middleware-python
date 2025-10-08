@@ -28,6 +28,7 @@ from src.routes.testcase_routes import router as testcase_routes
 from models.Timescale.connections import init_async_dbservice
 from src.routes.runagents_routes import router as runagents_routes
 from src.routes.orchestrator_routes import router as orchestrator_routes
+from src.routes.prebuilt_prompt_route import router as prebuilt_prompt_router
 from src.configs.model_configuration import init_model_configuration, background_listen_for_changes
 from globals import *
 
@@ -180,6 +181,7 @@ app.include_router(Internal_routes,prefix="/internal")
 app.include_router(testcase_routes, prefix='/testcases')
 app.include_router(runagents_routes, prefix='/publicAgent')
 app.include_router(orchestrator_routes, prefix='/orchestrator')
+app.include_router(prebuilt_prompt_router, prefix='/prebuilt_prompt')
 
 
 if __name__ == "__main__":
