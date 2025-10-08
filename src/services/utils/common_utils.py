@@ -627,7 +627,6 @@ async def orchestrator_agent_chat(agent_config, body=None, user=None):
         org_id = body.get('org_id')
         # Pick orchestrator_id with proper fallbacks
         orchestrator_id =  body.get('orchestrator_id')
-        print("orchestrator_id", orchestrator_id)
         
         # Use thread_id as primary session key, fallback to a global session key
         session_key = thread_id if thread_id else f"global_orchestrator_{org_id}"
@@ -769,7 +768,7 @@ async def orchestrator_agent_chat(agent_config, body=None, user=None):
             # Extract data from result and parsed_data
             orchestrator_data_to_store = {
                 'model_name': parsed_data.get('model'),
-                'messages': user,
+                'user': user,
                 'response': result.get('response', {}).get('data', {}).get('content', ''),
                 'tool_call_data': result.get('response', {}).get('data', {}).get('tool_data', ''),
                 'latency': latency if 'latency' in locals() else None,
@@ -831,17 +830,14 @@ async def orchestrator_agent_chat(agent_config, body=None, user=None):
         if 'bridge_id' in locals() and bridge_id:
             error_data = {
                 'model_name': parsed_data.get('model') if 'parsed_data' in locals() else None,
-                'messages': [
-                    {'role': 'user', 'content': user or ''},
-                    {'role': 'assistant', 'content': ''}
-                ],
+                'user': user,
                 'error': {'status': True, 'message': str(error)},
                 'variables': parsed_data.get('variables', {}) if 'parsed_data' in locals() else {},
                 'latency': latency if 'latency' in locals() else None,
                 'tokens': None,
                 'tool_call_data': None,
                 'image_urls': [],
-                'ai_config': {}
+                'ai_config': params.get('custom_config', {})
             }
             org_id = body.get('org_id') if 'body' in locals() else 'unknown'
             session_key = thread_id if 'thread_id' in locals() and thread_id else f"global_orchestrator_{org_id}"
