@@ -1,7 +1,7 @@
 import json
 import uuid
 import traceback
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 from fastapi.responses import JSONResponse
 from src.services.utils.time import Timer
 from src.services.commonServices.baseService.utils import axios_work
@@ -105,6 +105,40 @@ def initialize_timer(state: Dict[str, Any]) -> Timer:
     timer_obj = Timer()
     timer_obj.defaultStart(state.get('timer', []))
     return timer_obj
+
+
+def compute_embedding_cost(model_output_config: Dict[str, Any], usage: Optional[Dict[str, Any]]) -> float:
+    """
+    Calculate the approximate dollar cost for an embedding request using prompt tokens.
+    """
+    if not usage:
+        return 0.0
+
+    try:
+        pricing_info = (model_output_config or {}).get('usage', [{}])[0].get('total_cost')
+    except (AttributeError, IndexError, TypeError):
+        pricing_info = None
+
+    if pricing_info is None:
+        return 0.0
+
+    if isinstance(pricing_info, dict):
+        price_per_thousand = pricing_info.get('input_cost') or pricing_info.get('total_cost')
+    else:
+        price_per_thousand = pricing_info
+
+    if price_per_thousand in (None, 0, 0.0):
+        return 0.0
+
+    prompt_tokens = usage.get('prompt_tokens') or usage.get('total_tokens') or 0
+    try:
+        prompt_tokens = float(prompt_tokens)
+        price_per_thousand = float(price_per_thousand)
+    except (TypeError, ValueError):
+        return 0.0
+
+    cost = (prompt_tokens / 1000.0) * price_per_thousand
+    return round(cost, 6)
 
 async def load_model_configuration(model, configuration, service):
     model_obj = model_config_document[service][model]

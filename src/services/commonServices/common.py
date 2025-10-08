@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 import traceback
+from typing import Any, Dict, Optional
 from ...db_services import metrics_service as metrics_service
 import pydash as _
 from ..utils.helper import Helper
@@ -33,7 +34,8 @@ from src.services.utils.common_utils import (
     create_history_params,
     add_files_to_parse_data,
     orchestrator_agent_chat,
-    process_background_tasks_for_playground
+    process_background_tasks_for_playground,
+    compute_embedding_cost
 )
 from src.services.utils.guardrails_validator import guardrails_check
 from src.services.utils.rich_text_support import process_chatbot_response
@@ -42,6 +44,11 @@ from src.services.utils.helper import Helper
 from src.services.commonServices.testcases import run_testcases as run_bridge_testcases
 from globals import *
 from src.services.cache_service import find_in_cache
+from src.db_services.embed_user_limit_service import (
+    get_embed_usage_limits,
+    record_embed_usage_cost,
+    build_limit_summary,
+)
 
 configurationModel = db["configurations"]
 
@@ -281,12 +288,80 @@ async def orchestrator_chat(request_body):
 
 async def embedding(request_body):
     result = {}
+    limit_context = {"user": None, "org": None}
     try:
-        body = request_body.get('body')
-        configuration = body.get('configuration')
+        body = request_body.get('body') or {}
+        state = request_body.get('state') or {}
+        profile = state.get('profile') or {}
+        user_info = profile.get('user') or {}
+        org_info = profile.get('org') or {}
+
+        configuration = body.get('configuration', {})
         text = body.get('text')
         model = configuration.get('model')
         service = body.get('service')
+
+        # Determine embed user context
+        is_embed_user = state.get('embed')
+        if is_embed_user is None:
+            meta = user_info.get('meta')
+            if isinstance(meta, dict):
+                is_embed_user = meta.get('type') == 'embed'
+            else:
+                is_embed_user = user_info.get('is_embedUser')
+
+        org_id = state.get('org_id') or org_info.get('id') or body.get('org_id')
+        user_id = state.get('user_id') or user_info.get('id')
+        folder_id = state.get('folder_id')
+        if not folder_id:
+            meta = user_info.get('meta')
+            if isinstance(meta, dict):
+                folder_id = meta.get('folder_id')
+
+        # Pre-fetch usage records (user + org scopes) to enforce limits
+        if is_embed_user and org_id:
+            limit_context = await get_embed_usage_limits(org_id, user_id, folder_id)
+
+            user_record = limit_context.get("user")
+            org_record = limit_context.get("org")
+
+            async def limit_summary(record: Dict[str, Any]) -> Dict[str, Any]:
+                summary = await build_limit_summary(record)
+                summary["limit_reached"] = True
+                return summary
+
+            def is_limit_exhausted(record: Optional[Dict[str, Any]]) -> bool:
+                if not record or not record.get('is_active', True):
+                    return False
+                limit_value = record.get('limit')
+                if limit_value is None:
+                    return False
+                consumed_value = float(record.get('consumed', 0.0) or 0.0)
+                try:
+                    limit_float = float(limit_value)
+                except (TypeError, ValueError):
+                    return False
+                return consumed_value >= limit_float
+
+            exhausted_user = user_record if is_limit_exhausted(user_record) else None
+            exhausted_org = org_record if is_limit_exhausted(org_record) else None
+
+            if exhausted_user or exhausted_org:
+                usage_details: Dict[str, Any] = {"limit_reached": True}
+                if exhausted_user:
+                    usage_details["user_limit"] = await limit_summary(exhausted_user)
+                if exhausted_org:
+                    usage_details["org_limit"] = await limit_summary(exhausted_org)
+
+                return JSONResponse(
+                    status_code=402,
+                    content={
+                        "success": False,
+                        "error": "Embed cost limit exceeded",
+                        "usage": usage_details,
+                    },
+                )
+
         model_config, custom_config, model_output_config = await load_model_configuration(model, configuration, service)
         chatbot = body.get('chatbot')
         if chatbot:
@@ -303,7 +378,7 @@ async def embedding(request_body):
             "version_id": body.get('version_id'),
             "bridge_id": body.get('bridge_id'),
             "org_id": body.get('org_id'),
-            "apikey" : body.get('apikey')
+            "apikey": body.get('apikey')
         }
 
         class_obj = await Helper.embedding_service_handler(params, service)
@@ -311,10 +386,66 @@ async def embedding(request_body):
 
         if not result["success"]:
             raise ValueError(result)
-        
-        result['modelResponse'] = await Response_formatter(response = result["response"], service = service, type =configuration.get('type'))
 
-        return JSONResponse(status_code=200, content={"success": True, "response": result["modelResponse"]})
+        usage_data = (result.get("response") or {}).get("usage")
+        cost = compute_embedding_cost(model_output_config, usage_data)
+
+        user_record = limit_context.get("user")
+        org_record = limit_context.get("org")
+
+        updated_user_record = None
+        updated_org_record = None
+
+        if user_record and user_record.get('is_active', True):
+            updated_user_record = await record_embed_usage_cost(org_id, user_id, folder_id, cost)
+        if org_record and org_record.get('is_active', True):
+            updated_org_record = await record_embed_usage_cost(org_id, None, folder_id, cost)
+
+        async def summarize(record: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+            if not record:
+                return None
+            summary = await build_limit_summary(record)
+            if summary.get("limit") is not None:
+                summary["limit_reached"] = summary.get("remaining") == 0.0
+            return summary
+
+        user_summary = await summarize(updated_user_record or user_record)
+        org_summary = await summarize(updated_org_record or org_record)
+
+        usage_response: Dict[str, Any] = {}
+        if usage_data:
+            usage_response["prompt_tokens"] = usage_data.get("prompt_tokens")
+            usage_response["total_tokens"] = usage_data.get("total_tokens")
+        usage_response["cost"] = cost
+
+        primary_summary = user_summary or org_summary
+        if primary_summary:
+            usage_response.update(
+                {
+                    "limit": primary_summary.get("limit"),
+                    "consumed": primary_summary.get("consumed"),
+                    "remaining": primary_summary.get("remaining"),
+                    "reset_frequency": primary_summary.get("reset_frequency"),
+                    "period_start": primary_summary.get("period_start"),
+                    "period_end": primary_summary.get("period_end"),
+                    "limit_reached": primary_summary.get("limit_reached", False),
+                }
+            )
+
+        if user_summary:
+            usage_response["user_limit"] = user_summary
+        if org_summary:
+            usage_response["org_limit"] = org_summary
+
+        result['modelResponse'] = await Response_formatter(
+            response=result["response"], service=service, type=configuration.get('type')
+        )
+
+        response_payload = {"success": True, "response": result["modelResponse"]}
+        if usage_response:
+            response_payload["usage"] = usage_response
+
+        return JSONResponse(status_code=200, content=response_payload)
     except Exception as error:
         raise ValueError(error)
 

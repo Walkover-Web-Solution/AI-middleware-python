@@ -4,6 +4,12 @@ from validations.validation import Bridge_update as bridge_update_validation
 from ..controllers.configController import create_bridges_controller, get_bridge as get_bridge_controller,  get_all_bridges as get_all_bridges_controller, create_bridges_using_ai_controller
 from ..controllers.configController import get_all_service_models_controller,update_bridge_controller, get_all_service_controller, get_all_in_built_tools_controller, get_bridges_and_versions_by_model_controller
 from src.controllers.apicallControllerV2 import creates_api, updates_api
+from src.controllers.embed_user_controller import (
+    deactivate_embed_limit_controller,
+    get_embed_limit,
+    reset_embed_limit,
+    upsert_embed_limit,
+)
 router = APIRouter()
 
 @router.get('/service/models/{service}',dependencies=[Depends(jwt_middleware)])
@@ -49,3 +55,19 @@ async def get_all_tools():
 @router.get('/getBridgesAndVersions/{model_name}')
 async def get_bridges_and_versions_by_model(model_name: str):
     return await get_bridges_and_versions_by_model_controller(model_name)
+
+@router.post('/embed-users/limit', dependencies=[Depends(jwt_middleware)])
+async def create_or_update_embed_limit(request: Request):
+    return await upsert_embed_limit(request)
+
+@router.get('/embed-users/limit', dependencies=[Depends(jwt_middleware)])
+async def fetch_embed_limit(request: Request):
+    return await get_embed_limit(request)
+
+@router.post('/embed-users/limit/reset', dependencies=[Depends(jwt_middleware)])
+async def reset_embed_usage_limit(request: Request):
+    return await reset_embed_limit(request)
+
+@router.post('/embed-users/limit/deactivate', dependencies=[Depends(jwt_middleware)])
+async def deactivate_embed_usage_limit(request: Request):
+    return await deactivate_embed_limit_controller(request)
