@@ -49,64 +49,27 @@ async def update_prebuilt_prompt_controller(request: Request):
         
         if not body:
             raise HTTPException(status_code=400, detail="Request body cannot be empty")
+
+        prompt_id = list(body.keys())[0]
+        prompt_text = body[prompt_id]
         
-        updated_prompts = []
-        errors = []
-        
-        # Process each prompt_id and prompt pair in the request body
-        for prompt_id, prompt_text in body.items():
-            try:
-                # Validate that prompt_id is one of the allowed prebuilt prompt IDs
-                if prompt_id not in prebuilt_prompt_bridge_id:
-                    errors.append({
-                        "prompt_id": prompt_id,
-                        "error": f"Invalid prompt_id. Must be one of: {list(prebuilt_prompt_bridge_id.keys())}"
-                    })
-                    continue
+        if prompt_id not in prebuilt_prompt_bridge_id or not prompt_text:
+            raise HTTPException(status_code=400, detail=f"Invalid prompt_id. Must be one of: {list(prebuilt_prompt_bridge_id.keys())}")
+            
+        try:
+           # Update the prompt
+            prompt_data = {"prompt": prompt_text}
+            updated_prompt = await update_prebuilt_prompt_service(org_id, prompt_id, prompt_data)
                 
-                # Validate prompt text
-                if not prompt_text or not isinstance(prompt_text, str):
-                    errors.append({
-                        "prompt_id": prompt_id,
-                        "error": "Prompt text must be a non-empty string"
-                    })
-                    continue
-                
-                # Update the prompt
-                prompt_data = {"prompt": prompt_text}
-                updated_prompt = await update_prebuilt_prompt_service(org_id, prompt_id, prompt_data)
-                updated_prompts.append({
-                    "prompt_id": prompt_id,
-                    "data": updated_prompt
-                })
-                
-            except Exception as e:
-                errors.append({
-                    "prompt_id": prompt_id,
-                    "error": str(e)
-                })
-        
-        # Prepare response
-        response_data = {
-            "success": len(updated_prompts) > 0,
-            "updated_count": len(updated_prompts),
-            "error_count": len(errors),
-            "updated_prompts": updated_prompts
-        }
-        
-        if errors:
-            response_data["errors"] = errors
-        
-        status_code = 200 if len(updated_prompts) > 0 else 400
-        message = f"Updated {len(updated_prompts)} prompts successfully"
-        if errors:
-            message += f", {len(errors)} failed"
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed to update prebuilt prompt: {str(e)}")
         
         return JSONResponse(
-            status_code=status_code,
+            status_code=200,
             content={
-                **response_data,
-                "message": message
+                "success": True,
+                "message": "Prebuilt prompt updated successfully",
+                "data": updated_prompt
             }
         )
     except HTTPException:
