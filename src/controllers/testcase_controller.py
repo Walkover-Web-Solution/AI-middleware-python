@@ -127,9 +127,12 @@ async def handle_playground_testcase(result, parsed_data, Flag):
         
         else:
             # Create new testcase with default values
+            conversation = testcase_data.get('conversation', [])
+            conversation.append({'role': 'user', 'content': user})
+            
             new_testcase = {
                 "bridge_id": parsed_data.get('bridge_id', ''),
-                "conversation": testcase_data.get('conversation', []),
+                "conversation": conversation,
                 "type": testcase_data.get('type', 'response'),
                 "expected": {"response": expected_response},
                 "matching_type": testcase_data.get('matching_type', 'exact')
