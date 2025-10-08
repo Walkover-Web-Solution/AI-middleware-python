@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, Request
 from src.services.cache_service import clear_cache, find_in_cache
-from ..services.utils.formatter.ai_middleware_chat_api import structured_output_optimizer, retrieve_gpt_memory
+from ..services.utils.formatter.ai_middleware_chat_api import improve_prompt_optimizer, structured_output_optimizer, retrieve_gpt_memory
 from ..middlewares.middleware import jwt_middleware
 
 router = APIRouter()
