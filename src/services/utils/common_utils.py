@@ -779,19 +779,6 @@ async def orchestrator_agent_chat(agent_config, body=None, user=None):
                 'ai_config': params.get('custom_config', {})
             }
             
-            # Extract tool call data if present
-            if result.get('response', {}).get('data', {}).get('content'):
-                content = result['response']['data']['content']
-                if isinstance(content, list) and len(content) > 0:
-                    first_content = content[0]
-                    if first_content.get('type') == 'function_call':
-                        orchestrator_data_to_store['tool_call_data'] = {
-                            'name': first_content.get('name'),
-                            'arguments': json.loads(first_content.get('arguments', '{}')) if first_content.get('arguments') else {},
-                            'status': first_content.get('status', 'completed'),
-                            'tool_call_id': first_content.get('id')
-                        }
-            
             # Add data to collector using consistent session_key
             session_key = thread_id if thread_id else f"global_orchestrator_{org_id}"
             if not orchestrator_collector.get_session_data(session_key):
