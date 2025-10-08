@@ -103,10 +103,85 @@ async def chat(request_body):
             custom_config['response_type'] = restructure_json_schema(custom_config['response_type'], parsed_data['service'])
         
         
+        # Execute with retry mechanism
         class_obj = await Helper.create_service_handler(params, parsed_data['service'])
-        result = await class_obj.execute()
-        result['response']['usage'] = params['token_calculator'].get_total_usage()
+        
+        try:
+            result = await class_obj.execute()
+            result['response']['usage'] = params['token_calculator'].get_total_usage()
+            execution_failed = not result["success"]
+            original_error = result.get('error', 'Unknown error') if execution_failed else None
+        except Exception as execution_exception:
+            # Handle exceptions during execution
+            execution_failed = True
+            original_error = str(execution_exception)
+            result = {
+                "success": False,
+                "error": original_error,
+                "response": {"usage": {}},
+                "modelResponse": {}
+            }
+        
+        # Retry mechanism with fallback configuration
+        if execution_failed and parsed_data.get('fall_back'):
+            try:
+                # Store original configuration
+                fallback_config = parsed_data['fall_back']
+                original_model = parsed_data['model']
+                original_service = parsed_data['service']
+                
+                # Update parsed_data with fallback configuration
+                parsed_data['model'] = fallback_config.get('model', parsed_data['model'])
+                parsed_data['service'] = fallback_config.get('service', parsed_data['service'])
+                parsed_data['configuration']['model'] = fallback_config.get('model')
+                # Check if service has changed - if so, create new service handler
+                if parsed_data['service'] != original_service:
+                    parsed_data['apikey'] = fallback_config.get('apikey')
+                    
+                    # Load fresh model configuration for the fallback service and model
+                    fallback_model_config, fallback_custom_config, fallback_model_output_config = await load_model_configuration(
+                        parsed_data['model'], parsed_data['configuration'], parsed_data['service']
+                    )
             
+                    # Configure custom settings specifically for the fallback service
+                    fallback_custom_config = await configure_custom_settings(
+                        fallback_model_config['configuration'], fallback_custom_config, parsed_data['service']
+                    )
+                    params = build_service_params(
+                        parsed_data, fallback_custom_config, fallback_model_output_config, thread_info, timer, memory, send_error_to_webhook
+                    )
+                    # Step 9 : json_schema service conversion
+                    if 'response_type' in fallback_custom_config and fallback_custom_config['response_type'].get('type') == 'json_schema':
+                        fallback_custom_config['response_type'] = restructure_json_schema(fallback_custom_config['response_type'], parsed_data['service'])
+                    
+                    # Create new service handler for the fallback service
+                    class_obj = await Helper.create_service_handler(params, parsed_data['service'])
+                else:
+                    # Same service, just update existing class_obj
+                    class_obj.model = parsed_data['model']
+                    if fallback_config.get('apikey'):
+                        class_obj.apikey = fallback_config['apikey']
+                    
+                    # Reconfigure custom_config for fallback service
+                    class_obj.customConfig = await configure_custom_settings(
+                        model_config['configuration'], custom_config, parsed_data['service']
+                    )
+                
+                # Execute with updated configuration
+                result = await class_obj.execute()
+                result['response']['usage'] = params['token_calculator'].get_total_usage()
+                
+                # Mark that this was a retry attempt and store original error
+                if result["success"]:
+                    result['modelResponse']['firstAttemptError'] = f"Original attempt failed with {original_service}/{original_model}: {original_error}. Retried with {parsed_data['service']}/{parsed_data['model']}"
+                
+            except Exception as retry_error:
+                # If retry also fails, restore original configuration and continue with original error
+                parsed_data['model'] = original_model
+                parsed_data['service'] = original_service
+                # Note: We don't need to restore class_obj properties since we may have created a new object
+                logger.error(f"Retry mechanism failed: {str(retry_error)}")
+        
         if not result["success"]:
             raise ValueError(result)
         

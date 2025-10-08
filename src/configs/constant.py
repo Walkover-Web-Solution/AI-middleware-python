@@ -23,7 +23,8 @@ bridge_ids = {
     'generate_summary' : '679ca9520a9b42277fd2a3c1',
     'function_agrs_using_ai' : '67c81a424f3136bfb0e81906',
     'compare_result' : '67ce993c8407023ad4f7b277',
-    'generate_description' : '6800d48f7dfc8ddcc495f918'
+    'generate_description' : '6800d48f7dfc8ddcc495f918',
+    'improve_prompt_optimizer' : '68e4ac02739a8b89ba27b22a'
 }
 
 redis_keys = {

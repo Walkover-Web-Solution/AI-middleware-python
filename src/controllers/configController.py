@@ -110,6 +110,12 @@ async def create_bridges_controller(request):
         "cred": {}
         } 
         model_data["is_rich_text"]= False
+        # Add default fallback configuration
+        model_data['fall_back'] = {
+            "is_enable": True,
+            "service": "ai_ml",
+            "model": "gpt-oss-120b"
+        }
         if prompt is not None:
             model_data['prompt'] = prompt
         result = await create_bridge({
@@ -365,6 +371,7 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
             'name': lambda v: True,
             'bridgeType': lambda v: True,
             'meta': lambda v: True,
+            'fall_back': lambda v: True,
             'guardrails': lambda v: isinstance(v, dict) and 'is_enabled' in v
         }
         
