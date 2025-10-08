@@ -59,7 +59,7 @@ class OpenaiBatch(BaseService):
             "apikey": self.apikey,
             "webhook" : self.webhook
         }
-        await store_in_cache(batch_id, batch_json)
+        await store_in_cache(f"openai_batch_{batch_file.id}", batch_json, ttl = 86400)
         return {
             "success": True,
             "message": "Response will be successfully sent to the webhook wihtin 24 hrs."

@@ -481,7 +481,7 @@ async def total_token_calculation(tokens, bridge_id):
     await update_bridge(bridge_id=bridge_id, update_fields={'total_tokens': total_tokens})
 
 async def save_files_to_redis(thread_id, sub_thread_id, bridge_id, files):
-    cache_key = f"{bridge_id}_{thread_id}_{sub_thread_id}"
+    cache_key = f"files_{bridge_id}_{thread_id}_{sub_thread_id}"
     existing_cache = await find_in_cache(cache_key)
     if existing_cache:
         try:
