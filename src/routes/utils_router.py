@@ -13,7 +13,7 @@ async def clear_redis_cache(request: Request):
 async def get_redis_cache(request: Request, id: str):
     return await find_in_cache(id)
 
-@router.post('/structured_output')
+@router.post('/structured_output', dependencies=[Depends(jwt_middleware)])
 async def structured_output(request: Request):
     return await structured_output_optimizer(request)
 
