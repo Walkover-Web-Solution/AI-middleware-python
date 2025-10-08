@@ -1,7 +1,7 @@
 from fastapi import Request, HTTPException
 from fastapi.responses import JSONResponse
 from src.services.utils.ai_call_util import get_ai_middleware_agent_data
-from src.configs.constant import prebuilt_prompt_bridge_id
+from src.configs.constant import bridge_ids, prebuilt_prompt_bridge_id
 from src.services.prebuilt_prompt_service import get_prebuilt_prompts_service, update_prebuilt_prompt_service, get_specific_prebuilt_prompt_service
 from src.services.utils.logger import logger
 
@@ -20,7 +20,7 @@ async def get_prebuilt_prompts_controller(request: Request):
         for prebuilt_prompt_id in prebuilt_prompt_bridge_id:
             if prebuilt_prompt_id not in existing_prompt_ids:
                 try:
-                    bridge_prompt = await get_ai_middleware_agent_data(prebuilt_prompt_bridge_id[prebuilt_prompt_id])
+                    bridge_prompt = await get_ai_middleware_agent_data(bridge_ids[prebuilt_prompt_id])
                     if bridge_prompt:
                        prebuilt_prompts.append({prebuilt_prompt_id:bridge_prompt['bridge']['configuration']['prompt']})
                 except Exception as e:
@@ -54,7 +54,7 @@ async def update_prebuilt_prompt_controller(request: Request):
         prompt_text = body[prompt_id]
         
         if prompt_id not in prebuilt_prompt_bridge_id or not prompt_text:
-            raise HTTPException(status_code=400, detail=f"Invalid prompt_id. Must be one of: {list(prebuilt_prompt_bridge_id.keys())}")
+            raise HTTPException(status_code=400, detail=f"Invalid prompt_id. Must be one of: {prebuilt_prompt_bridge_id}")
             
         try:
            # Update the prompt
@@ -94,12 +94,12 @@ async def reset_prebuilt_prompts_controller(request: Request):
         if prompt_id not in prebuilt_prompt_bridge_id:
             raise HTTPException(
                 status_code=400, 
-                detail=f"Invalid prompt_id. Must be one of: {list(prebuilt_prompt_bridge_id.keys())}"
+                detail=f"Invalid prompt_id. Must be one of: {prebuilt_prompt_bridge_id}"
             )
         
         try:
             # Get the bridge_id for this prompt
-            bridge_id = prebuilt_prompt_bridge_id[prompt_id]
+            bridge_id = bridge_ids[prompt_id]
             
             # Fetch the original prompt from AI middleware
             bridge_prompt = await get_ai_middleware_agent_data(bridge_id)
@@ -155,7 +155,7 @@ async def get_specific_prebuilt_prompt_controller(request: Request):
         if prompt_key not in prebuilt_prompt_bridge_id:
             raise HTTPException(
                 status_code=400, 
-                detail=f"Invalid prompt_key. Must be one of: {list(prebuilt_prompt_bridge_id.keys())}"
+                detail=f"Invalid prompt_key. Must be one of: {prebuilt_prompt_bridge_id}"
             )
         
         # Get the specific prompt

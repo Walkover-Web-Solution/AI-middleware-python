@@ -1,3 +1,4 @@
+from config import Config
 from .apiservice import fetch
 import json
 import jwt
@@ -24,7 +25,7 @@ async def call_ai_middleware(user, bridge_id, variables = {}, configuration = No
         f"https://api.gtwy.ai/api/v2/model/chat/completion",
         "POST",
         {
-            "pauthkey": "1b13a7a038ce616635899a239771044c",
+            "pauthkey": Config.AI_MIDDLEWARE_PAUTH_KEY,
             "Content-Type": "application/json"
         },
         None,
@@ -137,7 +138,7 @@ async def get_ai_middleware_agent_data(bridge_id):
             f"https://api.gtwy.ai/api/v1/config/getbridges/{bridge_id}",
             "GET",
             {
-                "pauthkey": "1b13a7a038ce616635899a239771044c",
+                "pauthkey": Config.AI_MIDDLEWARE_PAUTH_KEY,
                 "Content-Type": "application/json"
             },
             None,
