@@ -372,7 +372,7 @@ async def make_request_data(request: Request):
     state_data = {}
     path_params = {}
     
-    attributes = ['is_playground', 'version', 'profile']
+    attributes = ['is_playground', 'version', 'profile', 'org_id', 'embed', 'folder_id', 'user_id']
     for attr in attributes:
         if hasattr(request.state, attr):
             state_data[attr] = getattr(request.state, attr)
