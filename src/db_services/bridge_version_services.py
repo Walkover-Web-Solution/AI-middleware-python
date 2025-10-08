@@ -165,7 +165,7 @@ async def publish(org_id, version_id, user_id):
     
     if updated_configuration.get('function_ids'):
         updated_configuration['function_ids'] = [ObjectId(fid) for fid in updated_configuration['function_ids']]
-    updated_configuration['agent_variables'] = agent_variables
+    # updated_configuration['agent_variables'] = agent_variables
     updated_configuration['connected_agent_details'] = {
         **updated_configuration.get('connected_agent_details', {}), 
         'agent_variables' : {
