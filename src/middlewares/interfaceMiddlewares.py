@@ -10,6 +10,7 @@ from ..db_services.conversationDbService import reset_and_mode_chat_history
 from ..services.commonServices.baseService.utils import sendResponse
 from ..services.utils.time import Timer
 from src.services.utils.apiservice import fetch
+from ..db_services.embedUserLimitService import EmbedUserLimitService, extract_cost_from_response
 
 async def send_data_middleware(request: Request, botId: str):
     try:
@@ -85,7 +86,55 @@ async def send_data_middleware(request: Request, botId: str):
         }
         db_config = await add_configuration_data_to_body(request=request)
         
-        return await chat_completion(request=request, db_config=db_config)
+        # Check if this is an embed user and if cost limits should be enforced
+        is_embed_user = getattr(request.state, 'is_embed_user', False)
+        user_id = str(request.state.profile['user']['id'])
+        
+        if is_embed_user:
+            # Check cost limits before processing
+            limit_check = await EmbedUserLimitService.check_cost_limit(org_id, user_id)
+            if not limit_check.get('allowed', True):
+                return JSONResponse(
+                    status_code=402,
+                    content={
+                        'error': 'Cost limit exceeded',
+                        'message': limit_check.get('reason', 'API usage limit reached'),
+                        'current_used': limit_check.get('current_used', 0),
+                        'limit': limit_check.get('limit', 0)
+                    }
+                )
+        
+        # Process the API call
+        response = await chat_completion(request=request, db_config=db_config)
+        
+        # Record cost for embed users after successful API call
+        if is_embed_user and response:
+            try:
+                # Extract cost from response
+                response_data = response.body if hasattr(response, 'body') else {}
+                api_cost = extract_cost_from_response(response_data, "sendmessage")
+                
+                # Record usage
+                metadata = {
+                    'folder_id': getattr(request.state, 'folder_id', None),
+                    'bot_id': botId,
+                    'thread_id': threadId,
+                    'sub_thread_id': subThreadId,
+                    'ip': request.client.host if hasattr(request, 'client') else None
+                }
+                
+                await EmbedUserLimitService.record_api_usage(
+                    org_id=org_id,
+                    user_id=user_id,
+                    api_cost=api_cost,
+                    api_endpoint="sendmessage",
+                    metadata=metadata
+                )
+            except Exception as e:
+                # Log error but don't fail the response
+                print(f"Error recording API usage: {str(e)}")
+        
+        return response
     except HTTPException as http_error:
         raise http_error  # Re-raise HTTP exceptions for proper handling
     except Exception as error: 
@@ -118,6 +167,10 @@ async def chat_bot_auth(request: Request):
                         "email": str(check_token.get('userEmail', ""))
                     },
                 }
+                
+                # Add embed user detection for chatbot auth
+                request.state.is_embed_user = check_token.get('is_embedUser', False)
+                request.state.folder_id = check_token.get('folder_id', None)
                 if check_token.get('variables') is not None:
                     request.state.profile["variables"] = json.dumps(check_token['variables']) if not isinstance(check_token['variables'], str) else check_token['variables']
                 if check_token.get('ispublic') is not None:

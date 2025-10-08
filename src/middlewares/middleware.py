@@ -48,11 +48,24 @@ async def jwt_middleware(request: Request):
                 check_token['org']['id'] = str(check_token['org']['id'])
                 request.state.profile = check_token
                 request.state.org_id = str(check_token.get('org', {}).get('id'))
-                if isinstance(check_token['user'].get('meta'), str):
-                    request.state.embed = False
+                
+                # Handle embed user detection - only from proxy token
+                is_embed_user = False
+                if request.headers.get('proxy_auth_token'):
+                    # Embed users are identified through proxy token with is_embedUser flag
+                    is_embed_user = check_token.get('user', {}).get('is_embedUser', False)
                 else:
-                    request.state.embed = check_token['user'].get('meta', {}).get('type', False) == 'embed' or False
-                request.state.folder_id = check_token.get('extraDetails', {}).get('folder_id', None)
+                    # Regular JWT tokens - not embed users
+                    is_embed_user = False
+                
+                request.state.embed = is_embed_user
+                request.state.is_embed_user = is_embed_user
+                
+                # Handle folder_id from both structures
+                request.state.folder_id = (
+                    check_token['user'].get('folder_id') or 
+                    check_token.get('extraDetails', {}).get('folder_id', None)
+                )
                 request.state.user_id = check_token['user'].get('id')
                 return 
             
