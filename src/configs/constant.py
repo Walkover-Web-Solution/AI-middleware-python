@@ -28,3 +28,5 @@ bridge_ids = {
 }
 
 __all__ = ['service_name', 'bridge_ids']
+
+prebuilt_prompt_bridge_id = ['optimze_prompt', 'gpt_memory', 'structured_output_optimizer', 'chatbot_suggestions', 'generate_summary']

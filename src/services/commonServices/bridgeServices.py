@@ -1,5 +1,6 @@
 from fastapi import Request, HTTPException
 from fastapi.responses import JSONResponse
+from src.services.prebuilt_prompt_service import get_specific_prebuilt_prompt_service
 from src.db_services.ConfigurationServices import get_bridges, get_bridges_with_tools
 from src.configs.constant import bridge_ids
 from src.services.utils.ai_call_util import call_ai_middleware
@@ -19,7 +20,11 @@ async def optimize_prompt_controller(request : Request, bridge_id: str):
         bridge = result.get('bridges')
         prompt = bridge.get('configuration',{}).get('prompt',"")
         result = ""
-        result = await call_ai_middleware(prompt,variables=variables, thread_id=thread_id, bridge_id = bridge_ids['optimze_prompt'], response_type='text')
+        configuration = None
+        updated_prompt = await get_specific_prebuilt_prompt_service(org_id, 'optimze_prompt')
+        if updated_prompt and updated_prompt.get('optimze_prompt'):
+            configuration = {"prompt": updated_prompt['optimze_prompt']}
+        result = await call_ai_middleware(prompt, variables=variables, configuration=configuration, thread_id=thread_id, bridge_id = bridge_ids['optimze_prompt'], response_type='text')
         return JSONResponse(status_code=200, content={
             "success": True,
             "message": "Prompt optimized successfully",
@@ -46,7 +51,11 @@ async def generate_summary(request):
             system_prompt += f'Available tool calls :-  {tools}'
         variables = {'prompt' : system_prompt}
         user = "generate summary from the user message provided in system prompt"
-        summary = await call_ai_middleware(user, bridge_id = bridge_ids['generate_summary'],response_type='text', variables = variables)
+        configuration = None
+        updated_prompt = await get_specific_prebuilt_prompt_service(org_id, 'generate_summary')
+        if updated_prompt and updated_prompt.get('generate_summary'):
+            configuration = {"prompt": updated_prompt['generate_summary']}
+        summary = await call_ai_middleware(user, bridge_id = bridge_ids['generate_summary'], configuration=configuration, response_type='text', variables = variables)
         return JSONResponse(status_code=200, content={
             "success": True,
             "message": "Summary generated successfully",
