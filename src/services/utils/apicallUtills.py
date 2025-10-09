@@ -130,9 +130,9 @@ async def delete_api(function_name, org_id, status = 0):
 
 async def delete_all_version_and_bridge_ids_from_cache(Id_to_delete):
     for ids in Id_to_delete.get('bridge_ids', []):
-        await delete_in_cache(str(ids))
+        await delete_in_cache(f"get_bridge_data_{str(ids)}")
     for ids in Id_to_delete.get('version_ids', []):
-        await delete_in_cache(str(ids))
+        await delete_in_cache(f"get_bridge_data_{str(ids)}")
     
 def validate_required_params(data_to_update):
     if not isinstance(data_to_update, dict):

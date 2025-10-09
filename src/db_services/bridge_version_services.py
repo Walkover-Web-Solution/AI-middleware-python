@@ -142,8 +142,7 @@ async def publish(org_id, version_id, user_id):
     agent_variables = Helper.get_req_opt_variables_in_prompt(prompt, variable_state, variable_path)
     transformed_agent_variables = Helper.transform_agent_variable_to_tool_call_format(agent_variables)
 
-    cache_key = f"{parent_id}"
-    await delete_in_cache(cache_key)
+    await delete_in_cache(f"get_bridge_data_{parent_id}")
 
     if not parent_id:
         raise BadRequestException("Parent ID not found in version data")
