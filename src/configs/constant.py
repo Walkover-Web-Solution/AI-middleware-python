@@ -27,4 +27,9 @@ bridge_ids = {
     'improve_prompt_optimizer' : '68e4ac02739a8b89ba27b22a'
 }
 
-__all__ = ['service_name', 'bridge_ids']
+redis_keys = {
+    'bridge_quota': 'bridge_quota',
+    'apikey_quota': 'apikey_quota'
+}
+
+__all__ = ['service_name', 'bridge_ids', 'redis_keys']
