@@ -59,7 +59,7 @@ async def get_bridges(bridge_id = None, org_id = None, version_id = None):
 
 async def get_bridges_with_redis(bridge_id = None, org_id = None, version_id = None):
     try:
-        cache_key = f"get_bridge_data_{version_id or bridge_id}"
+        cache_key = f"get_{version_id or bridge_id}"
         cached_data = await find_in_cache(cache_key)
         if cached_data:
             cached_result = json.loads(cached_data)
@@ -199,7 +199,7 @@ async def get_bridges_with_tools(bridge_id, org_id, version_id=None):
 
 async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None):
     try:
-        cache_key = f"bridge_data_with_tools_{version_id or bridge_id}"
+        cache_key = f"{version_id or bridge_id}"
        
         # Attempt to retrieve data from Redis cache
         cached_data = await find_in_cache(cache_key)
