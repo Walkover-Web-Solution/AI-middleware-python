@@ -5,7 +5,7 @@ from src.services.cache_service import store_in_cache, find_in_cache
 
 async def get_bridge_avg_response_time(org_id, bridge_id):
     try:
-        cache_key = f"avg_response_time_{org_id}_{bridge_id}"
+        cache_key = f"AVG_{org_id}_{bridge_id}"
         cached_avg_response_time = await find_in_cache(cache_key)
         
         if cached_avg_response_time is not None:

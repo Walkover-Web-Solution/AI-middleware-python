@@ -173,7 +173,7 @@ async def create(dataset, history_params, version_id, thread_info={}):
         await insertRawData(insert_ai_data_in_pg)
         
         # Create the cache key based on bridge_id (assuming it's always available)
-        cache_key = f"metrix_bridges_{history_params['bridge_id']}"
+        cache_key = f"metrix_bridges{history_params['bridge_id']}"
 
         # Safely load the old total token value from the cache
         cache_value = await find_in_cache(cache_key)
