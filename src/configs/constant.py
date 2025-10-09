@@ -3,6 +3,7 @@ service_name = {
     'gemini': 'gemini',
     'anthropic': 'anthropic',
     'groq': 'groq',
+    'grok': 'grok',
     'open_router': 'open_router',
     'mistral': 'mistral',
     'ai_ml': 'ai_ml',

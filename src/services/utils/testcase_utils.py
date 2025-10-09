@@ -11,7 +11,7 @@ def make_conversations_as_per_service(conversations, service):
     Newconversations = []
     for conversation in conversations:    
         match service:
-            case 'openai' | 'groq':
+            case 'openai' | 'groq' | 'grok':
                 if conversation.get('role') == 'tools_call':
                     id =  f"call_{uuid.uuid4().hex[:6]}"
                     for i, tools in enumerate(conversation.get('content')):
@@ -92,7 +92,7 @@ def custom_messages(custom_config, conversations, service, prompt):
             case 'anthropic':
                 custom_config['system'] = prompt
                 messages =  conversations
-            case 'groq': 
+            case 'groq' | 'grok':
                 messages = [{"role": "system", "content": prompt}] + conversations
     return messages
     

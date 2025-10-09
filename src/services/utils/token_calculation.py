@@ -26,7 +26,7 @@ class TokenCalculator:
                 usage["cachedTokens"] = (model_response['usage'].get('prompt_tokens_details') or {}).get('cached_tokens', 0)
                 usage["reasoningTokens"] = (model_response['usage'].get('completion_tokens_details') or {}).get('reasoning_tokens', 0)
             
-            case 'groq':
+            case 'groq' | 'grok':
                 usage["inputTokens"] = model_response['usage']['prompt_tokens']
                 usage["outputTokens"] = model_response['usage']['completion_tokens']
                 usage["totalTokens"] = model_response['usage']['total_tokens']
