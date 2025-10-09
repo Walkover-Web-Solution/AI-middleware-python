@@ -125,8 +125,10 @@ async def call_gtwy_agent(args):
             if isinstance(parsed_result, dict):
                 parsed_result['image_urls'] = image_urls
             else:
-                parsed_result = {"data": parsed_result, "image_urls": image_urls}
-        
+                parsed_result = {"data": parsed_result, "image_urls": image_urls}         
+                
+        parsed_result["message_id"] = data_section.get('message_id')
+        parsed_result["version_id"]=db_config.get('version_id')
         return parsed_result
             
     except Exception as e:
