@@ -48,3 +48,12 @@ async def retrieve_gpt_memory(
         "found": memory is not None,
         "memory": memory
     }
+async def improve_prompt_optimizer(request):
+    try:
+        body = await request.json()
+        variables = body.get('variables')
+        user = 'improve the prompt'
+        result = await call_ai_middleware(user, bridge_id = bridge_ids['improve_prompt_optimizer'], variables = (variables))
+        return result
+    except Exception as err:
+        logger.error('Error Calling function prompt optimise', err)

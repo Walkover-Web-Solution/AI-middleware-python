@@ -7,6 +7,7 @@ from ..services.utils.formatter.ai_middleware_chat_api import (
 )
 from ..middlewares.middleware import jwt_middleware
 
+
 router = APIRouter()
 
 @router.delete('/redis')
@@ -39,6 +40,7 @@ async def retrieve_gpt_memory(request: Request):
         sub_thread_id=sub_thread_id,
         version_id=version_id,
     )
+
     
 @router.post('/improve_prompt')
 async def improve_prompt(request: Request):
