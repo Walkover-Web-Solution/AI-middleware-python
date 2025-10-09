@@ -81,9 +81,9 @@ async def update_api_call_by_function_id(org_id, function_id, data_to_update):
     bridge_ids = updated_document.get('bridge_ids') or []
     version_ids = updated_document.get('version_ids') or []
     if bridge_ids:
-        await delete_in_cache(bridge_ids)
+        await delete_in_cache([f"get_bridge_data_{bridge_id}" for bridge_id in bridge_ids])
     if version_ids:
-        await delete_in_cache(version_ids)
+        await delete_in_cache([f"get_bridge_data_{version_id}" for version_id in version_ids])
     return {
         "success": True, 
         "data": updated_document 
