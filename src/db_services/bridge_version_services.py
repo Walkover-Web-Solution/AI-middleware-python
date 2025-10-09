@@ -140,6 +140,7 @@ async def publish(org_id, version_id, user_id):
     variable_state = get_version_data.get('variables_state', {})
     variable_path = get_version_data.get('variables_path', {})
     agent_variables = Helper.get_req_opt_variables_in_prompt(prompt, variable_state, variable_path)
+    transformed_agent_variables = Helper.transform_agent_variable_to_tool_call_format(agent_variables)
 
     cache_key = f"{parent_id}"
     await delete_in_cache(cache_key)
@@ -164,7 +165,15 @@ async def publish(org_id, version_id, user_id):
     
     if updated_configuration.get('function_ids'):
         updated_configuration['function_ids'] = [ObjectId(fid) for fid in updated_configuration['function_ids']]
-    updated_configuration['agent_variables'] = agent_variables
+    # updated_configuration['agent_variables'] = agent_variables
+    updated_configuration['connected_agent_details'] = {
+        **updated_configuration.get('connected_agent_details', {}), 
+        'agent_variables' : {
+            'fields' : transformed_agent_variables['fields'],
+            'required_params' : transformed_agent_variables['required_params']
+        }
+    }
+    
     
     await configurationModel.update_one(
         {'_id': ObjectId(parent_id)},
