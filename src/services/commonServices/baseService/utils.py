@@ -226,6 +226,8 @@ async def process_data_and_run_tools(codes_mapping, self):
             if self.tool_id_and_name_mapping.get(name) and self.tool_id_and_name_mapping[name].get('type') == 'AGENT':
                 tool_data['bridge_id'] = self.tool_id_and_name_mapping[name].get('bridge_id')
                 tool_data['version_id'] = self.tool_id_and_name_mapping[name].get('version_id')
+                tool_data['thread_id']= self.tool_id_and_name_mapping[name].get('thread_id') or self.thread_id
+                tool_data['sub_thread_id']= self.tool_id_and_name_mapping[name].get('sub_thread_id') or self.sub_thread_id
 
             if not tool_data.get("response"):
                 # if function is present in db/NO response, create task for async processing
