@@ -1,3 +1,4 @@
+from config import Config
 from .apiservice import fetch
 import json
 import jwt
@@ -24,7 +25,7 @@ async def call_ai_middleware(user, bridge_id, variables = {}, configuration = No
         f"https://api.gtwy.ai/api/v2/model/chat/completion",
         "POST",
         {
-            "pauthkey": "1b13a7a038ce616635899a239771044c",
+            "pauthkey": Config.AI_MIDDLEWARE_PAUTH_KEY,
             "Content-Type": "application/json"
         },
         None,
@@ -130,3 +131,36 @@ async def call_gtwy_agent(args):
             
     except Exception as e:
         raise Exception(f"Error in call_gtwy_agent: {str(e)}")
+
+async def get_ai_middleware_agent_data(bridge_id):
+    try:
+        response, rs_headers = await fetch(
+            f"https://api.gtwy.ai/api/v1/config/getbridges/{bridge_id}",
+            "GET",
+            {
+                "pauthkey": Config.AI_MIDDLEWARE_PAUTH_KEY,
+                "Content-Type": "application/json"
+            },
+            None,
+            None
+        )
+        
+        # Handle different response structures
+        if isinstance(response, dict):
+            if not response.get('success', True):
+                raise Exception(response.get('message', 'Unknown error'))
+            
+            # Try different possible response structures
+            result = response.get('response', {}).get('data', {}).get('content', "")
+            if not result:
+                result = response.get('data', {})
+            if not result:
+                result = response
+                
+            return result
+        else:
+            # If response is not a dict, return as is
+            return response
+            
+    except Exception as e:
+        raise Exception(f"Failed to fetch bridge data: {str(e)}")

@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, Depends, HTTPException, Request
+from src.middlewares.middleware import jwt_middleware
 from src.services.cache_service import clear_cache, find_in_cache
 from ..services.utils.formatter.ai_middleware_chat_api import (
     improve_prompt_optimizer,
@@ -18,7 +19,7 @@ async def clear_redis_cache(request: Request):
 async def get_redis_cache(request: Request, id: str):
     return await find_in_cache(id)
 
-@router.post('/structured_output')
+@router.post('/structured_output', dependencies=[Depends(jwt_middleware)])
 async def structured_output(request: Request):
     return await structured_output_optimizer(request)
 
