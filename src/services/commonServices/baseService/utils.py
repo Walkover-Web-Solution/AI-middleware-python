@@ -289,8 +289,7 @@ async def process_data_and_run_tools(codes_mapping, self):
                 })
 
                 # Update tool_call_logs with the response
-                tool_call_logs[tool_call_key] = {**tool_data, **response, "id": self.tool_id_and_name_mapping[tool_data['name']].get("name")}
-
+                tool_call_logs[tool_call_key] = {**tool_data, "data" : response, "id": self.tool_id_and_name_mapping[tool_data['name']].get("name")}
         # Create mapping by tool_call_id (now tool_call_key) for return
         mapping = {resp['tool_call_id']: resp for resp in responses}
 
