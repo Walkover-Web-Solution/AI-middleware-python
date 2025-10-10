@@ -26,7 +26,8 @@ async def call_ai_middleware(user, bridge_id, variables = {}, configuration = No
         "POST",
         {
             "pauthkey": Config.AI_MIDDLEWARE_PAUTH_KEY,
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            "Accept-Encoding": "gzip"
         },
         None,
         request_body
