@@ -166,7 +166,7 @@ async def manage_threads(parsed_data):
             logger.info(f"Retrieved conversations from Redis cache: {redis_key}")
         else:
             # Fallback to database if not in cache
-            result = await try_catch(getThread, thread_id, sub_thread_id, org_id, bridge_id, bridge_type)
+            result = await try_catch(getThread, thread_id, sub_thread_id, org_id, bridge_id)
             if result:
                 parsed_data['configuration']["conversation"] = result or []
     else:

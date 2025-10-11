@@ -1,11 +1,9 @@
 import json
 from models.index import combined_models as models
-import sqlalchemy as sa
-from sqlalchemy import func, and_ , insert, delete, or_ , update, select
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy import func, and_ , or_ , update, select
 from ..services.cache_service import find_in_cache, store_in_cache
 from datetime import datetime
-from models.postgres.pg_models import Conversation, RawData, system_prompt_versionings, user_bridge_config_history
+from models.postgres.pg_models import Conversation, system_prompt_versionings, user_bridge_config_history
 from models.Timescale.timescale_models import Metrics_model
 from sqlalchemy.sql import text
 from globals import *
@@ -14,63 +12,73 @@ from datetime import timedelta
 pg = models['pg']
 timescale = models['timescale']
 
-    
-def createBulk(conversations_data):
-    session = pg['session']()
-    try:
-        conversations = [Conversation(**data) for data in conversations_data]
-        session.add_all(conversations)
-        session.commit()
-        return [conversation.id for conversation in conversations]
-    except Exception as err :
-        logger.error(f"Error in creating bulk conversations: {str(err)}")
-        session.rollback()
-    finally : 
-        session.close()
-
-
-async def insertRawData(raw_data) : 
-    session = pg['session']()
-    try:
-        raws = [RawData(**data) for data in raw_data]
-        session.add_all(raws)
-        session.commit()
-    except Exception as e: 
-        session.rollback()
-        raise e
-
 async def find(org_id, thread_id, sub_thread_id, bridge_id):
     try:
         session = pg['session']()
+        
         conversations = (
-            session.query(
-                Conversation.message.label('content'),
-                Conversation.message_by.label('role'),
-                Conversation.createdAt,
-                Conversation.id,
-                Conversation.function,
-                Conversation.is_reset,
-                Conversation.tools_call_data,
-                RawData.error,
-                func.coalesce(Conversation.urls, []).label('urls')  # Updated to handle 'urls' as an array
-            )
-            .outerjoin(RawData, Conversation.id == RawData.chat_id)
+            session.query(Conversation)
             .filter(
                 and_(
                     Conversation.org_id == org_id,
                     Conversation.thread_id == thread_id,
                     Conversation.bridge_id == bridge_id,
                     Conversation.sub_thread_id == sub_thread_id,
-                    or_(RawData.error == '', RawData.error.is_(None)),
-                    Conversation.message_by.in_(["user", "tools_call", "assistant"])
+                    or_(Conversation.error == '', Conversation.error.is_(None))
                 )
             )
             .order_by(Conversation.id.desc())
             .limit(9)
             .all()
         )
-        conversations.reverse()
-        return [conversation._asdict() for conversation in conversations]
+        
+        # Convert to format expected by existing code
+        result = []
+        for conv in reversed(conversations):
+            # Create user message entry
+            if conv.get('user_message'):
+                result.append({
+                    'content': conv.get('user_message'),
+                    'role': 'user',
+                    'createdAt': conv.get('createdAt'),
+                    'id': conv.get('id'),
+                    'function': {},
+                    'is_reset': False,
+                    'tools_call_data': conv.get('tools_call_data', []),
+                    'error': conv.get('error', ''),
+                    'urls': conv.get('urls', [])
+                })
+            
+            # Create tools call entry if exists
+            if conv.get('tools_call_data') and len(conv.get('tools_call_data', [])) > 0:
+                result.append({
+                    'content': '',
+                    'role': 'tools_call',
+                    'createdAt': conv.get('createdAt'),
+                    'id': conv.get('id'),
+                    'function': conv.get('tools_call_data', [{}])[0],
+                    'is_reset': False,
+                    'tools_call_data': conv.get('tools_call_data'),
+                    'error': conv.get('error', ''),
+                    'urls': []
+                })
+            
+            # Create assistant message entry
+            if conv.get('response') or conv.get('chatbot_response'):
+                result.append({
+                    'content': conv.get('response') or conv.get('chatbot_response'),
+                    'role': 'assistant',
+                    'createdAt': conv.get('createdAt'),
+                    'id': conv.get('id'),
+                    'function': {},
+                    'is_reset': False,
+                    'tools_call_data': None,
+                    'error': conv.get('error', ''),
+                    'urls': []
+                })
+        
+        return result
+        
     except Exception as e:
         logger.error(f"Error in finding conversations: {str(e)}")
         return []
@@ -87,24 +95,16 @@ async def calculate_average_response_time(org_id, bridge_id):
         
         query = (
             session.query(
-                func.avg(
-                    func.cast(
-                        # Use the proper JSONB extraction for PostgreSQL
-                        func.jsonb_extract_path_text(RawData.latency, 'over_all_time'),
-                        sa.Float
-                    )
-                ).label('avg_response_time')
+                func.avg(Conversation.latency).label('avg_response_time')
             )
-            .select_from(Conversation)
-            .join(RawData, Conversation.id == RawData.chat_id)
             .filter(
                 and_(
                     Conversation.org_id == org_id,
                     Conversation.bridge_id == bridge_id,
-                    Conversation.message_by == 'user',
-                    or_(RawData.error == '', RawData.error.is_(None)),
-                    RawData.created_at >= yesterday_start,
-                    RawData.created_at <= yesterday_end
+                    Conversation.user_message.isnot(None),
+                    or_(Conversation.error == '', Conversation.error.is_(None)),
+                    Conversation.created_at >= yesterday_start,
+                    Conversation.created_at <= yesterday_end
                 )
             )
             .scalar()
@@ -139,53 +139,6 @@ async def storeSystemPrompt(prompt, org_id, bridge_id):
     finally:
         session.close()
 
-async def reset_and_mode_chat_history(org_id, bridge_id, thread_id, key, value):
-    session = pg['session']()
-    try:
-        subquery = (
-            select(Conversation.id)
-            .where(
-                and_(
-                    Conversation.org_id == org_id,
-                    Conversation.bridge_id == bridge_id,
-                    Conversation.thread_id == thread_id
-                )
-            )
-            .order_by(Conversation.id.desc())
-            .limit(1)
-        )
-        stmt = (
-            update(Conversation)
-            .where(Conversation.id == subquery.scalar_subquery())
-            .values({key: value})
-            .returning(Conversation.id)
-        )
-        result = session.execute(stmt)
-        updated_conversation = result.fetchone()
-        if updated_conversation:
-            session.commit()
-            return {
-                'success': True,
-                'message': 'Chatbot reset successfully',
-                'result': updated_conversation.id
-            }
-        else:
-            return {
-                'success': True,
-                'message': 'No conversation found to reset',
-                'result': None
-            }
-    except Exception as error:
-        session.rollback()
-        return {
-            'success': False,
-            'message': 'Error resetting chatbot',
-            'result': str(error)
-        }
-    finally:
-        session.close()
-
-
 async def add_bulk_user_entries(entries):
     session = pg['session']()
     try:
@@ -198,6 +151,30 @@ async def add_bulk_user_entries(entries):
     finally:
         session.close()
 
+
+async def create_conversation_entry(conversation_data):
+    """
+    Save conversation entry data to database
+    """
+    session = postgres['session']()
+    try:
+        from models.postgres.pg_models import ConversationEntry
+        
+        conversation_entry = ConversationEntry(**conversation_data)
+        session.add(conversation_entry)
+        session.commit()
+        
+        conversation_id = conversation_entry.id
+        logger.info(f"Created conversation entry with ID: {conversation_id}")
+        
+        return conversation_id
+        
+    except Exception as e:
+        session.rollback()
+        logger.error(f"Database error in create conversation entry: {str(e)}")
+        raise e
+    finally:
+        session.close()
 
 async def timescale_metrics(metrics_data):
     async with timescale['session']() as session:
