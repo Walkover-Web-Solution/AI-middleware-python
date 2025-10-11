@@ -26,7 +26,8 @@ async def call_ai_middleware(user, bridge_id, variables = {}, configuration = No
         "POST",
         {
             "pauthkey": Config.AI_MIDDLEWARE_PAUTH_KEY,
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            "Accept-Encoding": "gzip"
         },
         None,
         request_body
@@ -139,28 +140,17 @@ async def get_ai_middleware_agent_data(bridge_id):
             "GET",
             {
                 "pauthkey": Config.AI_MIDDLEWARE_PAUTH_KEY,
-                "Content-Type": "application/json"
+                "Content-Type": "application/json",
+                "Accept-Encoding": "gzip"
             },
             None,
             None
         )
+    
+        if not response.get('success', True):
+            raise Exception(response.get('message', 'Unknown error'))
         
-        # Handle different response structures
-        if isinstance(response, dict):
-            if not response.get('success', True):
-                raise Exception(response.get('message', 'Unknown error'))
-            
-            # Try different possible response structures
-            result = response.get('response', {}).get('data', {}).get('content', "")
-            if not result:
-                result = response.get('data', {})
-            if not result:
-                result = response
-                
-            return result
-        else:
-            # If response is not a dict, return as is
-            return response
+        return response
             
     except Exception as e:
         raise Exception(f"Failed to fetch bridge data: {str(e)}")

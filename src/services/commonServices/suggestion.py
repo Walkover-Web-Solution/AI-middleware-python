@@ -1,4 +1,5 @@
 import json
+from src.services.prebuilt_prompt_service import get_specific_prebuilt_prompt_service
 from .baseService.utils import sendResponse
 from src.services.commonServices.createConversations import ConversationService
 import uuid
@@ -16,10 +17,16 @@ async def chatbot_suggestions(response_format, assistant, user, bridge_summary, 
         conversation.extend([{"role": "user", "content": user}, {"role": "assistant", "content": assistant.get('data', '').get('content')}])
         final_prompt = prompt_summary if prompt_summary is not None else prompt
         random_id = str(uuid.uuid4())
+        updated_prompt = get_specific_prebuilt_prompt_service('chatbot_suggestions')
+        configuration = None
+        if updated_prompt and updated_prompt.get('chatbot_suggestions'):
+            configuration = {
+                'prompt' : updated_prompt.get('chatbot_suggestions'),
+            }
         message = f'Generate suggestions based on the user conversations. \n **User Conversations**: {conversation[-2:]}'
         variables = {'prompt_summary': final_prompt}
         thread_id = f"{thread_id or random_id}-{sub_thread_id or random_id}"
-        result = await call_ai_middleware(message, bridge_id = bridge_ids['chatbot_suggestions'], variables = variables, thread_id = thread_id)
+        result = await call_ai_middleware(message, bridge_id = bridge_ids['chatbot_suggestions'], configuration = configuration, variables = variables, thread_id = thread_id)
         response = {
             'data' : {
                 'suggestions' : result['suggestions']
