@@ -171,6 +171,31 @@ async def create(dataset, history_params, version_id, thread_info={}):
             for data_object in dataset
         ]
         await insertRawData(insert_ai_data_in_pg)
+
+# update the limit of apikey and bridge and folder
+
+        limitcache_key = f"bridge_limit_snapshot:{history_params['bridge_id']}"
+        limitcache_value = await find_in_cache(limitcache_key)
+
+        if not limitcache_value:
+            return  # nothing cached yet, or seed it the way you already do
+
+        try:
+            snapshot = json.loads(limitcache_value)
+        except (json.JSONDecodeError, TypeError):
+            return  # corrupt entry; skip or recreate it
+
+        # bump the counters you want, leave the rest alone
+        snapshot["bridge_uses"] += data_object.get('expectedCost', 0)
+        snapshot["api_uses"]  += data_object.get('expectedCost', 0)
+
+        folder_id = history_params.get("folder_id") or history_params.get("folderId")
+        if folder_id:
+            folder_uses = snapshot.get("folder_uses", 0)
+            snapshot["folder_uses"] = folder_uses + 1
+
+        await store_in_cache(limitcache_key, snapshot)
+
         
         # Create the cache key based on bridge_id (assuming it's always available)
         cache_key = f"metrix_bridges{history_params['bridge_id']}"
