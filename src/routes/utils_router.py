@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from src.middlewares.middleware import jwt_middleware
 from src.services.cache_service import clear_cache, find_in_cache
 from ..services.utils.formatter.ai_middleware_chat_api import (
@@ -7,7 +7,6 @@ from ..services.utils.formatter.ai_middleware_chat_api import (
     structured_output_optimizer,
 )
 from ..middlewares.middleware import jwt_middleware
-
 
 router = APIRouter()
 
@@ -41,7 +40,6 @@ async def retrieve_gpt_memory(request: Request):
         sub_thread_id=sub_thread_id,
         version_id=version_id,
     )
-
     
 @router.post('/improve_prompt')
 async def improve_prompt(request: Request):

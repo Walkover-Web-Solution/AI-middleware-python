@@ -1,7 +1,7 @@
 from mistralai import Mistral
 from mistralai.models import UserMessage
 import traceback
-from ..retry_mechanism import execute_with_retry
+from ..api_executor import execute_api_call
 from globals import *
 
 
@@ -21,22 +21,10 @@ async def mistral_model_run(configuration, apiKey, execution_time_logs, bridge_i
                     'status_code': getattr(error, 'status_code', None)
                 }
 
-        # Define how to get the alternative configuration
-        def get_alternative_config(config):
-            current_model = config.get('model', '')
-            if current_model == 'mistral-small-2506':
-                config['model'] = 'magistral-small-2506'
-            elif current_model == 'magistral-small-2506':
-                config['model'] = 'mistral-small-2506'
-            else:
-                config['model'] = 'magistral-small-2506'
-            return config
-
-        # Execute with retry
-        return await execute_with_retry(
+        # Execute API call with monitoring
+        return await execute_api_call(
             configuration=configuration,
             api_call=api_call,
-            get_alternative_config=get_alternative_config,
             execution_time_logs=execution_time_logs,
             timer=timer,
             bridge_id=bridge_id,

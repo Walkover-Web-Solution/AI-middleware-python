@@ -1,7 +1,7 @@
 from anthropic import AsyncAnthropic
 import traceback
 import json
-from ..retry_mechanism import execute_with_retry
+from ..api_executor import execute_api_call
 # from src.services.utils.unified_token_validator import validate_anthropic_token_limit
 from globals import *
 
@@ -122,20 +122,10 @@ async def anthropic_runmodel(configuration, apikey, execution_time_logs, bridge_
                     'status_code': getattr(error, 'status_code', None)
                 }
 
-        # Define how to get the alternative configuration
-        def get_alternative_config(config):
-            current_model = config.get('model', '')
-            if current_model == 'claude-3-5-sonnet-latest':
-                config['model'] = 'claude-3-5-sonnet-20241022'
-            else:
-                config['model'] = 'claude-3-5-sonnet-latest'
-            return config
-
-        # Execute with retry
-        return await execute_with_retry(
+        # Execute API call with monitoring
+        return await execute_api_call(
             configuration=configuration,
             api_call=api_call,
-            get_alternative_config=get_alternative_config,
             execution_time_logs=execution_time_logs,
             timer=timer,
             bridge_id=bridge_id,

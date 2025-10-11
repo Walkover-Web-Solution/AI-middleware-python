@@ -1,7 +1,7 @@
 from fastapi import HTTPException, status
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
-from src.db_services.ConfigurationServices import create_bridge, get_all_bridges_in_org_by_org_id, get_bridge_by_id, get_all_bridges_in_org, update_bridge, update_bridge_ids_in_api_calls, get_bridges_with_tools, get_apikey_creds, update_apikey_creds, update_built_in_tools, update_agents, get_all_agents_data, get_agents_data
+from src.db_services.ConfigurationServices import create_bridge, get_all_bridges_in_org_by_org_id, get_bridge_by_id, get_all_bridges_in_org, update_bridge, update_bridge_ids_in_api_calls, get_bridges_with_tools, get_apikey_creds, update_apikey_creds, update_built_in_tools, update_agents, get_all_agents_data, get_agents_data, get_bridges_and_versions_by_model
 from src.configs.modelConfiguration import ModelsConfig as model_configuration
 from src.services.utils.helper import Helper
 import json
@@ -108,6 +108,12 @@ async def create_bridges_controller(request):
         "cred": {}
         } 
         model_data["is_rich_text"]= False
+        # Add default fallback configuration
+        model_data['fall_back'] = {
+            "is_enable": True,
+            "service": "ai_ml",
+            "model": "gpt-oss-120b"
+        }
         if prompt is not None:
             model_data['prompt'] = prompt
         result = await create_bridge({
@@ -287,7 +293,8 @@ async def get_all_service_controller():
             "open_router": {"model": "deepseek/deepseek-chat-v3-0324:free"},
             "mistral": {"model": "mistral-medium-latest"},
             "gemini" : {"model" : "gemini-2.5-flash"},
-            "ai_ml" : {"model" : "gpt-oss-20b"}
+            "ai_ml" : {"model" : "gpt-oss-20b"},
+            "openai_completion" : {"model" : "gpt-4o"}
         }
     }
 
@@ -329,6 +336,11 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
         new_configuration = body.get('configuration')
         config_type = new_configuration.get('type') if new_configuration else None
         service = body.get('service')
+
+        #process connected agent data
+        connected_agent_details = body.get('connected_agent_details')
+        if connected_agent_details is not None:
+            update_fields['connected_agent_details'] = connected_agent_details
         
         # Process API key if provided
         apikey_object_id = body.get('apikey_object_id')
@@ -361,6 +373,7 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
             'name': lambda v: True,
             'bridgeType': lambda v: True,
             'meta': lambda v: True,
+            'fall_back': lambda v: True,
             'guardrails': lambda v: isinstance(v, dict) and 'is_enabled' in v
         }
         
@@ -515,6 +528,12 @@ async def get_all_in_built_tools_controller():
                 "name": 'Web Search',
                 "description": 'Allow models to search the web for the latest information before generating a response.',
                 "value": 'web_search'
+            },
+            {
+                "id": '2',
+                "name" : "image generation",
+                "description": "Allow models to generate images based on the user's input.",
+                "value": 'image_generation'
             }
         ]
     }
@@ -536,3 +555,12 @@ async def get_agent(request,slug_name):
         "success": True,
         "data": result
     }, default=str)))
+
+async def get_bridges_and_versions_by_model_controller(model_name):
+    models = await get_bridges_and_versions_by_model(model_name)
+    return {
+        "success": True,
+        "message": "Fetched models and bridges they are used in successfully.",
+        model_name: models
+    }
+    
