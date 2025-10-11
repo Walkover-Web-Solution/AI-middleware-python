@@ -234,7 +234,7 @@ async def chat(request_body):
             
             # Create history parameters
             parsed_data['historyParams'] = create_history_params(parsed_data, error, class_obj)
-            await sendResponse(parsed_data['response_format'], result.get("modelResponse", str(error)), variables=parsed_data['variables']) if parsed_data['response_format']['type'] != 'default' else None
+            await sendResponse(parsed_data['response_format'], result.get("error", str(error)), variables=parsed_data['variables']) if parsed_data['response_format']['type'] != 'default' else None
             # Process background tasks for error handling
             await process_background_tasks_for_error(parsed_data, error)
         # Add support contact information to error message
