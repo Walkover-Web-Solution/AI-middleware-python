@@ -284,8 +284,7 @@ async def process_data_and_run_tools(codes_mapping, self):
                 })
 
                 # Update tool_call_logs with the response
-                tool_call_logs[tool_call_key] = {**tool_data, **response, "id": self.tool_id_and_name_mapping[tool_data['name']].get("name")}
-
+                tool_call_logs[tool_call_key] = {**tool_data, "data" : response, "id": self.tool_id_and_name_mapping[tool_data['name']].get("name")}
         # Create mapping by tool_call_id (now tool_call_key) for return
         mapping = {resp['tool_call_id']: resp for resp in responses}
 
@@ -433,7 +432,8 @@ async def make_request_data_and_publish_sub_queue(parsed_data, result, params, t
             "bridge_summary": parsed_data.get('bridge_summary'),
             "thread_id": parsed_data.get('thread_id'),
             "sub_thread_id": parsed_data.get('sub_thread_id'),
-            "configuration": params.get('configuration', {})
+            "configuration": params.get('configuration', {}),
+            "org_id" : parsed_data.get('org_id')
         },
         "handle_gpt_memory" : {
             "id" : parsed_data.get('id'),

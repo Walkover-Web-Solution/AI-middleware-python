@@ -2,6 +2,7 @@ from fastapi import HTTPException, status
 from fastapi.responses import JSONResponse
 from src.db_services.apiCallDbService import get_all_api_calls_by_org_id, update_api_call_by_function_id, get_function_by_id, delete_function_from_apicalls_db
 from globals import *
+from src.services.utils.apicallUtills import validate_required_params
 
 async def get_all_apicalls_controller(request):
     try:
@@ -24,7 +25,7 @@ async def update_apicalls_controller(request, function_id):
     try:
         org_id = request.state.profile['org']['id']
         body = await request.json()  
-        data_to_update = body.get('dataToSend')  
+        data_to_update = validate_required_params(body.get('dataToSend'))  
 
         if not function_id or not data_to_update:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Missing function_id or data to update")

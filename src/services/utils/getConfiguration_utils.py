@@ -30,6 +30,8 @@ async def get_bridge_data(bridge_id, org_id, version_id):
         org_id=org_id, 
         version_id=version_id
     )
+
+    print(result)
     
     bridge_id = bridge_id or result.get('bridges', {}).get('parent_id')
     
@@ -63,6 +65,12 @@ def setup_tool_choice(configuration, result, service):
         if api_data['_id'] in tool_choice_ids:
             toolchoice = makeFunctionName(api_data['endpoint_name'] or api_data['function_name'])
             break
+    if not toolchoice:
+        connected_agents = result.get('bridges',{}).get('connected_agents',{})
+        for agent_name, agent_data in connected_agents.items():
+            if tool_choice_ids == agent_data['bridge_id']:
+                toolchoice = makeFunctionName(agent_name)
+                break
     
     # Find choice type
     found_choice = None
@@ -207,6 +215,14 @@ def setup_api_key(service, result, apikey):
     if not (apikey or db_api_key):
         raise Exception('Could not find api key or Agent is not Published')
     
+    # Handle fallback configuration
+    fallback_config = result.get('bridges', {}).get('fall_back')
+    if fallback_config:
+        fallback_service = fallback_config.get('service')
+        fallback_apikey = db_apikeys.get(fallback_service)
+        if fallback_apikey:
+            result['bridges']['fall_back']['apikey'] = Helper.decrypt(fallback_apikey)
+    
     # Use provided API key or decrypt from database
     return apikey if apikey else Helper.decrypt(db_api_key)
 
@@ -287,18 +303,39 @@ def add_anthropic_json_schema(service, configuration, tools):
 def add_connected_agents(result, tools, tool_id_and_name_mapping):
     """Add connected agents as tools"""
     connected_agents = result.get('bridges', {}).get('connected_agents', {})
+    connected_agent_details = result.get('bridges', {}).get('connected_agent_details', {})
+    
     if not connected_agents:
         return
     
     for bridge_name, bridge_info in connected_agents.items():
         bridge_id_value = bridge_info.get('bridge_id', '')
         version_id_value = bridge_info.get('version_id', '')
-        description = bridge_info.get('description', '')
-        variables = bridge_info.get('variables', {})
-        fields = variables.get('fields', {})
+        
+        # If version_id is present, use connected_agents data, otherwise use connected_agent_details
+        if version_id_value:
+            # Use data from connected_agents when version_id is present
+            description = bridge_info.get('description', '')
+            variables = bridge_info.get('variables', {})
+            fields = variables.get('fields', {})
+            required_params = variables.get('required_params', [])
+        else:
+            # Use data from connected_agent_details when version_id is not present
+            agent_details = connected_agent_details.get(bridge_id_value)
+            if agent_details and agent_details is not None:
+                description = agent_details.get('description', bridge_info.get('description', ''))
+                variables = agent_details.get('agent_variables', {})
+                fields = variables.get('fields', {})
+                required_params = variables.get('required_params', [])
+            else:
+                # Final fallback to connected_agents data
+                description = bridge_info.get('description', '')
+                variables = bridge_info.get('variables', {})
+                fields = variables.get('fields', {})
+                required_params = variables.get('required_params', [])
+        
         name = makeFunctionName(bridge_name)
 
-        
         tools.append({
             "type": "function",
             "name": name,
@@ -313,7 +350,7 @@ def add_connected_agents(result, tools, tool_id_and_name_mapping):
                 },
                 **fields
             },
-            "required": ["user"] + variables.get('required_params', [])
+            "required": ["user"] + required_params
         })
         
         tool_id_and_name_mapping[name] = {

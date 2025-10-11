@@ -1,7 +1,6 @@
 import json
-from ..prebuilt_prompt_service import get_specific_prebuilt_prompt_service
 from typing import Any, Optional, Tuple
-
+from ..prebuilt_prompt_service import get_specific_prebuilt_prompt_service
 from ..utils.ai_call_util import call_ai_middleware
 from ..utils.apiservice import fetch
 from ...configs.constant import bridge_ids

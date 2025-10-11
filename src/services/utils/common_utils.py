@@ -27,6 +27,7 @@ from src.services.utils.ai_middleware_format import send_alert
 from src.services.cache_service import find_in_cache, store_in_cache, client, REDIS_PREFIX
 from ..commonServices.baseService.utils import sendResponse
 from src.services.utils.rich_text_support import process_chatbot_response
+from src.db_services.orchestrator_history_service import OrchestratorHistoryService, orchestrator_collector
 
 def parse_request_body(request_body):
     body = request_body.get('body', {})
@@ -52,7 +53,7 @@ def parse_request_body(request_body):
         "response_format": body.get("configuration", {}).get("response_format"),
         "response_type": body.get("configuration", {}).get("response_type"),
         "model": body.get("configuration", {}).get('model'),
-        "is_playground": state.get('is_playground', False),
+        "is_playground": state.get('is_playground') or body.get('is_playground') or False,
         "bridge": body.get('bridge'),
         "pre_tools": body.get('pre_tools'),
         "version": state.get('version'),
@@ -86,7 +87,9 @@ def parse_request_body(request_body):
         "built_in_tools" : body.get('built_in_tools') or [],
         "thread_flag" : body.get('thread_flag') or False,
         "files" : body.get('files') or [],
-        "guardrails" : body.get('bridges', {}).get('guardrails') or {}
+        "fall_back" : body.get('fall_back') or {},
+        "guardrails" : body.get('bridges', {}).get('guardrails') or {},
+        "testcase_data" : body.get('testcase_data') or {}
     }
 
 
@@ -619,6 +622,18 @@ async def orchestrator_agent_chat(agent_config, body=None, user=None):
             if 'variables' not in agent_config:
                 agent_config['variables'] = {}
             agent_config['variables']['user_query'] = user
+        
+        # Initialize orchestrator data collection session
+        thread_id = body.get('thread_id')
+        org_id = body.get('org_id')
+        # Pick orchestrator_id with proper fallbacks
+        orchestrator_id =  body.get('orchestrator_id')
+        
+        # Use thread_id as primary session key, fallback to a global session key
+        session_key = thread_id if thread_id else f"global_orchestrator_{org_id}"
+        if session_key and org_id:
+            if not orchestrator_collector.get_session_data(session_key):
+                orchestrator_collector.initialize_session(session_key, org_id, orchestrator_id)
     
         request_data = {
             "body": {
@@ -657,6 +672,7 @@ async def orchestrator_agent_chat(agent_config, body=None, user=None):
                         "id": body.get("org_id", "")
                     }
                 },
+                "timer":body.get('state', {}).get("timer", []),
                 "isPlayground": False
             },
             "path_params": {}
@@ -746,6 +762,30 @@ async def orchestrator_agent_chat(agent_config, body=None, user=None):
             update_usage_metrics(parsed_data, params, latency, result=result, success=True)
             await process_background_tasks(parsed_data, result, params, thread_info)
         
+
+        # Collect orchestrator data before processing result
+        bridge_id = agent_config.get('bridge_id')
+        if bridge_id and result.get('success'):
+            # Extract data from result and parsed_data
+            orchestrator_data_to_store = {
+                'model_name': parsed_data.get('model'),
+                'user': user,
+                'response': result.get('response', {}).get('data', {}).get('content', ''),
+                'tool_call_data': result.get('response', {}).get('data', {}).get('tool_data', ''),
+                'latency': latency if 'latency' in locals() else None,
+                'tokens': parsed_data.get('tokens'),
+                'error': {'status': False, 'message': None},
+                'variables': parsed_data.get('variables', {}),
+                'image_urls': parsed_data.get('files', []) if parsed_data.get('files') else [],
+                'ai_config': params.get('custom_config', {})
+            }
+            
+            # Add data to collector using consistent session_key
+            session_key = thread_id if thread_id else f"global_orchestrator_{org_id}"
+            if not orchestrator_collector.get_session_data(session_key):
+                # Initialize session if not already done
+                orchestrator_collector.initialize_session(session_key, org_id, orchestrator_id)
+            orchestrator_collector.add_bridge_data(session_key, bridge_id, orchestrator_data_to_store)
         # Check if there are tool calls that need orchestration
         if result.get('transfer_agent_config'):
             return await handle_orchestration_tool_calls(
@@ -754,11 +794,47 @@ async def orchestrator_agent_chat(agent_config, body=None, user=None):
         current_agent_id = agent_config.get('bridge_id')
         cache_key = f"orchestrator_{parsed_data['thread_id']}_{parsed_data['sub_thread_id']}"
         await store_in_cache(cache_key, current_agent_id)
+        
+        # Save orchestrator history to PostgreSQL before returning
+        # Only save when this is the final agent call (no transfer_agent_config)
+        if bridge_id and result.get('success') and not result.get('transfer_agent_config'):
+            session_key = thread_id if thread_id else f"global_orchestrator_{org_id}"
+            session_data = orchestrator_collector.get_session_data(session_key)
+            if session_data:
+                try:
+                    await OrchestratorHistoryService.save_orchestrator_history(session_data)
+                    # Clear session data after saving
+                    orchestrator_collector.clear_session(session_key)
+                except Exception as e:
+                    logger.error(f"Failed to save orchestrator history: {str(e)}")
+        
         return JSONResponse(status_code=200, content={"success": True, "response": result["response"]})
         
     except (Exception, ValueError, BadRequestException) as error:
         if not isinstance(error, BadRequestException):
             logger.error(f'Error in orchestrator_agent_chat: %s, {str(error)}, {traceback.format_exc()}')
+        
+        # Collect error data for orchestrator history
+        if 'bridge_id' in locals() and bridge_id:
+            error_data = {
+                'model_name': parsed_data.get('model') if 'parsed_data' in locals() else None,
+                'user': user,
+                'error': {'status': True, 'message': str(error)},
+                'variables': parsed_data.get('variables', {}) if 'parsed_data' in locals() else {},
+                'latency': latency if 'latency' in locals() else None,
+                'tokens': None,
+                'tool_call_data': None,
+                'image_urls': [],
+                'ai_config': params.get('custom_config', {})
+            }
+            org_id = body.get('org_id') if 'body' in locals() else 'unknown'
+            session_key = thread_id if 'thread_id' in locals() and thread_id else f"global_orchestrator_{org_id}"
+            if not orchestrator_collector.get_session_data(session_key):
+                # Initialize session if not already done
+                final_orchestrator_id = bridge_id or 'error_orchestrator'  # Use bridge_id as fallback
+                orchestrator_collector.initialize_session(session_key, org_id, final_orchestrator_id)
+            orchestrator_collector.add_bridge_data(session_key, bridge_id, error_data)
+        
         if not parsed_data['is_playground']:
             # Create latency object and update usage metrics
             latency = create_latency_object(timer, params)
@@ -769,6 +845,20 @@ async def orchestrator_agent_chat(agent_config, body=None, user=None):
             await sendResponse(parsed_data['response_format'], result.get("modelResponse", str(error)), variables=parsed_data['variables']) if parsed_data['response_format']['type'] != 'default' else None
             # Process background tasks for error handling
             await process_background_tasks_for_error(parsed_data, error)
+        
+        # Save orchestrator history even in error cases
+        if 'bridge_id' in locals() and bridge_id:
+            org_id = body.get('org_id') if 'body' in locals() else 'unknown'
+            session_key = thread_id if 'thread_id' in locals() and thread_id else f"global_orchestrator_{org_id}"
+            session_data = orchestrator_collector.get_session_data(session_key)
+            if session_data:
+                try:
+                    await OrchestratorHistoryService.save_orchestrator_history(session_data)
+                    # Clear session data after saving
+                    orchestrator_collector.clear_session(session_key)
+                except Exception as e:
+                    logger.error(f"Failed to save orchestrator history in error case: {str(e)}")
+        
         # Add support contact information to error message
         error_message = f"{str(error)}. For more support contact us at support@gtwy.ai"
         print(f"Error in orchestrator_agent_chat: {error_message}")
@@ -883,5 +973,46 @@ Based on the child agent's response above, please provide your final answer to t
     
     # If no agent tool calls found, return original response
     return JSONResponse(status_code=200, content={"success": True, "response": result["response"]})
+
+async def process_background_tasks_for_playground(result, parsed_data):
+    from src.controllers.testcase_controller import handle_playground_testcase
+    from bson import ObjectId
+    
+    try:
+        testcase_data = parsed_data.get('testcase_data', {})
+        
+        # If testcase_id exists, update in background and return immediately
+        if testcase_data.get('testcase_id'):
+            Flag = False
+            # Update testcase in background (async task)
+            async def update_testcase_background():
+                try:
+                    await handle_playground_testcase(result, parsed_data, Flag)
+                except Exception as e:
+                    logger.error(f"Error updating testcase in background: {str(e)}")
+            
+            asyncio.create_task(update_testcase_background())
+        
+        else:
+            # Generate testcase_id immediately and add to response
+            new_testcase_id = str(ObjectId())
+            result['response']['testcase_id'] = new_testcase_id
+            
+            # Add the generated ID to testcase_data for the background task
+            parsed_data['testcase_data']['testcase_id'] = new_testcase_id
+            
+            # Save testcase data in background using the same function
+            async def create_testcase_background():
+                try:
+                    Flag = True
+                    await handle_playground_testcase(result, parsed_data, Flag)
+                except Exception as e:
+                    logger.error(f"Error creating testcase in background: {str(e)}")
+            
+            asyncio.create_task(create_testcase_background())
+                
+    except Exception as e:
+        logger.error(f"Error processing playground testcase: {str(e)}")
+    
 
 

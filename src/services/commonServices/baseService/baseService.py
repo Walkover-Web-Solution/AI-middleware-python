@@ -266,7 +266,6 @@ class BaseService:
             if service == service_name['openai'] and 'reasoning' in new_config:
                 # Only transform if reasoning has 'key' and 'type' structure
                 if isinstance(new_config['reasoning'], dict) and 'key' in new_config['reasoning'] and 'type' in new_config['reasoning']:
-                    print(f"Transforming reasoning: {new_config['reasoning']}")
                     new_config['reasoning'] = { new_config['reasoning']['key']: new_config['reasoning']['type'] }
             return new_config
         except Exception as e:
