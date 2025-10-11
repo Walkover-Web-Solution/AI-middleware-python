@@ -109,7 +109,7 @@ async def create_bridges_controller(request):
         } 
         model_data["is_rich_text"]= False
         # Add default fallback configuration
-        model_data['fall_back'] = {
+        fall_back = {
             "is_enable": True,
             "service": "ai_ml",
             "model": "gpt-oss-120b"
@@ -126,7 +126,8 @@ async def create_bridges_controller(request):
             "status": status,
             "gpt_memory" : True,
             "folder_id" : folder_id,
-            "user_id" : user_id
+            "user_id" : user_id,
+            "fall_back" : fall_back
         })
         create_version = await create_bridge_version(result['bridge'])
         update_fields = {'versions' : [create_version]}
