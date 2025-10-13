@@ -1,4 +1,3 @@
-
 import uuid
 import traceback
 from datetime import datetime
@@ -23,7 +22,7 @@ def prepare_conversation_data(primary_data, history_params, version_id, thread_i
         'chatbot_response': history_params.get('chatbot_message', ''),
         'tools_call_data': history_params.get('tools_call_data', []),
         'user_feedback': None,
-        'response_id': str(uuid.uuid4()),
+        'response_id': uuid.uuid4(),
         'version_id': version_id,
         'sub_thread_id': thread_info.get('sub_thread_id'),
         'revised_response': history_params.get('revised_prompt'),
@@ -35,10 +34,8 @@ def prepare_conversation_data(primary_data, history_params, version_id, thread_i
         'authkey_name': primary_data.get('apikey_object_id', {}).get(primary_data['service'], '') if primary_data.get('apikey_object_id') else '',
         'latency': primary_data.get('latency', 0),
         'service': primary_data['service'],
-        'input_tokens': primary_data.get('inputTokens', 0),
-        'output_tokens': primary_data.get('outputTokens', 0),
-        'expected_cost': primary_data.get('expectedCost', 0),
-        'message_id': primary_data.get('message_id'),
+        'tokens': {"input_tokens": primary_data.get('inputTokens', 0), "output_tokens": primary_data.get('outputTokens', 0), "expected_cost": primary_data.get('expectedCost', 0)},
+        'message_id': uuid.UUID(primary_data.get('message_id')) if primary_data.get('message_id') else None,
         'variables': primary_data.get('variables', {}),
         'finish_reason': primary_data.get('finish_reason'),
         'model_name': primary_data['model'],
@@ -46,7 +43,7 @@ def prepare_conversation_data(primary_data, history_params, version_id, thread_i
         'AiConfig': history_params.get('AiConfig'),
         'annotations': history_params.get('annotations', []),
         'createdAt': datetime.now(),
-        'updatedAt': datetime.now()
+        'updatedAt': datetime.now(),
     }
     
     return conversation_data

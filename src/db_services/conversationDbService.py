@@ -156,11 +156,12 @@ async def create_conversation_entry(conversation_data):
     """
     Save conversation entry data to database
     """
-    session = postgres['session']()
+    session = pg['session']()
+    print(conversation_data)
     try:
-        from models.postgres.pg_models import ConversationEntry
+        from models.postgres.pg_models import Conversation
         
-        conversation_entry = ConversationEntry(**conversation_data)
+        conversation_entry = Conversation(**conversation_data)
         session.add(conversation_entry)
         session.commit()
         

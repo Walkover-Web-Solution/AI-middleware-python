@@ -95,9 +95,9 @@ class UnifiedConversationService:
             # Insert into database
             session = postgres['session']()
             try:
-                from models.postgres.pg_models import UnifiedConversation
+                from models.postgres.pg_models import Conversation
                 
-                unified_conversation = UnifiedConversation(**unified_data)
+                unified_conversation = Conversation(**unified_data)
                 session.add(unified_conversation)
                 session.commit()
                 
@@ -134,23 +134,23 @@ class UnifiedConversationService:
         try:
             session = postgres['session']()
             try:
-                from models.postgres.pg_models import UnifiedConversation
+                from models.postgres.pg_models import Conversation
                 
-                query = session.query(UnifiedConversation).filter(
-                    UnifiedConversation.org_id == org_id
+                query = session.query(Conversation).filter(
+                    Conversation.org_id == org_id
                 )
                 
                 if thread_id:
-                    query = query.filter(UnifiedConversation.thread_id == thread_id)
+                    query = query.filter(Conversation.thread_id == thread_id)
                 
                 if bridge_id:
-                    query = query.filter(UnifiedConversation.bridge_id == bridge_id)
+                    query = query.filter(Conversation.bridge_id == bridge_id)
                 
                 if start_time and end_time:
                     query = query.filter(
                         and_(
-                            UnifiedConversation.createdAt >= start_time,
-                            UnifiedConversation.createdAt <= end_time
+                            Conversation.createdAt >= start_time,
+                            Conversation.createdAt <= end_time
                         )
                     )
                 
@@ -160,7 +160,7 @@ class UnifiedConversationService:
                 if limit:
                     query = query.limit(limit)
                 
-                query = query.order_by(UnifiedConversation.createdAt.desc())
+                query = query.order_by(Conversation.createdAt.desc())
                 
                 conversations = query.all()
                 
@@ -221,10 +221,10 @@ class UnifiedConversationService:
         try:
             session = postgres['session']()
             try:
-                from models.postgres.pg_models import UnifiedConversation
+                from models.postgres.pg_models import Conversation
                 
-                conversation = session.query(UnifiedConversation).filter(
-                    UnifiedConversation.id == conversation_id
+                conversation = session.query(Conversation).filter(
+                    Conversation.id == conversation_id
                 ).first()
                 
                 if not conversation:
@@ -284,10 +284,10 @@ class UnifiedConversationService:
         try:
             session = postgres['session']()
             try:
-                from models.postgres.pg_models import UnifiedConversation
+                from models.postgres.pg_models import Conversation
                 
-                conversation = session.query(UnifiedConversation).filter(
-                    UnifiedConversation.id == conversation_id
+                conversation = session.query(Conversation).filter(
+                    Conversation.id == conversation_id
                 ).first()
                 
                 if not conversation:

@@ -6,7 +6,7 @@ import uuid
 from models.postgres.pg_connection import Base
 
 class Conversation(Base):
-    __tablename__ = 'conversations'
+    __tablename__ = 'agent_conversations'
     __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True)
@@ -16,14 +16,14 @@ class Conversation(Base):
     user_message = Column(Text)
     response = Column(Text)
     chatbot_response = Column(Text)
-    tools_call_data = Column(ARRAY(JSON))
+    tools_call_data = Column(JSON)
     user_feedback = Column(Integer)
     response_id = Column(UUID(as_uuid=True), nullable=True)
     version_id = Column(String)
     sub_thread_id = Column(String, nullable=True)
     revised_response = Column(Text, nullable=True)
-    image_urls = Column(ARRAY(JSON), nullable=True)
-    urls = Column(ARRAY(String), nullable=True)
+    image_urls = Column(JSON, nullable=True)
+    urls = Column(JSON, nullable=True)
     fallback_model = Column(String, nullable=True)
     error = Column(Text, nullable=True)
     status = Column(Integer, nullable=True)  # 0: failed, 1: success, 2: second time is high
@@ -32,9 +32,7 @@ class Conversation(Base):
     authkey_name = Column(String)
     latency = Column(Float)
     service = Column(String)
-    input_tokens = Column(Float)
-    output_tokens = Column(Float)
-    expected_cost = Column(Float)
+    tokens = Column(JSON, nullable=True)
     created_at = Column(DateTime, default=func.now())
     message_id = Column(UUID(as_uuid=True), nullable=True)
     variables = Column(JSON)
@@ -42,7 +40,7 @@ class Conversation(Base):
     model_name = Column(String)
     type = Column(String, nullable=False)
     AiConfig = Column(JSON, nullable=True)
-    annotations = Column(ARRAY(JSON), nullable=True)
+    annotations = Column(JSON, nullable=True)
 
 class system_prompt_versionings(Base):
     __tablename__ = 'system_prompt_versionings'
