@@ -82,22 +82,10 @@ async def openai_completion(configuration, apiKey, execution_time_logs, bridge_i
                     'status_code': getattr(error, 'status_code', None)
                 }
 
-        # Define how to get the alternative configuration
-        def get_alternative_config(config):
-            current_model = config.get('model', '')
-            if current_model == 'o3':
-                config['model'] = 'gpt-4o-2024-08-06'
-            elif current_model == 'gpt-4o':
-                config['model'] = 'o3'
-            else:
-                config['model'] = 'gpt-4o'
-            return config
-
         # Execute API call with monitoring
         return await execute_api_call(
             configuration=configuration,
             api_call=api_call,
-            get_alternative_config=get_alternative_config,
             execution_time_logs=execution_time_logs,
             timer=timer,
             bridge_id=bridge_id,
