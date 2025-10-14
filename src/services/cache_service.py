@@ -108,24 +108,7 @@ async def find_in_cache_with_prefix(prefix: str) -> Union[List[str], None]:
     except Exception as e:
         logger.error(f"Error finding in cache: {str(e)}")
         return None
-
-async def delete_in_cache_for_batch(identifiers: Union[str, List[str]]) -> bool:
-    if not await client.ping():
-        return False
-    
-    if isinstance(identifiers, str):
-        identifiers = [identifiers]
-    
-    keys_to_delete = [f"{id}" for id in identifiers]
-
-    try:
-        delete_count = await client.delete(*keys_to_delete)
-        print(f"Deleted {delete_count} items from cache")
-        return True
-    except Exception as error:
-        logger.error(f"Error during deletion: {str(error)}")
-        return False
-    
+   
 def make_json_serializable(data):
     """Recursively converts non-serializable values in a dictionary to strings."""
     if isinstance(data, dict):
@@ -138,4 +121,4 @@ def make_json_serializable(data):
     except (TypeError, OverflowError):
         return str(data)
 
-__all__ = ['delete_in_cache', 'store_in_cache', 'find_in_cache', 'find_in_cache_and_expire', 'store_in_cache_permanent_until_read', 'verify_ttl', 'clear_cache','store_in_cache_for_batch', 'find_in_cache_for_batch', 'delete_in_cache_for_batch']
+__all__ = ['delete_in_cache', 'store_in_cache', 'find_in_cache', 'find_in_cache_and_expire', 'store_in_cache_permanent_until_read', 'verify_ttl', 'clear_cache','store_in_cache_for_batch', 'find_in_cache_for_batch']

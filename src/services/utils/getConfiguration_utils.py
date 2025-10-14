@@ -30,8 +30,6 @@ async def get_bridge_data(bridge_id, org_id, version_id):
         org_id=org_id, 
         version_id=version_id
     )
-
-    print(result)
     
     bridge_id = bridge_id or result.get('bridges', {}).get('parent_id')
     
