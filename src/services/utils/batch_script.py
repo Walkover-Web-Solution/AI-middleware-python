@@ -1,4 +1,4 @@
-from ..cache_service import find_in_cache_with_prefix, delete_in_cache_for_batch
+from ..cache_service import find_in_cache_with_prefix, delete_in_cache
 from openai import AsyncOpenAI
 from ..utils.send_error_webhook import create_response_format
 from ..commonServices.baseService.baseService import sendResponse
@@ -46,7 +46,7 @@ async def check_batch_status():
                         file_content[index] = formatted_content
                         
                     await sendResponse(response_format, data=file_content, success = True)
-                await delete_in_cache_for_batch(f'AIMIDDLEWARE_{batch_id}')
+                await delete_in_cache(batch_id)
     except Exception as error:
         logger.error(f"An error occurred while checking the batch status: {str(error)}")
         

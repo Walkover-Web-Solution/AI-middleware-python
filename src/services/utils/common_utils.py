@@ -400,7 +400,7 @@ def create_latency_object(timer, params):
         Dictionary containing latency metrics
     """
     # Safely get overall time without overriding original errors
-    over_all_time = ""
+    over_all_time = 0.00
     try:
         if hasattr(timer, "start_times") and timer.start_times:
             over_all_time = timer.stop("Api total time")
