@@ -4,6 +4,7 @@ import json
 import traceback
 from config import Config
 from ....db_services import metrics_service
+from ....db_services.ConfigurationServices import update_apikey_last_used
 from .utils import validate_tool_call, tool_call_formatter, sendResponse, make_code_mapping_by_service, process_data_and_run_tools
 from src.configs.serviceKeys import ServiceKeys
 from ..openAI.runModel import openai_response_model, openai_completion
@@ -294,6 +295,12 @@ class BaseService:
                 response = await openai_completion(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer, self.message_id, self.org_id, self.name, self.org_name, service, count, self.token_calculator)
             if not response['success']:
                 raise ValueError(response['error'])
+            if self.org_id and self.apikey_object_id and service:
+                try:
+                    await update_apikey_last_used(self.org_id, service, self.apikey_object_id)
+                except Exception as e:
+                    logger.warning(f"Failed to update API key lastUsed: {str(e)}")
+            
             return {
                 'success': True,
                 'modelResponse': response['response']

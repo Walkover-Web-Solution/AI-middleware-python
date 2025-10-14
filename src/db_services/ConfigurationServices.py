@@ -4,6 +4,7 @@ from ..services.cache_service import find_in_cache, store_in_cache, delete_in_ca
 import json
 from globals import *
 from bson import errors
+from datetime import datetime
 
 configurationModel = db["configurations"]
 apiCallModel = db['apicalls']
@@ -1059,3 +1060,25 @@ async def get_bridges_and_versions_by_model(model_name):
     except Exception as error:
         logger.error(f'Error in get_bridges_and_versions_by_model: {str(error)}')
         raise error
+
+async def update_apikey_last_used(org_id, service, apikey_object_id):
+    try:
+        object_id = apikey_object_id[service]
+            
+        if not object_id:
+            logger.warning(f"No API key object ID found for service: {service}")
+            return
+            
+        # Update the lastUsed field
+        result = await apikeyCredentialsModel.update_one(
+            {'_id': ObjectId(object_id), 'org_id': org_id},
+            {'$set': {'lastused': datetime.utcnow()}}
+        )
+        
+        if result.modified_count > 0:
+            logger.info(f"Updated lastused for API key {object_id} in service {service}")
+        else:
+            logger.warning(f"API key {object_id} not found or not updated for service {service}")
+            
+    except Exception as error:
+        logger.error(f'Error updating API key lastused: {str(error)}')
