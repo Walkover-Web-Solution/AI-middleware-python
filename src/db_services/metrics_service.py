@@ -3,6 +3,7 @@ import json
 import uuid
 import traceback
 from datetime import datetime, timezone
+
 from models.index import combined_models
 from sqlalchemy import and_
 from ..controllers.conversationController import savehistory
@@ -149,6 +150,8 @@ async def create(dataset, history_params, version_id, thread_info={}):
             }
             for data_object in dataset
         ]
+        await insertRawData(insert_ai_data_in_pg)
+        latency = json.loads(dataset[0].get('latency', 0)).get('over_all_time') or 0
         metrics_data = [
             {
                 'org_id': data_object['orgId'],
@@ -161,7 +164,7 @@ async def create(dataset, history_params, version_id, thread_info={}):
                 'total_tokens': data_object.get('totalTokens', 0) or 0.0,
                 'apikey_id': data_object.get('apikey_object_id', {}).get(data_object['service'], '') if data_object.get('apikey_object_id') else '',
                 'created_at': datetime.now(),  # Remove timezone to match database expectations
-                'latency': data_object.get('latency', {}).get('over_all_time', 0) or 0.0,
+                'latency': latency,
                 'success' : data_object.get('success', False),
                 'cost' : data_object.get('expectedCost', 0) or 0.0,
                 'time_zone' : 'Asia/Kolkata',
@@ -169,7 +172,6 @@ async def create(dataset, history_params, version_id, thread_info={}):
             }
             for data_object in dataset
         ]
-        await insertRawData(insert_ai_data_in_pg)
         
         # Create the cache key based on bridge_id (assuming it's always available)
         cache_key = f"metrix_bridges{history_params['bridge_id']}"
