@@ -1,3 +1,4 @@
+from config import Config
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 import traceback
@@ -137,6 +138,8 @@ async def chat(request_body):
                 # Check if service has changed - if so, create new service handler
                 if parsed_data['service'] != original_service:
                     parsed_data['apikey'] = fallback_config.get('apikey')
+                    if parsed_data['apikey'] is None and fallback_config.get('service') == 'ai_ml':
+                        parsed_data['apikey'] = Config.AI_ML_APIKEY
                     
                     # Load fresh model configuration for the fallback service and model
                     fallback_model_config, fallback_custom_config, fallback_model_output_config = await load_model_configuration(
@@ -161,6 +164,9 @@ async def chat(request_body):
                     class_obj.model = parsed_data['model']
                     if fallback_config.get('apikey'):
                         class_obj.apikey = fallback_config['apikey']
+                        if class_obj.apikey is None and fallback_config.get('service') == 'ai_ml':
+                            class_obj.apikey = Config.AI_ML_APIKEY
+                            
                     
                     # Reconfigure custom_config for fallback service
                     class_obj.customConfig = await configure_custom_settings(
