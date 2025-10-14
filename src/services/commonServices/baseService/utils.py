@@ -492,10 +492,3 @@ async def save_files_to_redis(thread_id, sub_thread_id, bridge_id, files):
         await store_in_cache(cache_key, files, 604800)
 
 
-
-def safe_float(value, default=0.0, keyname= ''):
-    try:
-        return float(value)
-    except (TypeError, ValueError):
-        print("error in float conversation of key", keyname)
-        return default

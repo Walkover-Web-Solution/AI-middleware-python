@@ -47,7 +47,7 @@ class Queue2(BaseQueue):
 
     async def consume_messages(self):
         try:
-            if await self.connect():
+            if await self._ensure_connection():
                 await self.channel.set_qos(prefetch_count=int(self.prefetch_count))
                 primary_queue = await self.channel.declare_queue(self.queue_name, durable=True)
 
