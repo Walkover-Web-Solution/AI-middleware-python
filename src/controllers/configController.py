@@ -116,6 +116,10 @@ async def create_bridges_controller(request):
         }
         if prompt is not None:
             model_data['prompt'] = prompt
+        # Handle limit keys - default to 0 if not provided
+        bridge_limit = bridges.get('bridge_limit', 0)
+        folder_limit = bridges.get('folder_limit', 0)
+        
         result = await create_bridge({
             "configuration": model_data,
             "name": name,
@@ -126,7 +130,9 @@ async def create_bridges_controller(request):
             "status": status,
             "gpt_memory" : True,
             "folder_id" : folder_id,
-            "user_id" : user_id
+            "user_id" : user_id,
+            "bridge_limit": bridge_limit,
+            "folder_limit": folder_limit
         })
         create_version = await create_bridge_version(result['bridge'])
         update_fields = {'versions' : [create_version]}
@@ -144,9 +150,20 @@ async def create_bridges_using_ai_controller(request):
         body = await request.json()
         purpose = body.get('purpose')
         bridge_type = body.get('bridgeType')
+        
+        # Handle limit keys - default to 0 if not provided
+        bridge_limit = body.get('bridge_limit', 0)
+        folder_limit = body.get('folder_limit', 0)
+        
         result = []
         proxy_auth_token = request.headers.get("proxy_auth_token")
-        variables = {"proxy_auth_token": proxy_auth_token, "purpose": purpose, "bridgeType": bridge_type}
+        variables = {
+            "proxy_auth_token": proxy_auth_token, 
+            "purpose": purpose, 
+            "bridgeType": bridge_type,
+            "bridge_limit": bridge_limit,
+            "folder_limit": folder_limit
+        }
         bridge = await call_ai_middleware(purpose, bridge_id = bridge_ids['create_bridge_using_ai'], variables = variables)
         if bridge:
             return JSONResponse(status_code=200, content={
@@ -382,6 +399,12 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
             value = body.get(field)
             if value is not None and validator(value):
                 update_fields[field] = value
+        
+        # Handle limit keys - default to 0 if not provided
+        if 'bridge_limit' in body:
+            update_fields['bridge_limit'] = body.get('bridge_limit', 0)
+        if 'folder_limit' in body:
+            update_fields['folder_limit'] = body.get('folder_limit', 0)
         
         # Handle service and model configuration
         if page_config is not None:

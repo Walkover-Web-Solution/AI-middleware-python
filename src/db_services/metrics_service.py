@@ -3,11 +3,14 @@ import json
 import uuid
 import traceback
 from datetime import datetime, timezone
+import asyncio
+from numpy import version
 from models.index import combined_models
 from sqlalchemy import and_
 from ..controllers.conversationController import savehistory
 from .conversationDbService import insertRawData, timescale_metrics
 from ..services.cache_service import find_in_cache, store_in_cache
+from ..services.utils.check_limit import update_limit_cache_usage
 from globals import *
 from src.services.commonServices.baseService.utils import safe_float
 # from src.services.utils.send_error_webhook import send_error_to_webhook
@@ -172,6 +175,9 @@ async def create(dataset, history_params, version_id, thread_info={}):
         ]
         await insertRawData(insert_ai_data_in_pg)
         
+        # Update limit cache usage (replacing old bridge cache logic)
+        await update_limit_cache_usage_from_metrics(dataset, history_params, version_id)
+        
         # Create the cache key based on bridge_id (assuming it's always available)
         cache_key = f"metrix_bridges{history_params['bridge_id']}"
 
@@ -190,5 +196,110 @@ async def create(dataset, history_params, version_id, thread_info={}):
     except Exception as error:
         logger.error(f'Error during bulk insert of Ai middleware, {str(error)}')
 
+# DEPRECATED: This function has been replaced by update_limit_cache_usage_from_metrics
+# The old bridge cache logic is no longer used - we now use separate limit cache
+# async def update_bridge_usage_in_cache(dataset, history_params, version_id):
+#     """DEPRECATED: Replaced by limit cache system"""
+#     pass
+
+async def update_limit_cache_usage_from_metrics(dataset, history_params, version_id):
+    """Optimized limit cache update from metrics data"""
+    try:
+        # Calculate total cost
+        total_cost = sum(item.get('expectedCost', 0) for item in dataset)
+        
+        if total_cost <= 0:
+            return
+        
+        # Get bridge data
+        bridge_id = history_params.get('bridge_id')
+        cache_key = f"{version_id}"
+        cached_data = await find_in_cache(cache_key)
+        
+        if not cached_data:
+            logger.warning(f"No bridge cache found: {cache_key}")
+            return
+        
+        bridge_data = json.loads(cached_data)
+        bridges_info = bridge_data.get('bridges', {})
+        
+        if not bridges_info:
+            return
+        
+        # Extract identifiers
+        folder_id = bridges_info.get('folder_id')
+        service = bridges_info.get('service')
+        apikey_object_id = bridges_info.get('apikey_object_id', {}).get(service) if service else None
+        
+        # Prepare cache updates
+        cache_updates = []
+        
+        # Bridge cache
+        if bridge_id:
+            cache_updates.append({
+                'key': f"bridgelimit_{bridge_id}",
+                'limit_field': 'bridge_limit',
+                'uses_field': 'bridge_uses',
+                'data_source': bridges_info
+            })
+        
+        # Folder cache
+        if folder_id:
+            cache_updates.append({
+                'key': f"folderlimit_{folder_id}",
+                'limit_field': 'folder_limit', 
+                'uses_field': 'folder_uses',
+                'data_source': bridges_info
+            })
+        
+        # API cache
+        if service and apikey_object_id:
+            api_data = bridge_data.get('apikeys', {}).get(service, {})
+            if api_data:
+                cache_updates.append({
+                    'key': f"apilimit_{apikey_object_id}",
+                    'limit_field': 'apikey_limit',
+                    'uses_field': 'apikey_uses', 
+                    'data_source': api_data
+                })
+        
+        # Execute all updates concurrently
+        if cache_updates:
+            await asyncio.gather(*[
+                _update_single_limit_cache(update, total_cost) 
+                for update in cache_updates
+            ], return_exceptions=True)
+            
+            logger.info(f"Updated {len(cache_updates)} limit caches with cost: {total_cost}")
+        
+    except Exception as e:
+        logger.error(f"Error updating limit cache: {str(e)}")
+
+async def _update_single_limit_cache(cache_config, usage_delta):
+    """Optimized single cache update with create-or-update logic"""
+    try:
+        cache_key = cache_config['key']
+        data_source = cache_config['data_source']
+        
+        # Try to get existing cache
+        existing_cache = await find_in_cache(cache_key)
+        
+        if existing_cache:
+            # Update existing cache
+            cache_data = json.loads(existing_cache)
+            cache_data['uses'] = float(cache_data.get('uses', 0)) + float(usage_delta)
+        else:
+            # Create new cache from database values
+            current_uses = float(data_source.get(cache_config['uses_field'], 0) or 0)
+            cache_data = {
+                'limit': data_source.get(cache_config['limit_field'], 0),
+                'uses': current_uses + float(usage_delta)
+            }
+        # Store updated cache
+        await store_in_cache(cache_key, cache_data)
+        
+    except Exception as e:
+        logger.error(f"Error updating cache {cache_config['key']}: {str(e)}")
+        raise
 # Exporting functions
 __all__ = ["find", "create", "find_one", "find_one_pg"]

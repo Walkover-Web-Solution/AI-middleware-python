@@ -7,6 +7,7 @@ from .getConfiguration_utils import (
     setup_tools, setup_api_key, setup_pre_tools, add_rag_tool,
     add_anthropic_json_schema, add_connected_agents
 )
+from .check_limit import check_bridge_api_folder_limits_with_cache
 
 apiCallModel = db['apicalls']
 from globals import *
@@ -38,6 +39,12 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
     # Get bridge data
     result, bridge_data, bridge_id = await get_bridge_data(bridge_id, org_id, version_id)
     
+    # Use cached limit checking for better performance
+    limit_error = await check_bridge_api_folder_limits_with_cache(result.get('bridges'), bridge_data)
+    if limit_error:
+        return limit_error
+   
+    
     # Validate bridge
     validation_result = await validate_bridge(bridge_data, result)
     if validation_result:
@@ -53,6 +60,8 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
 
     # Setup API key
     service = service.lower() if service else ""
+    result['bridges']['apikeys'][service] = result['bridges']['apikeys'][service]['apikey']
+
     apikey = setup_api_key(service, result, apikey)
     apikey_object_id = result.get('bridges', {}).get('apikey_object_id')
 
@@ -145,5 +154,6 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
         "built_in_tools": built_in_tools or result.get("bridges", {}).get("built_in_tools"),
         "fall_back" : result.get("bridges", {}).get("fall_back") or {},
         "guardrails" : guardrails if guardrails is not None else (result.get("bridges", {}).get("guardrails") or {}),
+        "is_Embed": result.get("folder_id")!=None
     }
 

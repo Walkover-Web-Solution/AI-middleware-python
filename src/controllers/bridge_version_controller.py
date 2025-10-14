@@ -24,9 +24,18 @@ async def create_version(request):
       version_id = body.get('version_id')
       version_description = body.get('version_description') or ""
       org_id = request.state.profile['org']['id']
+      
+      # Handle limit keys - default to 0 if not provided
+      bridge_limit = body.get('bridge_limit', 0)
+      folder_limit = body.get('folder_limit', 0)
+      
       bridge_data = await get_bridges_without_tools(org_id=org_id, version_id= version_id)
       parent_id = bridge_data.get('bridges').get('parent_id')
       bridge_data['bridges']['version_description'] = version_description
+      
+      # Add limit keys to bridge data
+      bridge_data['bridges']['bridge_limit'] = bridge_limit
+      bridge_data['bridges']['folder_limit'] = folder_limit
       create_new_version = await create_bridge_version(bridge_data.get('bridges'), parent_id=parent_id)
       update_fields = {'versions' : [create_new_version]}
       await update_bridges(parent_id, update_fields)
