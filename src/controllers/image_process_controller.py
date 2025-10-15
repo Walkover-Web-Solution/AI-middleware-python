@@ -6,6 +6,7 @@ from src.services.utils.gcp_upload_service import uploadDoc
 from google import genai
 import tempfile
 import os
+from config import Config
 
 async def image_processing(request):
     body = await request.form()
@@ -84,7 +85,7 @@ async def video_processing(request):
         raise HTTPException(status_code=400, detail={"success": False, "error": "Only MP4 video files are supported"})
     
     # Get API key from form data or use default
-    api_key = body.get('api_key', 'AIzaSyDnVV7YMZe1LAhRwGlp7Nwy-LTP3k4-AGo')
+    api_key = Config.GEMINI_APIKEY
     
     file_content = await file.read()
     

@@ -59,3 +59,4 @@ class Config:
     DOCSTAR_COLLECTION_ID = os.getenv('DOCSTAR_COLLECTION_ID')
     AI_ML_APIKEY = os.getenv('AI_ML_APIKEY')
     AI_MIDDLEWARE_PAUTH_KEY = os.getenv('AI_MIDDLEWARE_PAUTH_KEY')
+    GEMINI_APIKEY = os.getenv('GEMINI_APIKEY')
