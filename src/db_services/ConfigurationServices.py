@@ -4,7 +4,6 @@ from ..services.cache_service import find_in_cache, store_in_cache, delete_in_ca
 import json
 from globals import *
 from bson import errors
-from datetime import datetime
 
 configurationModel = db["configurations"]
 apiCallModel = db['apicalls']
@@ -984,15 +983,14 @@ async def update_apikey_creds(version_id, apikey_object_ids):
         logger.error(f"Error in update_apikey_creds: {str(error)}")
         raise error
 
-async def save_sub_thread_id(org_id, thread_id, sub_thread_id, display_name, bridge_id): # bridge_id is now a required parameter
+async def save_sub_thread_id(org_id, thread_id, sub_thread_id, display_name, bridge_id,current_time): # bridge_id is now a required parameter
     try:
-        current_time = datetime.now()
+        
         
         # Build update data with both $set and $setOnInsert in single operation
         update_data = {
             '$set': {
-                'bridge_id': bridge_id,
-                'updated_at': current_time
+                'bridge_id': bridge_id
             },
             '$setOnInsert': {
                 'org_id': org_id,
