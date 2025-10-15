@@ -1,2 +1,0 @@
-class gemini:
-    pass
