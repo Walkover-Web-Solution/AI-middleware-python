@@ -171,7 +171,7 @@ async def save_sub_thread_id_and_name(thread_id, sub_thread_id, org_id, thread_f
             'thread_id': thread_id,
             'sub_thread_id': sub_thread_id,
             'display_name': display_name,
-            'created_at': current_time
+            'created_at': current_time.isoformat()
         }
         await store_in_cache(cache_key, cache_data, ttl=172800)  # 48 hours
         
@@ -182,7 +182,7 @@ async def save_sub_thread_id_and_name(thread_id, sub_thread_id, org_id, thread_f
                     'sub_thread_id': sub_thread_id,
                     'thread_id': thread_id,
                     'bridge_id': bridge_id,
-                    'created_at': current_time
+                    'created_at': current_time.isoformat()
                 }
             }
             await sendResponse(response_format, response, True)
