@@ -3,6 +3,9 @@ import uuid
 from fastapi import HTTPException
 from src.services.cache_service import find_in_cache, store_in_cache, client, REDIS_PREFIX
 from src.services.utils.gcp_upload_service import uploadDoc
+from google import genai
+import tempfile
+import os
 
 async def image_processing(request):
     body = await request.form()
@@ -66,4 +69,67 @@ async def file_processing(request):
         }
     except Exception as e:
         # Handle exceptions and return an error response
-        raise HTTPException(status_code=400, detail={"success": False, "error": "Error in image processing: "+ str(e)})
+        raise HTTPException(status_code=400, detail={"success": False, "error": "Error in file processing: "+ str(e)})
+
+
+async def video_processing(request):
+    body = await request.form()
+    file = body.get('video')
+    
+    if file is None:
+        raise HTTPException(status_code=400, detail={"success": False, "error": "Video file not found"})
+    
+    # Check if file is MP4
+    if not (file.content_type == 'video/mp4' or file.filename.lower().endswith('.mp4')):
+        raise HTTPException(status_code=400, detail={"success": False, "error": "Only MP4 video files are supported"})
+    
+    # Get API key from form data or use default
+    api_key = body.get('api_key', 'AIzaSyDnVV7YMZe1LAhRwGlp7Nwy-LTP3k4-AGo')
+    
+    file_content = await file.read()
+    
+    try:
+        # Create Gemini client
+        gemini_client = genai.Client(api_key=api_key)
+        
+        # Create temporary file to upload to Gemini
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.mp4') as temp_file:
+            temp_file.write(file_content)
+            temp_file_path = temp_file.name
+        
+        try:
+            # Upload file to Gemini
+            gemini_file = gemini_client.files.upload(file=temp_file_path)
+            
+            # Convert file object to dictionary for JSON serialization
+            file_data = {
+                'name': gemini_file.name,
+                'display_name': gemini_file.display_name,
+                'mime_type': gemini_file.mime_type,
+                'size_bytes': gemini_file.size_bytes,
+                'create_time': gemini_file.create_time.isoformat() if gemini_file.create_time else None,
+                'expiration_time': gemini_file.expiration_time.isoformat() if gemini_file.expiration_time else None,
+                'update_time': gemini_file.update_time.isoformat() if gemini_file.update_time else None,
+                'sha256_hash': gemini_file.sha256_hash,
+                'uri': gemini_file.uri,
+                'download_uri': gemini_file.download_uri,
+                'state': str(gemini_file.state),
+                'source': str(gemini_file.source),
+                'video_metadata': gemini_file.video_metadata,
+                'error': gemini_file.error
+            }
+            
+            return {
+                'success': True,
+                'file_data': file_data,
+                'message': 'Video uploaded to Gemini successfully'
+            }
+            
+        finally:
+            # Clean up temporary file
+            if os.path.exists(temp_file_path):
+                os.unlink(temp_file_path)
+                
+    except Exception as e:
+        # Handle exceptions and return an error response
+        raise HTTPException(status_code=400, detail={"success": False, "error": "Error in video processing: " + str(e)})
