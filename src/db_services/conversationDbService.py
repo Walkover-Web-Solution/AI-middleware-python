@@ -17,7 +17,16 @@ async def find(org_id, thread_id, sub_thread_id, bridge_id):
         session = pg['session']()
         
         conversations = (
-            session.query(Conversation)
+            session.query(
+                Conversation.id,
+                Conversation.user_message,
+                Conversation.response,
+                Conversation.chatbot_response,
+                Conversation.tools_call_data,
+                Conversation.error,
+                Conversation.urls,
+                Conversation.createdAt
+            )
             .filter(
                 and_(
                     Conversation.org_id == org_id,
@@ -28,52 +37,55 @@ async def find(org_id, thread_id, sub_thread_id, bridge_id):
                 )
             )
             .order_by(Conversation.id.desc())
-            .limit(9)
+            .limit(3)
             .all()
         )
         
         # Convert to format expected by existing code
         result = []
         for conv in reversed(conversations):
+            # Unpack the tuple result
+            conv_id, user_message, response, chatbot_response, tools_call_data, error, urls, created_at = conv
+            
             # Create user message entry
-            if conv.get('user_message'):
+            if user_message:
                 result.append({
-                    'content': conv.get('user_message'),
+                    'content': user_message,
                     'role': 'user',
-                    'createdAt': conv.get('createdAt'),
-                    'id': conv.get('id'),
+                    'createdAt': created_at,
+                    'id': conv_id,
                     'function': {},
                     'is_reset': False,
-                    'tools_call_data': conv.get('tools_call_data', []),
-                    'error': conv.get('error', ''),
-                    'urls': conv.get('urls', [])
+                    'tools_call_data': tools_call_data or [],
+                    'error': error or '',
+                    'urls': urls or []
                 })
             
             # Create tools call entry if exists
-            if conv.get('tools_call_data') and len(conv.get('tools_call_data', [])) > 0:
+            if tools_call_data and len(tools_call_data) > 0:
                 result.append({
                     'content': '',
                     'role': 'tools_call',
-                    'createdAt': conv.get('createdAt'),
-                    'id': conv.get('id'),
-                    'function': conv.get('tools_call_data', [{}])[0],
+                    'createdAt': created_at,
+                    'id': conv_id,
+                    'function': tools_call_data[0] if tools_call_data else {},
                     'is_reset': False,
-                    'tools_call_data': conv.get('tools_call_data'),
-                    'error': conv.get('error', ''),
+                    'tools_call_data': tools_call_data,
+                    'error': error or '',
                     'urls': []
                 })
             
             # Create assistant message entry
-            if conv.get('response') or conv.get('chatbot_response'):
+            if response or chatbot_response:
                 result.append({
-                    'content': conv.get('response') or conv.get('chatbot_response'),
+                    'content': response or chatbot_response,
                     'role': 'assistant',
-                    'createdAt': conv.get('createdAt'),
-                    'id': conv.get('id'),
+                    'createdAt': created_at,
+                    'id': conv_id,
                     'function': {},
                     'is_reset': False,
                     'tools_call_data': None,
-                    'error': conv.get('error', ''),
+                    'error': error or '',
                     'urls': []
                 })
         
