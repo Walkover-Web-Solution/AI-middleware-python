@@ -6,7 +6,6 @@ from src.configs.constant import redis_keys
 
 async def get_bridge_avg_response_time(org_id, bridge_id):
     try:
-        cache_key = f"avg_response_time_{org_id}_{bridge_id}"
         cache_key = f"{redis_keys['avg_response_time_']}{org_id}_{bridge_id}"
         cached_avg_response_time = await find_in_cache(cache_key)
         
