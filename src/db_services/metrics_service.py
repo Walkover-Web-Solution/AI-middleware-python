@@ -175,6 +175,20 @@ async def create(dataset, history_params, version_id, thread_info={}):
         
         # Create the cache key based on bridge_id (assuming it's always available)
         cache_key = f"{redis_keys['metrix_bridges_']}{history_params['bridge_id']}"
+        bridge_lastused_cache_key = f"bridgelastused_{history_params['bridge_id']}"
+        # Get API key cache key from first dataset item if available
+        if dataset:
+            first_item = dataset[0]
+            apikey_id = first_item.get('apikey_object_id', {}).get(first_item['service'], '') if first_item.get('apikey_object_id') else ''
+            api_lastused_cache_key = f"apikeylastused_{apikey_id}"
+        else:
+            api_lastused_cache_key = "apikeylastused_"
+
+        #store last used time for bridge and apikey
+        current_time = datetime.now().isoformat()
+        await store_in_cache(bridge_lastused_cache_key, current_time)
+        await store_in_cache(api_lastused_cache_key, current_time)
+
         # Safely load the old total token value from the cache
         cache_value = await find_in_cache(cache_key)
         try:

@@ -208,6 +208,12 @@ async def get_all_bridges(request):
         for bridge in bridges:
             bridge_id = bridge.get('_id')
             avg_response_time_data = await find_in_cache(f"AVG_{org_id}_{bridge_id}")
+            lastused = await find_in_cache(f"bridgelastused_{bridge_id}")
+            
+            # Set last_used from cache, or from database if cache is empty
+            if lastused:
+                bridge["last_used"] = lastused.decode().strip('"')
+                
             avg_response_time[bridge_id] = round(float(avg_response_time_data), 2) if avg_response_time_data else 0
         return JSONResponse(status_code=200, content={
                 "success": True,
