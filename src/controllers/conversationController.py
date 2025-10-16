@@ -159,9 +159,10 @@ async def save_sub_thread_id_and_name(thread_id, sub_thread_id, org_id, thread_f
         }
         display_name = sub_thread_id
         message  = 'generate description'
+        current_time = datetime.now()
         if thread_flag:
             display_name = await call_ai_middleware(message, bridge_ids['generate_description'], response_type='text', variables=variables)
-        await save_sub_thread_id(org_id, thread_id, sub_thread_id, display_name, bridge_id)
+        await save_sub_thread_id(org_id, thread_id, sub_thread_id, display_name, bridge_id,current_time)
         
         # Store in Redis cache for 48 hours (172800 seconds)
         cache_data = {
@@ -169,7 +170,8 @@ async def save_sub_thread_id_and_name(thread_id, sub_thread_id, org_id, thread_f
             'bridge_id': bridge_id,
             'thread_id': thread_id,
             'sub_thread_id': sub_thread_id,
-            'display_name': display_name
+            'display_name': display_name,
+            'created_at': current_time.isoformat()
         }
         await store_in_cache(cache_key, cache_data, ttl=172800)  # 48 hours
         
@@ -179,7 +181,8 @@ async def save_sub_thread_id_and_name(thread_id, sub_thread_id, org_id, thread_f
                     'display_name': display_name,
                     'sub_thread_id': sub_thread_id,
                     'thread_id': thread_id,
-                    'bridge_id': bridge_id
+                    'bridge_id': bridge_id,
+                    'created_at': current_time.isoformat()
                 }
             }
             await sendResponse(response_format, response, True)

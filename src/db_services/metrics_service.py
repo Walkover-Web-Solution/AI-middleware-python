@@ -3,13 +3,13 @@ import json
 import uuid
 import traceback
 from datetime import datetime, timezone
+
 from models.index import combined_models
 from sqlalchemy import and_
 from ..controllers.conversationController import savehistory
 from .conversationDbService import insertRawData, timescale_metrics
 from ..services.cache_service import find_in_cache, store_in_cache
 from globals import *
-from src.services.commonServices.baseService.utils import safe_float
 # from src.services.utils.send_error_webhook import send_error_to_webhook
 
 postgres = combined_models['pg']
@@ -150,6 +150,8 @@ async def create(dataset, history_params, version_id, thread_info={}):
             }
             for data_object in dataset
         ]
+        await insertRawData(insert_ai_data_in_pg)
+        latency = json.loads(dataset[0].get('latency', 0)).get('over_all_time') or 0
         metrics_data = [
             {
                 'org_id': data_object['orgId'],
@@ -157,20 +159,19 @@ async def create(dataset, history_params, version_id, thread_info={}):
                 'version_id' : version_id,
                 'thread_id': history_params['thread_id'],
                 'model': data_object['model'],
-                'input_tokens': safe_float(data_object.get('inputTokens', 0), 0.0, "inputTokens"),
-                'output_tokens': safe_float(data_object.get('outputTokens', 0), 0.0, "outputTokens"),
-                'total_tokens': safe_float(data_object.get('totalTokens', 0),0.0, "totalTokens"),
+                'input_tokens': data_object.get('inputTokens', 0) or 0.0,
+                'output_tokens': data_object.get('outputTokens', 0) or 0.0,
+                'total_tokens': data_object.get('totalTokens', 0) or 0.0,
                 'apikey_id': data_object.get('apikey_object_id', {}).get(data_object['service'], '') if data_object.get('apikey_object_id') else '',
                 'created_at': datetime.now(),  # Remove timezone to match database expectations
-                'latency': safe_float(json.loads(data_object.get('latency', {})).get('over_all_time', 0),0.0, "over_all_time"),
+                'latency': latency,
                 'success' : data_object.get('success', False),
-                'cost' : safe_float(data_object.get('expectedCost', 0), 0.0, 'expectedCost'),
+                'cost' : data_object.get('expectedCost', 0) or 0.0,
                 'time_zone' : 'Asia/Kolkata',
                 'service' : data_object['service']
             }
             for data_object in dataset
         ]
-        await insertRawData(insert_ai_data_in_pg)
         
         # Create the cache key based on bridge_id (assuming it's always available)
         cache_key = f"metrix_bridges{history_params['bridge_id']}"

@@ -241,6 +241,10 @@ async def process_data_and_run_tools(codes_mapping, self):
                     if self.tool_id_and_name_mapping[name].get('version_id', False):
                         agent_args["version_id"] = self.tool_id_and_name_mapping[name].get('version_id')
                     
+                    # Pass timer state to maintain latency tracking in recursive calls
+                    if hasattr(self, 'timer') and hasattr(self.timer, 'getTime'):
+                        agent_args["timer_state"] = self.timer.getTime()
+                    
                     task = call_gtwy_agent(agent_args)
                 else: 
                     task = axios_work(tool_data.get("args"), self.tool_id_and_name_mapping[name])
@@ -492,10 +496,3 @@ async def save_files_to_redis(thread_id, sub_thread_id, bridge_id, files):
         await store_in_cache(cache_key, files, 604800)
 
 
-
-def safe_float(value, default=0.0, keyname= ''):
-    try:
-        return float(value)
-    except (TypeError, ValueError):
-        print("error in float conversation of key", keyname)
-        return default

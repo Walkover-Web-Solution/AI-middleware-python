@@ -76,23 +76,60 @@ class BaseQueue:
             logger.error(f"Queue declaration failed: {e}")
             raise
 
-    async def publish_message(self, message, queue_name=None):
+    async def _ensure_connection(self):
+        """Ensure connection and channel are healthy before operations"""
         try:
-            await self.connect()
-            target_queue = queue_name or self.queue_name
-            message_body = json.dumps(message)
-            await self.channel.default_exchange.publish(
-                Message(
-                    body=message_body.encode(),
-                    delivery_mode=DeliveryMode.PERSISTENT,
-                    headers={'retry_count': 1}
-                ),
-                routing_key=target_queue,
-            )
-            logger.info(f"Message published to {target_queue}")
-        except Exception as e:
-            logger.error(f"Publish failed to {target_queue}: {e}")
-            raise
+            # Check if we need to reconnect
+            if not self.connection_manager.connection or self.connection_manager.connection.is_closed:
+                self.connection_manager.connection = await self.connection_manager.get_connection()
+
+            if not self.channel or self.channel.is_closed:
+                self.channel = await self.connection_manager.get_channel(self.queue_name)
+
+            # Additional check to ensure connection is still alive
+            if hasattr(self.connection_manager.connection, 'is_open') and not self.connection_manager.connection.is_open:
+                self.connection_manager.connection = await self.connection_manager.get_connection()
+                self.channel = await self.connection_manager.get_channel(self.queue_name)
+
+            return True
+        except Exception as E:
+            logger.error(f"Connection validation error for {self.queue_name}: {E}")
+            return False
+
+    async def publish_message(self, message, queue_name=None, max_retries=3, retry_delay=1):
+        target_queue = queue_name or self.queue_name
+        last_error = None
+
+        for attempt in range(max_retries):
+            try:
+                # Ensure connection is healthy before publishing
+                if not await self._ensure_connection():
+                    raise Exception("Failed to establish healthy connection")
+
+                message_body = json.dumps(message)
+                await self.channel.default_exchange.publish(
+                    Message(
+                        body=message_body.encode(),
+                        delivery_mode=DeliveryMode.PERSISTENT,
+                        headers={'retry_count': attempt + 1}
+                    ),
+                    routing_key=target_queue,
+                )
+                logger.info(f"Message published to {target_queue} (attempt {attempt + 1})")
+                return True
+
+            except Exception as e:
+                last_error = e
+                logger.error(f"Publish attempt {attempt + 1} failed to {target_queue}: {e}")
+
+                if attempt < max_retries - 1:
+                    # Exponential backoff
+                    delay = retry_delay * (2 ** attempt)
+                    logger.info(f"Retrying in {delay} seconds...")
+                    await asyncio.sleep(delay)
+
+        logger.error(f"Publish failed to {target_queue} after {max_retries} attempts: {last_error}")
+        return False
 
     async def _message_handler_wrapper(self, message: AbstractIncomingMessage, process_callback):
         async with message.process():
