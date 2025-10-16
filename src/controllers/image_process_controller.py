@@ -3,6 +3,7 @@ import uuid
 from fastapi import HTTPException
 from src.services.cache_service import find_in_cache, store_in_cache, client, REDIS_PREFIX
 from src.services.utils.gcp_upload_service import uploadDoc
+from src.configs.constant import redis_keys
 
 async def image_processing(request):
     body = await request.form()
@@ -57,7 +58,7 @@ async def file_processing(request):
 
         # If PDF and thread parameters exist, save to Redis cache
         if is_pdf and thread_id and bridge_id:
-            cache_key = f"{bridge_id}_{thread_id}_{sub_thread_id or thread_id}"
+            cache_key = f"{redis_keys['pdf_url_']}{bridge_id}_{thread_id}_{sub_thread_id or thread_id}"
             await store_in_cache(cache_key, [file_url], 604800)
         
         return {

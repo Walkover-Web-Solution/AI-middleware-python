@@ -5,6 +5,7 @@ from src.configs.constant import service_name
 import json
 from ...cache_service import store_in_cache
 from src.services.commonServices.openAI.openai_run_batch import create_batch_file, process_batch_file
+from src.configs.constant import redis_keys
 
 class OpenaiBatch(BaseService):
     async def batch_execute(self):
@@ -59,7 +60,8 @@ class OpenaiBatch(BaseService):
             "apikey": self.apikey,
             "webhook" : self.webhook
         }
-        await store_in_cache(batch_id, batch_json)
+        cache_key = f"{redis_keys['openai_batch_']}{batch_file.id}"
+        await store_in_cache(cache_key, batch_json, ttl = 86400)
         return {
             "success": True,
             "message": "Response will be successfully sent to the webhook wihtin 24 hrs."
