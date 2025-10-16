@@ -3,6 +3,7 @@ from models.mongo_connection import db
 from src.services.cache_service import delete_in_cache
 apiCallModel = db['apicalls']
 from globals import *
+from src.configs.constant import redis_keys
 
 async def get_api_data(org_id, function_name, folder_id, user_id, isEmbedUser):
     try:
@@ -130,9 +131,11 @@ async def delete_api(function_name, org_id, status = 0):
 
 async def delete_all_version_and_bridge_ids_from_cache(Id_to_delete):
     for ids in Id_to_delete.get('bridge_ids', []):
-        await delete_in_cache(f"get_bridge_data_{str(ids)}")
+        cache_key = f"{redis_keys['get_bridge_data_']}{str(ids)}"
+        await delete_in_cache(cache_key)
     for ids in Id_to_delete.get('version_ids', []):
-        await delete_in_cache(f"get_bridge_data_{str(ids)}")
+        cache_key = f"{redis_keys['get_bridge_data_']}{str(ids)}"
+        await delete_in_cache(cache_key)
     
 def validate_required_params(data_to_update):
     if not isinstance(data_to_update, dict):

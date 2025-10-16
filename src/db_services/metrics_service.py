@@ -11,6 +11,7 @@ from .conversationDbService import insertRawData, timescale_metrics
 from ..services.cache_service import find_in_cache, store_in_cache
 from globals import *
 # from src.services.utils.send_error_webhook import send_error_to_webhook
+from src.configs.constant import redis_keys
 
 postgres = combined_models['pg']
 timescale = combined_models['timescale']
@@ -26,8 +27,7 @@ async def save_conversations_to_redis(conversations, version_id, thread_id, sub_
     """
     try:
         # Create Redis key
-        redis_key = f"conversation_{version_id}_{thread_id}_{sub_thread_id}"
-        
+        redis_key = f"{redis_keys['conversation_']}{version_id}_{thread_id}_{sub_thread_id}"
         # Start with existing conversations from database
         conversation_list = conversations or []
         
@@ -174,8 +174,7 @@ async def create(dataset, history_params, version_id, thread_info={}):
         ]
         
         # Create the cache key based on bridge_id (assuming it's always available)
-        cache_key = f"metrix_bridges_{history_params['bridge_id']}"
-
+        cache_key = f"{redis_keys['metrix_bridges_']}{history_params['bridge_id']}"
         # Safely load the old total token value from the cache
         cache_value = await find_in_cache(cache_key)
         try:

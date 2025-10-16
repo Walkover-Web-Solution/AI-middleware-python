@@ -14,6 +14,7 @@ from src.db_services.testcase_services import delete_current_testcase_history
 from src.configs.constant import bridge_ids
 from ..services.utils.ai_call_util import call_ai_middleware
 from globals import *
+from src.configs.constant import redis_keys
 
 configurationModel = db["configurations"]
 version_model = db['configuration_versions']
@@ -142,7 +143,7 @@ async def publish(org_id, version_id, user_id):
     agent_variables = Helper.get_req_opt_variables_in_prompt(prompt, variable_state, variable_path)
     transformed_agent_variables = Helper.transform_agent_variable_to_tool_call_format(agent_variables)
 
-    await delete_in_cache(f"get_bridge_data_{parent_id}")
+    await delete_in_cache(f"{redis_keys['get_bridge_data_']}{parent_id}")
 
     if not parent_id:
         raise BadRequestException("Parent ID not found in version data")

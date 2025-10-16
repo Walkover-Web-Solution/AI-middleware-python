@@ -26,6 +26,7 @@ from ..utils.apiservice import fetch
 from ..commonServices.baseService.utils import sendResponse
 from datetime import datetime
 import pytz
+from src.configs.constant import redis_keys
 class Helper:
     @staticmethod
     def encrypt(text):
@@ -312,7 +313,8 @@ class Helper:
             return cached_result
         else:
             response, _ = await fetch(f"https://routes.msg91.com/api/{Config.PUBLIC_REFERENCEID}/getCompanies?id={org_id}", "GET", {"Authkey": Config.ADMIN_API_KEY}, None, None)
-            await store_in_cache(f"timezone_and_org_{org_id}", response.get('data', {}).get('data', [{}])[0])
+            cache_key = f"{redis_keys['timezone_and_org_']}{org_id}"
+            await store_in_cache(cache_key, response.get('data', {}).get('data', [{}])[0])
             return response.get('data', {}).get('data', [{}])[0]
     def sort_bridges(bridges, metrics_data):
         # Create a dictionary to map _id to total tokens

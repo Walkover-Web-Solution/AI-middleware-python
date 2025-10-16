@@ -14,6 +14,7 @@ from src.db_services.ConfigurationServices import get_bridges_without_tools, upd
 from src.services.utils.ai_call_util import call_gtwy_agent
 from globals import *
 from src.services.cache_service import store_in_cache, find_in_cache, client, REDIS_PREFIX
+from src.configs.constant import redis_keys
 
 def clean_json(data):
     """Recursively remove keys with empty string, empty list, or empty dictionary."""
@@ -481,7 +482,7 @@ async def total_token_calculation(tokens, bridge_id):
     await update_bridge(bridge_id=bridge_id, update_fields={'total_tokens': total_tokens})
 
 async def save_files_to_redis(thread_id, sub_thread_id, bridge_id, files):
-    cache_key = f"files_{bridge_id}_{thread_id}_{sub_thread_id}"
+    cache_key = f"{redis_keys['files_']}{bridge_id}_{thread_id}_{sub_thread_id}"
     existing_cache = await find_in_cache(cache_key)
     if existing_cache:
         try:
