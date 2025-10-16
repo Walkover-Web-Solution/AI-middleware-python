@@ -983,19 +983,29 @@ async def update_apikey_creds(version_id, apikey_object_ids):
         logger.error(f"Error in update_apikey_creds: {str(error)}")
         raise error
 
-async def save_sub_thread_id(org_id, thread_id, sub_thread_id, display_name, bridge_id): # bridge_id is now a required parameter
+async def save_sub_thread_id(org_id, thread_id, sub_thread_id, display_name, bridge_id,current_time): # bridge_id is now a required parameter
     try:
-        update_data = {'$setOnInsert': {'thread_id': thread_id}}
         
-        # Fields to be set or updated
-        set_fields = {'bridge_id': bridge_id} # bridge_id will always be set
+        
+        # Build update data with both $set and $setOnInsert in single operation
+        update_data = {
+            '$set': {
+                'bridge_id': bridge_id
+            },
+            '$setOnInsert': {
+                'org_id': org_id,
+                'thread_id': thread_id,
+                'sub_thread_id': sub_thread_id,
+                'created_at': current_time
+            }
+        }
+        
+        # Add display_name to $set if provided
         if display_name is not None and isinstance(display_name, str):
-            set_fields['display_name'] = display_name
-            
-        update_data['$set'] = set_fields
+            update_data['$set']['display_name'] = display_name
        
         result = await threadsModel.find_one_and_update(
-            {'org_id': org_id,'thread_id': thread_id, 'sub_thread_id': sub_thread_id, 'bridge_id': bridge_id},
+            {'org_id': org_id, 'thread_id': thread_id, 'sub_thread_id': sub_thread_id, 'bridge_id': bridge_id},
             update_data,
             upsert=True,
             return_document=True

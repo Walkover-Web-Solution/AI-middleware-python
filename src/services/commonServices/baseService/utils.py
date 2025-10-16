@@ -221,11 +221,6 @@ async def process_data_and_run_tools(codes_mapping, self):
             # Get corresponding function code mapping
             tool_mapping = {} if self.tool_id_and_name_mapping[name] else {"error": True, "response": "Wrong Function name"}
             tool_data = {**tool, **tool_mapping}
-            
-            # Add bridge_id and version_id to tool_data for AGENT type tools only
-            if self.tool_id_and_name_mapping.get(name) and self.tool_id_and_name_mapping[name].get('type') == 'AGENT':
-                tool_data['bridge_id'] = self.tool_id_and_name_mapping[name].get('bridge_id')
-                tool_data['version_id'] = self.tool_id_and_name_mapping[name].get('version_id')
 
             if not tool_data.get("response"):
                 # if function is present in db/NO response, create task for async processing
@@ -246,6 +241,10 @@ async def process_data_and_run_tools(codes_mapping, self):
                     if self.tool_id_and_name_mapping[name].get('version_id', False):
                         agent_args["version_id"] = self.tool_id_and_name_mapping[name].get('version_id')
                     
+                    # Pass timer state to maintain latency tracking in recursive calls
+                    if hasattr(self, 'timer') and hasattr(self.timer, 'getTime'):
+                        agent_args["timer_state"] = self.timer.getTime()
+                    
                     task = call_gtwy_agent(agent_args)
                 else: 
                     task = axios_work(tool_data.get("args"), self.tool_id_and_name_mapping[name])
@@ -260,7 +259,7 @@ async def process_data_and_run_tools(codes_mapping, self):
                     'content': json.dumps(tool_data['response'])
                 })
                 # Update tool_call_logs with existing response
-                tool_call_logs[tool_call_key] = {**tool_data, "response": tool_data['response']}
+                tool_call_logs[tool_call_key] = {**tool, "response": tool_data['response']}
 
         # Execute all tasks concurrently if any exist
         if tasks:
@@ -289,8 +288,7 @@ async def process_data_and_run_tools(codes_mapping, self):
                 })
 
                 # Update tool_call_logs with the response
-                tool_call_logs[tool_call_key] = {**tool_data, **response, "id": self.tool_id_and_name_mapping[tool_data['name']].get("name")}
-
+                tool_call_logs[tool_call_key] = {**tool_data, "data" : response, "id": self.tool_id_and_name_mapping[tool_data['name']].get("name")}
         # Create mapping by tool_call_id (now tool_call_key) for return
         mapping = {resp['tool_call_id']: resp for resp in responses}
 
@@ -438,7 +436,8 @@ async def make_request_data_and_publish_sub_queue(parsed_data, result, params, t
             "bridge_summary": parsed_data.get('bridge_summary'),
             "thread_id": parsed_data.get('thread_id'),
             "sub_thread_id": parsed_data.get('sub_thread_id'),
-            "configuration": params.get('configuration', {})
+            "configuration": params.get('configuration', {}),
+            "org_id" : parsed_data.get('org_id')
         },
         "handle_gpt_memory" : {
             "id" : parsed_data.get('id'),
@@ -497,10 +496,3 @@ async def save_files_to_redis(thread_id, sub_thread_id, bridge_id, files):
         await store_in_cache(cache_key, files, 604800)
 
 
-
-def safe_float(value, default=0.0, keyname= ''):
-    try:
-        return float(value)
-    except (TypeError, ValueError):
-        print("error in float conversation of key", keyname)
-        return default
