@@ -157,15 +157,15 @@ async def create_conversation_entry(conversation_data):
     Save conversation entry data to database
     """
     session = pg['session']()
-    print(conversation_data)
     try:
         from models.postgres.pg_models import Conversation
         
         conversation_entry = Conversation(**conversation_data)
         session.add(conversation_entry)
-        session.commit()
+        session.flush()  # Flush to get the ID without committing
         
         conversation_id = conversation_entry.id
+        session.commit()  # Now commit the transaction
         logger.info(f"Created conversation entry with ID: {conversation_id}")
         
         return conversation_id

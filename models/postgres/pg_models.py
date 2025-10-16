@@ -18,7 +18,6 @@ class Conversation(Base):
     chatbot_response = Column(Text)
     tools_call_data = Column(JSON)
     user_feedback = Column(Integer)
-    response_id = Column(UUID(as_uuid=True), nullable=True)
     version_id = Column(String)
     sub_thread_id = Column(String, nullable=True)
     revised_response = Column(Text, nullable=True)
