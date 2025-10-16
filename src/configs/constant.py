@@ -32,15 +32,15 @@ __all__ = ['service_name', 'bridge_ids']
 prebuilt_prompt_bridge_id = ['optimze_prompt', 'gpt_memory', 'structured_output_optimizer', 'chatbot_suggestions', 'generate_summary']
 
 redis_keys = {
-    pdf_url_ : 'pdf_url_',
-    get_bridge_data_ : 'get_bridge_data_',
-    bridge_data_with_tools_ : 'bridge_data_with_tools_',
-    metrix_bridges_ : 'metrix_bridges_',
-    rate_limit_ : 'rate_limit_',
-    files_ : 'files_',
-    openai_batch_ : 'openai_batch_',
-    avg_response_time_ : 'avg_response_time_',
-    gpt_memory_ : 'gpt_memory_',
-    timezone_and_org_ : 'timezone_and_org_',
-    conversation_ : 'conversation_'
+    'pdf_url_' : 'pdf_url_',
+    'get_bridge_data_' : 'get_bridge_data_',
+    'bridge_data_with_tools_' : 'bridge_data_with_tools_',
+    'metrix_bridges_' : 'metrix_bridges_',
+    'rate_limit_' : 'rate_limit_',
+    'files_' : 'files_',
+    'openai_batch_' : 'openai_batch_',
+    'avg_response_time_' : 'avg_response_time_',
+    'gpt_memory_' : 'gpt_memory_',
+    'timezone_and_org_' : 'timezone_and_org_',
+    'conversation_' : 'conversation_'
 }
