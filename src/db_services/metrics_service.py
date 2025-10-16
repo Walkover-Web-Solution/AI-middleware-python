@@ -4,6 +4,7 @@ from datetime import datetime
 from .conversationDbService import timescale_metrics, create_conversation_entry
 from ..services.cache_service import find_in_cache, store_in_cache
 from globals import *
+import json
 
 def prepare_conversation_data(primary_data, history_params, version_id, thread_info):
     """
@@ -47,35 +48,31 @@ def prepare_conversation_data(primary_data, history_params, version_id, thread_i
     
     return conversation_data
 
-def prepare_timescale_data(dataset, history_params, conversation_id):
+def prepare_timescale_data(dataset, history_params):
     """
     Prepare timescale metrics data
     """
-    insert_ai_data_in_pg = [
+    metrics_data = [
         {
-            'org_id': data_object['orgId'],
-            'authkey_name': data_object.get('apikey_object_id', {}).get(data_object['service'], '') if data_object.get('apikey_object_id') else '',
-            'latency': data_object.get('latency', 0),
-            'service': data_object['service'],
-            'status': data_object.get('success', False),
-            'error': data_object.get('error', '') if not data_object.get('success', False) else '',
-            'model': data_object['model'],
-            'input_tokens': data_object.get('inputTokens', 0),
-            'output_tokens': data_object.get('outputTokens', 0),
-            'expected_cost': data_object.get('expectedCost', 0),
-            'created_at': datetime.now(),
-            'chat_id': conversation_id,
-            'message_id': data_object.get('message_id'),
-            'variables': data_object.get('variables') or {},
-            'is_present': 'prompt' in data_object,
-            'id': str(uuid.uuid4()),
-            'firstAttemptError': history_params.get('firstAttemptError'),
-            'finish_reason': data_object.get('finish_reason')
+            'org_id': dataset['orgId'],
+            'bridge_id': history_params.get('bridge_id'),
+            'version_id': history_params.get('version_id'),
+            'thread_id': history_params.get('thread_id'),
+            'model': history_params.get('model'),
+            'input_tokens': dataset.get('inputTokens', 0) or 0.0,
+            'output_tokens': dataset.get('outputTokens', 0) or 0.0,
+            'total_tokens': dataset.get('totalTokens', 0) or 0.0,
+            'apikey_id': dataset.get('apikey_object_id', {}).get(dataset['service'], '') if dataset.get('apikey_object_id') else '',
+            'created_at': datetime.now(),  # Remove timezone to match database expectations
+            'latency': int(json.loads(dataset.get('latency', {})).get('over_all_time', 0)),
+            'success': dataset.get('success', False),
+            'cost': dataset.get('expectedCost', 0) or 0.0,
+            'time_zone': 'Asia/Kolkata',
+            'service': dataset['service']
         }
-        for data_object in dataset
     ]
     
-    return insert_ai_data_in_pg
+    return metrics_data
 
 async def save_conversations_to_redis(conversations, version_id, thread_id, sub_thread_id, history_params):
     """
@@ -163,7 +160,7 @@ async def create(dataset, history_params, version_id, thread_info={}):
             await save_conversations_to_redis(conversations, version_id, thread_id, sub_thread_id, history_params)
         
         # Prepare and insert timescale metrics data
-        insert_ai_data_in_pg = prepare_timescale_data(dataset, history_params, conversation_id)
+        insert_ai_data_in_pg = prepare_timescale_data(dataset[0], history_params)
         
         await timescale_metrics(insert_ai_data_in_pg)
         
