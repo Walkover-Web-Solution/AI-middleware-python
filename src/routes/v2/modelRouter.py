@@ -63,13 +63,24 @@ async def playground_chat_completion_bridge(request: Request, db_config: dict = 
     if db_config.get('orchestrator_id'):
         result = await orchestrator_chat(data_to_send)
         return result
-    type = data_to_send.get("body",{}).get('configuration',{}).get('type')
-    if type == 'embedding':
-            result =  await embedding(data_to_send)
-            return result
-    loop = asyncio.get_event_loop()
-    result = await chat(data_to_send)
-    return result
+    response_format = data_to_send.get('body',{}).get('configuration', {}).get('response_format', {})
+    if response_format and response_format.get('type') != 'default':
+        try:
+            # Publish the message to the queue
+            await queue_obj.publish_message(data_to_send)
+            return {"success": True, "message": "Your response will be sent through configured means."}
+        except Exception as e:
+            # Log the error and return a meaningful error response
+            logger.error(f"Failed to publish message: {str(e)}")
+            raise HTTPException(status_code=500, detail="Failed to publish message.")
+    else:
+        type = data_to_send.get("body",{}).get('configuration',{}).get('type')
+        if type == 'embedding':
+                result =  await embedding(data_to_send)
+                return result
+        loop = asyncio.get_event_loop()
+        result = await chat(data_to_send)
+        return result
 
 @router.post('/batch/chat/completion', dependencies=[Depends(auth_and_rate_limit)])
 async def batch_chat_completion(request: Request, db_config: dict = Depends(add_configuration_data_to_body)):

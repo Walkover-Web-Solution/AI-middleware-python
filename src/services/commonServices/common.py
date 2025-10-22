@@ -208,41 +208,38 @@ async def chat(request_body):
             result['response']['data']['message_id'] = parsed_data['message_id']
         # Create latency object using utility function
         latency = create_latency_object(timer, params)
-        if not parsed_data['is_playground']:
-            if result.get('response') and result['response'].get('data'):
-                result['response']['data']['message_id'] = parsed_data['message_id']
-            await sendResponse(parsed_data['response_format'], result["response"], success=True, variables=parsed_data.get('variables',{}))
-            # Update usage metrics for successful API calls
-            update_usage_metrics(parsed_data, params, latency, result=result, success=True)
-            result['response']['usage']['cost'] = parsed_data['usage'].get('expectedCost', 0)
-            await process_background_tasks(parsed_data, result, params, thread_info)
+        if result.get('response') and result['response'].get('data'):
+            result['response']['data']['message_id'] = parsed_data['message_id']
+        await sendResponse(parsed_data['response_format'], result["response"], success=True, variables=parsed_data.get('variables',{}))
+        # Update usage metrics for successful API calls
+        update_usage_metrics(parsed_data, params, latency, result=result, success=True)
+        result['response']['usage']['cost'] = parsed_data['usage'].get('expectedCost', 0)
+        await process_background_tasks(parsed_data, result, params, thread_info)
+        if parsed_data.get('testcase_data',{}).get('run_testcase', False):
+            from src.services.commonServices.testcases import process_single_testcase_result
+            # Process testcase result and add score to response
+            testcase_result = await process_single_testcase_result(
+                parsed_data.get('testcase_data', {}), 
+                result, 
+                parsed_data
+            )
+            result['response']['testcase_result'] = testcase_result
         else:
-            if parsed_data.get('testcase_data',{}).get('run_testcase', False):
-                from src.services.commonServices.testcases import process_single_testcase_result
-                # Process testcase result and add score to response
-                testcase_result = await process_single_testcase_result(
-                    parsed_data.get('testcase_data', {}), 
-                    result, 
-                    parsed_data
-                )
-                result['response']['testcase_result'] = testcase_result
-            else:
-                await process_background_tasks_for_playground(result, parsed_data)
+            await process_background_tasks_for_playground(result, parsed_data)
         return JSONResponse(status_code=200, content={"success": True, "response": result["response"]})
     
     except (Exception, ValueError, BadRequestException) as error:
         if not isinstance(error, BadRequestException):
             logger.error(f'Error in chat service: %s, {str(error)}, {traceback.format_exc()}')
-        if not parsed_data['is_playground']:
             # Create latency object and update usage metrics
-            latency = create_latency_object(timer, params)
-            update_usage_metrics(parsed_data, params, latency, error=error, success=False)
-            
-            # Create history parameters
-            parsed_data['historyParams'] = create_history_params(parsed_data, error, class_obj)
-            await sendResponse(parsed_data['response_format'], result.get("error", str(error)), variables=parsed_data['variables']) if parsed_data['response_format']['type'] != 'default' else None
-            # Process background tasks for error handling
-            await process_background_tasks_for_error(parsed_data, error)
+        latency = create_latency_object(timer, params)
+        update_usage_metrics(parsed_data, params, latency, error=error, success=False)
+        
+        # Create history parameters
+        parsed_data['historyParams'] = create_history_params(parsed_data, error, class_obj)
+        await sendResponse(parsed_data['response_format'], result.get("error", str(error)), variables=parsed_data['variables']) if parsed_data['response_format']['type'] != 'default' else None
+        # Process background tasks for error handling
+        await process_background_tasks_for_error(parsed_data, error)
         # Add support contact information to error message
         error_message = f"{str(error)}. For more support contact us at support@gtwy.ai"
         raise ValueError(error_message)
@@ -410,26 +407,24 @@ async def image(request_body):
 
         # Create latency object using utility function
         latency = create_latency_object(timer, params)
-        if not parsed_data['is_playground']:
-            if result.get('response') and result['response'].get('data'):
-                result['response']['data']['id'] = parsed_data['message_id']
-            await sendResponse(parsed_data['response_format'], result["response"], success=True, variables=parsed_data.get('variables',{}))
-            # Update usage metrics for successful API calls
-            update_usage_metrics(parsed_data, params, latency, result=result, success=True)
-            await process_background_tasks(parsed_data, result, params, None)
+        if result.get('response') and result['response'].get('data'):
+            result['response']['data']['id'] = parsed_data['message_id']
+        await sendResponse(parsed_data['response_format'], result["response"], success=True, variables=parsed_data.get('variables',{}))
+        # Update usage metrics for successful API calls
+        update_usage_metrics(parsed_data, params, latency, result=result, success=True)
+        await process_background_tasks(parsed_data, result, params, None)
         return JSONResponse(status_code=200, content={"success": True, "response": result["response"]})
     
     except (Exception, ValueError, BadRequestException) as error:
         if not isinstance(error, BadRequestException):
             logger.error(f'Error in image service: {str(error)}, {traceback.format_exc()}')
-        if not parsed_data['is_playground']:
             # Create latency object and update usage metrics
-            latency = create_latency_object(timer, params)
-            update_usage_metrics(parsed_data, params, latency, error=error, success=False)
-            
-            # Create history parameters
-            parsed_data['historyParams'] = create_history_params(parsed_data, error, class_obj)
-            await sendResponse(parsed_data['response_format'], result.get("modelResponse", str(error)), variables=parsed_data['variables']) if parsed_data['response_format']['type'] != 'default' else None
-            # Process background tasks for error handling
-            await process_background_tasks_for_error(parsed_data, error)
+        latency = create_latency_object(timer, params)
+        update_usage_metrics(parsed_data, params, latency, error=error, success=False)
+        
+        # Create history parameters
+        parsed_data['historyParams'] = create_history_params(parsed_data, error, class_obj)
+        await sendResponse(parsed_data['response_format'], result.get("modelResponse", str(error)), variables=parsed_data['variables']) if parsed_data['response_format']['type'] != 'default' else None
+        # Process background tasks for error handling
+        await process_background_tasks_for_error(parsed_data, error)
         raise ValueError(error)
