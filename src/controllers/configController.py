@@ -109,7 +109,7 @@ async def create_bridges_controller(request):
         } 
         model_data["is_rich_text"]= False
         # Add default fallback configuration
-        model_data['fall_back'] = {
+        fall_back = {
             "is_enable": True,
             "service": "ai_ml",
             "model": "gpt-oss-120b"
@@ -131,6 +131,7 @@ async def create_bridges_controller(request):
             "gpt_memory" : True,
             "folder_id" : folder_id,
             "user_id" : user_id,
+            "fall_back" : fall_back,
             "bridge_limit": bridge_limit,
             "folder_limit": folder_limit
         })
@@ -310,8 +311,7 @@ async def get_all_service_controller():
             "open_router": {"model": "deepseek/deepseek-chat-v3-0324:free"},
             "mistral": {"model": "mistral-medium-latest"},
             "gemini" : {"model" : "gemini-2.5-flash"},
-            "ai_ml" : {"model" : "gpt-oss-20b"},
-            "openai_completion" : {"model" : "gpt-4o"}
+            "ai_ml" : {"model" : "gpt-oss-20b"}
         }
     }
 

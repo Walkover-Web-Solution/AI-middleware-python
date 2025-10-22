@@ -30,8 +30,6 @@ async def get_bridge_data(bridge_id, org_id, version_id):
         org_id=org_id, 
         version_id=version_id
     )
-
-    print(result)
     
     bridge_id = bridge_id or result.get('bridges', {}).get('parent_id')
     
@@ -187,7 +185,8 @@ def setup_tools(result, variables_path_bridge, extra_tools):
             tool_id_and_name_mapping[name_of_function] = tool_mapping
     # Process extra tools
     for tool in extra_tools:
-        tool_format, tool_mapping, variable_path = process_extra_tool(tool)
+        tool_format, tool_mapping, path = process_extra_tool(tool)
+        variable_path.update(path)
         if tool_format:
             name_of_function = tool_format["name"]
             tools.append(tool_format)

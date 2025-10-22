@@ -2,6 +2,7 @@ from ..services.cache_service import find_in_cache, store_in_cache, verify_ttl
 import json
 from fastapi import Request, Response, HTTPException
 from starlette.middleware.base import BaseHTTPMiddleware
+from src.configs.constant import redis_keys
 
 async def get_nested_value(request: Request, path):
     """Extract nested value from the request object based on the key path."""
@@ -36,7 +37,7 @@ async def rate_limit(request: Request, key_path: str, points: int = 40, ttl: int
     if not key:
         return
 
-    redis_key = f"rate-limit:{key}"
+    redis_key = f"{redis_keys['rate_limit_']}{key}"
     record = await find_in_cache(redis_key)
 
     if record:
