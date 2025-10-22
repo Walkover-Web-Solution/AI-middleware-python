@@ -127,15 +127,21 @@ async def delete_api(function_name, org_id, status = 0):
         logger.error(f"Delete API error=> {str(error)}")
         return {"success": False, "error": str(error)}
     
-
-
 async def delete_all_version_and_bridge_ids_from_cache(Id_to_delete):
-    for ids in Id_to_delete.get('bridge_ids', []):
-        cache_key = f"{redis_keys['get_bridge_data_']}{str(ids)}"
-        await delete_in_cache(cache_key)
-    for ids in Id_to_delete.get('version_ids', []):
-        cache_key = f"{redis_keys['get_bridge_data_']}{str(ids)}"
-        await delete_in_cache(cache_key)
+    bridge_ids = Id_to_delete.get('bridge_ids', [])
+    version_ids = Id_to_delete.get('version_ids', [])
+    
+    # Combine and unique the IDs
+    all_ids = list(set(bridge_ids + version_ids))
+    
+    for an_id in all_ids:
+        # Construct cache keys
+        cache_key_1 = f"{redis_keys['get_bridge_data_']}{str(an_id)}"
+        cache_key_2 = f"{redis_keys['bridge_data_with_tools_']}{str(an_id)}"
+        
+        # Delete keys from cache
+        await delete_in_cache(cache_key_1)
+        await delete_in_cache(cache_key_2)
     
 def validate_required_params(data_to_update):
     if not isinstance(data_to_update, dict):

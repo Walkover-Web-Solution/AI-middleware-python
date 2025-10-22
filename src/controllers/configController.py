@@ -467,7 +467,6 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
                     update_fields['function_ids'] = [ObjectId(fid) for fid in function_ids]
                     id_to_delete = await update_bridge_ids_in_api_calls(function_id, target_id, 0)
             
-            await delete_all_version_and_bridge_ids_from_cache(id_to_delete)
         
         # Build user history entries
         for key, value in body.items():
@@ -494,6 +493,19 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
         
         # Perform database updates
         await update_bridge(bridge_id=bridge_id, update_fields=update_fields, version_id=version_id)
+
+        ids_to_clear = []
+        if bridge_id:
+            ids_to_clear.append(bridge_id)
+        if version_id:
+            ids_to_clear.append(version_id)
+        
+        id_to_delete = {
+            "bridge_ids": ids_to_clear,
+            "version_ids": ids_to_clear
+        }
+        await delete_all_version_and_bridge_ids_from_cache(id_to_delete)
+        
         result = await get_bridges_with_tools(bridge_id, org_id, version_id)
         await add_bulk_user_entries(user_history)
         if apikey_object_id is not None:
