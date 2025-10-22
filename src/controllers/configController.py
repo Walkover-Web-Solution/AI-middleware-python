@@ -11,7 +11,7 @@ from src.db_services.conversationDbService import storeSystemPrompt, add_bulk_us
 from bson import ObjectId
 from src.services.utils.getDefaultValue import get_default_values_controller
 from src.db_services.bridge_version_services import create_bridge_version
-from src.services.utils.apicallUtills import delete_all_version_and_bridge_ids_from_cache
+from src.services.utils.apicallUtills import delete_all_version_and_bridge_ids_from_cache, delete_cache_for_prompt_update
 from src.configs.model_configuration import model_config_document
 from globals import *
 from src.configs.constant import bridge_ids
@@ -352,6 +352,7 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
         if new_configuration and (prompt := new_configuration.get('prompt')):
             prompt_result = await storeSystemPrompt(prompt, org_id, parent_id if parent_id is not None else version_id)
             new_configuration['system_prompt_version_id'] = prompt_result.get('id')
+            await delete_cache_for_prompt_update(bridge_id if bridge_id else version_id)
         
         # Reset fine-tune model for non-fine-tune configurations
         if new_configuration and 'type' in new_configuration and new_configuration.get('type') != 'fine-tune':
