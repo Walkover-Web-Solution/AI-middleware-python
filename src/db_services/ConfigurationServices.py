@@ -947,7 +947,7 @@ async def update_bridge(bridge_id = None, update_fields = None, version_id = Non
     if 'function_ids' in updated_bridge and updated_bridge['function_ids'] is not None:
         updated_bridge['function_ids'] = [str(fid) for fid in updated_bridge['function_ids']]  # Convert function_ids to string
 
-    await delete_in_cache(f"{redis_keys['get_bridge_data_']}{cache_key}")
+    await delete_in_cache(f"{redis_keys['bridge_data_with_tools_']}{cache_key}")
     return {
         'success': True,
         'result': updated_bridge
