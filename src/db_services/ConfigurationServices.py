@@ -1114,6 +1114,7 @@ async def clone_agent_to_org(bridge_id, to_shift_org_id, cloned_agents_map=None,
         new_config.pop('apikey_object_id', None)  # Remove API keys - should not be cloned
         new_config['org_id'] = to_shift_org_id  # Update org_id
         new_config['versions'] = []  # Reset versions array - will be populated later
+        new_config.pop('total_tokens', None)
         
         # Step 3: Insert new configuration
         new_config_result = await configurationModel.insert_one(new_config)
@@ -1127,6 +1128,7 @@ async def clone_agent_to_org(bridge_id, to_shift_org_id, cloned_agents_map=None,
         
         # Step 4: Clone all versions
         cloned_version_ids = []
+        version_id_mapping = {}  # Track mapping between original and cloned version IDs
         if original_config.get('versions'):
             for version_id in original_config['versions']:
                 # Get original version data
@@ -1141,12 +1143,22 @@ async def clone_agent_to_org(bridge_id, to_shift_org_id, cloned_agents_map=None,
                     
                     # Insert new version
                     new_version_result = await version_model.insert_one(new_version)
-                    cloned_version_ids.append(str(new_version_result.inserted_id))
+                    new_version_id = str(new_version_result.inserted_id)
+                    cloned_version_ids.append(new_version_id)
+                    
+                    # Track the mapping between original and cloned version IDs
+                    version_id_mapping[version_id] = new_version_id
         
-        # Step 5: Update the new configuration with cloned version IDs
+        # Step 5: Update the new configuration with cloned version IDs and published_version_id
+        update_data = {'versions': cloned_version_ids}
+        
+        # Handle published_version_id mapping if it exists
+        if original_config.get('published_version_id') and original_config['published_version_id'] in version_id_mapping:
+            update_data['published_version_id'] = version_id_mapping[original_config['published_version_id']]
+        
         await configurationModel.update_one(
             {'_id': new_bridge_id},
-            {'$set': {'versions': cloned_version_ids}}
+            {'$set': update_data}
         )
         
         # Step 6: Clone related API calls (functions) using external API
