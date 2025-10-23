@@ -5,10 +5,10 @@ import json
 from globals import *
 from bson import errors
 from src.configs.constant import redis_keys
-import aiohttp
 from config import Config
 from datetime import datetime
 import jwt
+from ..services.utils.apiservice import fetch
 
 configurationModel = db["configurations"]
 apiCallModel = db['apicalls']
@@ -1171,32 +1171,33 @@ async def clone_agent_to_org(bridge_id, to_shift_org_id, cloned_agents_map=None,
                             'Authorization': auth_token,
                             'Content-Type': 'application/json'
                         }
-                        payload = {
+                        json_body = {
                             "title": "",
                             "meta": ""
                         }
                         
-                        async with aiohttp.ClientSession() as session:
-                            async with session.post(duplicate_url, headers=headers, json=payload) as response:
-                                if response.status == 200:
-                                    duplicate_data = await response.json()
-                                    
-                                    if duplicate_data.get('success') and duplicate_data.get('data'):
-                                        # Prepare new API call data from original
-                                        new_api_call = original_api_call.copy()
-                                        new_api_call.pop('_id', None)  # Remove original ID
-                                        new_api_call['org_id'] = to_shift_org_id  # Update org_id
-                                        new_api_call['function_name'] = duplicate_data['data']['id']  # Update with new script_id
-                                        new_api_call['bridge_ids'] = [new_bridge_id]  # Update bridge_ids
-                                        new_api_call['updated_at'] = datetime.utcnow()  # Update timestamp
-                                        
-                                        # Insert new API call with new _id
-                                        new_api_call_result = await apiCallModel.insert_one(new_api_call)
-                                        cloned_function_ids.append(str(new_api_call_result.inserted_id))
-                                    else:
-                                        logger.error(f"Failed to duplicate function {original_api_call['function_name']}: {duplicate_data}")
-                                else:
-                                    logger.error(f"HTTP error {response.status} when duplicating function {original_api_call['function_name']}")
+                        # Use fetch function instead of direct aiohttp
+                        duplicate_data, response_headers = await fetch(
+                            url=duplicate_url,
+                            method="POST",
+                            headers=headers,
+                            json_body=json_body
+                        )
+                        
+                        if duplicate_data.get('success') and duplicate_data.get('data'):
+                            # Prepare new API call data from original
+                            new_api_call = original_api_call.copy()
+                            new_api_call.pop('_id', None)  # Remove original ID
+                            new_api_call['org_id'] = to_shift_org_id  # Update org_id
+                            new_api_call['function_name'] = duplicate_data['data']['id']  # Update with new script_id
+                            new_api_call['bridge_ids'] = [new_bridge_id]  # Update bridge_ids
+                            new_api_call['updated_at'] = datetime.utcnow()  # Update timestamp
+                            
+                            # Insert new API call with new _id
+                            new_api_call_result = await apiCallModel.insert_one(new_api_call)
+                            cloned_function_ids.append(str(new_api_call_result.inserted_id))
+                        else:
+                            logger.error(f"Failed to duplicate function {original_api_call['function_name']}: {duplicate_data}")
                     
                     except Exception as e:
                         logger.error(f"Error duplicating function {original_api_call.get('function_name', function_id)}: {str(e)}")
