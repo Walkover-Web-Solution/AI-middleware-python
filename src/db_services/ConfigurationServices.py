@@ -5,6 +5,10 @@ import json
 from globals import *
 from bson import errors
 from src.configs.constant import redis_keys
+import aiohttp
+from config import Config
+from datetime import datetime
+import jwt
 
 configurationModel = db["configurations"]
 apiCallModel = db['apicalls']
@@ -1070,3 +1074,153 @@ async def get_bridges_and_versions_by_model(model_name):
     except Exception as error:
         logger.error(f'Error in get_bridges_and_versions_by_model: {str(error)}')
         raise error
+
+async def clone_agent_to_org(bridge_id, to_shift_org_id):
+    """
+    Clone an agent (configuration) and all its related data to a different organization.
+    
+    Args:
+        bridge_id: The ID of the bridge/agent to clone
+        to_shift_org_id: The target organization ID to clone to
+        
+    Returns:
+        dict: Success response with cloned agent data
+    """
+    try:
+        # Step 1: Get the original configuration
+        original_config = await configurationModel.find_one({'_id': ObjectId(bridge_id)})
+        if not original_config:
+            raise BadRequestException("Bridge not found")
+        
+        # Step 2: Prepare new configuration data
+        new_config = original_config.copy()
+        new_config.pop('_id', None)  # Remove original ID
+        new_config.pop('apikey_object_id', None)  # Remove API keys - should not be cloned
+        new_config['org_id'] = to_shift_org_id  # Update org_id
+        new_config['versions'] = []  # Reset versions array - will be populated later
+        
+        # Step 3: Insert new configuration
+        new_config_result = await configurationModel.insert_one(new_config)
+        new_bridge_id = new_config_result.inserted_id
+        
+        # Step 4: Clone all versions
+        cloned_version_ids = []
+        if original_config.get('versions'):
+            for version_id in original_config['versions']:
+                # Get original version data
+                original_version = await version_model.find_one({'_id': ObjectId(version_id)})
+                if original_version:
+                    # Prepare new version data
+                    new_version = original_version.copy()
+                    new_version.pop('_id', None)  # Remove original ID
+                    new_version.pop('apikey_object_id', None)  # Remove API keys - should not be cloned
+                    new_version['org_id'] = to_shift_org_id  # Update org_id
+                    new_version['parent_id'] = str(new_bridge_id)  # Update parent_id to new bridge
+                    
+                    # Insert new version
+                    new_version_result = await version_model.insert_one(new_version)
+                    cloned_version_ids.append(str(new_version_result.inserted_id))
+        
+        # Step 5: Update the new configuration with cloned version IDs
+        await configurationModel.update_one(
+            {'_id': new_bridge_id},
+            {'$set': {'versions': cloned_version_ids}}
+        )
+        
+        # Step 6: Clone related API calls (functions) using external API
+        cloned_function_ids = []
+        if original_config.get('function_ids'):
+            for function_id in original_config['function_ids']:
+                # Get original API call data
+                original_api_call = await apiCallModel.find_one({'_id': ObjectId(function_id)})
+                if original_api_call and original_api_call.get('function_name'):
+                    try:
+                        # Generate authorization token
+                        payload = {
+                            "org_id": Config.ORG_ID,
+                            "project_id": Config.PROJECT_ID,
+                            "user_id": to_shift_org_id
+                        }
+                        auth_token = jwt.encode(payload, Config.Access_key, algorithm='HS256')
+                        
+                        # Call external API to duplicate function
+                        duplicate_url = f"https://flow-api.viasocket.com/embed/duplicateflow/{original_api_call['function_name']}"
+                        headers = {
+                            'Authorization': auth_token,
+                            'Content-Type': 'application/json'
+                        }
+                        payload = {
+                            "title": "",
+                            "meta": ""
+                        }
+                        
+                        async with aiohttp.ClientSession() as session:
+                            async with session.post(duplicate_url, headers=headers, json=payload) as response:
+                                if response.status == 200:
+                                    duplicate_data = await response.json()
+                                    
+                                    if duplicate_data.get('success') and duplicate_data.get('data'):
+                                        # Prepare new API call data from original
+                                        new_api_call = original_api_call.copy()
+                                        new_api_call.pop('_id', None)  # Remove original ID
+                                        new_api_call['org_id'] = to_shift_org_id  # Update org_id
+                                        new_api_call['function_name'] = duplicate_data['data']['id']  # Update with new script_id
+                                        new_api_call['bridge_ids'] = [new_bridge_id]  # Update bridge_ids
+                                        new_api_call['updated_at'] = datetime.utcnow()  # Update timestamp
+                                        
+                                        # Insert new API call with new _id
+                                        new_api_call_result = await apiCallModel.insert_one(new_api_call)
+                                        cloned_function_ids.append(str(new_api_call_result.inserted_id))
+                                    else:
+                                        logger.error(f"Failed to duplicate function {original_api_call['function_name']}: {duplicate_data}")
+                                else:
+                                    logger.error(f"HTTP error {response.status} when duplicating function {original_api_call['function_name']}")
+                    
+                    except Exception as e:
+                        logger.error(f"Error duplicating function {original_api_call.get('function_name', function_id)}: {str(e)}")
+                        # Fallback: create a copy without external API call
+                        new_api_call = original_api_call.copy()
+                        new_api_call.pop('_id', None)
+                        new_api_call['org_id'] = to_shift_org_id
+                        new_api_call['bridge_ids'] = [new_bridge_id]
+                        new_api_call['updated_at'] = datetime.utcnow()
+                        
+                        new_api_call_result = await apiCallModel.insert_one(new_api_call)
+                        cloned_function_ids.append(str(new_api_call_result.inserted_id))
+        
+        # Step 7: Update configuration and versions with cloned function IDs
+        if cloned_function_ids:
+            # Update main configuration
+            await configurationModel.update_one(
+                {'_id': new_bridge_id},
+                {'$set': {'function_ids': cloned_function_ids}}
+            )
+            
+            # Update all cloned versions
+            for version_id in cloned_version_ids:
+                await version_model.update_one(
+                    {'_id': ObjectId(version_id)},
+                    {'$set': {'function_ids': cloned_function_ids}}
+                )
+        
+        # Step 8: Get the final cloned configuration
+        cloned_config = await configurationModel.find_one({'_id': new_bridge_id})
+        cloned_config['_id'] = str(cloned_config['_id'])
+        
+        # Convert ObjectIds to strings for response
+        if cloned_config.get('function_ids'):
+            cloned_config['function_ids'] = [str(fid) for fid in cloned_config['function_ids']]
+        
+        return {
+            'success': True,
+            'message': 'Agent cloned successfully',
+            'cloned_agent': cloned_config,
+            'original_bridge_id': bridge_id,
+            'new_bridge_id': str(new_bridge_id),
+            'cloned_versions': cloned_version_ids,
+            'cloned_functions': [str(fid) for fid in cloned_function_ids]
+        }
+        
+    except Exception as error:
+        logger.error(f'Error in clone_agent_to_org: {str(error)}')
+        raise BadRequestException(f"Failed to clone agent: {str(error)}")
