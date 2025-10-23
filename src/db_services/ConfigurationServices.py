@@ -1075,18 +1075,34 @@ async def get_bridges_and_versions_by_model(model_name):
         logger.error(f'Error in get_bridges_and_versions_by_model: {str(error)}')
         raise error
 
-async def clone_agent_to_org(bridge_id, to_shift_org_id):
+async def clone_agent_to_org(bridge_id, to_shift_org_id, cloned_agents_map=None, depth=0):
     """
     Clone an agent (configuration) and all its related data to a different organization.
+    Recursively clones connected agents as well.
     
     Args:
         bridge_id: The ID of the bridge/agent to clone
         to_shift_org_id: The target organization ID to clone to
+        cloned_agents_map: Dict to track already cloned agents to avoid infinite loops
+        depth: Current recursion depth to prevent infinite loops
         
     Returns:
         dict: Success response with cloned agent data
     """
     try:
+        # Initialize cloned_agents_map for tracking and prevent infinite loops
+        if cloned_agents_map is None:
+            cloned_agents_map = {}
+        
+        # Prevent infinite recursion
+        if depth > 10:  # Maximum depth limit
+            logger.warning(f"Maximum recursion depth reached for bridge_id: {bridge_id}")
+            return None
+            
+        # Check if this agent was already cloned
+        if bridge_id in cloned_agents_map:
+            return cloned_agents_map[bridge_id]
+        
         # Step 1: Get the original configuration
         original_config = await configurationModel.find_one({'_id': ObjectId(bridge_id)})
         if not original_config:
@@ -1102,6 +1118,12 @@ async def clone_agent_to_org(bridge_id, to_shift_org_id):
         # Step 3: Insert new configuration
         new_config_result = await configurationModel.insert_one(new_config)
         new_bridge_id = new_config_result.inserted_id
+        
+        # Track this cloned agent to prevent infinite loops
+        cloned_agents_map[bridge_id] = {
+            'new_bridge_id': str(new_bridge_id),
+            'original_bridge_id': bridge_id
+        }
         
         # Step 4: Clone all versions
         cloned_version_ids = []
@@ -1203,7 +1225,61 @@ async def clone_agent_to_org(bridge_id, to_shift_org_id):
                     {'$set': {'function_ids': cloned_function_ids}}
                 )
         
-        # Step 8: Get the final cloned configuration
+        # Step 8: Handle connected agents recursively
+        cloned_connected_agents = {}
+        connected_agents_info = []
+        
+        # Check for connected_agents in original configuration
+        if original_config.get('connected_agents'):
+            for agent_name, agent_info in original_config['connected_agents'].items():
+                connected_bridge_id = agent_info.get('bridge_id')
+                if connected_bridge_id:
+                    try:
+                        # Recursively clone the connected agent
+                        connected_result = await clone_agent_to_org(
+                            connected_bridge_id, 
+                            to_shift_org_id, 
+                            cloned_agents_map, 
+                            depth + 1
+                        )
+                        
+                        if connected_result:
+                            # Update the connected_agents mapping with new bridge_id
+                            cloned_connected_agents[agent_name] = {
+                                'bridge_id': connected_result['new_bridge_id']
+                            }
+                            connected_agents_info.append({
+                                'agent_name': agent_name,
+                                'original_bridge_id': connected_bridge_id,
+                                'new_bridge_id': connected_result['new_bridge_id']
+                            })
+                    except Exception as e:
+                        logger.error(f"Error cloning connected agent {agent_name} (bridge_id: {connected_bridge_id}): {str(e)}")
+        
+        # Check for connected_agents in versions and update them too
+        for version_id in cloned_version_ids:
+            original_version = await version_model.find_one({'_id': ObjectId(version_id)})
+            if original_version and original_version.get('connected_agents'):
+                version_connected_agents = {}
+                for agent_name, agent_info in original_version['connected_agents'].items():
+                    if agent_name in cloned_connected_agents:
+                        version_connected_agents[agent_name] = cloned_connected_agents[agent_name]
+                
+                # Update version with new connected_agents mapping
+                if version_connected_agents:
+                    await version_model.update_one(
+                        {'_id': ObjectId(version_id)},
+                        {'$set': {'connected_agents': version_connected_agents}}
+                    )
+        
+        # Update main configuration with new connected_agents mapping
+        if cloned_connected_agents:
+            await configurationModel.update_one(
+                {'_id': new_bridge_id},
+                {'$set': {'connected_agents': cloned_connected_agents}}
+            )
+        
+        # Step 9: Get the final cloned configuration
         cloned_config = await configurationModel.find_one({'_id': new_bridge_id})
         cloned_config['_id'] = str(cloned_config['_id'])
         
@@ -1218,7 +1294,9 @@ async def clone_agent_to_org(bridge_id, to_shift_org_id):
             'original_bridge_id': bridge_id,
             'new_bridge_id': str(new_bridge_id),
             'cloned_versions': cloned_version_ids,
-            'cloned_functions': [str(fid) for fid in cloned_function_ids]
+            'cloned_functions': [str(fid) for fid in cloned_function_ids],
+            'connected_agents': connected_agents_info,
+            'recursion_depth': depth
         }
         
     except Exception as error:
