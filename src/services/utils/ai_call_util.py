@@ -93,8 +93,7 @@ async def call_gtwy_agent(args):
         # Step 4: Create data structure for chat function
         # Pass timer state from parent request to maintain latency tracking in recursive calls
         state_data = {}
-        if args.get('timer_state'):
-            state_data['timer'] = args.get('timer_state')
+        state_data['timer'] = args.get('timer_state')
         
         data_to_send = {
             "body": request_body,
