@@ -9,7 +9,7 @@ async def image(request: Request):
     return await image_processing(request)
     
 @router.post('/upload', dependencies=[Depends(jwt_middleware)])
-async def image(request: Request):
+async def upload(request: Request):
     return await file_processing(request)
 
 @router.post('/video', dependencies=[Depends(jwt_middleware)])
