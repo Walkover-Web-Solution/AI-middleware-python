@@ -465,3 +465,45 @@ class Helper:
             "required_params": required_params
         }
 
+    @staticmethod
+    async def get_user_org_mapping(user_id, org_id):
+        """
+        Gets user details by user_id and org_id using admin token
+        Implements caching for better performance
+        """
+        if not user_id or not org_id:
+            return None
+            
+        try:
+            # Check cache first for performance
+            cache_key = f"userOrgMapping-{user_id}-{org_id}"
+            cached_data = await find_in_cache(cache_key)
+            
+            if cached_data:
+                return json.loads(cached_data)
+            
+            # Fetch from API if not cached
+            url = f"https://routes.msg91.com/api/{Config.PUBLIC_REFERENCEID}/getDetails"
+            params = {
+                "user_id": user_id,
+                "company_id": org_id
+            }
+            headers = {
+                "Authkey": Config.ADMIN_API_KEY
+            }
+            
+            response, _ = await fetch(url, "GET", headers, None, params)
+            
+            if response and response.get('status') == 'success':
+                user_data = response.get('data', {})
+                # Cache for 1 hour (3600 seconds)
+                await store_in_cache(cache_key, user_data, ttl=3600)
+                return user_data
+            else:
+                return None
+                
+        except Exception as e:
+            logger.error(f"Error in get_user_org_mapping: {str(e)}")
+            return None
+
+

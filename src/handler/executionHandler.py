@@ -39,14 +39,17 @@ def handle_exceptions(func):
                 }
             bridge_id = path_params.get('bridge_id') or body.get("bridge_id")
             org_id = state.get('profile', {}).get('org', {}).get('id')
+            bridge_name = body.get('name')
+            is_embed = body.get('is_embed')
+            user_id = body.get('user_id')
             if is_playground == False:
-                await send_error_to_webhook(bridge_id, org_id,error_json, error_type = 'Error')
+                await send_error_to_webhook(bridge_id, org_id, error_json, error_type='Error', bridge_name=bridge_name, is_embed=is_embed, user_id=user_id)
             return JSONResponse(
                 status_code=400,
                 content=json.loads(json.dumps({
                     "success": False,
                     "error": exc.args[0] if isinstance(exc, ValueError) and isinstance(exc.args[0], dict) else str(exc),
-                    "error_location": error_location,
+                    "error_location": error_location,  
                 }))
             )
     

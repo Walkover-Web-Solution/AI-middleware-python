@@ -674,10 +674,11 @@ async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None)
                         }
                     }
                 },
-                # Stage 5: Project only folder_apikeys
+                # Stage 5: Project folder_apikeys and type
                 {
                     '$project': {
-                        'folder_apikeys': 1
+                        'folder_apikeys': 1,
+                        'type': 1
                     }
                 }
             ]
@@ -685,14 +686,17 @@ async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None)
             # Execute folder pipeline on folders collection
             folder_result = await foldersModel.aggregate(folder_pipeline).to_list(length=None)
             
-            # Append folder_apikeys to bridge_data if found
-            if folder_result and folder_result[0].get('folder_apikeys'):
-                bridge_data['folder_apikeys'] = folder_result[0]['folder_apikeys']
+            # Append folder_apikeys and folder_type to bridge_data if found
+            if folder_result and len(folder_result) > 0:
+                bridge_data['folder_apikeys'] = folder_result[0].get('folder_apikeys', {})
+                bridge_data['folder_type'] = folder_result[0].get('type')
             else:
                 bridge_data['folder_apikeys'] = {}
+                bridge_data['folder_type'] = None
         else:
-            # No folder_id, set empty folder_apikeys
+            # No folder_id, set empty folder_apikeys and folder_type
             bridge_data['folder_apikeys'] = {}
+            bridge_data['folder_type'] = None
        
         # Structure the final response
         response = {
