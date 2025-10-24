@@ -42,5 +42,7 @@ redis_keys = {
     'avg_response_time_' : 'avg_response_time_',
     'gpt_memory_' : 'gpt_memory_',
     'timezone_and_org_' : 'timezone_and_org_',
-    'conversation_' : 'conversation_'
+    'conversation_' : 'conversation_',
+    'bridgelastused_' : 'bridgelastused_',
+    'apikeylastused_' : 'apikeylastused_'
 }
