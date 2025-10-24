@@ -1,7 +1,7 @@
 from fastapi import HTTPException, status
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
-from src.db_services.ConfigurationServices import create_bridge, get_all_bridges_in_org_by_org_id, get_bridge_by_id, get_all_bridges_in_org, update_bridge, update_bridge_ids_in_api_calls, get_bridges_with_tools, get_apikey_creds, update_apikey_creds, update_built_in_tools, update_agents, get_all_agents_data, get_agents_data, get_bridges_and_versions_by_model
+from src.db_services.ConfigurationServices import create_bridge, get_all_bridges_in_org_by_org_id, get_bridge_by_id, get_all_bridges_in_org, update_bridge, update_bridge_ids_in_api_calls, get_bridges_with_tools, get_apikey_creds, update_apikey_creds, update_built_in_tools, update_agents, get_all_agents_data, get_agents_data, get_bridges_and_versions_by_model, clone_agent_to_org
 from src.configs.modelConfiguration import ModelsConfig as model_configuration
 from src.services.utils.helper import Helper
 import json
@@ -563,4 +563,37 @@ async def get_bridges_and_versions_by_model_controller(model_name):
         "message": "Fetched models and bridges they are used in successfully.",
         model_name: models
     }
+
+async def clone_agent_controller(request):
+    """
+    Clone an agent to a different organization.
+    
+    Expected request body:
+    {
+        "bridge_id": "string",
+        "to_shift_org_id": "string"
+    }
+    """
+    try:
+        body = await request.json()
+        bridge_id = body.get('bridge_id')
+        to_shift_org_id = body.get('to_shift_org_id')
+        
+        # Validate required parameters
+        if not bridge_id:
+            raise HTTPException(status_code=400, detail="bridge_id is required")
+        
+        if not to_shift_org_id:
+            raise HTTPException(status_code=400, detail="to_shift_org_id is required")
+        
+        # Call the service function to clone the agent
+        result = await clone_agent_to_org(bridge_id, to_shift_org_id)
+        
+        return JSONResponse(status_code=200, content=result)
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error in clone_agent_controller: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to clone agent: {str(e)}")
     
