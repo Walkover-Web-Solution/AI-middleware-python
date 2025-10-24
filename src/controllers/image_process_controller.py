@@ -58,8 +58,10 @@ async def file_processing(request):
         
         # Handle video files with Gemini processing
         if is_video:
-            # Get API key from form data or use default
-            api_key = Config.GEMINI_APIKEY
+            # Get API key from form data - required for video processing
+            api_key = body.get('api_key')
+            if not api_key:
+                raise HTTPException(status_code=400, detail={"success": False, "error": "API key is required for video processing"})
             
             # Create Gemini client
             gemini_client = genai.Client(api_key=api_key)
