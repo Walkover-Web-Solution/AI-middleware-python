@@ -15,6 +15,8 @@ def check_transfer_from_codes_mapping(codes_mapping: Dict[str, Any], tool_id_and
             continue
             
         args = tool_data.get('args', {})
+        if not isinstance(args, dict):
+            continue
         action_type = args.get('action_type')
         
         if action_type == 'transfer':
