@@ -234,7 +234,9 @@ async def process_data_and_run_tools(codes_mapping, self):
                         "user": tool_data.get("args").get("user"), 
                         "variables": {key: value for key, value in tool_data.get("args").items() if key != "user"}
                     }
-                    
+                    tool_data["thread"] = getattr(self, 'thread_id', None)
+                    tool_data["subthread"] = getattr(self, 'sub_thread_id', None)
+                    tool_data["bridge"] = self.tool_id_and_name_mapping[name].get("bridge_id")
                     # Add thread_id and sub_thread_id if bridge requires it
                     if self.tool_id_and_name_mapping[name].get('requires_thread_id', False):
                         agent_args["thread_id"] = self.thread_id
@@ -246,7 +248,14 @@ async def process_data_and_run_tools(codes_mapping, self):
                     if hasattr(self, 'timer') and hasattr(self.timer, 'getTime'):
                         agent_args["timer_state"] = self.timer.getTime()
                     
-                    task = call_gtwy_agent(agent_args)
+                    # Create an async wrapper function that returns the result
+                    async def agent_task():
+                        parsed_result, message_id, version_id = await call_gtwy_agent(agent_args)
+                        tool_data["message_id"] = message_id
+                        tool_data["version_id"] = version_id
+                        return parsed_result.get("data", {})
+                    
+                    task = agent_task()
                 else: 
                     task = axios_work(tool_data.get("args"), self.tool_id_and_name_mapping[name])
                 tasks.append((tool_call_key, tool_data, task))
