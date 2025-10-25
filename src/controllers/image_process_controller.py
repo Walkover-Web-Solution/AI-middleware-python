@@ -52,7 +52,13 @@ async def file_processing(request):
     
     # Check file type
     is_pdf = file.content_type == 'application/pdf' or file.filename.lower().endswith('.pdf')
-    is_video = file.content_type == 'video/mp4' or file.filename.lower().endswith('.mp4')
+    
+    # Check for various video formats
+    video_content_types = ['video/mp4', 'video/quicktime', 'video/avi', 'video/mov', 'video/webm', 'video/mkv']
+    video_extensions = ['.mp4', '.mov', '.avi', '.webm', '.mkv', '.qt']
+    
+    is_video = (file.content_type in video_content_types or 
+                any(file.filename.lower().endswith(ext) for ext in video_extensions))
     
     try:
         
@@ -67,7 +73,9 @@ async def file_processing(request):
             gemini_client = genai.Client(api_key=api_key)
             
             # Create temporary file to upload to Gemini
-            with tempfile.NamedTemporaryFile(delete=False, suffix='.mp4') as temp_file:
+            # Use original file extension or default to .mp4
+            file_extension = os.path.splitext(file.filename)[1] if file.filename else '.mp4'
+            with tempfile.NamedTemporaryFile(delete=False, suffix=file_extension) as temp_file:
                 temp_file.write(file_content)
                 temp_file_path = temp_file.name
             
