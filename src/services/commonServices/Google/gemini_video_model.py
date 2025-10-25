@@ -37,7 +37,7 @@ async def gemini_video_model(configuration, apikey, execution_time_logs, timer, 
         response = client.models.generate_content(
             model=model,
             contents=contents,
-            config=types.GenerateContentConfig(**configuration) if configuration else None
+            config= None
         )
         
         execution_time_logs.append({"step": "Gemini video content generation", "time_taken": timer.stop("Gemini video content generation")})
