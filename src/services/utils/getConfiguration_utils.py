@@ -340,8 +340,8 @@ def add_connected_agents(result, tools, tool_id_and_name_mapping):
             "name": name,
             "description": description,
             "properties": {
-                "user": {
-                    "description": "this is the query for the agent to process the request",
+                "_query": {
+                    "description": "The query or message to be processed by the connected agent.",
                     "type": "string",
                     "enum": [],
                     "required_params": [],
@@ -349,7 +349,7 @@ def add_connected_agents(result, tools, tool_id_and_name_mapping):
                 },
                 **fields
             },
-            "required": ["user"] + required_params
+            "required": ["_query"] + required_params
         })
         
         tool_id_and_name_mapping[name] = {
