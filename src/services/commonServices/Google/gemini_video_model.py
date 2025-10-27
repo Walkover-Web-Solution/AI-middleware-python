@@ -10,36 +10,54 @@ async def gemini_video_model(configuration, apikey, execution_time_logs, timer, 
         model = configuration.pop('model')
         youtube_url = configuration.pop('youtube_url', None)
         prompt = configuration.pop('prompt', None)
-        print("configurations=>", configuration, "\n\n")
+        print("harsh: configurations=>", configuration, "\n\n")
         timer.start()
         
         # Prepare contents based on YouTube URL or uploaded file
+        print("harsh: Preparing contents for Gemini video model...")
+        print(f"harsh: youtube_url: {youtube_url}")
+        print(f"harsh: prompt: {prompt}")
+        print(f"harsh: file_data: {file_data}")
+        
         if youtube_url:
+            print("harsh: Using YouTube URL path...")
             # Use YouTube URL with structured content
-            contents = types.Content(
-                parts=[
-                    types.Part(
-                        file_data=types.FileData(file_uri=youtube_url)
-                    ),
-                    types.Part(text=prompt) if prompt else None
-                ]
+            print(f"harsh: Creating FileData with URI: {youtube_url}")
+            file_part = types.Part(
+                file_data=types.FileData(file_uri=youtube_url)
             )
+            print(f"harsh: Created file_part: {file_part}")
+            
+            prompt_part = types.Part(text=prompt) if prompt else None
+            print(f"harsh: Created prompt_part: {prompt_part}")
+            
+            contents = types.Content(
+                parts=[file_part, prompt_part]
+            )
+            print(f"harsh: Created contents with parts: {contents}")
+            
             # Remove None parts
+            print("harsh: Removing None parts from contents...")
             contents.parts = [part for part in contents.parts if part is not None]
+            print(f"harsh: Final contents after removing None: {contents}")
         else:
+            print("harsh: Using uploaded file path...")
             # For uploaded files, use the simpler approach from test.py
             if prompt:
+                print(f"harsh: Creating contents with file_data and prompt")
                 contents = [file_data, prompt]
             else:
+                print(f"harsh: Creating contents with file_data only")
                 contents = [file_data]
+            print(f"harsh: Final contents: {contents}")
         
         # Generate content
+        print("harsh: contents=>", contents, "\n\n")
         response = client.models.generate_content(
             model=model,
             contents=contents,
             config= None
         )
-        
         execution_time_logs.append({"step": "Gemini video content generation", "time_taken": timer.stop("Gemini video content generation")})
         
         # Extract text content from response
