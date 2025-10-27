@@ -54,7 +54,7 @@ async def call_gtwy_agent(args):
         org_id = args.get('org_id')
         bridge_id = args.get('bridge_id')
         version_id = args.get('version_id')
-        user_message = args.get('_query')
+        user_message = args.get('user')
         variables = args.get('variables') or {}
         
         # Step 1: Update request body with core data
