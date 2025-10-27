@@ -63,7 +63,7 @@ async def Response_formatter(response = {}, service = None, tools={}, type='chat
                 "cached_tokens": response.get("usage", {}).get("input_tokens_details", {}).get('cached_tokens', None)
             }
         }                    
-    elif service == service_name['gemini'] and (type !='image' and type != 'embedding' and type != 'video'):
+    elif service == service_name['gemini'] and (type !='image' and type != 'embedding'):
         return {
             "data" : {
                 "id" : response.get("id", None),
@@ -97,13 +97,6 @@ async def Response_formatter(response = {}, service = None, tools={}, type='chat
                 "revised_prompt" : response.get('data')[0].get('text_content'),
                 "image_url" : response.get('data')[0].get('url'),
                 "permanent_url" :   response.get('data')[0].get('url'),
-            }
-        }
-    elif service == service_name['gemini'] and type == 'video':
-        return {
-            "data" : {
-                "content" : response.get('data')[0].get('text_content'),
-                "file_data" : response.get('data')[0].get('file_reference')
             }
         }
     elif service == service_name['openai']:
