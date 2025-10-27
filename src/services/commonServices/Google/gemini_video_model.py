@@ -10,7 +10,7 @@ async def gemini_video_model(configuration, apikey, execution_time_logs, timer, 
         model = configuration.pop('model')
         youtube_url = configuration.pop('youtube_url', None)
         prompt = configuration.pop('prompt', None)
-        
+        print("configurations=>", configuration, "\n\n")
         timer.start()
         
         # Prepare contents based on YouTube URL or uploaded file
