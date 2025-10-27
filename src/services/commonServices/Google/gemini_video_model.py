@@ -34,12 +34,12 @@ async def gemini_video_model(configuration, apikey, execution_time_logs, timer, 
                 contents = [file_data]
         
         # Generate content
+        print("contents=>", contents, "\n\n")
         response = client.models.generate_content(
             model=model,
             contents=contents,
             config= None
         )
-        
         execution_time_logs.append({"step": "Gemini video content generation", "time_taken": timer.stop("Gemini video content generation")})
         
         # Extract text content from response
