@@ -3,14 +3,11 @@ import uuid
 from fastapi import HTTPException
 from src.services.cache_service import find_in_cache, store_in_cache, client, REDIS_PREFIX
 from src.services.utils.gcp_upload_service import uploadDoc
-<<<<<<< Updated upstream
-=======
 from google import genai
 import tempfile
 import os
 from config import Config
 from src.configs.constant import redis_keys
->>>>>>> Stashed changes
 
 async def image_processing(request):
     body = await request.form()
@@ -126,7 +123,6 @@ async def file_processing(request):
                 original_filename=file.filename
             )
 
-<<<<<<< Updated upstream
         # If PDF and thread parameters exist, save to Redis cache
         if is_pdf and thread_id and bridge_id:
             cache_key = f"{bridge_id}_{thread_id}_{sub_thread_id or thread_id}"
@@ -136,18 +132,6 @@ async def file_processing(request):
             'success': True,
             'file_url': file_url
         }
-=======
-            # If PDF and thread parameters exist, save to Redis cache
-            if is_pdf and thread_id and bridge_id:
-                cache_key = f"{redis_keys['pdf_url_']}{bridge_id}_{thread_id}_{sub_thread_id or thread_id}"
-                await store_in_cache(cache_key, [file_url], 604800)
-            
-            return {
-                'success': True,
-                'file_url': file_url
-            }
-            
->>>>>>> Stashed changes
     except Exception as e:
         # Handle exceptions and return an error response
         error_message = "Error in video processing: " if is_video else "Error in file processing: "
