@@ -16,7 +16,6 @@ from ..openRouter.openRouter_modelrun import openrouter_modelrun
 from ....configs.constant import service_name
 from ..openAI.image_model import OpenAIImageModel
 from ..Google.gemini_image_model import gemini_image_model
-from ..Google.gemini_video_model import gemini_video_model
 from ..AiMl.ai_ml_model_run import ai_ml_model_run
 from concurrent.futures import ThreadPoolExecutor
 from globals import *
@@ -66,8 +65,6 @@ class BaseService:
         self.built_in_tools = params.get('built_in_tools')
         self.function_time_logs = params.get('function_time_logs')
         self.files = params.get('files')
-        self.file_data = params.get('file_data')
-        self.youtube_url = params.get('youtube_url')
 
 
     def aiconfig(self):
@@ -346,19 +343,4 @@ class BaseService:
             }
         except Exception as e:
             logger.error(f"chats error in image=>, {str(e)}, {traceback.format_exc()}")
-            raise ValueError(f"error occurs from {self.service} api {e.args[0]}")
-        
-    async def video(self, configuration, apikey, service):
-        try:
-            response = {}
-            if service == service_name['gemini']:
-                response = await gemini_video_model(configuration, apikey, self.execution_time_logs, self.timer, self.file_data)
-            if not response['success']:
-                raise ValueError(response['error'])
-            return {
-                'success': True,
-                'modelResponse': response['response']
-            }
-        except Exception as e:
-            logger.error(f"chats error in video=>, {str(e)}, {traceback.format_exc()}")
             raise ValueError(f"error occurs from {self.service} api {e.args[0]}")
