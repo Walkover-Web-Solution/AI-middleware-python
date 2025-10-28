@@ -1,3 +1,4 @@
+from config import Config
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 import traceback
@@ -32,7 +33,8 @@ from src.services.utils.common_utils import (
     create_latency_object,
     create_history_params,
     add_files_to_parse_data,
-    orchestrator_agent_chat
+    orchestrator_agent_chat,
+    process_background_tasks_for_playground
 )
 from src.services.utils.guardrails_validator import guardrails_check
 from src.services.utils.rich_text_support import process_chatbot_response
@@ -102,15 +104,96 @@ async def chat(request_body):
             custom_config['response_type'] = restructure_json_schema(custom_config['response_type'], parsed_data['service'])
         
         
+        # Execute with retry mechanism
         class_obj = await Helper.create_service_handler(params, parsed_data['service'])
-        result = await class_obj.execute()
-        result['response']['usage'] = params['token_calculator'].get_total_usage()
+        
+        try:
+            result = await class_obj.execute()
+            result['response']['usage'] = params['token_calculator'].get_total_usage()
+            execution_failed = not result["success"]
+            original_error = result.get('error', 'Unknown error') if execution_failed else None
+        except Exception as execution_exception:
+            # Handle exceptions during execution
+            execution_failed = True
+            original_error = str(execution_exception)
+            result = {
+                "success": False,
+                "error": original_error,
+                "response": {"usage": {}},
+                "modelResponse": {}
+            }
+        
+        # Retry mechanism with fallback configuration
+        if execution_failed and parsed_data.get('fall_back') and parsed_data['fall_back'].get('is_enable', False):
+            try:
+                # Store original configuration
+                fallback_config = parsed_data['fall_back']
+                original_model = parsed_data['model']
+                original_service = parsed_data['service']
+                
+                # Update parsed_data with fallback configuration
+                parsed_data['model'] = fallback_config.get('model', parsed_data['model'])
+                parsed_data['service'] = fallback_config.get('service', parsed_data['service'])
+                parsed_data['configuration']['model'] = fallback_config.get('model')
+                # Check if service has changed - if so, create new service handler
+                if parsed_data['service'] != original_service:
+                    parsed_data['apikey'] = fallback_config.get('apikey')
+                    if parsed_data['apikey'] is None and fallback_config.get('service') == 'ai_ml':
+                        parsed_data['apikey'] = Config.AI_ML_APIKEY
+                    
+                    # Load fresh model configuration for the fallback service and model
+                    fallback_model_config, fallback_custom_config, fallback_model_output_config = await load_model_configuration(
+                        parsed_data['model'], parsed_data['configuration'], parsed_data['service']
+                    )
             
+                    # Configure custom settings specifically for the fallback service
+                    fallback_custom_config = await configure_custom_settings(
+                        fallback_model_config['configuration'], fallback_custom_config, parsed_data['service']
+                    )
+                    params = build_service_params(
+                        parsed_data, fallback_custom_config, fallback_model_output_config, thread_info, timer, memory, send_error_to_webhook
+                    )
+                    # Step 9 : json_schema service conversion
+                    if 'response_type' in fallback_custom_config and fallback_custom_config['response_type'].get('type') == 'json_schema':
+                        fallback_custom_config['response_type'] = restructure_json_schema(fallback_custom_config['response_type'], parsed_data['service'])
+                    
+                    # Create new service handler for the fallback service
+                    class_obj = await Helper.create_service_handler(params, parsed_data['service'])
+                else:
+                    # Same service, just update existing class_obj
+                    class_obj.model = parsed_data['model']
+                    if fallback_config.get('apikey'):
+                        class_obj.apikey = fallback_config['apikey']
+                        if class_obj.apikey is None and fallback_config.get('service') == 'ai_ml':
+                            class_obj.apikey = Config.AI_ML_APIKEY
+                            
+                    
+                    # Reconfigure custom_config for fallback service
+                    class_obj.customConfig = await configure_custom_settings(
+                        model_config['configuration'], custom_config, parsed_data['service']
+                    )
+                
+                # Execute with updated configuration
+                result = await class_obj.execute()
+                result['response']['usage'] = params['token_calculator'].get_total_usage()
+                
+                # Mark that this was a retry attempt and store original error
+                if result["success"]:
+                    result['response']['data']['firstAttemptError'] = f"Original attempt failed with {original_service}/{original_model}: {original_error}. Retried with {parsed_data['service']}/{parsed_data['model']}"
+                    result['response']['data']['fallback'] = True
+                
+            except Exception as retry_error:
+                # If retry also fails, restore original configuration and continue with original error
+                parsed_data['model'] = original_model
+                parsed_data['service'] = original_service
+                # Note: We don't need to restore class_obj properties since we may have created a new object
+                logger.error(f"Retry mechanism failed: {str(retry_error)}")
+        
         if not result["success"]:
             raise ValueError(result)
         
-        if result['modelResponse'].get('firstAttemptError'):
-            send_error(parsed_data['bridge_id'], parsed_data['org_id'], result['modelResponse']['firstAttemptError'], error_type='retry_mechanism')
+        if original_error:
+            send_error(parsed_data['bridge_id'], parsed_data['org_id'], original_error, error_type='retry_mechanism')
         
         if parsed_data['configuration']['type'] == 'chat':
             if parsed_data['is_rich_text'] and parsed_data['bridgeType'] and parsed_data['reasoning_model'] == False:
@@ -133,6 +216,18 @@ async def chat(request_body):
             update_usage_metrics(parsed_data, params, latency, result=result, success=True)
             result['response']['usage']['cost'] = parsed_data['usage'].get('expectedCost', 0)
             await process_background_tasks(parsed_data, result, params, thread_info)
+        else:
+            if parsed_data.get('testcase_data',{}).get('run_testcase', False):
+                from src.services.commonServices.testcases import process_single_testcase_result
+                # Process testcase result and add score to response
+                testcase_result = await process_single_testcase_result(
+                    parsed_data.get('testcase_data', {}), 
+                    result, 
+                    parsed_data
+                )
+                result['response']['testcase_result'] = testcase_result
+            else:
+                await process_background_tasks_for_playground(result, parsed_data)
         return JSONResponse(status_code=200, content={"success": True, "response": result["response"]})
     
     except (Exception, ValueError, BadRequestException) as error:
@@ -145,7 +240,7 @@ async def chat(request_body):
             
             # Create history parameters
             parsed_data['historyParams'] = create_history_params(parsed_data, error, class_obj)
-            await sendResponse(parsed_data['response_format'], result.get("modelResponse", str(error)), variables=parsed_data['variables']) if parsed_data['response_format']['type'] != 'default' else None
+            await sendResponse(parsed_data['response_format'], result.get("error", str(error)), variables=parsed_data['variables']) if parsed_data['response_format']['type'] != 'default' else None
             # Process background tasks for error handling
             await process_background_tasks_for_error(parsed_data, error)
         # Add support contact information to error message

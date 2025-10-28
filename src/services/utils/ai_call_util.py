@@ -1,3 +1,4 @@
+from config import Config
 from .apiservice import fetch
 import json
 import jwt
@@ -24,8 +25,9 @@ async def call_ai_middleware(user, bridge_id, variables = {}, configuration = No
         f"https://api.gtwy.ai/api/v2/model/chat/completion",
         "POST",
         {
-            "pauthkey": "1b13a7a038ce616635899a239771044c",
-            "Content-Type": "application/json"
+            "pauthkey": Config.AI_MIDDLEWARE_PAUTH_KEY,
+            "Content-Type": "application/json",
+            "Accept-Encoding": "gzip"
         },
         None,
         request_body
@@ -89,8 +91,13 @@ async def call_gtwy_agent(args):
         request_body.update(db_config)
         
         # Step 4: Create data structure for chat function
+        # Pass timer state from parent request to maintain latency tracking in recursive calls
+        state_data = {}
+        state_data['timer'] = args.get('timer_state')
+        
         data_to_send = {
-            "body": request_body
+            "body": request_body,
+            "state": state_data
         }
         
         # Step 5: Call the chat function directly
@@ -130,3 +137,25 @@ async def call_gtwy_agent(args):
             
     except Exception as e:
         raise Exception(f"Error in call_gtwy_agent: {str(e)}")
+
+async def get_ai_middleware_agent_data(bridge_id):
+    try:
+        response, rs_headers = await fetch(
+            f"https://api.gtwy.ai/api/v1/config/getbridges/{bridge_id}",
+            "GET",
+            {
+                "pauthkey": Config.AI_MIDDLEWARE_PAUTH_KEY,
+                "Content-Type": "application/json",
+                "Accept-Encoding": "gzip"
+            },
+            None,
+            None
+        )
+    
+        if not response.get('success', True):
+            raise Exception(response.get('message', 'Unknown error'))
+        
+        return response
+            
+    except Exception as e:
+        raise Exception(f"Failed to fetch bridge data: {str(e)}")

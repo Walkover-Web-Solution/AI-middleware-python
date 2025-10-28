@@ -128,7 +128,6 @@ class ConversationService:
                     'role': message['role'],
                     'content': content_items
                 })
-            print(threads)
             return {
                 'success': True,
                 'messages': threads

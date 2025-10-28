@@ -1,7 +1,7 @@
 from fastapi import HTTPException, status
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
-from src.db_services.ConfigurationServices import create_bridge, get_all_bridges_in_org_by_org_id, get_bridge_by_id, get_all_bridges_in_org, update_bridge, update_bridge_ids_in_api_calls, get_bridges_with_tools, get_apikey_creds, update_apikey_creds, update_built_in_tools, update_agents, get_all_agents_data, get_agents_data, get_bridges_and_versions_by_model
+from src.db_services.ConfigurationServices import create_bridge, get_all_bridges_in_org_by_org_id, get_bridge_by_id, get_all_bridges_in_org, update_bridge, update_bridge_ids_in_api_calls, get_bridges_with_tools, get_apikey_creds, update_apikey_creds, update_built_in_tools, update_agents, get_all_agents_data, get_agents_data, get_bridges_and_versions_by_model, clone_agent_to_org
 from src.configs.modelConfiguration import ModelsConfig as model_configuration
 from src.services.utils.helper import Helper
 import json
@@ -23,12 +23,16 @@ async def create_bridges_controller(request):
     try:
         bridges = await request.json()
         purpose = bridges.get('purpose')
+        bridgeType = bridges.get('bridgeType') or 'api'
         org_id = request.state.profile['org']['id']
         folder_id = request.state.folder_id if hasattr(request.state, 'folder_id') else None
         user_id = request.state.user_id
-        isEmbedUser = request.state.embed
         all_bridge = await get_all_bridges_in_org_by_org_id(org_id)
         prompt = None
+        name =None
+        service = "ai_ml"
+        model = "gpt-oss-120b"
+        type = "chat"
         if 'templateId' in bridges:
             template_id = bridges['templateId']
             template_data = await get_template(template_id)
@@ -39,11 +43,11 @@ async def create_bridges_controller(request):
                 )
             # Override prompt with template's prompt if available
             prompt = template_data.get('prompt', prompt)
-        
+        all_bridge_name = [bridge.get("name") for bridge in all_bridge]
         if purpose is not None:
             variables = {
                 "purpose": purpose,
-                 "all_bridge_names": [bridge.get("name") for bridge in all_bridge]
+                "all_bridge_names": all_bridge_name
             }
             user = "Generate Bridge Configuration accroding to the given user purpose."
             bridge_data =  await call_ai_middleware(user, bridge_id = bridge_ids['create_bridge_using_ai'], variables = variables)
@@ -51,31 +55,29 @@ async def create_bridges_controller(request):
             service = bridge_data.get('service')
             name = bridge_data.get('name')
             prompt = bridge_data.get('system_prompt')
-            slugName = bridge_data.get('name')
             type = bridge_data.get('type')
 
-        else:
-            name_next_count = 1
-            slug_next_count = 1
-            if bridges.get('name').startswith("untitled_agent_"):
-                if all_bridge:
-                    for bridge in all_bridge:
-                        if bridge.get('name') and bridge.get('name').startswith("untitled_agent_"):
-                            num = int(bridge.get('name').replace("untitled_agent_", ""))
-                            if num > name_next_count:
-                                name_next_count = num
-                        if bridge.get('slugName') and bridge.get('slugName').startswith("untitled_agent_"):
-                            num = int(bridge.get('slugName').replace("untitled_agent_", ""))
-                            if num > slug_next_count:
-                                slug_next_count = num
-                    name_next_count = name_next_count + 1
-                    slug_next_count = slug_next_count + 1
-            service = bridges.get('service')
-            model = bridges.get('model')
-            name = bridges.get('name') if not bridges.get('name').startswith("untitled_agent_") else f"untitled_agent_{name_next_count}"
-            type = bridges.get('type')
-            slugName = bridges.get('slugName') if not bridges.get('slugName').startswith("untitled_agent_") else f"untitled_agent_{slug_next_count}"
-        bridgeType = bridges.get('bridgeType')
+        name_next_count = 1
+        slug_next_count = 1
+        for bridge in all_bridge:
+            name = name or "untitled_agent"
+            if name.startswith("untitled_agent") and bridge.get('name').startswith("untitled_agent_"):
+                num = int(bridge.get('name').replace("untitled_agent_", ""))
+                if num >= name_next_count:
+                    name_next_count = num +1
+            elif bridge.get('name') == name:
+                name_next_count += 1
+
+            if name.startswith("untitled_agent") and bridge.get('slugName').startswith("untitled_agent_"):
+                num = int(bridge.get('slugName').replace("untitled_agent_", ""))
+                if num >= slug_next_count:
+                    slug_next_count = num +1
+            elif bridge.get('slugName') == name:
+                slug_next_count += 1
+
+        slugName = f"{name}_{slug_next_count}"
+        name = f"{name}_{name_next_count}"
+        
         modelObj = model_config_document[service][model]
         configurations = modelObj['configuration']
         status = 1
@@ -108,6 +110,12 @@ async def create_bridges_controller(request):
         "cred": {}
         } 
         model_data["is_rich_text"]= False
+        # Add default fallback configuration
+        fall_back = {
+            "is_enable": True,
+            "service": "ai_ml",
+            "model": "gpt-oss-120b"
+        }
         if prompt is not None:
             model_data['prompt'] = prompt
         result = await create_bridge({
@@ -120,7 +128,8 @@ async def create_bridges_controller(request):
             "status": status,
             "gpt_memory" : True,
             "folder_id" : folder_id,
-            "user_id" : user_id
+            "user_id" : user_id,
+            "fall_back" : fall_back
         })
         create_version = await create_bridge_version(result['bridge'])
         update_fields = {'versions' : [create_version]}
@@ -287,8 +296,7 @@ async def get_all_service_controller():
             "open_router": {"model": "deepseek/deepseek-chat-v3-0324:free"},
             "mistral": {"model": "mistral-medium-latest"},
             "gemini" : {"model" : "gemini-2.5-flash"},
-            "ai_ml" : {"model" : "gpt-oss-20b"},
-            "openai_completion" : {"model" : "gpt-4o"}
+            "ai_ml" : {"model" : "gpt-oss-20b"}
         }
     }
 
@@ -330,6 +338,11 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
         new_configuration = body.get('configuration')
         config_type = new_configuration.get('type') if new_configuration else None
         service = body.get('service')
+
+        #process connected agent data
+        connected_agent_details = body.get('connected_agent_details')
+        if connected_agent_details is not None:
+            update_fields['connected_agent_details'] = connected_agent_details
         
         # Process API key if provided
         apikey_object_id = body.get('apikey_object_id')
@@ -362,6 +375,7 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
             'name': lambda v: True,
             'bridgeType': lambda v: True,
             'meta': lambda v: True,
+            'fall_back': lambda v: True,
             'guardrails': lambda v: isinstance(v, dict) and 'is_enabled' in v
         }
         
@@ -551,4 +565,37 @@ async def get_bridges_and_versions_by_model_controller(model_name):
         "message": "Fetched models and bridges they are used in successfully.",
         model_name: models
     }
+
+async def clone_agent_controller(request):
+    """
+    Clone an agent to a different organization.
+    
+    Expected request body:
+    {
+        "bridge_id": "string",
+        "to_shift_org_id": "string"
+    }
+    """
+    try:
+        body = await request.json()
+        bridge_id = body.get('bridge_id')
+        to_shift_org_id = body.get('to_shift_org_id')
+        
+        # Validate required parameters
+        if not bridge_id:
+            raise HTTPException(status_code=400, detail="bridge_id is required")
+        
+        if not to_shift_org_id:
+            raise HTTPException(status_code=400, detail="to_shift_org_id is required")
+        
+        # Call the service function to clone the agent
+        result = await clone_agent_to_org(bridge_id, to_shift_org_id)
+        
+        return JSONResponse(status_code=200, content=result)
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error in clone_agent_controller: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to clone agent: {str(e)}")
     

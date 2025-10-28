@@ -185,7 +185,8 @@ def setup_tools(result, variables_path_bridge, extra_tools):
             tool_id_and_name_mapping[name_of_function] = tool_mapping
     # Process extra tools
     for tool in extra_tools:
-        tool_format, tool_mapping, variable_path = process_extra_tool(tool)
+        tool_format, tool_mapping, path = process_extra_tool(tool)
+        variable_path.update(path)
         if tool_format:
             name_of_function = tool_format["name"]
             tools.append(tool_format)
@@ -212,6 +213,14 @@ def setup_api_key(service, result, apikey):
     # Validate API key existence
     if not (apikey or db_api_key):
         raise Exception('Could not find api key or Agent is not Published')
+    
+    # Handle fallback configuration
+    fallback_config = result.get('bridges', {}).get('fall_back')
+    if fallback_config:
+        fallback_service = fallback_config.get('service')
+        fallback_apikey = db_apikeys.get(fallback_service)
+        if fallback_apikey:
+            result['bridges']['fall_back']['apikey'] = Helper.decrypt(fallback_apikey)
     
     # Use provided API key or decrypt from database
     return apikey if apikey else Helper.decrypt(db_api_key)
@@ -293,25 +302,46 @@ def add_anthropic_json_schema(service, configuration, tools):
 def add_connected_agents(result, tools, tool_id_and_name_mapping):
     """Add connected agents as tools"""
     connected_agents = result.get('bridges', {}).get('connected_agents', {})
+    connected_agent_details = result.get('bridges', {}).get('connected_agent_details', {})
+    
     if not connected_agents:
         return
     
     for bridge_name, bridge_info in connected_agents.items():
         bridge_id_value = bridge_info.get('bridge_id', '')
         version_id_value = bridge_info.get('version_id', '')
-        description = bridge_info.get('description', '')
-        variables = bridge_info.get('variables', {})
-        fields = variables.get('fields', {})
+        
+        # If version_id is present, use connected_agents data, otherwise use connected_agent_details
+        if version_id_value:
+            # Use data from connected_agents when version_id is present
+            description = bridge_info.get('description', '')
+            variables = bridge_info.get('variables', {})
+            fields = variables.get('fields', {})
+            required_params = variables.get('required_params', [])
+        else:
+            # Use data from connected_agent_details when version_id is not present
+            agent_details = connected_agent_details.get(bridge_id_value)
+            if agent_details and agent_details is not None:
+                description = agent_details.get('description', bridge_info.get('description', ''))
+                variables = agent_details.get('agent_variables', {})
+                fields = variables.get('fields', {})
+                required_params = variables.get('required_params', [])
+            else:
+                # Final fallback to connected_agents data
+                description = bridge_info.get('description', '')
+                variables = bridge_info.get('variables', {})
+                fields = variables.get('fields', {})
+                required_params = variables.get('required_params', [])
+        
         name = makeFunctionName(bridge_name)
 
-        
         tools.append({
             "type": "function",
             "name": name,
             "description": description,
             "properties": {
-                "user": {
-                    "description": "this is the query for the agent to process the request",
+                "_query": {
+                    "description": "The query or message to be processed by the connected agent.",
                     "type": "string",
                     "enum": [],
                     "required_params": [],
@@ -319,7 +349,7 @@ def add_connected_agents(result, tools, tool_id_and_name_mapping):
                 },
                 **fields
             },
-            "required": ["user"] + variables.get('required_params', [])
+            "required": ["_query"] + required_params
         })
         
         tool_id_and_name_mapping[name] = {

@@ -14,6 +14,7 @@ from src.db_services.testcase_services import delete_current_testcase_history
 from src.configs.constant import bridge_ids
 from ..services.utils.ai_call_util import call_ai_middleware
 from globals import *
+from src.configs.constant import redis_keys
 
 configurationModel = db["configurations"]
 version_model = db['configuration_versions']
@@ -140,15 +141,15 @@ async def publish(org_id, version_id, user_id):
     variable_state = get_version_data.get('variables_state', {})
     variable_path = get_version_data.get('variables_path', {})
     agent_variables = Helper.get_req_opt_variables_in_prompt(prompt, variable_state, variable_path)
+    transformed_agent_variables = Helper.transform_agent_variable_to_tool_call_format(agent_variables)
 
-    cache_key = f"{parent_id}"
-    await delete_in_cache(cache_key)
+    await delete_in_cache(f"{redis_keys['get_bridge_data_']}{parent_id}")
 
     if not parent_id:
         raise BadRequestException("Parent ID not found in version data")
     
     parent_configuration = await configurationModel.find_one({'_id': ObjectId(parent_id)})
-    prev_published_version_id = parent_configuration.get('published_version_id')
+    
     if not parent_configuration:
         raise BadRequestException("Parent configuration not found")
     
@@ -164,37 +165,22 @@ async def publish(org_id, version_id, user_id):
     
     if updated_configuration.get('function_ids'):
         updated_configuration['function_ids'] = [ObjectId(fid) for fid in updated_configuration['function_ids']]
-    updated_configuration['agent_variables'] = agent_variables
+    # updated_configuration['agent_variables'] = agent_variables
+    updated_configuration['connected_agent_details'] = {
+        **updated_configuration.get('connected_agent_details', {}), 
+        'agent_variables' : {
+            'fields' : transformed_agent_variables['fields'],
+            'required_params' : transformed_agent_variables['required_params']
+        }
+    }
+    
     
     await configurationModel.update_one(
         {'_id': ObjectId(parent_id)},
         {'$set': updated_configuration}
     )
-    # Use transaction for version updates with parallel execution and error handling
-    async with await db.client.start_session() as session:
-        async with session.start_transaction():
-            try:
-                # Execute version updates in parallel within transaction
-                await asyncio.gather(
-                    version_model.update_one(
-                        {'_id': ObjectId(prev_published_version_id)}, 
-                        {'$set': {'is_drafted': True}},
-                        session=session
-                    ),
-                    version_model.update_one(
-                        {'_id': ObjectId(published_version_id)}, 
-                        {'$set': {'is_drafted': False}},
-                        session=session
-                    )
-                )
-                
-                # Check if any operation failed
-                
-                        
-            except Exception as e:
-                # Transaction will automatically rollback on exception
-                logger.error(f"Version update transaction failed: {str(e)}, {traceback.format_exc()}")
-                raise Exception(f"Failed to update version states: {str(e)}")
+    
+    await version_model.update_one({'_id': ObjectId(published_version_id)}, {'$set': {'is_drafted': False}})
     await add_bulk_user_entries([{
                 'user_id': user_id,
                 'org_id': org_id,

@@ -26,6 +26,7 @@ from ..utils.apiservice import fetch
 from ..commonServices.baseService.utils import sendResponse
 from datetime import datetime
 import pytz
+from src.configs.constant import redis_keys
 class Helper:
     @staticmethod
     def encrypt(text):
@@ -312,7 +313,8 @@ class Helper:
             return cached_result
         else:
             response, _ = await fetch(f"https://routes.msg91.com/api/{Config.PUBLIC_REFERENCEID}/getCompanies?id={org_id}", "GET", {"Authkey": Config.ADMIN_API_KEY}, None, None)
-            await store_in_cache(org_id, response.get('data', {}).get('data', [{}])[0])
+            cache_key = f"{redis_keys['timezone_and_org_']}{org_id}"
+            await store_in_cache(cache_key, response.get('data', {}).get('data', [{}])[0])
             return response.get('data', {}).get('data', [{}])[0]
 
     async def validate_proxy_pauthkey(pauthkey):
@@ -392,6 +394,86 @@ class Helper:
 
         return final
 
+    def transform_agent_variable_to_tool_call_format(input_data):
+        fields = {}
+        required_params = []
+
+        def set_nested_value(obj, path, value, is_required):
+            parts = path.split('.')
+            current = obj
+
+            for i in range(len(parts) - 1):
+                part = parts[i]
+
+                if part not in current:
+                    current[part] = {
+                        "type": "object",
+                        "description": "",
+                        "enum": [],
+                        "required_params": [],
+                        "parameter": {}
+                    }
+                elif "parameter" not in current[part]:
+                    current[part]["parameter"] = {}
+
+                current = current[part]["parameter"]
+
+            final_key = parts[-1]
+
+            # Infer type
+            param_type = "string"
+            if "number" in final_key.lower() or "num" in final_key.lower():
+                param_type = "number"
+            elif "bool" in final_key.lower() or "flag" in final_key.lower():
+                param_type = "boolean"
+
+            current[final_key] = {
+                "type": param_type,
+                "description": "",
+                "enum": [],
+                "required_params": []
+            }
+
+            if is_required:
+                for i in range(len(parts) - 1):
+                    current_level = obj
+                    for j in range(i):
+                        current_level = current_level[parts[j]]["parameter"]
+
+                    parent_key = parts[i]
+                    child_key = parts[i + 1]
+
+                    if child_key not in current_level[parent_key]["required_params"]:
+                        current_level[parent_key]["required_params"].append(child_key)
+
+                if parts[0] not in required_params:
+                    required_params.append(parts[0])
+
+        for key, value in input_data.items():
+            is_required = value == "required"
+
+            if '.' in key:
+                set_nested_value(fields, key, value, is_required)
+            else:
+                param_type = "string"
+                if "number" in key.lower() or "num" in key.lower():
+                    param_type = "number"
+                elif "bool" in key.lower() or "flag" in key.lower():
+                    param_type = "boolean"
+
+                fields[key] = {
+                    "type": param_type,
+                    "description": "",
+                    "enum": [],
+                    "required_params": []
+                }
+
+                if is_required and key not in required_params:
+                    required_params.append(key)
+
+        return {
+            "fields": fields,
+            "required_params": required_params
+        }
 
 
-            

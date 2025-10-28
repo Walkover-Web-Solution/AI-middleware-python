@@ -14,6 +14,7 @@ from src.db_services.ConfigurationServices import get_bridges_without_tools, upd
 from src.services.utils.ai_call_util import call_gtwy_agent
 from globals import *
 from src.services.cache_service import store_in_cache, find_in_cache, client, REDIS_PREFIX
+from src.configs.constant import redis_keys
 
 def clean_json(data):
     """Recursively remove keys with empty string, empty list, or empty dictionary."""
@@ -230,7 +231,7 @@ async def process_data_and_run_tools(codes_mapping, self):
                     agent_args = {
                         "org_id": self.org_id, 
                         "bridge_id": self.tool_id_and_name_mapping[name].get("bridge_id"), 
-                        "user": tool_data.get("args").get("user"), 
+                        "user": tool_data.get("args").get("_query"), 
                         "variables": {key: value for key, value in tool_data.get("args").items() if key != "user"}
                     }
                     
@@ -240,6 +241,10 @@ async def process_data_and_run_tools(codes_mapping, self):
                         agent_args["sub_thread_id"] = self.sub_thread_id
                     if self.tool_id_and_name_mapping[name].get('version_id', False):
                         agent_args["version_id"] = self.tool_id_and_name_mapping[name].get('version_id')
+                    
+                    # Pass timer state to maintain latency tracking in recursive calls
+                    if hasattr(self, 'timer') and hasattr(self.timer, 'getTime'):
+                        agent_args["timer_state"] = self.timer.getTime()
                     
                     task = call_gtwy_agent(agent_args)
                 else: 
@@ -284,8 +289,7 @@ async def process_data_and_run_tools(codes_mapping, self):
                 })
 
                 # Update tool_call_logs with the response
-                tool_call_logs[tool_call_key] = {**tool_data, **response, "id": self.tool_id_and_name_mapping[tool_data['name']].get("name")}
-
+                tool_call_logs[tool_call_key] = {**tool_data, "data" : response, "id": self.tool_id_and_name_mapping[tool_data['name']].get("name")}
         # Create mapping by tool_call_id (now tool_call_key) for return
         mapping = {resp['tool_call_id']: resp for resp in responses}
 
@@ -433,14 +437,16 @@ async def make_request_data_and_publish_sub_queue(parsed_data, result, params, t
             "bridge_summary": parsed_data.get('bridge_summary'),
             "thread_id": parsed_data.get('thread_id'),
             "sub_thread_id": parsed_data.get('sub_thread_id'),
-            "configuration": params.get('configuration', {})
+            "configuration": params.get('configuration', {}),
+            "org_id" : parsed_data.get('org_id')
         },
         "handle_gpt_memory" : {
             "id" : parsed_data.get('id'),
             "user" : parsed_data.get('user'),
             "assistant" : result.get('modelResponse'),
             "purpose" : parsed_data.get('memory'),
-            "gpt_memory_context" : parsed_data.get('gpt_memory_context')
+            "gpt_memory_context" : parsed_data.get('gpt_memory_context'),
+            "org_id" : parsed_data.get('org_id')
         },
         "check_handle_gpt_memory" : {
             "gpt_memory" : parsed_data.get('gpt_memory'),
@@ -476,7 +482,7 @@ async def total_token_calculation(tokens, bridge_id):
     await update_bridge(bridge_id=bridge_id, update_fields={'total_tokens': total_tokens})
 
 async def save_files_to_redis(thread_id, sub_thread_id, bridge_id, files):
-    cache_key = f"{bridge_id}_{thread_id}_{sub_thread_id}"
+    cache_key = f"{redis_keys['files_']}{bridge_id}_{thread_id}_{sub_thread_id}"
     existing_cache = await find_in_cache(cache_key)
     if existing_cache:
         try:
@@ -491,10 +497,3 @@ async def save_files_to_redis(thread_id, sub_thread_id, bridge_id, files):
         await store_in_cache(cache_key, files, 604800)
 
 
-
-def safe_float(value, default=0.0, keyname= ''):
-    try:
-        return float(value)
-    except (TypeError, ValueError):
-        print("error in float conversation of key", keyname)
-        return default

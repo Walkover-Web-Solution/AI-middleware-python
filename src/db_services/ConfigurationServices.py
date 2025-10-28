@@ -4,6 +4,11 @@ from ..services.cache_service import find_in_cache, store_in_cache, delete_in_ca
 import json
 from globals import *
 from bson import errors
+from src.configs.constant import redis_keys
+from config import Config
+from datetime import datetime
+import jwt
+from ..services.utils.apiservice import fetch
 
 configurationModel = db["configurations"]
 apiCallModel = db['apicalls']
@@ -59,7 +64,7 @@ async def get_bridges(bridge_id = None, org_id = None, version_id = None):
 
 async def get_bridges_with_redis(bridge_id = None, org_id = None, version_id = None):
     try:
-        cache_key = f"get_{version_id or bridge_id}"
+        cache_key = f"{redis_keys['get_bridge_data_']}{version_id or bridge_id}"
         cached_data = await find_in_cache(cache_key)
         if cached_data:
             cached_result = json.loads(cached_data)
@@ -199,7 +204,7 @@ async def get_bridges_with_tools(bridge_id, org_id, version_id=None):
 
 async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None):
     try:
-        cache_key = f"{version_id or bridge_id}"
+        cache_key = f"{redis_keys['bridge_data_with_tools_']}{version_id or bridge_id}"
        
         # Attempt to retrieve data from Redis cache
         cached_data = await find_in_cache(cache_key)
@@ -439,13 +444,107 @@ async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None)
             'as': 'pre_tools_data'
         }
     },
-    # Stage 8: Remove temporary fields to clean up the output
+    # Stage 8: Extract bridge_ids from connected_agents if it exists
+    {
+        '$addFields': {
+            'connected_agents_bridge_ids': {
+                '$cond': [
+                    { '$and': [
+                        { '$ne': ['$connected_agents', None] },
+                        { '$ne': ['$connected_agents', {}] },
+                        { '$eq': [{ '$type': '$connected_agents' }, 'object'] }
+                    ]},
+                    {
+                        '$map': {
+                            'input': { '$objectToArray': '$connected_agents' },
+                            'as': 'agent',
+                            'in': {
+                                '$convert': {
+                                    'input': '$$agent.v.bridge_id',
+                                    'to': 'objectId',
+                                    'onError': None,
+                                    'onNull': None
+                                }
+                            }
+                        }
+                    },
+                    []
+                ]
+            }
+        }
+    },
+    # Stage 9: Lookup connected_agent_details from configurations collection
+    {
+        '$lookup': {
+            'from': 'configurations',
+            'let': {
+                'bridge_ids': {
+                    '$filter': {
+                        'input': '$connected_agents_bridge_ids',
+                        'as': 'id',
+                        'cond': { '$ne': ['$$id', None] }
+                    }
+                }
+            },
+            'pipeline': [
+                {
+                    '$match': {
+                        '$expr': {
+                            '$and': [
+                                { '$in': ['$_id', '$$bridge_ids'] },
+                                { '$ne': ['$connected_agent_details', None] },
+                                { '$ne': ['$connected_agent_details', {}] }
+                            ]
+                        }
+                    }
+                },
+                {
+                    '$project': {
+                        '_id': 1,
+                        'connected_agent_details': 1
+                    }
+                },
+                {
+                    '$addFields': {
+                        '_id': { '$toString': '$_id' }
+                    }
+                }
+            ],
+            'as': 'agent_details_docs'
+        }
+    },
+    # Stage 10: Create connected_agent_details object with bridge_id as key
+    {
+        '$addFields': {
+            'connected_agent_details': {
+                '$cond': [
+                    { '$gt': [{ '$size': '$agent_details_docs' }, 0] },
+                    {
+                        '$arrayToObject': {
+                            '$map': {
+                                'input': '$agent_details_docs',
+                                'as': 'doc',
+                                'in': [
+                                    '$$doc._id',
+                                    '$$doc.connected_agent_details'
+                                ]
+                            }
+                        }
+                    },
+                    {}
+                ]
+            }
+        }
+    },
+    # Stage 11: Remove temporary fields to clean up the output
     {
         '$project': {
             'apikeys_array': 0,
             'apikeys_docs': 0,
             'apikey_object_id_safe': 0,
-            'has_apikeys': 0
+            'has_apikeys': 0,
+            'connected_agents_bridge_ids': 0,
+            'agent_details_docs': 0
             # Exclude additional temporary fields as needed
         }
     }
@@ -761,7 +860,8 @@ async def get_all_bridges_in_org(org_id, folder_id, user_id, isEmbedUser):
         "versions":1,
         'connected_agents':1,
         'function_ids':1,
-        'apiCalls':1
+        'connected_agent_details':1,
+        'bridge_summary': 1 
     })
     bridges_list = await bridge.to_list(length=None)
     for itr in bridges_list:
@@ -851,7 +951,7 @@ async def update_bridge(bridge_id = None, update_fields = None, version_id = Non
     if 'function_ids' in updated_bridge and updated_bridge['function_ids'] is not None:
         updated_bridge['function_ids'] = [str(fid) for fid in updated_bridge['function_ids']]  # Convert function_ids to string
 
-    await delete_in_cache(cache_key)
+    await delete_in_cache(f"{redis_keys['bridge_data_with_tools_']}{cache_key}")
     return {
         'success': True,
         'result': updated_bridge
@@ -888,19 +988,29 @@ async def update_apikey_creds(version_id, apikey_object_ids):
         logger.error(f"Error in update_apikey_creds: {str(error)}")
         raise error
 
-async def save_sub_thread_id(org_id, thread_id, sub_thread_id, display_name, bridge_id): # bridge_id is now a required parameter
+async def save_sub_thread_id(org_id, thread_id, sub_thread_id, display_name, bridge_id,current_time): # bridge_id is now a required parameter
     try:
-        update_data = {'$setOnInsert': {'thread_id': thread_id}}
         
-        # Fields to be set or updated
-        set_fields = {'bridge_id': bridge_id} # bridge_id will always be set
+        
+        # Build update data with both $set and $setOnInsert in single operation
+        update_data = {
+            '$set': {
+                'bridge_id': bridge_id
+            },
+            '$setOnInsert': {
+                'org_id': org_id,
+                'thread_id': thread_id,
+                'sub_thread_id': sub_thread_id,
+                'created_at': current_time
+            }
+        }
+        
+        # Add display_name to $set if provided
         if display_name is not None and isinstance(display_name, str):
-            set_fields['display_name'] = display_name
-            
-        update_data['$set'] = set_fields
+            update_data['$set']['display_name'] = display_name
        
         result = await threadsModel.find_one_and_update(
-            {'org_id': org_id,'thread_id': thread_id, 'sub_thread_id': sub_thread_id, 'bridge_id': bridge_id},
+            {'org_id': org_id, 'thread_id': thread_id, 'sub_thread_id': sub_thread_id, 'bridge_id': bridge_id},
             update_data,
             upsert=True,
             return_document=True
@@ -964,3 +1074,244 @@ async def get_bridges_and_versions_by_model(model_name):
     except Exception as error:
         logger.error(f'Error in get_bridges_and_versions_by_model: {str(error)}')
         raise error
+
+async def clone_agent_to_org(bridge_id, to_shift_org_id, cloned_agents_map=None, depth=0):
+    """
+    Clone an agent (configuration) and all its related data to a different organization.
+    Recursively clones connected agents as well.
+    
+    Args:
+        bridge_id: The ID of the bridge/agent to clone
+        to_shift_org_id: The target organization ID to clone to
+        cloned_agents_map: Dict to track already cloned agents to avoid infinite loops
+        depth: Current recursion depth to prevent infinite loops
+        
+    Returns:
+        dict: Success response with cloned agent data
+    """
+    try:
+        # Initialize cloned_agents_map for tracking and prevent infinite loops
+        if cloned_agents_map is None:
+            cloned_agents_map = {}
+        
+        # Prevent infinite recursion
+        if depth > 10:  # Maximum depth limit
+            logger.warning(f"Maximum recursion depth reached for bridge_id: {bridge_id}")
+            return None
+            
+        # Check if this agent was already cloned
+        if bridge_id in cloned_agents_map:
+            return cloned_agents_map[bridge_id]
+        
+        # Step 1: Get the original configuration
+        original_config = await configurationModel.find_one({'_id': ObjectId(bridge_id)})
+        if not original_config:
+            raise BadRequestException("Bridge not found")
+        
+        # Step 2: Prepare new configuration data
+        new_config = original_config.copy()
+        new_config.pop('_id', None)  # Remove original ID
+        new_config.pop('apikey_object_id', None)  # Remove API keys - should not be cloned
+        new_config['org_id'] = to_shift_org_id  # Update org_id
+        new_config['versions'] = []  # Reset versions array - will be populated later
+        new_config.pop('total_tokens', None)
+        
+        # Step 3: Insert new configuration
+        new_config_result = await configurationModel.insert_one(new_config)
+        new_bridge_id = new_config_result.inserted_id
+        
+        # Track this cloned agent to prevent infinite loops
+        cloned_agents_map[bridge_id] = {
+            'new_bridge_id': str(new_bridge_id),
+            'original_bridge_id': bridge_id
+        }
+        
+        # Step 4: Clone all versions
+        cloned_version_ids = []
+        version_id_mapping = {}  # Track mapping between original and cloned version IDs
+        if original_config.get('versions'):
+            for version_id in original_config['versions']:
+                # Get original version data
+                original_version = await version_model.find_one({'_id': ObjectId(version_id)})
+                if original_version:
+                    # Prepare new version data
+                    new_version = original_version.copy()
+                    new_version.pop('_id', None)  # Remove original ID
+                    new_version.pop('apikey_object_id', None)  # Remove API keys - should not be cloned
+                    new_version['org_id'] = to_shift_org_id  # Update org_id
+                    new_version['parent_id'] = str(new_bridge_id)  # Update parent_id to new bridge
+                    
+                    # Insert new version
+                    new_version_result = await version_model.insert_one(new_version)
+                    new_version_id = str(new_version_result.inserted_id)
+                    cloned_version_ids.append(new_version_id)
+                    
+                    # Track the mapping between original and cloned version IDs
+                    version_id_mapping[version_id] = new_version_id
+        
+        # Step 5: Update the new configuration with cloned version IDs and published_version_id
+        update_data = {'versions': cloned_version_ids}
+        
+        # Handle published_version_id mapping if it exists
+        if original_config.get('published_version_id') and original_config['published_version_id'] in version_id_mapping:
+            update_data['published_version_id'] = version_id_mapping[original_config['published_version_id']]
+        
+        await configurationModel.update_one(
+            {'_id': new_bridge_id},
+            {'$set': update_data}
+        )
+        
+        # Step 6: Clone related API calls (functions) using external API
+        cloned_function_ids = []
+        if original_config.get('function_ids'):
+            for function_id in original_config['function_ids']:
+                # Get original API call data
+                original_api_call = await apiCallModel.find_one({'_id': ObjectId(function_id)})
+                if original_api_call and original_api_call.get('function_name'):
+                    try:
+                        # Generate authorization token
+                        payload = {
+                            "org_id": Config.ORG_ID,
+                            "project_id": Config.PROJECT_ID,
+                            "user_id": to_shift_org_id
+                        }
+                        auth_token = jwt.encode(payload, Config.Access_key, algorithm='HS256')
+                        
+                        # Call external API to duplicate function
+                        duplicate_url = f"https://flow-api.viasocket.com/embed/duplicateflow/{original_api_call['function_name']}"
+                        headers = {
+                            'Authorization': auth_token,
+                            'Content-Type': 'application/json'
+                        }
+                        json_body = {
+                            "title": "",
+                            "meta": ""
+                        }
+                        
+                        # Use fetch function instead of direct aiohttp
+                        duplicate_data, response_headers = await fetch(
+                            url=duplicate_url,
+                            method="POST",
+                            headers=headers,
+                            json_body=json_body
+                        )
+                        
+                        if duplicate_data.get('success') and duplicate_data.get('data'):
+                            # Prepare new API call data from original
+                            new_api_call = original_api_call.copy()
+                            new_api_call.pop('_id', None)  # Remove original ID
+                            new_api_call['org_id'] = to_shift_org_id  # Update org_id
+                            new_api_call['function_name'] = duplicate_data['data']['id']  # Update with new script_id
+                            new_api_call['bridge_ids'] = [new_bridge_id]  # Update bridge_ids
+                            new_api_call['updated_at'] = datetime.utcnow()  # Update timestamp
+                            
+                            # Insert new API call with new _id
+                            new_api_call_result = await apiCallModel.insert_one(new_api_call)
+                            cloned_function_ids.append(str(new_api_call_result.inserted_id))
+                        else:
+                            logger.error(f"Failed to duplicate function {original_api_call['function_name']}: {duplicate_data}")
+                    
+                    except Exception as e:
+                        logger.error(f"Error duplicating function {original_api_call.get('function_name', function_id)}: {str(e)}")
+                        # Fallback: create a copy without external API call
+                        new_api_call = original_api_call.copy()
+                        new_api_call.pop('_id', None)
+                        new_api_call['org_id'] = to_shift_org_id
+                        new_api_call['bridge_ids'] = [new_bridge_id]
+                        new_api_call['updated_at'] = datetime.utcnow()
+                        
+                        new_api_call_result = await apiCallModel.insert_one(new_api_call)
+                        cloned_function_ids.append(str(new_api_call_result.inserted_id))
+        
+        # Step 7: Update configuration and versions with cloned function IDs
+        if cloned_function_ids:
+            # Update main configuration
+            await configurationModel.update_one(
+                {'_id': new_bridge_id},
+                {'$set': {'function_ids': cloned_function_ids}}
+            )
+            
+            # Update all cloned versions
+            for version_id in cloned_version_ids:
+                await version_model.update_one(
+                    {'_id': ObjectId(version_id)},
+                    {'$set': {'function_ids': cloned_function_ids}}
+                )
+        
+        # Step 8: Handle connected agents recursively
+        cloned_connected_agents = {}
+        connected_agents_info = []
+        
+        # Check for connected_agents in original configuration
+        if original_config.get('connected_agents'):
+            for agent_name, agent_info in original_config['connected_agents'].items():
+                connected_bridge_id = agent_info.get('bridge_id')
+                if connected_bridge_id:
+                    try:
+                        # Recursively clone the connected agent
+                        connected_result = await clone_agent_to_org(
+                            connected_bridge_id, 
+                            to_shift_org_id, 
+                            cloned_agents_map, 
+                            depth + 1
+                        )
+                        
+                        if connected_result:
+                            # Update the connected_agents mapping with new bridge_id
+                            cloned_connected_agents[agent_name] = {
+                                'bridge_id': connected_result['new_bridge_id']
+                            }
+                            connected_agents_info.append({
+                                'agent_name': agent_name,
+                                'original_bridge_id': connected_bridge_id,
+                                'new_bridge_id': connected_result['new_bridge_id']
+                            })
+                    except Exception as e:
+                        logger.error(f"Error cloning connected agent {agent_name} (bridge_id: {connected_bridge_id}): {str(e)}")
+        
+        # Check for connected_agents in versions and update them too
+        for version_id in cloned_version_ids:
+            original_version = await version_model.find_one({'_id': ObjectId(version_id)})
+            if original_version and original_version.get('connected_agents'):
+                version_connected_agents = {}
+                for agent_name, agent_info in original_version['connected_agents'].items():
+                    if agent_name in cloned_connected_agents:
+                        version_connected_agents[agent_name] = cloned_connected_agents[agent_name]
+                
+                # Update version with new connected_agents mapping
+                if version_connected_agents:
+                    await version_model.update_one(
+                        {'_id': ObjectId(version_id)},
+                        {'$set': {'connected_agents': version_connected_agents}}
+                    )
+        
+        # Update main configuration with new connected_agents mapping
+        if cloned_connected_agents:
+            await configurationModel.update_one(
+                {'_id': new_bridge_id},
+                {'$set': {'connected_agents': cloned_connected_agents}}
+            )
+        
+        # Step 9: Get the final cloned configuration
+        cloned_config = await configurationModel.find_one({'_id': new_bridge_id})
+        cloned_config['_id'] = str(cloned_config['_id'])
+        
+        # Convert ObjectIds to strings for response
+        if cloned_config.get('function_ids'):
+            cloned_config['function_ids'] = [str(fid) for fid in cloned_config['function_ids']]
+        
+        return {
+            'success': True,
+            'message': 'Agent cloned successfully',
+            'cloned_agent': cloned_config,
+            'original_bridge_id': bridge_id,
+            'new_bridge_id': str(new_bridge_id),
+            'cloned_versions': cloned_version_ids,
+            'cloned_functions': [str(fid) for fid in cloned_function_ids],
+            'connected_agents': connected_agents_info,
+            'recursion_depth': depth
+        }
+        
+    except Exception as error:
+        logger.error(f'Error in clone_agent_to_org: {str(error)}')
+        raise BadRequestException(f"Failed to clone agent: {str(error)}")

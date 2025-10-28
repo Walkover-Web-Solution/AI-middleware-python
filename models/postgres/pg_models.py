@@ -81,3 +81,24 @@ class user_bridge_config_history(Base):
     type = Column(String, nullable=False)
     time = Column(DateTime, nullable=False, default=func.now())
     version_id = Column(String, nullable=True, default="")
+
+class OrchestratorHistory(Base):
+    __tablename__ = 'orchestrator_history'
+    __table_args__ = {'extend_existing': True}
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    org_id = Column(String, nullable=False)
+    thread_id = Column(String, nullable=False)
+    sub_thread_id = Column(String, nullable=False)
+    model_name = Column(JSON, nullable=False)  # {"bridge_id": "model_name"}
+    orchestrator_id = Column(String, nullable=False)
+    user = Column(JSON, nullable=False)  # {"bridge_id": [user_messages]}
+    response = Column(JSON, nullable=True)  # {"bridge_id": response_json}
+    tool_call_data = Column(JSON, nullable=True)  # {"bridge_id": tool_call_json}
+    createdAt = Column(DateTime, nullable=False, default=func.now())
+    latency = Column(JSON, nullable=True)  # {"bridge_id": latency_json}
+    tokens = Column(JSON, nullable=True)  # {"bridge_id": tokens_json}
+    error = Column(JSON, nullable=True)  # {"bridge_id": error_json}
+    variables = Column(JSON, nullable=True)  # {"bridge_id": variables_json}
+    image_urls = Column(ARRAY(JSON), nullable=True)  # {"bridge_id": [image_urls]}
+    ai_config = Column(JSON, nullable=True)  # {"bridge_id": ai_config_json}
