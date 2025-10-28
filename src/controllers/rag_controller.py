@@ -301,7 +301,7 @@ async def get_text_from_vectorsQuery(args):
         return {
             'response': text,
             'metadata': {
-                'flowHitId': ''
+               "type": "RAG"
             },
             'status': 1
         }
@@ -311,7 +311,7 @@ async def get_text_from_vectorsQuery(args):
         return {
             'response': str(error),
             'metadata': {
-                'flowHitId': ''
+                "type": "RAG"
             },
             'status': 0  # 0 indicates error/failure
         }

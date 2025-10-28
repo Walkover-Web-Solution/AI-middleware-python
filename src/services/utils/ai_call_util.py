@@ -117,6 +117,8 @@ async def call_gtwy_agent(args):
         
         data_section = response_data.get('response', {}).get('data', {})
         result = data_section.get('content', "")
+        message_id = data_section.get('message_id', "")
+        version_id = db_config.get('version_id', None)
         
         # Check for image URLs and include them if present
         image_urls = data_section.get('image_urls')
@@ -132,11 +134,33 @@ async def call_gtwy_agent(args):
                 parsed_result['image_urls'] = image_urls
             else:
                 parsed_result = {"data": parsed_result, "image_urls": image_urls}
-        
-        return parsed_result
+
+        return {
+            "response": parsed_result,
+            "metadata":{
+                 "agent_id": bridge_id,
+                 "version_id": version_id,
+                 "message_id": message_id,
+                 "thread_id": args.get('thread_id'),
+                 "subthread_id": args.get('subthread_id'),
+                 "type": "agent"
+            },
+            'status': 1
+        }
             
     except Exception as e:
-        raise Exception(f"Error in call_gtwy_agent: {str(e)}")
+        return {
+            "response": str(e),
+            "metadata":{
+                 "agent_id": bridge_id,
+                 "version_id": version_id,
+                 "message_id": message_id,
+                 "thread_id": args.get('thread_id'),
+                 "subthread_id": args.get('subthread_id'),
+                 "type": "agent"
+            },
+            'status': 0
+        }
 
 async def get_ai_middleware_agent_data(bridge_id):
     try:

@@ -48,6 +48,7 @@ async def axios_work(data, function_payload):
             'response': response,
             'metadata':{
                 'flowHitId': rs_headers.get('flowHitId'),
+                "type": "function"
             },
             'status': 1
         }
@@ -57,7 +58,7 @@ async def axios_work(data, function_payload):
         return {
             'response': str(err),
             'metadata':{
-                'error': str(err),
+                "type": "function"
             },
             'status': 0
         }
@@ -278,7 +279,7 @@ async def process_data_and_run_tools(codes_mapping, self):
                 elif tool_data.get('error'):
                     response = {"error":"Args / Input is not proper JSON"}
                 else:
-                    response = result
+                    response = result.get("response","") if result.get("status") == 1 else {"error": result.get("response","")}
 
                 # Append formatted response
                 responses.append({
@@ -289,7 +290,7 @@ async def process_data_and_run_tools(codes_mapping, self):
                 })
 
                 # Update tool_call_logs with the response
-                tool_call_logs[tool_call_key] = {**tool_data, "data" : response, "id": self.tool_id_and_name_mapping[tool_data['name']].get("name")}
+                tool_call_logs[tool_call_key] = {**tool_data, "data" : result or response, "id": self.tool_id_and_name_mapping[tool_data['name']].get("name")}
         # Create mapping by tool_call_id (now tool_call_key) for return
         mapping = {resp['tool_call_id']: resp for resp in responses}
 
