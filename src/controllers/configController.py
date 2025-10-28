@@ -1,12 +1,12 @@
 from fastapi import HTTPException, status
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
-from src.db_services.ConfigurationServices import create_bridge, get_all_bridges_in_org_by_org_id, get_bridge_by_id, get_all_bridges_in_org, update_bridge, update_bridge_ids_in_api_calls, get_bridges_with_tools, get_apikey_creds, update_apikey_creds, update_built_in_tools, update_agents, get_all_agents_data, get_agents_data, get_bridges_and_versions_by_model
+from src.db_services.ConfigurationServices import create_bridge, get_all_bridges_in_org_by_org_id, get_bridge_by_id, get_all_bridges_in_org, update_bridge, update_bridge_ids_in_api_calls, get_bridges_with_tools, get_apikey_creds, update_apikey_creds, update_built_in_tools, update_agents, get_all_agents_data, get_agents_data, get_bridges_and_versions_by_model, clone_agent_to_org
 from src.configs.modelConfiguration import ModelsConfig as model_configuration
 from src.services.utils.helper import Helper
 import json
 from config import Config
-from ..configs.constant import service_name
+from ..configs.constant import redis_keys, service_name
 from src.db_services.conversationDbService import storeSystemPrompt, add_bulk_user_entries
 from bson import ObjectId
 from src.services.utils.getDefaultValue import get_default_values_controller
@@ -28,7 +28,7 @@ async def create_bridges_controller(request):
         user_id = request.state.user_id
         isEmbedUser = request.state.embed
         all_bridge = await get_all_bridges_in_org_by_org_id(org_id)
-        prompt = None
+        prompt = bridges.get('prompt', None) 
         if 'templateId' in bridges:
             template_id = bridges['templateId']
             template_data = await get_template(template_id)
@@ -208,6 +208,15 @@ async def get_all_bridges(request):
         for bridge in bridges:
             bridge_id = bridge.get('_id')
             avg_response_time_data = await find_in_cache(f"AVG_{org_id}_{bridge_id}")
+            lastused = await find_in_cache(f"{redis_keys['bridgelastused_']}{bridge_id}")
+            
+            # Set last_used from cache, or from database if cache is empty
+            if lastused:
+                bridge["last_used"] = json.loads(lastused.decode())
+            else:
+                # Convert datetime object to string when coming from database
+                bridge["last_used"] = str(bridge["last_used"]) if bridge.get("last_used") else None
+
             avg_response_time[bridge_id] = round(float(avg_response_time_data), 2) if avg_response_time_data else 0
         return JSONResponse(status_code=200, content={
                 "success": True,
@@ -563,4 +572,37 @@ async def get_bridges_and_versions_by_model_controller(model_name):
         "message": "Fetched models and bridges they are used in successfully.",
         model_name: models
     }
+
+async def clone_agent_controller(request):
+    """
+    Clone an agent to a different organization.
+    
+    Expected request body:
+    {
+        "bridge_id": "string",
+        "to_shift_org_id": "string"
+    }
+    """
+    try:
+        body = await request.json()
+        bridge_id = body.get('bridge_id')
+        to_shift_org_id = body.get('to_shift_org_id')
+        
+        # Validate required parameters
+        if not bridge_id:
+            raise HTTPException(status_code=400, detail="bridge_id is required")
+        
+        if not to_shift_org_id:
+            raise HTTPException(status_code=400, detail="to_shift_org_id is required")
+        
+        # Call the service function to clone the agent
+        result = await clone_agent_to_org(bridge_id, to_shift_org_id)
+        
+        return JSONResponse(status_code=200, content=result)
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error in clone_agent_controller: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to clone agent: {str(e)}")
     
