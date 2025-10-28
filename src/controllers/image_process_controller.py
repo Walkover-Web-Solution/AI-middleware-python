@@ -7,6 +7,7 @@ import os
 import aiohttp
 from urllib.parse import urlparse
 from config import Config
+from src.configs.constant import redis_keys
 
 async def image_processing(request):
     body = await request.form()
@@ -144,15 +145,16 @@ async def file_processing(request):
                 original_filename=file.filename
             )
 
-        # If PDF and thread parameters exist, save to Redis cache
-        if is_pdf and thread_id and bridge_id:
-            cache_key = f"{bridge_id}_{thread_id}_{sub_thread_id or thread_id}"
-            await store_in_cache(cache_key, [file_url], 604800)
-        
-        return {
-            'success': True,
-            'file_url': file_url
-        }
+            # If PDF and thread parameters exist, save to Redis cache
+            if is_pdf and thread_id and bridge_id:
+                cache_key = f"{redis_keys['pdf_url_']}{bridge_id}_{thread_id}_{sub_thread_id or thread_id}"
+                await store_in_cache(cache_key, [file_url], 604800)
+            
+            return {
+                'success': True,
+                'file_url': file_url
+            }
+            
     except Exception as e:
         # Handle exceptions and return an error response
         error_message = "Error in video processing: " if is_video else "Error in file processing: "

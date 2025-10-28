@@ -4,6 +4,7 @@ from ..services.cache_service import find_in_cache, store_in_cache, delete_in_ca
 import json
 from globals import *
 from bson import errors
+from src.configs.constant import redis_keys
 from config import Config
 from datetime import datetime
 import jwt
@@ -63,7 +64,7 @@ async def get_bridges(bridge_id = None, org_id = None, version_id = None):
 
 async def get_bridges_with_redis(bridge_id = None, org_id = None, version_id = None):
     try:
-        cache_key = f"get_{version_id or bridge_id}"
+        cache_key = f"{redis_keys['get_bridge_data_']}{version_id or bridge_id}"
         cached_data = await find_in_cache(cache_key)
         if cached_data:
             cached_result = json.loads(cached_data)
@@ -203,7 +204,7 @@ async def get_bridges_with_tools(bridge_id, org_id, version_id=None):
 
 async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None):
     try:
-        cache_key = f"{version_id or bridge_id}"
+        cache_key = f"{redis_keys['bridge_data_with_tools_']}{version_id or bridge_id}"
        
         # Attempt to retrieve data from Redis cache
         cached_data = await find_in_cache(cache_key)
@@ -950,7 +951,7 @@ async def update_bridge(bridge_id = None, update_fields = None, version_id = Non
     if 'function_ids' in updated_bridge and updated_bridge['function_ids'] is not None:
         updated_bridge['function_ids'] = [str(fid) for fid in updated_bridge['function_ids']]  # Convert function_ids to string
 
-    await delete_in_cache(cache_key)
+    await delete_in_cache(f"{redis_keys['bridge_data_with_tools_']}{cache_key}")
     return {
         'success': True,
         'result': updated_bridge
