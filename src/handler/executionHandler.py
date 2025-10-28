@@ -31,11 +31,19 @@ def handle_exceptions(func):
             if isinstance(error_details, ValueError):
                 error_details = error_details.args[0] if error_details.args else str(error_details)
 
-            try:
-                error_json = json.loads(error_details)
-            except json.JSONDecodeError:
+            # Handle different types of error_details
+            if isinstance(error_details, dict):
+                error_json = error_details
+            elif isinstance(error_details, str):
+                try:
+                    error_json = json.loads(error_details)
+                except json.JSONDecodeError:
+                    error_json = {
+                        "error_message": error_details
+                    }
+            else:
                 error_json = {
-                    "error_message": error_details
+                    "error_message": str(error_details)
                 }
             bridge_id = path_params.get('bridge_id') or body.get("bridge_id")
             org_id = state.get('profile', {}).get('org', {}).get('id')

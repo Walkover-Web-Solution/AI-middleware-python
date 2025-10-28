@@ -247,17 +247,29 @@ async def chat(request_body):
             await sendResponse(parsed_data['response_format'], result.get("error", str(error)), variables=parsed_data['variables']) if parsed_data['response_format']['type'] != 'default' else None
             # Process background tasks for error handling
             await process_background_tasks_for_error(parsed_data, error)
-        # Check for a chained exception and create a detailed error message
+        # Check for a chained exception and create a structured error object
         if error.__cause__:
-            error_message = (
-                f"Initial Error: {str(error.__cause__)}. "
-                f"Fallback Error: {str(error)}. "
-                f"For more support contact us at support@gtwy.ai"
-            )
+            error_object = {
+                "initial_error": {
+                    "message": str(error.__cause__),
+                    "type": type(error.__cause__).__name__
+                },
+                "fallback_error": {
+                    "message": str(error),
+                    "type": type(error).__name__
+                },
+                "support_message": "For more support contact us at support@gtwy.ai"
+            }
         else:
-            error_message = f"{str(error)}. For more support contact us at support@gtwy.ai"
+            error_object = {
+                "error": {
+                    "message": str(error),
+                    "type": type(error).__name__
+                },
+                "support_message": "For more support contact us at support@gtwy.ai"
+            }
 
-        raise ValueError(error_message)
+        raise ValueError(error_object)
 
 
 
