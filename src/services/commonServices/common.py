@@ -249,24 +249,24 @@ async def chat(request_body):
             await process_background_tasks_for_error(parsed_data, error)
         # Check for a chained exception and create a structured error object
         if error.__cause__:
+            # Combine both initial and fallback errors into a single string
+            combined_error_string = (
+                f"Initial Error: {str(error.__cause__)} (Type: {type(error.__cause__).__name__}). "
+                f"Fallback Error: {str(error)} (Type: {type(error).__name__}). "
+                f"For more support contact us at support@gtwy.ai"
+            )
             error_object = {
-                "initial_error": {
-                    "message": str(error.__cause__),
-                    "type": type(error.__cause__).__name__
-                },
-                "fallback_error": {
-                    "message": str(error),
-                    "type": type(error).__name__
-                },
-                "support_message": "For more support contact us at support@gtwy.ai"
+                "success": False,
+                "error": combined_error_string,
+                "error_location": "common.py:248"
             }
         else:
+            # Single error case
+            error_string = f"{str(error)} (Type: {type(error).__name__}). For more support contact us at support@gtwy.ai"
             error_object = {
-                "error": {
-                    "message": str(error),
-                    "type": type(error).__name__
-                },
-                "support_message": "For more support contact us at support@gtwy.ai"
+                "success": False,
+                "error": error_string,
+                "error_location": "common.py:248"
             }
 
         raise ValueError(error_object)
