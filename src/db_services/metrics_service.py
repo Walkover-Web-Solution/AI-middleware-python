@@ -103,24 +103,6 @@ async def find_one_pg(id):
     model = postgres.raw_data
     return await model.find_by_pk(id)
 
-async def update_lastused(history_params, dataset):
-   
-    bridge_lastused_cache_key = f"{redis_keys['bridgelastused_']}{history_params['bridge_id']}"
-
-    apikey_id = None
-    if dataset:
-        apikey_map = dataset.get('apikey_object_id') or {}
-        service = dataset.get('service')
-        if service and isinstance(apikey_map, dict):
-            apikey_id = apikey_map.get(service)
-
-    # Store last used time for bridge and apikey (if available)
-    current_time = datetime.now().isoformat()
-    await store_in_cache(bridge_lastused_cache_key, current_time)
-    if apikey_id:
-        api_lastused_cache_key = f"{redis_keys['apikeylastused_']}{apikey_id}"
-        await store_in_cache(api_lastused_cache_key, current_time)
-
 async def create(dataset, history_params, version_id, thread_info={}):
     try:
         conversations = []
@@ -205,7 +187,6 @@ async def create(dataset, history_params, version_id, thread_info={}):
         # await send_error_to_webhook(history_params['bridge_id'], history_params['org_id'],totaltoken , 'metrix_limit_reached')
         await store_in_cache(cache_key, float(totaltoken))
         await timescale_metrics(metrics_data)
-        await update_lastused(history_params, dataset[0])
     except Exception as error:
         logger.error(f'Error during bulk insert of Ai middleware, {str(error)}')
 
