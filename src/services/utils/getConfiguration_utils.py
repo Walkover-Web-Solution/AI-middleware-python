@@ -281,7 +281,13 @@ def add_anthropic_json_schema(service, configuration, tools):
     """Add JSON schema response format for Anthropic service"""
     if (service != 'anthropic' or 
         not isinstance(configuration.get('response_type'), dict) or 
-        not configuration['response_type'].get('json_schema')):
+        not configuration['response_type'].get('json_schema') ):
+        # If condition is fulfilled and service is anthropic, remove response_type key
+        if (service == 'anthropic' and 
+            (not isinstance(configuration.get('response_type'), dict) or 
+             not configuration['response_type'].get('json_schema'))):
+            if 'response_type' in configuration:
+                del configuration['response_type']
         return
     
     # Remove required field if it exists

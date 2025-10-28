@@ -123,6 +123,8 @@ async def load_model_configuration(model, configuration, service):
         if key == 'type' or key == 'specification':
             continue
         if "level" in config and (config["level"] == 0 or config["level"] == 1 or config["level"] == 2) or key in configuration:
+            if service == 'anthropic' and key == 'response_type' and key not in configuration:
+                continue    
             custom_config[key] = configuration.get(key, config["default"])
     
     return model_obj, custom_config, model_output_config
