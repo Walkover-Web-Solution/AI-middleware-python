@@ -28,7 +28,7 @@ async def create_bridges_controller(request):
         folder_id = request.state.folder_id if hasattr(request.state, 'folder_id') else None
         user_id = request.state.user_id
         all_bridge = await get_all_bridges_in_org_by_org_id(org_id)
-        prompt = None
+        prompt = "Role: AI Bot\nObjective: Respond logically and clearly, maintaining a neutral, automated tone.\nGuidelines:\nIdentify the task or question first.\nProvide brief reasoning before the answer or action.\nKeep responses concise and contextually relevant.\nAvoid emotion, filler, or self-reference.\nUse examples or placeholders only when helpful."
         name =None
         service = "ai_ml"
         model = "gpt-oss-120b"
