@@ -28,7 +28,7 @@ async def create_bridges_controller(request):
         user_id = request.state.user_id
         isEmbedUser = request.state.embed
         all_bridge = await get_all_bridges_in_org_by_org_id(org_id)
-        prompt = None
+        prompt = bridges.get('prompt', None) 
         if 'templateId' in bridges:
             template_id = bridges['templateId']
             template_data = await get_template(template_id)
