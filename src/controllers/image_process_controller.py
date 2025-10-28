@@ -1,7 +1,5 @@
-import json
-import uuid
 from fastapi import HTTPException
-from src.services.cache_service import find_in_cache, store_in_cache, client, REDIS_PREFIX
+from src.services.cache_service import store_in_cache
 from src.services.utils.gcp_upload_service import uploadDoc
 from google import genai
 import tempfile
