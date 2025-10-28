@@ -149,7 +149,7 @@ async def publish(org_id, version_id, user_id):
         raise BadRequestException("Parent ID not found in version data")
     
     parent_configuration = await configurationModel.find_one({'_id': ObjectId(parent_id)})
-    
+    prev_published_version_id = parent_configuration.get('published_version_id')
     if not parent_configuration:
         raise BadRequestException("Parent configuration not found")
     
@@ -179,7 +179,7 @@ async def publish(org_id, version_id, user_id):
         {'_id': ObjectId(parent_id)},
         {'$set': updated_configuration}
     )
-    
+    await version_model.update_one({'_id': ObjectId(prev_published_version_id)}, {'$set': {'is_drafted': True}})
     await version_model.update_one({'_id': ObjectId(published_version_id)}, {'$set': {'is_drafted': False}})
     await add_bulk_user_entries([{
                 'user_id': user_id,
