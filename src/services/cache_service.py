@@ -21,7 +21,27 @@ async def store_in_cache(identifier: str, data: dict, ttl: int = DEFAULT_REDIS_T
 
 async def find_in_cache(identifier: str) -> Union[str, None]:
     try:
-        return await client.get(f"{REDIS_PREFIX}{identifier}")
+
+        data = await client.get(f"{REDIS_PREFIX}{identifier}")
+        if data:
+            return data
+        
+        # Fetch keys with the prefix
+        data = await client.keys(f"{REDIS_PREFIX}{identifier}*")
+
+        if not data:
+            return None
+
+        result = []
+
+        # Get values one by one
+        for key in data:
+            if isinstance(key, (bytes, str)):
+                key_str = key.decode() if isinstance(key, bytes) else key
+                key_str = key_str.replace(REDIS_PREFIX, '')
+                result.append(key_str)
+
+        return result if result else Non
     except Exception as e:
         logger.error(f"Error finding in cache: {str(e)}")
         return None
@@ -62,7 +82,8 @@ async def clear_cache(request) -> JSONResponse:
         body = await request.json()
         id = body.get('id')
         ids = body.get('ids')
-        
+        prefix = body.get('prefix')
+
         # Handle single id or array of ids
         if id or ids:
             identifiers = ids if ids else id
@@ -75,6 +96,15 @@ async def clear_cache(request) -> JSONResponse:
                 message = "Redis Key cleared successfully"
                 
             return JSONResponse(status_code=200, content={"message": message})
+        elif prefix:
+            if not isinstance(prefix, list):
+                prefix = [prefix]
+            for p in prefix:
+                data = await find_in_cache(p)
+                if data is not None:
+                    await delete_in_cache(data)
+            return JSONResponse(status_code=200, content={"message": f"Redis Keys with given prefix cleared successfully"})
+
         elif await client.ping():
             # Scan for keys with the specific prefix
             cursor = b'0'
