@@ -31,19 +31,6 @@ def handle_exceptions(func):
             if isinstance(error_details, ValueError):
                 error_details = error_details.args[0] if error_details.args else str(error_details)
 
-            # Check if error_details is already a properly formatted error object from common.py
-            if isinstance(error_details, dict) and "success" in error_details and "error" in error_details and "error_location" in error_details:
-                # This is already a properly formatted error object, return it directly
-                bridge_id = path_params.get('bridge_id') or body.get("bridge_id")
-                org_id = state.get('profile', {}).get('org', {}).get('id')
-                if is_playground == False:
-                    await send_error_to_webhook(bridge_id, org_id, error_details, error_type = 'Error')
-                return JSONResponse(
-                    status_code=400,
-                    content=error_details
-                )
-
-            # Handle different types of error_details for other cases
             if isinstance(error_details, dict):
                 error_json = error_details
             elif isinstance(error_details, str):
@@ -57,19 +44,14 @@ def handle_exceptions(func):
                 error_json = {
                     "error_message": str(error_details)
                 }
-
-                
+   
             bridge_id = path_params.get('bridge_id') or body.get("bridge_id")
             org_id = state.get('profile', {}).get('org', {}).get('id')
             if is_playground == False:
                 await send_error_to_webhook(bridge_id, org_id,error_json, error_type = 'Error')
             return JSONResponse(
                 status_code=400,
-                content=json.loads(json.dumps({
-                    "success": False,
-                    "error": exc.args[0] if isinstance(exc, ValueError) and isinstance(exc.args[0], dict) else str(exc),
-                    "error_location": error_location,
-                }))
+                content=json.loads(json.dumps(error_json))
             )
     
     return wrapper

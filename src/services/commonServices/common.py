@@ -258,7 +258,6 @@ async def chat(request_body):
             error_object = {
                 "success": False,
                 "error": combined_error_string,
-                "error_location": "common.py:248"
             }
         else:
             # Single error case
@@ -266,7 +265,6 @@ async def chat(request_body):
             error_object = {
                 "success": False,
                 "error": error_string,
-                "error_location": "common.py:248"
             }
 
         raise ValueError(error_object)
