@@ -391,6 +391,53 @@ def restructure_json_schema(response_type, service):
         case _:
             return response_type
 
+def validate_json_schema_configuration(configuration):
+    """
+    Validates the JSON schema configuration for response_type.
+    Only validates when 'response_type' key is present in configuration.
+    
+    Args:
+        configuration (dict): The configuration object to validate
+        
+    Returns:
+        tuple: (is_valid, error_message)
+        
+    Raises:
+        None - returns validation result as tuple
+    """
+    if not configuration or 'response_type' not in configuration:
+        return True, None
+        
+    response_type = configuration.get('response_type')
+    if not response_type:
+        return True, None
+        
+    # Check if type is json_schema
+    if response_type.get('type') != 'json_schema':
+        return True, None
+        
+    # If json_schema key exists and is None, return error
+    if 'json_schema' in response_type and response_type['json_schema'] is None:
+        return False, "json_schema should be a valid JSON, not None"
+        
+    # If json_schema key exists and is not None, validate it's valid JSON
+    if 'json_schema' in response_type and response_type['json_schema'] is not None:
+        try:
+            # If it's already a dict/object, it's valid
+            if isinstance(response_type['json_schema'], dict):
+                return True, None
+            # If it's a string, try to parse it as JSON
+            elif isinstance(response_type['json_schema'], str):
+                json.loads(response_type['json_schema'])
+                return True, None
+            else:
+                return False, "json_schema should be a valid JSON object or string"
+        except (json.JSONDecodeError, TypeError):
+            return False, "json_schema should be a valid JSON"
+            
+    # If json_schema key is not present, it's valid (allowed case)
+    return True, None
+
 
 def create_latency_object(timer, params):
     """
