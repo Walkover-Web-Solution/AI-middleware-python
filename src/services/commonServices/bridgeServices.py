@@ -24,7 +24,14 @@ async def optimize_prompt_controller(request : Request, bridge_id: str):
         updated_prompt = await get_specific_prebuilt_prompt_service(org_id, 'optimze_prompt')
         if updated_prompt and updated_prompt.get('optimze_prompt'):
             configuration = {"prompt": updated_prompt['optimze_prompt']}
-        result = await call_ai_middleware(prompt, variables=variables, configuration=configuration, thread_id=thread_id, bridge_id = bridge_ids['optimze_prompt'], response_type='text')
+        result = await call_ai_middleware(
+            prompt, 
+            variables=variables, 
+            configuration=configuration, 
+            thread_id=thread_id, 
+            bridge_id = bridge_ids['optimze_prompt'], 
+            response_type='text'
+        )
         return JSONResponse(status_code=200, content={
             "success": True,
             "message": "Prompt optimized successfully",
@@ -78,4 +85,53 @@ async def function_agrs_using_ai(request):
             
     except Exception as err:
         logger.error("Error calling function function_agrs_using_ai =>", err)
+
+async def generate_additional_test_cases(request: Request, bridge_id: str):
+    try:
+        body = await request.json()
+        version_id = body.get('version_id')
+        org_id = request.state.profile.get("org",{}).get("id","")
+        
+        # Get bridge data with tools using version_id
+        result = await get_bridges_with_tools(bridge_id, org_id, version_id)
+        bridge_data = result.get('bridges')
+        
+        if not bridge_data:
+            raise HTTPException(status_code=404, detail={"success": False, "error": "Bridge data not found"})
+        
+        # Extract bridge information
+        system_prompt = bridge_data.get('configuration',{}).get('prompt', "")
+        tools = {tool['endpoint_name']: tool['description'] for tool in bridge_data.get('apiCalls', {}).values()}
+        
+        # Prepare variables for AI call
+        variables = {
+            "system_prompt": system_prompt,
+            "available_tools": tools if tools else "No tools available"
+        }
+        
+        # Get prebuilt prompt for test case generation if available
+        configuration = None
+        updated_prompt = await get_specific_prebuilt_prompt_service(org_id, 'generate_test_cases')
+        if updated_prompt and updated_prompt.get('generate_test_cases'):
+            configuration = {"prompt": updated_prompt['generate_test_cases']}
+        
+        # Generate test cases using AI
+        user_message = "Generate 10 comprehensive test cases for this AI assistant based on its system prompt and available tools. Each test case should include a user query and expected behavior."
+        Testcases = await call_ai_middleware(
+            user_message, 
+            variables=variables, 
+            configuration=configuration, 
+            response_type='text',
+            bridge_id=bridge_ids['generate_test_cases']
+            
+        )
+        
+        return JSONResponse(status_code=200, content={
+            "success": True,
+            "message": "Test cases generated successfully",
+            "result": Testcases
+        })
+        
+    except Exception as e:
+        raise HTTPException(status_code=400, detail={"success": False, "error": "Error in generating test cases: "+ str(e)})
     
