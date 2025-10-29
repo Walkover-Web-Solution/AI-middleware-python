@@ -5,6 +5,8 @@ from google import genai
 import tempfile
 import os
 import aiohttp
+import asyncio
+import time
 from urllib.parse import urlparse
 from config import Config
 from src.configs.constant import redis_keys
@@ -211,6 +213,43 @@ async def _process_video_url(body_dict):
             # Upload file to Gemini
             gemini_file = gemini_client.files.upload(file=temp_file_path)
             
+            # Wait for file processing to complete
+            max_wait_time = 300  # 5 minutes timeout
+            poll_interval = 0.1  # Check every 100 milliseconds
+            start_time = time.time()
+            
+            while True:
+                # Get current file status
+                current_file = gemini_client.files.get(name=gemini_file.name)
+                print(f"File state: {current_file.state}")
+                
+                # Check if processing is complete
+                if current_file.state.name == 'ACTIVE':
+                    gemini_file = current_file  # Update with latest file info
+                    break
+                elif current_file.state.name == 'FAILED':
+                    raise HTTPException(
+                        status_code=500, 
+                        detail={
+                            "success": False, 
+                            "error": f"File processing failed: {current_file.error}"
+                        }
+                    )
+                
+                # Check timeout
+                elapsed_time = time.time() - start_time
+                if elapsed_time > max_wait_time:
+                    raise HTTPException(
+                        status_code=408, 
+                        detail={
+                            "success": False, 
+                            "error": f"File processing timeout after {max_wait_time} seconds. Current state: {current_file.state}"
+                        }
+                    )
+                
+                # Wait before next poll
+                await asyncio.sleep(poll_interval)
+            
             # Convert file object to dictionary for JSON serialization
             file_data = {
                 'name': gemini_file.name,
@@ -232,7 +271,7 @@ async def _process_video_url(body_dict):
             return {
                 'success': True,
                 'file_data': file_data,
-                'message': 'Video uploaded to Gemini successfully from URL',
+                'message': 'Video uploaded and processed successfully by Gemini',
                 'original_url': video_url
             }
             
