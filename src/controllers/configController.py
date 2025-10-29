@@ -18,6 +18,7 @@ from src.configs.constant import bridge_ids
 from src.services.utils.ai_call_util import call_ai_middleware
 from src.services.cache_service import find_in_cache
 from src.db_services.templateDbservice import get_template
+from src.services.utils.common_utils import validate_json_schema_configuration
 
 async def create_bridges_controller(request):
     try:
@@ -347,6 +348,12 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
         new_configuration = body.get('configuration')
         config_type = new_configuration.get('type') if new_configuration else None
         service = body.get('service')
+        
+        # Validate JSON schema configuration
+        if new_configuration:
+            is_valid, error_message = validate_json_schema_configuration(new_configuration)
+            if not is_valid:
+                raise HTTPException(status_code=400, detail=error_message)
 
         #process connected agent data
         connected_agent_details = body.get('connected_agent_details')
