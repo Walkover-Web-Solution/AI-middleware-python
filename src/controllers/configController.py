@@ -210,16 +210,8 @@ async def get_all_bridges(request):
         for bridge in bridges:
             bridge_id = bridge.get('_id')
             avg_response_time_data = await find_in_cache(f"{redis_keys['avg_response_time_']}{org_id}_{bridge_id}")
-            lastused = await find_in_cache(f"{redis_keys['bridgelastused_']}{bridge_id}")
             total_tokens = await find_in_cache(f"{redis_keys['metrix_bridges_']}{bridge_id}")
             
-            # Set last_used from cache, or from database if cache is empty
-            if lastused:
-                bridge["last_used"] = json.loads(lastused.decode())
-            else:
-                # Convert datetime object to string when coming from database
-                bridge["last_used"] = str(bridge["last_used"]) if bridge.get("last_used") else None
-
             if total_tokens:
                 bridge["total_tokens"] = json.loads(total_tokens)
 
