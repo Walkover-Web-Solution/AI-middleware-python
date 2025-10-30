@@ -89,7 +89,21 @@ async def function_agrs_using_ai(request):
 
 async def generate_additional_test_cases(request: Request, bridge_id: str):
     try:
-        body = await request.json()
+        # Check if request has body and parse JSON
+        try:
+            body = await request.json()
+        except Exception as json_error:
+            raise HTTPException(status_code=400, detail={
+                "success": False, 
+                "error": f"Invalid or missing JSON in request body: {str(json_error)}"
+            })
+        
+        if not body:
+            raise HTTPException(status_code=400, detail={
+                "success": False, 
+                "error": "Request body is required"
+            })
+            
         version_id = body.get('version_id')
         org_id = request.state.profile.get("org",{}).get("id","")
         
