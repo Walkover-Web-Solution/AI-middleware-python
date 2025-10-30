@@ -100,6 +100,8 @@ async def handle_playground_testcase(result, parsed_data, Flag):
         user = parsed_data['user']
         
         # Check if testcase_id is present for update
+        # testcase_id = None
+        Flag = True
         if testcase_data.get('testcase_id') and Flag == False:
             # Update existing testcase
             testcase_id = testcase_data['testcase_id']
