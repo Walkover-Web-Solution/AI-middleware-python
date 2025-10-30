@@ -6,7 +6,7 @@ from src.configs.modelConfiguration import ModelsConfig as model_configuration
 from src.services.utils.helper import Helper
 import json
 from config import Config
-from ..configs.constant import redis_keys, service_name
+from ..configs.constant import service_name
 from src.db_services.conversationDbService import storeSystemPrompt, add_bulk_user_entries
 from bson import ObjectId
 from src.services.utils.getDefaultValue import get_default_values_controller
@@ -18,17 +18,22 @@ from src.configs.constant import bridge_ids
 from src.services.utils.ai_call_util import call_ai_middleware
 from src.services.cache_service import find_in_cache
 from src.db_services.templateDbservice import get_template
+from src.services.utils.common_utils import validate_json_schema_configuration
 
 async def create_bridges_controller(request):
     try:
         bridges = await request.json()
         purpose = bridges.get('purpose')
+        bridgeType = bridges.get('bridgeType') or 'api'
         org_id = request.state.profile['org']['id']
         folder_id = request.state.folder_id if hasattr(request.state, 'folder_id') else None
         user_id = request.state.user_id
-        isEmbedUser = request.state.embed
         all_bridge = await get_all_bridges_in_org_by_org_id(org_id)
-        prompt = None
+        prompt = "Role: AI Bot\nObjective: Respond logically and clearly, maintaining a neutral, automated tone.\nGuidelines:\nIdentify the task or question first.\nProvide brief reasoning before the answer or action.\nKeep responses concise and contextually relevant.\nAvoid emotion, filler, or self-reference.\nUse examples or placeholders only when helpful."
+        name =None
+        service = "ai_ml"
+        model = "gpt-oss-120b"
+        type = "chat"
         if 'templateId' in bridges:
             template_id = bridges['templateId']
             template_data = await get_template(template_id)
@@ -39,11 +44,11 @@ async def create_bridges_controller(request):
                 )
             # Override prompt with template's prompt if available
             prompt = template_data.get('prompt', prompt)
-        
+        all_bridge_name = [bridge.get("name") for bridge in all_bridge]
         if purpose is not None:
             variables = {
                 "purpose": purpose,
-                 "all_bridge_names": [bridge.get("name") for bridge in all_bridge]
+                "all_bridge_names": all_bridge_name
             }
             user = "Generate Bridge Configuration accroding to the given user purpose."
             bridge_data =  await call_ai_middleware(user, bridge_id = bridge_ids['create_bridge_using_ai'], variables = variables)
@@ -51,31 +56,29 @@ async def create_bridges_controller(request):
             service = bridge_data.get('service')
             name = bridge_data.get('name')
             prompt = bridge_data.get('system_prompt')
-            slugName = bridge_data.get('name')
             type = bridge_data.get('type')
 
-        else:
-            name_next_count = 1
-            slug_next_count = 1
-            if bridges.get('name').startswith("untitled_agent_"):
-                if all_bridge:
-                    for bridge in all_bridge:
-                        if bridge.get('name') and bridge.get('name').startswith("untitled_agent_"):
-                            num = int(bridge.get('name').replace("untitled_agent_", ""))
-                            if num > name_next_count:
-                                name_next_count = num
-                        if bridge.get('slugName') and bridge.get('slugName').startswith("untitled_agent_"):
-                            num = int(bridge.get('slugName').replace("untitled_agent_", ""))
-                            if num > slug_next_count:
-                                slug_next_count = num
-                    name_next_count = name_next_count + 1
-                    slug_next_count = slug_next_count + 1
-            service = bridges.get('service')
-            model = bridges.get('model')
-            name = bridges.get('name') if not bridges.get('name').startswith("untitled_agent_") else f"untitled_agent_{name_next_count}"
-            type = bridges.get('type')
-            slugName = bridges.get('slugName') if not bridges.get('slugName').startswith("untitled_agent_") else f"untitled_agent_{slug_next_count}"
-        bridgeType = bridges.get('bridgeType')
+        name_next_count = 1
+        slug_next_count = 1
+        for bridge in all_bridge:
+            name = name or "untitled_agent"
+            if name.startswith("untitled_agent") and bridge.get('name').startswith("untitled_agent_"):
+                num = int(bridge.get('name').replace("untitled_agent_", ""))
+                if num >= name_next_count:
+                    name_next_count = num +1
+            elif bridge.get('name') == name:
+                name_next_count += 1
+
+            if name.startswith("untitled_agent") and bridge.get('slugName').startswith("untitled_agent_"):
+                num = int(bridge.get('slugName').replace("untitled_agent_", ""))
+                if num >= slug_next_count:
+                    slug_next_count = num +1
+            elif bridge.get('slugName') == name:
+                slug_next_count += 1
+
+        slugName = f"{name}_{slug_next_count}"
+        name = f"{name}_{name_next_count}"
+        
         modelObj = model_config_document[service][model]
         configurations = modelObj['configuration']
         status = 1
@@ -349,6 +352,12 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
         new_configuration = body.get('configuration')
         config_type = new_configuration.get('type') if new_configuration else None
         service = body.get('service')
+        
+        # Validate JSON schema configuration
+        if new_configuration:
+            is_valid, error_message = validate_json_schema_configuration(new_configuration)
+            if not is_valid:
+                raise HTTPException(status_code=400, detail=error_message)
 
         #process connected agent data
         connected_agent_details = body.get('connected_agent_details')
