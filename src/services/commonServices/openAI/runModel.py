@@ -2,6 +2,7 @@ from openai import AsyncOpenAI
 import traceback
 import copy
 from ..api_executor import execute_api_call
+from src.services.utils.ai_middleware_format import send_alert
 # from src.services.utils.unified_token_validator import validate_openai_token_limit
 from globals import *
 
@@ -77,6 +78,18 @@ async def openai_response_model(configuration, apiKey, execution_time_logs, brid
                         logger.warning(f"Duplicate ID error detected on attempt {attempt + 1}: {error_str}")
                         logger.info("Attempting to fix duplicate IDs and retry...")
                         
+                        # Send alert for duplicate item error
+                        await send_alert(data={
+                            "org_name": org_name,
+                            "bridge_name": name,
+                            "configuration": configuration,
+                            "message_id": message_id,
+                            "bridge_id": bridge_id,
+                            "org_id": org_id,
+                            "message": f"Duplicate item error detected on attempt {attempt + 1} - Attempting retry with fixed IDs",
+                            "error": error_str
+                        })
+                        
                         # Remove duplicate IDs and regenerate unique ones
                         current_config = remove_duplicate_ids_from_input(current_config)
                         
@@ -87,8 +100,47 @@ async def openai_response_model(configuration, apiKey, execution_time_logs, brid
                         })
                         
                         continue  # Retry with fixed configuration
+                    
+                    # Check if it's a 400 Bad Request error
+                    elif "400 Bad Request" in error_str and attempt < max_retries:
+                        logger.warning(f"400 Bad Request error detected on attempt {attempt + 1}: {error_str}")
+                        logger.info("Attempting to remove JSON and retry...")
+                        
+                        # Send alert for 400 Bad Request error
+                        await send_alert(data={
+                            "org_name": org_name,
+                            "bridge_name": name,
+                            "configuration": configuration,
+                            "message_id": message_id,
+                            "bridge_id": bridge_id,
+                            "org_id": org_id,
+                            "message": f"400 Bad Request error detected on attempt {attempt + 1} - Attempting retry without JSON",
+                            "error": error_str
+                        })
+                        
+                        # Remove reasoning objects that cause 400 Bad Request
+                        if 'input' in current_config:
+                            input_array = current_config['input']
+                            # Filter out reasoning type objects
+                            filtered_input = []
+                            for item in input_array:
+                                if isinstance(item, dict) and item.get('type') == 'reasoning':
+                                    logger.info(f"Removing reasoning object with id: {item.get('id', 'unknown')}")
+                                    continue  # Skip reasoning objects
+                                else:
+                                    filtered_input.append(item)
+                            current_config['input'] = filtered_input
+                        
+                        # Log the retry attempt
+                        execution_time_logs.append({
+                            "step": f"{service} Retry attempt {attempt + 1} - Removed reasoning objects", 
+                            "time_taken": 0
+                        })
+                        
+                        continue  # Retry with fixed configuration
                     else:
                         # For non-duplicate errors or max retries reached, return the error
+                        print("\n\n\n current config",current_config, "\n\n\n")
                         traceback.print_exc()
                         return {
                             'success': False,
