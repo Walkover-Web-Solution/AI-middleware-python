@@ -53,7 +53,7 @@ async def Response_formatter(response = {}, service = None, tools={}, type='chat
                 "tools_data": tools_data or {},
                 "images": images,
                 "annotations": response.get("output", [{}])[0].get("content", [{}])[0].get("annotations", None),
-                "fall_back" : response.get('fallback') or False,
+                "fallback" : response.get('fallback') or False,
                 "firstAttemptError" : response.get('firstAttemptError') or ''
             },
             "usage": {
@@ -129,7 +129,7 @@ async def Response_formatter(response = {}, service = None, tools={}, type='chat
                 "model" : response.get("model", None),
                 "role" : response.get("role", None),
                 "tools_data": tools_data or {},
-                "fall_back" : response.get('fallback') or False,
+                "fallback" : response.get('fallback') or False,
                 "firstAttemptError" : response.get('firstAttemptError') or '',
                 "finish_reason" : finish_reason_mapping(response.get("stop_reason", ""))
             },
@@ -153,7 +153,7 @@ async def Response_formatter(response = {}, service = None, tools={}, type='chat
                 "model" : response.get("model", None),
                 "role" : response.get("choices", [{}])[0].get("message", {}).get("role", None),
                 "tools_data": tools_data or {},
-                "fall_back" : response.get('fallback') or False,
+                "fallback" : response.get('fallback') or False,
                 "finish_reason" : finish_reason_mapping(response.get("choices", [{}])[0].get("finish_reason", ""))
             },
             "usage" : {
