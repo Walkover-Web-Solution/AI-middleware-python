@@ -322,7 +322,7 @@ class Helper:
             raise ValueError("pauthkey is required for validation")
         headers = {
             "authkey": Config.ADMIN_API_KEY,
-            "pauthkey": pauthkey
+            "cauthkey": pauthkey
         }
         response, _ = await fetch("https://routes.msg91.com/api/validateCauthKey", "GET", headers, None, None)
         return response
