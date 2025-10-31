@@ -3,6 +3,47 @@ from ...configs.constant import service_name
 from fastapi import HTTPException
 from src.configs.model_configuration import model_config_document
 
+def validate_fall_back(fall_back_data):
+    """
+    Validate fall_back configuration structure and service/model availability.
+    
+    Args:
+        fall_back_data: Dictionary containing fall_back configuration
+        
+    Returns:
+        bool: True if valid, False otherwise
+        
+    Raises:
+        HTTPException: If validation fails with specific error message
+    """
+    if not isinstance(fall_back_data, dict):
+        raise HTTPException(status_code=400, detail="fall_back must be a dictionary")
+    
+    # Check required fields
+    required_fields = ['is_enable', 'service', 'model']
+    for field in required_fields:
+        if field not in fall_back_data:
+            raise HTTPException(status_code=400, detail=f"fall_back missing required field: {field}")
+    
+    # Validate is_enable is boolean
+    if not isinstance(fall_back_data['is_enable'], bool):
+        raise HTTPException(status_code=400, detail="fall_back.is_enable must be a boolean")
+    
+    # If fall_back is enabled, validate service and model
+    if fall_back_data['is_enable']:
+        service = fall_back_data['service']
+        model = fall_back_data['model']
+        
+        # Check if service exists in model configuration
+        if service not in model_config_document:
+            raise HTTPException(status_code=400, detail=f"fall_back service '{service}' is not available")
+        
+        # Check if model exists for the service
+        if model not in model_config_document[service]:
+            raise HTTPException(status_code=400, detail=f"fall_back model '{model}' is not available for service '{service}'")
+    
+    return True
+
 async def get_default_values_controller(service, model, current_configuration, type):
     try:
         service = service.lower()
