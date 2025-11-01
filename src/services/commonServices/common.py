@@ -101,10 +101,7 @@ async def chat(request_body):
         )
         # Step 9 : json_schema service conversion
         if 'response_type' in custom_config and custom_config['response_type'].get('type') == 'json_schema':
-            if parsed_data['service'] == 'anthropic':
-                del custom_config['response_type']
-            else:
-                custom_config['response_type'] = restructure_json_schema(custom_config['response_type'], parsed_data['service'])
+            custom_config['response_type'] = restructure_json_schema(custom_config['response_type'], parsed_data['service'])
         
         
         # Execute with retry mechanism
