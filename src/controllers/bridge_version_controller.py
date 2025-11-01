@@ -2,7 +2,7 @@ import json
 import asyncio
 from fastapi import HTTPException, status
 from fastapi.responses import JSONResponse
-from ..db_services.bridge_version_services import create_bridge_version, update_bridges, get_version_with_tools, publish, get_comparison_score
+from ..db_services.bridge_version_services import create_bridge_version, update_bridges, get_version_with_tools, publish, get_comparison_score, delete_bridge_version
 from src.services.utils.helper import Helper
 from ..db_services.ConfigurationServices import get_bridges_with_tools, update_bridge, get_bridges_without_tools
 from bson import ObjectId
@@ -72,6 +72,17 @@ async def publish_version(request, version_id):
         return JSONResponse({"success": True, "message": "version published successfully", "version_id": version_id })
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+async def remove_version(request, version_id):
+    try:
+        org_id = request.state.profile['org']['id']
+        result = await delete_bridge_version(org_id, version_id)
+        return JSONResponse(result)
+    except BadRequestException as error:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(error))
+    except Exception as error:
+        logger.error(f"Unexpected error while deleting version {version_id}: {str(error)}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to delete version")
 
 async def bulk_publish_version(request):
     try:
