@@ -161,7 +161,7 @@ async def create(dataset, history_params, version_id, thread_info={}):
                 'model': data_object['model'],
                 'input_tokens': data_object.get('inputTokens', 0) or 0.0,
                 'output_tokens': data_object.get('outputTokens', 0) or 0.0,
-                'total_tokens': data_object.get('totalTokens', 0) or 0.0,
+                'total_tokens': data_object.get('total_tokens', 0) or 0.0,
                 'apikey_id': data_object.get('apikey_object_id', {}).get(data_object['service'], '') if data_object.get('apikey_object_id') else '',
                 'created_at': datetime.now(),  # Remove timezone to match database expectations
                 'latency': latency,
@@ -183,7 +183,7 @@ async def create(dataset, history_params, version_id, thread_info={}):
             oldTotalToken = 0
 
         # Calculate the total token sum, using .get() for 'totalTokens' to handle missing keys
-        totaltoken = sum(data_object.get('totalTokens', 0) for data_object in dataset) + oldTotalToken
+        totaltoken = sum(data_object.get('total_tokens', 0) for data_object in dataset) + oldTotalToken
         # await send_error_to_webhook(history_params['bridge_id'], history_params['org_id'],totaltoken , 'metrix_limit_reached')
         await store_in_cache(cache_key, float(totaltoken))
         await timescale_metrics(metrics_data)

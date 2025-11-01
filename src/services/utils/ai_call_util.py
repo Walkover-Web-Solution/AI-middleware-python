@@ -40,6 +40,11 @@ async def call_ai_middleware(user, bridge_id, variables = {}, configuration = No
     return result
 
 async def call_gtwy_agent(args):
+    # Initialize variables that might be used in exception handler
+    message_id = ""
+    version_id = args.get('version_id')
+    bridge_id = args.get('bridge_id')
+    
     try:
         # Import inside function to avoid circular imports
         from src.services.commonServices.common import chat
@@ -52,8 +57,6 @@ async def call_gtwy_agent(args):
             request_body["sub_thread_id"] = args.get('sub_thread_id')
         
         org_id = args.get('org_id')
-        bridge_id = args.get('bridge_id')
-        version_id = args.get('version_id')
         user_message = args.get('user')
         variables = args.get('variables') or {}
         
@@ -117,6 +120,8 @@ async def call_gtwy_agent(args):
         
         data_section = response_data.get('response', {}).get('data', {})
         result = data_section.get('content', "")
+        message_id = data_section.get('message_id', "")
+        version_id = db_config.get('version_id', None)
         
         # Check for image URLs and include them if present
         image_urls = data_section.get('image_urls')
@@ -132,11 +137,33 @@ async def call_gtwy_agent(args):
                 parsed_result['image_urls'] = image_urls
             else:
                 parsed_result = {"data": parsed_result, "image_urls": image_urls}
-        
-        return parsed_result
+
+        return {
+            "response": parsed_result,
+            "metadata":{
+                 "agent_id": bridge_id,
+                 "version_id": version_id,
+                 "message_id": message_id,
+                 "thread_id": args.get('thread_id'),
+                 "subthread_id": args.get('subthread_id'),
+                 "type": "agent"
+            },
+            'status': 1
+        }
             
     except Exception as e:
-        raise Exception(f"Error in call_gtwy_agent: {str(e)}")
+        return {
+            "response": str(e),
+            "metadata":{
+                 "agent_id": bridge_id,
+                 "version_id": version_id,
+                 "message_id": message_id,
+                 "thread_id": args.get('thread_id'),
+                 "subthread_id": args.get('subthread_id'),
+                 "type": "agent"
+            },
+            'status': 0
+        }
 
 async def get_ai_middleware_agent_data(bridge_id):
     try:

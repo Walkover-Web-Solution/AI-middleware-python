@@ -316,6 +316,17 @@ class Helper:
             cache_key = f"{redis_keys['timezone_and_org_']}{org_id}"
             await store_in_cache(cache_key, response.get('data', {}).get('data', [{}])[0])
             return response.get('data', {}).get('data', [{}])[0]
+
+    async def validate_proxy_pauthkey(pauthkey):
+        if not pauthkey:
+            raise ValueError("pauthkey is required for validation")
+        headers = {
+            "authkey": Config.ADMIN_API_KEY,
+            "cauthkey": pauthkey
+        }
+        response, _ = await fetch("https://routes.msg91.com/api/validateCauthKey", "GET", headers, None, None)
+        return response
+
     def sort_bridges(bridges, metrics_data):
         # Create a dictionary to map _id to total tokens
         token_map = {_id: tokens for _id, tokens in metrics_data}
@@ -464,4 +475,5 @@ class Helper:
             "fields": fields,
             "required_params": required_params
         }
+
 

@@ -2,11 +2,10 @@ from fastapi import HTTPException, status
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 from src.db_services.ConfigurationServices import create_bridge, get_all_bridges_in_org_by_org_id, get_bridge_by_id, get_all_bridges_in_org, update_bridge, update_bridge_ids_in_api_calls, get_bridges_with_tools, get_apikey_creds, update_apikey_creds, update_built_in_tools, update_agents, get_all_agents_data, get_agents_data, get_bridges_and_versions_by_model, clone_agent_to_org
-from src.configs.modelConfiguration import ModelsConfig as model_configuration
 from src.services.utils.helper import Helper
+from src.configs.constant import redis_keys
 import json
 from config import Config
-from ..configs.constant import service_name
 from src.db_services.conversationDbService import storeSystemPrompt, add_bulk_user_entries
 from bson import ObjectId
 from src.services.utils.getDefaultValue import get_default_values_controller, validate_fall_back
@@ -18,6 +17,7 @@ from src.configs.constant import bridge_ids
 from src.services.utils.ai_call_util import call_ai_middleware
 from src.services.cache_service import find_in_cache
 from src.db_services.templateDbservice import get_template
+from src.services.utils.common_utils import validate_json_schema_configuration
 
 async def create_bridges_controller(request):
     try:
@@ -28,7 +28,7 @@ async def create_bridges_controller(request):
         folder_id = request.state.folder_id if hasattr(request.state, 'folder_id') else None
         user_id = request.state.user_id
         all_bridge = await get_all_bridges_in_org_by_org_id(org_id)
-        prompt = None
+        prompt = "Role: AI Bot\nObjective: Respond logically and clearly, maintaining a neutral, automated tone.\nGuidelines:\nIdentify the task or question first.\nProvide brief reasoning before the answer or action.\nKeep responses concise and contextually relevant.\nAvoid emotion, filler, or self-reference.\nUse examples or placeholders only when helpful."
         name =None
         service = "ai_ml"
         model = "gpt-oss-120b"
@@ -209,7 +209,12 @@ async def get_all_bridges(request):
         avg_response_time = {}
         for bridge in bridges:
             bridge_id = bridge.get('_id')
-            avg_response_time_data = await find_in_cache(f"AVG_{org_id}_{bridge_id}")
+            avg_response_time_data = await find_in_cache(f"{redis_keys['avg_response_time_']}{org_id}_{bridge_id}")
+            total_tokens = await find_in_cache(f"{redis_keys['metrix_bridges_']}{bridge_id}")
+            
+            if total_tokens:
+                bridge["total_tokens"] = json.loads(total_tokens)
+
             avg_response_time[bridge_id] = round(float(avg_response_time_data), 2) if avg_response_time_data else 0
         return JSONResponse(status_code=200, content={
                 "success": True,
@@ -338,6 +343,12 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
         new_configuration = body.get('configuration')
         config_type = new_configuration.get('type') if new_configuration else None
         service = body.get('service')
+        
+        # Validate JSON schema configuration
+        if new_configuration:
+            is_valid, error_message = validate_json_schema_configuration(new_configuration)
+            if not is_valid:
+                raise HTTPException(status_code=400, detail=error_message)
 
         #process connected agent data
         connected_agent_details = body.get('connected_agent_details')
