@@ -412,6 +412,10 @@ def validate_json_schema_configuration(configuration):
     if not response_type:
         return True, None
         
+    # If response_type is a string (like "default"), allow it
+    if isinstance(response_type, str):
+        return True, None
+        
     # Check if type is json_schema
     if response_type.get('type') != 'json_schema':
         return True, None
