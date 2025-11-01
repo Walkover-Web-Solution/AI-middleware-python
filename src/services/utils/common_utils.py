@@ -32,45 +32,15 @@ from src.db_services.orchestrator_history_service import OrchestratorHistoryServ
 def handle_anthropic_response_type_error(error_str, parsed_data=None):
     """
     Handle specific Anthropic API error for unexpected 'response_type' keyword argument.
-    Returns a proper JSON schema instead of empty objects.
+    Returns error message if pattern matches, otherwise None.
     """
     # Check if this is the specific Anthropic response_type error
     if ("anthropic api AsyncMessages.stream() got an unexpected keyword argument 'response_type'" in str(error_str) or 
         "unexpected keyword argument 'response_type'" in str(error_str)):
         
-        # Create proper JSON schema response
-        proper_response = {
-            'success': False,
-            'error': 'Anthropic API does not support response_type parameter. Please remove response_type from your configuration or use a different model provider.',
-            'response': {
-                'usage': {
-                    'prompt_tokens': 0,
-                    'completion_tokens': 0,
-                    'total_tokens': 0,
-                    'cost': 0
-                },
-                'data': {
-                    'message': 'Error: Anthropic models do not support structured output via response_type parameter.',
-                    'suggestion': 'Consider using OpenAI models for structured JSON responses or modify your prompt to request JSON format naturally.',
-                    'error_type': 'unsupported_parameter'
-                }
-            },
-            'modelResponse': {
-                'error': 'response_type_not_supported',
-                'provider': 'anthropic',
-                'supported_features': ['text_generation', 'conversation', 'tool_calling'],
-                'unsupported_features': ['structured_output_response_type']
-            }
+        return {
+            'error': 'Anthropic API does not support response_type parameter. Please remove response_type from your configuration or use a different model provider.'
         }
-        
-        # Add bridge_id and org_id if available from parsed_data
-        if parsed_data:
-            proper_response['response']['data']['bridge_id'] = parsed_data.get('bridge_id')
-            proper_response['response']['data']['org_id'] = parsed_data.get('org_id')
-            proper_response['response']['data']['model'] = parsed_data.get('model')
-            proper_response['response']['data']['service'] = parsed_data.get('service')
-        
-        return proper_response
     
     return None
 
@@ -85,7 +55,7 @@ def transform_error_response(error, parsed_data=None):
     # Check for the specific Anthropic response_type error in any format
     if ("AsyncMessages.stream() got an unexpected keyword argument" in error_str and 
         "response_type" in error_str):
-        return 'Anthropic API does not support response_type parameter. Please remove response_type from your configuration or use a different model provider.'
+        return 'Anthropic API does not support {} as JSON SCHEMA. Please update response_type.'
     
     # Check for the direct error pattern using the original function
     transformed_error = handle_anthropic_response_type_error(error_str, parsed_data)
