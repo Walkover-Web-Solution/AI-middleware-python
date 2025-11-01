@@ -2,6 +2,8 @@ from config import Config
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 import traceback
+from exceptions.bad_request import BadRequestException
+from src.services.utils.logger import logger
 from ...db_services import metrics_service as metrics_service
 import pydash as _
 from ..utils.helper import Helper
@@ -34,15 +36,12 @@ from src.services.utils.common_utils import (
     create_history_params,
     add_files_to_parse_data,
     orchestrator_agent_chat,
-    process_background_tasks_for_playground
+    process_background_tasks_for_playground,
+    transform_error_response
 )
 from src.services.utils.guardrails_validator import guardrails_check
 from src.services.utils.rich_text_support import process_chatbot_response
 app = FastAPI()
-from src.services.utils.helper import Helper
-from src.services.commonServices.testcases import run_testcases as run_bridge_testcases
-from globals import *
-from src.services.cache_service import find_in_cache
 
 configurationModel = db["configurations"]
 
@@ -233,7 +232,7 @@ async def chat(request_body):
     except (Exception, ValueError, BadRequestException) as error:
         if not isinstance(error, BadRequestException):
             logger.error(f'Error in chat service: %s, {str(error)}, {traceback.format_exc()}')
-        if not parsed_data['is_playground']:
+        if not parsed_data.get('is_playground', True):
             # Create latency object and update usage metrics
             latency = create_latency_object(timer, params)
             update_usage_metrics(parsed_data, params, latency, error=error, success=False)
@@ -243,8 +242,9 @@ async def chat(request_body):
             await sendResponse(parsed_data['response_format'], result.get("error", str(error)), variables=parsed_data['variables']) if parsed_data['response_format']['type'] != 'default' else None
             # Process background tasks for error handling
             await process_background_tasks_for_error(parsed_data, error)
-        # Add support contact information to error message
-        error_message = f"{str(error)}. For more support contact us at support@gtwy.ai"
+        # Transform error using one-line function and add support contact information
+        transformed_error = transform_error_response(error, parsed_data)
+        error_message = f"{transformed_error}. For more support contact us at support@gtwy.ai"
         raise ValueError(error_message)
 
 
@@ -422,7 +422,7 @@ async def image(request_body):
     except (Exception, ValueError, BadRequestException) as error:
         if not isinstance(error, BadRequestException):
             logger.error(f'Error in image service: {str(error)}, {traceback.format_exc()}')
-        if not parsed_data['is_playground']:
+        if not parsed_data.get('is_playground', True):
             # Create latency object and update usage metrics
             latency = create_latency_object(timer, params)
             update_usage_metrics(parsed_data, params, latency, error=error, success=False)
@@ -432,4 +432,6 @@ async def image(request_body):
             await sendResponse(parsed_data['response_format'], result.get("modelResponse", str(error)), variables=parsed_data['variables']) if parsed_data['response_format']['type'] != 'default' else None
             # Process background tasks for error handling
             await process_background_tasks_for_error(parsed_data, error)
-        raise ValueError(error)
+        # Transform error using one-line function
+        transformed_error = transform_error_response(error, parsed_data)
+        raise ValueError(transformed_error)
