@@ -29,6 +29,41 @@ from ..commonServices.baseService.utils import sendResponse
 from src.services.utils.rich_text_support import process_chatbot_response
 from src.db_services.orchestrator_history_service import OrchestratorHistoryService, orchestrator_collector
 
+def handle_anthropic_response_type_error(error_str, parsed_data=None):
+    """
+    Handle specific Anthropic API error for unexpected 'response_type' keyword argument.
+    Returns error message if pattern matches, otherwise None.
+    """
+    # Check if this is the specific Anthropic response_type error
+    if ("anthropic api AsyncMessages.stream() got an unexpected keyword argument 'response_type'" in str(error_str) or 
+        "unexpected keyword argument 'response_type'" in str(error_str)):
+        
+        return {
+            'error': 'Anthropic API does not support response_type parameter. Please remove response_type from your configuration or use a different model provider.'
+        }
+    
+    return None
+
+def transform_error_response(error, parsed_data=None):
+    """
+    Simple one-line function to transform error into proper structured response.
+    Returns the new error if it matches specific patterns, otherwise returns original error.
+    """
+    # Handle both string errors and dictionary errors
+    error_str = str(error)
+    
+    # Check for the specific Anthropic response_type error in any format
+    if ("AsyncMessages.stream() got an unexpected keyword argument" in error_str and 
+        "response_type" in error_str):
+        return 'Anthropic API does not support {} as JSON SCHEMA. Please update response_type.'
+    
+    # Check for the direct error pattern using the original function
+    transformed_error = handle_anthropic_response_type_error(error_str, parsed_data)
+    if transformed_error:
+        return transformed_error['error']
+    
+    return str(error)
+
 def parse_request_body(request_body):
     body = request_body.get('body', {})
     state = request_body.get('state', {})
