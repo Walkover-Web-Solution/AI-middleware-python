@@ -5,10 +5,6 @@ import json
 from globals import *
 from bson import errors
 from src.configs.constant import redis_keys
-from config import Config
-from datetime import datetime
-import jwt
-from ..services.utils.apiservice import fetch
 
 configurationModel = db["configurations"]
 apiCallModel = db['apicalls']
@@ -326,7 +322,8 @@ async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None)
                     }
                 },
                 {
-                    '$project': { 'service': 1, 'apikey': 1 }
+                    '$project': { 'service': 1, 'apikey': 1, 'apikey_limit': { '$ifNull': ['$apikey_limit', 0] },
+                     'apikey_usage': { '$ifNull': ['$apikey_usage', 0] } }
                 }
             ],
             'as': 'apikeys_docs'
@@ -369,7 +366,11 @@ async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None)
                                                         }
                                                     },
                                                     'as': 'matched_doc',
-                                                    'in': '$$matched_doc.apikey'
+                                                    'in': {
+                                                    'apikey': '$$matched_doc.apikey',
+                                                    'apikey_limit': '$$matched_doc.apikey_limit', 
+                                                    'apikey_usage': '$$matched_doc.apikey_usage'
+                                                    }       
                                                 }
                                             },
                                             0  # Get the first matched apikey
@@ -573,7 +574,9 @@ async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None)
                 {
                     '$addFields': {
                         'apikey_object_id_safe': { '$ifNull': ['$apikey_object_id', {}] },
-                        'has_apikeys': { '$cond': [{ '$eq': [{ '$type': '$apikey_object_id' }, 'object'] }, True, False] }
+                        'has_apikeys': { '$cond': [{ '$eq': [{ '$type': '$apikey_object_id' }, 'object'] }, True, False] },
+                        'folder_limit': { '$ifNull': ['$folder_limit', 0] },
+                        'folder_usage': { '$ifNull': ['$folder_usage', 0] }
                     }
                 },
                 {
@@ -677,7 +680,7 @@ async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None)
                 # Stage 5: Project only folder_apikeys
                 {
                     '$project': {
-                        'folder_apikeys': 1
+                        'folder_apikeys': 1,'folder_limit': { '$ifNull': ['$folder_limit', 0] },'folder_usage': { '$ifNull': ['$folder_usage', 0] }
                     }
                 }
             ]
@@ -688,11 +691,17 @@ async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None)
             # Append folder_apikeys to bridge_data if found
             if folder_result and folder_result[0].get('folder_apikeys'):
                 bridge_data['folder_apikeys'] = folder_result[0]['folder_apikeys']
+                bridge_data['folder_limit'] = folder_result[0]['folder_limit']
+                bridge_data['folder_usage'] = folder_result[0]['folder_usage']
             else:
                 bridge_data['folder_apikeys'] = {}
+                bridge_data['folder_limit'] = 0
+                bridge_data['folder_usage'] = 0
         else:
             # No folder_id, set empty folder_apikeys
             bridge_data['folder_apikeys'] = {}
+            bridge_data['folder_limit'] = 0
+            bridge_data['folder_usage'] = 0
        
         # Structure the final response
         response = {
