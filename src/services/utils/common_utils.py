@@ -82,23 +82,16 @@ def transform_error_response(error, parsed_data=None):
     # Handle both string errors and dictionary errors
     error_str = str(error)
     
-    # Debug: Print the error to see what we're getting
-    print(f"DEBUG: Error type: {type(error)}")
-    print(f"DEBUG: Error string: {error_str}")
-    
     # Check for the specific Anthropic response_type error in any format
     if ("AsyncMessages.stream() got an unexpected keyword argument" in error_str and 
         "response_type" in error_str):
-        print("DEBUG: Anthropic error detected, transforming...")
         return 'Anthropic API does not support response_type parameter. Please remove response_type from your configuration or use a different model provider.'
     
     # Check for the direct error pattern using the original function
     transformed_error = handle_anthropic_response_type_error(error_str, parsed_data)
     if transformed_error:
-        print("DEBUG: Transformed using handle_anthropic_response_type_error")
         return transformed_error['error']
     
-    print("DEBUG: No transformation applied, returning original error")
     return str(error)
 
 def parse_request_body(request_body):
