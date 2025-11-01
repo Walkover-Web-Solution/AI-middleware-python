@@ -17,7 +17,7 @@ async def chatbot_suggestions(response_format, assistant, user, bridge_summary, 
         conversation.extend([{"role": "user", "content": user}, {"role": "assistant", "content": assistant.get('data', '').get('content')}])
         final_prompt = prompt_summary if prompt_summary is not None else prompt
         random_id = str(uuid.uuid4())
-        updated_prompt = get_specific_prebuilt_prompt_service(org_id,'chatbot_suggestions')
+        updated_prompt = await get_specific_prebuilt_prompt_service(org_id,'chatbot_suggestions')
         configuration = None
         if updated_prompt and updated_prompt.get('chatbot_suggestions'):
             configuration = {
