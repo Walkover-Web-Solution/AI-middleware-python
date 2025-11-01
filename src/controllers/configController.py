@@ -118,10 +118,8 @@ async def create_bridges_controller(request):
         }
         if prompt is not None:
             model_data['prompt'] = prompt
-        # Handle limit keys - default to 0 if not provided
         bridge_limit = bridges.get('bridge_limit', 0)
-        folder_limit = bridges.get('folder_limit', 0)
-        
+        bridge_usage = bridges.get('bridge_usage', 0)
         result = await create_bridge({
             "configuration": model_data,
             "name": name,
@@ -135,7 +133,7 @@ async def create_bridges_controller(request):
             "user_id" : user_id,
             "fall_back" : fall_back,
             "bridge_limit": bridge_limit,
-            "folder_limit": folder_limit
+            "bridge_usage":bridge_usage
         })
         create_version = await create_bridge_version(result['bridge'])
         update_fields = {'versions' : [create_version]}
@@ -405,8 +403,8 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
         # Handle limit keys - default to 0 if not provided
         if 'bridge_limit' in body:
             update_fields['bridge_limit'] = body.get('bridge_limit', 0)
-        if 'folder_limit' in body:
-            update_fields['folder_limit'] = body.get('folder_limit', 0)
+        if 'bridge_usage' in body:
+            update_fields['bridge_usage'] = body.get('bridge_usage', 0)
         
         # Handle service and model configuration
         if page_config is not None:

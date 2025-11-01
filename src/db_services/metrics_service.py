@@ -117,7 +117,7 @@ async def update_usage_cost_in_cache(cache_key, cost_increment):
     except Exception as e:
         logger.error(f"Error updating usage cost for key {cache_key}: {str(e)}")
 
-async def update_cost(history_params, dataset):
+async def update_cost(history_params, dataset,version_id):
     try:
         bridge_id = history_params.get('bridge_id')
         folder_id = history_params.get('folder_id')
@@ -134,17 +134,17 @@ async def update_cost(history_params, dataset):
             
             # Update bridge usage
             if bridge_id:
-                bridge_usage_key = f"{redis_keys['bridgeusedcost_']}{bridge_id}"
+                bridge_usage_key = f"{redis_keys['bridgeusedcost_']}{bridge_id}_{version_id}"
                 await update_usage_cost_in_cache(bridge_usage_key, expected_cost)
             
             # Update folder usage
             if folder_id:
-                folder_usage_key = f"{redis_keys['folderusedcost_']}{folder_id}"
+                folder_usage_key = f"{redis_keys['folderusedcost_']}{folder_id}_{version_id}"
                 await update_usage_cost_in_cache(folder_usage_key, expected_cost)
             
             # Update API key usage
             if apikey_id:
-                api_usage_key = f"{redis_keys['apikeyusedcost_']}{apikey_id}"
+                api_usage_key = f"{redis_keys['apikeyusedcost_']}{apikey_id}_{version_id}"
                 await update_usage_cost_in_cache(api_usage_key, expected_cost)
         
         logger.info(f"Updated cost usage for bridge: {bridge_id}, folder: {folder_id}, apikey: {apikey_id}")
@@ -236,7 +236,7 @@ async def create(dataset, history_params, version_id, thread_info={}):
         # await send_error_to_webhook(history_params['bridge_id'], history_params['org_id'],totaltoken , 'metrix_limit_reached')
         await store_in_cache(cache_key, float(totaltoken))
         await timescale_metrics(metrics_data)
-        await update_cost(history_params, dataset[0])
+        await update_cost(history_params, dataset[0],version_id)
     except Exception as error:
         logger.error(f'Error during bulk insert of Ai middleware, {str(error)}')
 
