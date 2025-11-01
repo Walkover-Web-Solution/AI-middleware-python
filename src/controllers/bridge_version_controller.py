@@ -25,6 +25,14 @@ async def create_version(request):
       version_description = body.get('version_description') or ""
       org_id = request.state.profile['org']['id']
       bridge_data = await get_bridges_without_tools(org_id=org_id, version_id= version_id)
+      
+      # Check if bridge is deleted
+      if bridge_data.get('bridges', {}).get('deletedAt'):
+          raise HTTPException(
+              status_code=status.HTTP_400_BAD_REQUEST, 
+              detail="Cannot create version for a deleted bridge"
+          )
+      
       parent_id = bridge_data.get('bridges').get('parent_id')
       bridge_data['bridges']['version_description'] = version_description
       create_new_version = await create_bridge_version(bridge_data.get('bridges'), parent_id=parent_id)
