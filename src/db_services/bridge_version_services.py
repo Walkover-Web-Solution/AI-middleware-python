@@ -1,6 +1,6 @@
 from src.db_services.conversationDbService import add_bulk_user_entries
 from models.mongo_connection import db
-from bson import ObjectId
+from bson import ObjectId, errors
 import traceback
 import json
 import asyncio
@@ -15,9 +15,13 @@ from src.configs.constant import bridge_ids
 from ..services.utils.ai_call_util import call_ai_middleware
 from globals import *
 from src.configs.constant import redis_keys
+from typing import Dict, Set, Iterable, Optional
 
 configurationModel = db["configurations"]
 version_model = db['configuration_versions']
+apiCallModel = db['apicalls']
+apikeyCredentialsModel = db['apikeycredentials']
+testcases_history_model = db['testcases_history']
 
 
 async def get_version(org_id, version_id):
@@ -193,6 +197,201 @@ async def publish(org_id, version_id, user_id):
         "success": True,
         "message": "Configuration updated successfully", 
     }
+
+
+async def _cleanup_connected_agents(version_id: str, org_id: str) -> Dict[str, Set[str]]:
+    """Remove references to the version from connected agent mappings across bridges and versions."""
+    affected_ids: Dict[str, Set[str]] = {'versions': set(), 'bridges': set()}
+
+    config_cursor = configurationModel.find(
+        {
+            'org_id': org_id,
+            'connected_agents': {'$type': 'object'}
+        },
+        {'connected_agents': 1}
+    )
+    async for doc in config_cursor:
+        connected_agents = doc.get('connected_agents') or {}
+        filtered_agents = {
+            name: info
+            for name, info in connected_agents.items()
+            if info.get('version_id') != version_id
+        }
+        if len(filtered_agents) != len(connected_agents):
+            await configurationModel.update_one(
+                {'_id': doc['_id']},
+                {'$set': {'connected_agents': filtered_agents}}
+            )
+            affected_ids['bridges'].add(str(doc['_id']))
+
+    version_cursor = version_model.find(
+        {
+            'org_id': org_id,
+            'connected_agents': {'$type': 'object'}
+        },
+        {'connected_agents': 1}
+    )
+    async for doc in version_cursor:
+        connected_agents = doc.get('connected_agents') or {}
+        filtered_agents = {
+            name: info
+            for name, info in connected_agents.items()
+            if info.get('version_id') != version_id
+        }
+        if len(filtered_agents) != len(connected_agents):
+            await version_model.update_one(
+                {'_id': doc['_id']},
+                {'$set': {'connected_agents': filtered_agents}}
+            )
+            affected_ids['versions'].add(str(doc['_id']))
+
+    return affected_ids
+
+
+async def _cleanup_api_calls(version_id: str) -> Dict[str, Set[str]]:
+    """Detach the version from API call documents and collect impacted bridge/version ids for cache invalidation."""
+    impacted: Dict[str, Set[str]] = {'bridges': set(), 'versions': set()}
+    lookup_query = {
+        '$or': [
+            {'version_ids': version_id}
+        ]
+    }
+
+    cursor = apiCallModel.find(lookup_query, {'bridge_ids': 1, 'version_ids': 1})
+    async for doc in cursor:
+        for bridge_id in doc.get('bridge_ids') or []:
+            impacted['bridges'].add(str(bridge_id))
+        for vid in doc.get('version_ids') or []:
+            impacted['versions'].add(str(vid))
+
+    await apiCallModel.update_many(
+        {'version_ids': version_id},
+        {'$pull': {'version_ids': version_id}}
+    )
+
+    return impacted
+
+
+async def _cleanup_apikey_credentials(version_id: str) -> None:
+    """Remove the version from any apikey credential mappings."""
+    await apikeyCredentialsModel.update_many(
+        {'version_ids': version_id},
+        {'$pull': {'version_ids': version_id}}
+    )
+
+
+def _collect_rag_cache_keys(version_doc: dict) -> Set[str]:
+    """Build cache keys tied to RAG resources associated with the version."""
+    cache_keys: Set[str] = set()
+    doc_ids = version_doc.get('doc_ids') or []
+    for doc_id in doc_ids:
+        if isinstance(doc_id, str):
+            cache_keys.add(f"{redis_keys['files_']}{doc_id}")
+    return cache_keys
+
+
+async def _cleanup_testcase_history(version_id: str) -> None:
+    """Drop testcase history documents linked to the version."""
+    await testcases_history_model.delete_many({'version_id': version_id})
+
+
+def _merge_impacted_ids(*impacts: Optional[Dict[str, Set[str]]]) -> Dict[str, Set[str]]:
+    """Merge multiple impacted-id maps into a single structure."""
+    merged: Dict[str, Set[str]] = {'bridges': set(), 'versions': set()}
+    for impact in impacts:
+        if not impact:
+            continue
+        merged['bridges'].update(impact.get('bridges', set()))
+        merged['versions'].update(impact.get('versions', set()))
+    return merged
+
+
+def _build_cache_keys(
+    version_id: str,
+    parent_id: Optional[str],
+    impacted_ids: Dict[str, Set[str]],
+    extra_keys: Iterable[str]
+) -> Set[str]:
+    """Collect all Redis keys that should be cleared after removing the version."""
+    cache_keys: Set[str] = {
+        f"{redis_keys['get_bridge_data_']}{version_id}",
+        f"{redis_keys['bridge_data_with_tools_']}{version_id}"
+    }
+
+    if parent_id:
+        cache_keys.update({
+            f"{redis_keys['get_bridge_data_']}{parent_id}",
+            f"{redis_keys['bridge_data_with_tools_']}{parent_id}"
+        })
+
+    for bridge_id in impacted_ids['bridges']:
+        cache_keys.update({
+            f"{redis_keys['get_bridge_data_']}{bridge_id}",
+            f"{redis_keys['bridge_data_with_tools_']}{bridge_id}"
+        })
+
+    for version in impacted_ids['versions']:
+        cache_keys.update({
+            f"{redis_keys['get_bridge_data_']}{version}",
+            f"{redis_keys['bridge_data_with_tools_']}{version}"
+        })
+
+    cache_keys.update(extra_keys)
+    return cache_keys
+
+
+async def delete_bridge_version(org_id: str, version_id: str):
+    if not version_id:
+        raise BadRequestException("Invalid version id provided")
+
+    version_doc = await version_model.find_one({'_id': version_id, 'org_id': org_id})
+    if not version_doc:
+        raise BadRequestException("Version not found")
+
+    parent_id = version_doc.get('parent_id')
+    parent_object_id = None
+    if parent_id:
+        try:
+            parent_object_id = ObjectId(parent_id)
+        except (errors.InvalidId, TypeError):
+            parent_object_id = None
+
+    if parent_object_id:
+        parent_config = await configurationModel.find_one(
+            {'_id': parent_object_id, 'org_id': org_id},
+            {'published_version_id': 1}
+        )
+        if parent_config and parent_config.get('published_version_id') == version_id:
+            raise BadRequestException("Cannot delete the currently published version. Publish a different version first.")
+
+    connected_agents_impacted = await _cleanup_connected_agents(version_id, org_id)
+
+    if parent_object_id:
+        await configurationModel.update_one(
+            {'_id': parent_object_id},
+            {'$pull': {'versions': version_id}}
+        )
+
+    api_calls_impacted = await _cleanup_api_calls(version_id)
+    await _cleanup_apikey_credentials(version_id)
+    await _cleanup_testcase_history(version_id)
+
+    delete_result = await version_model.delete_one({'_id': version_id, 'org_id': org_id})
+    if delete_result.deleted_count == 0:
+        raise BadRequestException("Failed to delete version")
+
+    rag_cache_keys = _collect_rag_cache_keys(version_doc)
+    impacted_ids = _merge_impacted_ids(connected_agents_impacted, api_calls_impacted)
+    cache_keys_to_delete = _build_cache_keys(version_id, parent_id, impacted_ids, rag_cache_keys)
+
+    if cache_keys_to_delete:
+        await delete_in_cache(list(cache_keys_to_delete))
+
+    return {
+        "success": True,
+        "message": "Version deleted successfully"
+    }
+
 async def makeQuestion(parent_id, prompt, functions, save = False):
     if functions: 
         filtered_functions = {
