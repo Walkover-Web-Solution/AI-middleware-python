@@ -344,7 +344,7 @@ async def delete_bridge_version(org_id: str, version_id: str):
     if not version_id:
         raise BadRequestException("Invalid version id provided")
 
-    version_doc = await version_model.find_one({'_id': version_id, 'org_id': org_id})
+    version_doc = await version_model.find_one({'_id': ObjectId(version_id), 'org_id': org_id})
     if not version_doc:
         raise BadRequestException("Version not found")
 
@@ -376,7 +376,7 @@ async def delete_bridge_version(org_id: str, version_id: str):
     await _cleanup_apikey_credentials(version_id)
     await _cleanup_testcase_history(version_id)
 
-    delete_result = await version_model.delete_one({'_id': version_id, 'org_id': org_id})
+    delete_result = await version_model.delete_one({'_id': ObjectId(version_id), 'org_id': org_id})
     if delete_result.deleted_count == 0:
         raise BadRequestException("Failed to delete version")
 
