@@ -146,4 +146,5 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
         "fall_back" : result.get("bridges", {}).get("fall_back") or {},
         "guardrails" : guardrails if guardrails is not None else (result.get("bridges", {}).get("guardrails") or {}),
         "is_embed":result.get("folder_id")!=None,
+        "web_search_filters" : result.get("bridges", {}).get("web_search_filters") or {},
     }

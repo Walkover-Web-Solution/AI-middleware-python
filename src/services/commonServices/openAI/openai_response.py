@@ -50,7 +50,18 @@ class OpenaiResponse(BaseService):
                 if 'web_search' in self.built_in_tools and 'tools' in model_config_document[self.service][self.model]['configuration']:
                     if 'tools' not in self.customConfig:
                         self.customConfig['tools'] = []
-                    self.customConfig['tools'].append({"type": "web_search_preview"})
+                    
+                    if self.web_search_filters and isinstance(self.web_search_filters, list):
+                        web_search_tool = {
+                            "type": "web_search",
+                            "filters": {
+                                "allowed_domains": self.web_search_filters
+                            }
+                        }
+                    else:
+                        web_search_tool = {"type": "web_search_preview"}
+                    
+                    self.customConfig['tools'].append(web_search_tool)
 
             openAIResponse = await self.chats(self.customConfig, self.apikey, service_name['openai'])
             modelResponse = openAIResponse.get("modelResponse", {})
