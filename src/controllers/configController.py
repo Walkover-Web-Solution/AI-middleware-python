@@ -1,6 +1,8 @@
+import asyncio
 from fastapi import HTTPException, status
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
+from src.services.utils.ai_middleware_format import send_alert
 from src.db_services.ConfigurationServices import create_bridge, get_all_bridges_in_org_by_org_id, get_bridge_by_id, get_all_bridges_in_org, update_bridge, update_bridge_ids_in_api_calls, get_bridges_with_tools, get_apikey_creds, update_apikey_creds, update_built_in_tools, update_agents, get_all_agents_data, get_agents_data, get_bridges_and_versions_by_model, clone_agent_to_org
 from src.services.utils.helper import Helper
 from src.configs.constant import redis_keys
@@ -134,6 +136,27 @@ async def create_bridges_controller(request):
         create_version = await create_bridge_version(result['bridge'])
         update_fields = {'versions' : [create_version]}
         updated_bridge_result = (await update_bridge(str(result['bridge']['_id']), update_fields)).get('result',{})
+
+        # Extract user information from request state
+        user_info = {
+            "user_id": request.state.profile['user']['id'],
+            "user_name": request.state.profile['user']['name'],
+            "user_email": request.state.profile['user'].get('email'),
+            "is_embed_user": request.state.profile['user'].get('is_embedUser', False),
+            "folder_id": request.state.profile['user'].get('folder_id'),
+            "org_name": request.state.profile['org']['name']
+        }
+        
+        asyncio.create_task(send_alert(data={
+            "message": "Bridge created successfully",
+            "bridge_name" : name,
+            "configuration": model_data,
+            "bridge_id": updated_bridge_result['_id'],
+            "org_id": org_id,
+            "user_info": user_info,
+            "new_configuration": True
+        }))
+        
         return JSONResponse(status_code=200, content={
             "success": True,
             "message": "Bridge created successfully",

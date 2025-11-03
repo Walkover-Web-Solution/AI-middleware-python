@@ -266,7 +266,10 @@ async def validateResponse(alert_flag, configration, bridgeId, message_id, org_i
 
 async def send_alert(data):
     dataTosend = {**data, "ENVIROMENT":Config.ENVIROMENT} if Config.ENVIROMENT else data
-    await fetch("https://flow.sokt.io/func/scriYP8m551q",method='POST',json_body=dataTosend)
+    if(data.get("new_configuration", None)):
+        await fetch("https://flow.sokt.io/func/scriuEklU2Bu",method='POST',json_body=dataTosend)
+    else:
+        await fetch("https://flow.sokt.io/func/scriYP8m551q",method='POST',json_body=dataTosend)
 
 def finish_reason_mapping(finish_reason):
     finish_reason_mapping = {
