@@ -242,10 +242,9 @@ async def chat(request_body):
             await sendResponse(parsed_data['response_format'], result.get("error", str(error)), variables=parsed_data['variables']) if parsed_data['response_format']['type'] != 'default' else None
             # Process background tasks for error handling
             await process_background_tasks_for_error(parsed_data, error)
-        # Transform error using one-line function and add support contact information
-        transformed_error = transform_error_response(error, parsed_data)
-        error_message = f"{transformed_error}. For more support contact us at support@gtwy.ai"
-        raise ValueError(error_message)
+        # Transform error using one-line function
+        transformed_error = transform_error_response(error)
+        raise ValueError(transformed_error)
 
 
 
