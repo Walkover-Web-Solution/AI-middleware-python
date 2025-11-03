@@ -68,6 +68,7 @@ class BaseService:
         self.files = params.get('files')
         self.file_data = params.get('file_data')
         self.youtube_url = params.get('youtube_url')
+        self.web_search_filters = params.get('web_search_filters')
 
 
     def aiconfig(self):

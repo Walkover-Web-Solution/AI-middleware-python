@@ -91,7 +91,8 @@ def parse_request_body(request_body):
         "guardrails" : body.get('bridges', {}).get('guardrails') or {},
         "testcase_data" : body.get('testcase_data') or {},
         "file_data" : body.get('video_data') or {},
-        "youtube_url" : body.get('youtube_url') or None
+        "youtube_url" : body.get('youtube_url') or None,
+        "web_search_filters" : body.get('web_search_filters') or None,
     }
 
 
@@ -287,7 +288,8 @@ def build_service_params(parsed_data, custom_config, model_output_config, thread
         "built_in_tools" : parsed_data['built_in_tools'],
         "files" : parsed_data['files'],
         "file_data" : parsed_data['file_data'],
-        "youtube_url" : parsed_data['youtube_url']
+        "youtube_url" : parsed_data['youtube_url'],
+        "web_search_filters" : parsed_data['web_search_filters']
 
     }
 
