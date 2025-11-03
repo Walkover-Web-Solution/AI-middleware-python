@@ -29,6 +29,21 @@ from ..commonServices.baseService.utils import sendResponse
 from src.services.utils.rich_text_support import process_chatbot_response
 from src.db_services.orchestrator_history_service import OrchestratorHistoryService, orchestrator_collector
 
+def transform_error_response(error):
+    """
+    Simple one-line function to transform error into proper structured response.
+    Returns the new error if it matches specific patterns, otherwise returns original error.
+    """
+    # Handle both string errors and dictionary errors
+    error_str = str(error)
+    
+    # Check for the specific Anthropic response_type error in any format
+    if ("AsyncMessages.stream() got an unexpected keyword argument" in error_str and 
+        "response_type" in error_str):
+        return 'Anthropic API does not support {} as JSON SCHEMA. Please update response_type. For more support contact us at support@gtwy.ai'
+    
+    return f"{str(error)}. For more support contact us at support@gtwy.ai"
+
 def parse_request_body(request_body):
     body = request_body.get('body', {})
     state = request_body.get('state', {})
