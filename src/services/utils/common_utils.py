@@ -92,7 +92,8 @@ def parse_request_body(request_body):
         "testcase_data" : body.get('testcase_data') or {},
         "file_data" : body.get('video_data') or {},
         "youtube_url" : body.get('youtube_url') or None,
-        "web_search_filters" : body.get('web_search_filters') or None,
+        "folder_id": body.get('folder_id'),
+        "web_search_filters" : body.get('web_search_filters') or None
     }
 
 
@@ -549,7 +550,9 @@ def create_history_params(parsed_data, error=None, class_obj=None):
         "actor": "user",
         'tools_call_data': error.args[1] if error and len(error.args) > 1 else None,
         "message_id": parsed_data['message_id'],
-        "AiConfig": class_obj.aiconfig() if class_obj else None
+        "AiConfig": class_obj.aiconfig() if class_obj else None,
+        "folder_id": parsed_data.get('folder_id'),
+        "folder_limit": parsed_data.get('folder_limit', 0)
     }
 
 
