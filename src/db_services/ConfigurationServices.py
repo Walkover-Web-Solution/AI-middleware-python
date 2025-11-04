@@ -1,6 +1,6 @@
 from models.mongo_connection import db
 from bson import ObjectId
-from ..services.cache_service import find_in_cache, store_in_cache, delete_in_cache
+from ..services.cache_service import find_in_cache, store_in_cache, delete_in_cache, make_json_serializable
 import json
 from globals import *
 from bson import errors
@@ -870,7 +870,8 @@ async def get_all_bridges_in_org(org_id, folder_id, user_id, isEmbedUser):
         'connected_agents':1,
         'function_ids':1,
         'connected_agent_details':1,
-        'bridge_summary': 1 
+        'bridge_summary': 1,
+        "deletedAt":1
     })
     bridges_list = await bridge.to_list(length=None)
     for itr in bridges_list:
@@ -878,7 +879,7 @@ async def get_all_bridges_in_org(org_id, folder_id, user_id, isEmbedUser):
         if "function_ids" in itr and itr["function_ids"]:
             # Convert every ObjectId in the list to a string
             itr["function_ids"] = [str(fid) for fid in itr["function_ids"]]
-    return bridges_list
+    return make_json_serializable(bridges_list)
 
 async def get_all_bridges_in_org_by_org_id(org_id):
     query = {"org_id": org_id}
@@ -891,7 +892,7 @@ async def get_all_bridges_in_org_by_org_id(org_id):
     for bridge in bridges_list:
         bridge['_id'] = str(bridge['_id'])
             
-    return bridges_list
+    return make_json_serializable(bridges_list)
 
 async def get_bridge_by_id(org_id, bridge_id, version_id=None):
     model = version_model if version_id else configurationModel
