@@ -62,14 +62,16 @@ async def create_bridges_controller(request):
         for bridge in all_bridge:
             name = name or "untitled_agent"
             if name.startswith("untitled_agent") and bridge.get('name').startswith("untitled_agent_"):
-                num = int(bridge.get('name').replace("untitled_agent_", ""))
+                num= bridge.get('name').replace("untitled_agent_", "")
+                num = int(num) if num.isdigit() else 1
                 if num >= name_next_count:
                     name_next_count = num +1
             elif bridge.get('name') == name:
                 name_next_count += 1
 
             if name.startswith("untitled_agent") and bridge.get('slugName').startswith("untitled_agent_"):
-                num = int(bridge.get('slugName').replace("untitled_agent_", ""))
+                num= bridge.get('slugName').replace("untitled_agent_", "")
+                num = int(num) if num.isdigit() else 1
                 if num >= slug_next_count:
                     slug_next_count = num +1
             elif bridge.get('slugName') == name:
