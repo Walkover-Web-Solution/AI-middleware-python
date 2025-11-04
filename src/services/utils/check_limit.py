@@ -17,16 +17,6 @@ def _build_limit_error(limit_type, current_usage, limit_value):
     }
 
 
-<<<<<<< Updated upstream
-async def _check_limit(limit_type, data):
-    """Check a specific limit type against the provided data with Redis cache first."""
-    limit_field = f"{limit_type}_limit"
-    usage_field = f"{limit_type}_uses"
-    
-    # Get limit value from data
-    try:
-        limit_value = float(data.get(limit_field, 0) or 0)
-=======
 async def _check_limit(limit_type, data,version_id):
     """Check a specific limit type against the provided data with Redis cache first."""
     limit_field = f"{limit_type}_limit"
@@ -38,7 +28,6 @@ async def _check_limit(limit_type, data,version_id):
             limit_value=float(data.get("apikeys", {}).get(data.get("service"), {}).get(limit_field, 0) or 0)
         else:
             limit_value = float(data.get(limit_field, 0) or 0) or float(data.get("bridges",{}).get(limit_field) or 0)
->>>>>>> Stashed changes
     except (ValueError, TypeError):
         limit_value = 0.0
     
@@ -49,30 +38,18 @@ async def _check_limit(limit_type, data,version_id):
     # Create Redis key based on limit_type and identifier
     identifier = None
     if limit_type == 'bridge':
-<<<<<<< Updated upstream
-        identifier = data.get('parent_id') or data.get('bridge_id') or data.get('_id')
-    elif limit_type == 'folder':
-        identifier = data.get('folder_id')
-    elif limit_type == 'apikey':
-        identifier = data.get('apikey_id') or data.get('_id')
-=======
         identifier = data.get('_id') or data.get('bridges',{}).get("_id")
     elif limit_type == 'folder':
         identifier = data.get('folder_id')
     elif limit_type == 'apikey':
         service = data.get('service')
         identifier = data.get('apikey_object_id',{}).get(service)
->>>>>>> Stashed changes
     
     usage_value = 0.0
     
     if identifier:
         # Try to get usage from Redis first bridgeusage_
-<<<<<<< Updated upstream
-        cache_key = f"{redis_keys[f'{limit_type}usedcost_']}{identifier}"
-=======
         cache_key = f"{redis_keys[f'{limit_type}usedcost_']}{identifier}_{version_id}"
->>>>>>> Stashed changes
         try:
             cached_usage = await find_in_cache(cache_key)
             if cached_usage:
@@ -80,14 +57,10 @@ async def _check_limit(limit_type, data,version_id):
             else:
                 # Fallback to data and update Redis
                 try:
-<<<<<<< Updated upstream
-                    usage_value = float(data.get(usage_field, 0) or 0)
-=======
                     if(limit_type=="apikey"):
                        usage_value=float(data.get("apikeys", {}).get(data.get("service"), {}).get(usage_field, 0) or 0)
                     else:
                        usage_value = float(data.get(usage_field, 0) or 0) or float(data.get("bridges",{}).get(usage_field) or 0)
->>>>>>> Stashed changes
                 except (ValueError, TypeError):
                     usage_value = 0.0
                 
@@ -114,40 +87,24 @@ async def _check_limit(limit_type, data,version_id):
 
     return None
 
-<<<<<<< Updated upstream
-async def check_bridge_api_folder_limits(result, bridge_data):
-=======
 async def check_bridge_api_folder_limits(result, bridge_data,version_id):
->>>>>>> Stashed changes
     """Validate folder, bridge, and API usage against their limits."""
     if not isinstance(bridge_data, dict):
         return None
 
     folder_identifier = result.get('folder_id')
     if folder_identifier:
-<<<<<<< Updated upstream
-        folder_error = await _check_limit('folder', data=result)
-        if folder_error:
-            return folder_error
-
-    bridge_error = await _check_limit('bridge', data=bridge_data)
-=======
         folder_error = await _check_limit('folder',data=result,version_id=version_id)
         if folder_error:
             return folder_error
 
     bridge_error = await _check_limit('bridge', data=bridge_data,version_id=version_id)
->>>>>>> Stashed changes
     if bridge_error:
         return bridge_error
 
     service_identifier = result.get('service')
     if service_identifier and result.get('apikeys') and service_identifier in result['apikeys']:
-<<<<<<< Updated upstream
-        api_error = await _check_limit('apikey', data=result['apikeys'][service_identifier])
-=======
         api_error = await _check_limit('apikey', data=result,version_id=version_id)
->>>>>>> Stashed changes
         if api_error:
             return api_error
 
