@@ -1,40 +1,39 @@
 import traceback
-import httpx
+import os
 from ..api_executor import execute_api_call
+from ...utils.apiservice import fetch
 from globals import *
 
-XAI_CHAT_COMPLETIONS_URL = "https://api.x.ai/v1/chat/completions"
-
 async def grok_runmodel(configuration, api_key, execution_time_logs, bridge_id, timer, message_id, org_id, name="", org_name="", service="", count=0, token_calculator=None):
-    """Execute a chat completion call against the xAI Grok API."""
-    headers = {
-        "Authorization": f"Bearer {api_key}",
-        "Content-Type": "application/json"
-    }
-
-    timeout = httpx.Timeout(3600.0, connect=30.0)
+    """Execute a chat completion call against the xAI Grok API using custom fetch function."""
 
     async def api_call(config):
         try:
-            print(config)
-            async with httpx.AsyncClient(timeout=timeout) as client:
-                response = await client.post(XAI_CHAT_COMPLETIONS_URL, json=config, headers=headers)
-            response.raise_for_status()
+            # Prepare the request payload for xAI API
+            url = "https://api.x.ai/v1/chat/completions"
+            headers = {
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json"
+            }
+            
+            # Use the custom fetch function to make the API call
+            response_data, response_headers = await fetch(
+                url=url,
+                method="POST",
+                headers=headers,
+                json_body=config
+            )
+            
+            # Parse the response similar to OpenAI format
             return {
                 "success": True,
-                "response": response.json()
-            }
-        except httpx.HTTPStatusError as error:
-            return {
-                "success": False,
-                "error": error.response.text,
-                "status_code": error.response.status_code
+                "response": response_data
             }
         except Exception as error:
             return {
                 "success": False,
                 "error": str(error),
-                "status_code": None
+                "status_code": getattr(error, 'status_code', None)
             }
 
     try:
@@ -62,31 +61,3 @@ async def grok_runmodel(configuration, api_key, execution_time_logs, bridge_id, 
             "error": str(error)
         }
 
-
-async def grok_test_model(configuration, api_key):
-    headers = {
-        "Authorization": f"Bearer {api_key}",
-        "Content-Type": "application/json"
-    }
-    timeout = httpx.Timeout(3600.0, connect=30.0)
-
-    try:
-        async with httpx.AsyncClient(timeout=timeout) as client:
-            response = await client.post(XAI_CHAT_COMPLETIONS_URL, json=configuration, headers=headers)
-        response.raise_for_status()
-        return {
-            "success": True,
-            "response": response.json()
-        }
-    except httpx.HTTPStatusError as error:
-        return {
-            "success": False,
-            "error": error.response.text,
-            "status_code": error.response.status_code
-        }
-    except Exception as error:
-        return {
-            "success": False,
-            "error": str(error),
-            "status_code": None
-        }
