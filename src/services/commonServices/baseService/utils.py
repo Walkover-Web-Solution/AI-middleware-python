@@ -27,7 +27,7 @@ def clean_json(data):
 
 def validate_tool_call(service, response):
     match service: # TODO: Fix validation process.
-        case  'openai_completion' | 'groq' | 'open_router' | 'mistral' | 'gemini'| 'ai_ml':
+        case  'openai_completion' | 'groq' | 'grok' | 'open_router' | 'mistral' | 'gemini'| 'ai_ml':
             tool_calls = response.get('choices', [])[0].get('message', {}).get("tool_calls", [])
             return len(tool_calls) > 0 if tool_calls is not None else False
         case 'openai':
@@ -155,7 +155,7 @@ def tool_call_formatter(configuration: dict, service: str, variables: dict, vari
                 }
             } for transformed_tool in configuration.get('tools', [])
         ]
-    elif service == service_name['groq']:
+    elif service == service_name['groq'] or service == service_name['grok']:
         return [
             {
             "type": "function",
@@ -311,7 +311,7 @@ def make_code_mapping_by_service(responses, service):
     codes_mapping = {}
     function_list = []
     match service:
-        case 'openai_completion' | 'groq' | 'open_router' | 'mistral' | 'gemini' | 'ai_ml':
+        case 'openai_completion' | 'groq' | 'grok' | 'open_router' | 'mistral' | 'gemini' | 'ai_ml':
 
             for tool_call in responses['choices'][0]['message']['tool_calls']:
                 name = tool_call['function']['name']

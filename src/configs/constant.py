@@ -2,6 +2,7 @@ service_name = {
     'openai': 'openai',
     'gemini': 'gemini',
     'anthropic': 'anthropic',
+    'grok': 'grok',
     'groq': 'groq',
     'open_router': 'open_router',
     'mistral': 'mistral',
