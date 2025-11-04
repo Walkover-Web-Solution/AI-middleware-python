@@ -40,6 +40,11 @@ async def call_ai_middleware(user, bridge_id, variables = {}, configuration = No
     return result
 
 async def call_gtwy_agent(args):
+    # Initialize variables that might be used in exception handler
+    message_id = ""
+    version_id = args.get('version_id')
+    bridge_id = args.get('bridge_id')
+    
     try:
         # Import inside function to avoid circular imports
         from src.services.commonServices.common import chat
@@ -52,8 +57,6 @@ async def call_gtwy_agent(args):
             request_body["sub_thread_id"] = args.get('sub_thread_id')
         
         org_id = args.get('org_id')
-        bridge_id = args.get('bridge_id')
-        version_id = args.get('version_id')
         user_message = args.get('user')
         variables = args.get('variables') or {}
         

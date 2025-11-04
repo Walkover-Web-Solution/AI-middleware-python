@@ -92,7 +92,8 @@ def parse_request_body(request_body):
         "testcase_data" : body.get('testcase_data') or {},
         "file_data" : body.get('video_data') or {},
         "youtube_url" : body.get('youtube_url') or None,
-        "folder_id": body.get('folder_id')
+        "folder_id": body.get('folder_id'),
+        "web_search_filters" : body.get('web_search_filters') or None
     }
 
 
@@ -124,7 +125,7 @@ async def load_model_configuration(model, configuration, service):
         if key == 'type' or key == 'specification':
             continue
         if "level" in config and (config["level"] == 0 or config["level"] == 1 or config["level"] == 2) or key in configuration:
-            custom_config[key] = configuration.get(key, "default")
+            custom_config[key] = configuration.get(key, config["default"])
     
     return model_obj, custom_config, model_output_config
 
@@ -288,7 +289,8 @@ def build_service_params(parsed_data, custom_config, model_output_config, thread
         "built_in_tools" : parsed_data['built_in_tools'],
         "files" : parsed_data['files'],
         "file_data" : parsed_data['file_data'],
-        "youtube_url" : parsed_data['youtube_url']
+        "youtube_url" : parsed_data['youtube_url'],
+        "web_search_filters" : parsed_data['web_search_filters']
 
     }
 
@@ -411,6 +413,10 @@ def validate_json_schema_configuration(configuration):
         
     response_type = configuration.get('response_type')
     if not response_type:
+        return True, None
+        
+    # If response_type is a string (like "default"), allow it
+    if isinstance(response_type, str):
         return True, None
         
     # Check if type is json_schema
