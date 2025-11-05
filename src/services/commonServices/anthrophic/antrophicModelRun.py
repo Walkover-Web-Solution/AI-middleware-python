@@ -18,7 +18,19 @@ async def anthropic_runmodel(configuration, apikey, execution_time_logs, bridge_
         # Define the API call function with streaming
         async def api_call(config):
             try:
-                # Initialize response structure to accumulate streaming data
+                # Log the configuration for debugging
+                logger.info(f"Anthropic API call config: {config}")
+                
+                # Remove 'stream' parameter if present as it's not needed for the stream method
+                config_copy = config.copy()
+                if 'stream' in config_copy:
+                    del config_copy['stream']
+                
+                # Check if streaming is disabled for debugging
+                if config.get('stream') == False:
+                    # Non-streaming call for debugging
+                    response = await anthropic_client.messages.create(**config_copy)
+                    return {'success': True, 'response': response.to_dict()}
                 accumulated_response = {
                     'id': '',
                     'type': 'message',
@@ -34,8 +46,9 @@ async def anthropic_runmodel(configuration, apikey, execution_time_logs, bridge_
                 content_blocks = {}
                 
                 # Create streaming response (stream method doesn't need 'stream' parameter)
-                async with anthropic_client.messages.stream(**config) as stream:
+                async with anthropic_client.messages.stream(**config_copy) as stream:
                     async for event in stream:
+                        logger.debug(f"Received event type: {event.type}")
                         if event.type == 'message_start':
                             # Initialize message with basic info
                             message_data = event.message
@@ -60,10 +73,29 @@ async def anthropic_runmodel(configuration, apikey, execution_time_logs, bridge_
                                     'name': content_block.name,
                                     'input': {}
                                 }
+                            elif content_block.type == 'server_tool_use':
+                                content_blocks[index] = {
+                                    'type': 'server_tool_use',
+                                    'id': content_block.id,
+                                    'name': content_block.name,
+                                    'input': getattr(content_block, 'input', {})
+                                }
                             elif content_block.type == 'thinking':
                                 content_blocks[index] = {
                                     'type': 'thinking',
                                     'thinking': ''
+                                }
+                            elif content_block.type == 'web_search_tool_result':
+                                content_blocks[index] = {
+                                    'type': 'web_search_tool_result',
+                                    'tool_use_id': getattr(content_block, 'tool_use_id', ''),
+                                    'content': getattr(content_block, 'content', [])
+                                }
+                            else:
+                                # Handle any other content types generically
+                                content_blocks[index] = {
+                                    'type': content_block.type,
+                                    **{attr: getattr(content_block, attr, None) for attr in dir(content_block) if not attr.startswith('_') and attr != 'type'}
                                 }
                                 
                         elif event.type == 'content_block_delta':
@@ -72,14 +104,21 @@ async def anthropic_runmodel(configuration, apikey, execution_time_logs, bridge_
                             delta = event.delta
                             
                             if delta.type == 'text_delta':
-                                content_blocks[index]['text'] += delta.text
+                                if 'text' in content_blocks[index]:
+                                    content_blocks[index]['text'] += delta.text
                             elif delta.type == 'input_json_delta':
                                 # For tool use, we need to accumulate the JSON string
                                 if 'partial_json' not in content_blocks[index]:
                                     content_blocks[index]['partial_json'] = ''
                                 content_blocks[index]['partial_json'] += delta.partial_json
                             elif delta.type == 'thinking_delta':
-                                content_blocks[index]['thinking'] += delta.thinking
+                                if 'thinking' in content_blocks[index]:
+                                    content_blocks[index]['thinking'] += delta.thinking
+                            # Handle other delta types generically
+                            else:
+                                # For server-side tools and other content types, they usually don't have deltas
+                                # as they are provided complete in the content_block_start event
+                                pass
                                 
                         elif event.type == 'content_block_stop':
                             # Finalize content block
@@ -110,15 +149,60 @@ async def anthropic_runmodel(configuration, apikey, execution_time_logs, bridge_
                             # Finalize the response
                             break
                 
-                # Convert content_blocks dict to ordered list
-                accumulated_response['content'] = [content_blocks[i] for i in sorted(content_blocks.keys())]
+                # Convert content_blocks dict to ordered list and merge consecutive text blocks
+                content_list = [content_blocks[i] for i in sorted(content_blocks.keys())]
                 
+                # Merge consecutive text blocks
+                merged_content = []
+                current_text = ""
+                
+                for block in content_list:
+                    if block['type'] == 'text':
+                        # Accumulate text content
+                        current_text += block.get('text', '')
+                    else:
+                        # If we have accumulated text, add it as a single block
+                        if current_text:
+                            merged_content.append({
+                                'type': 'text',
+                                'text': current_text
+                            })
+                            current_text = ""
+                        
+                        # Add the non-text block
+                        merged_content.append(block)
+                
+                # Don't forget to add any remaining text at the end
+                if current_text:
+                    merged_content.append({
+                        'type': 'text',
+                        'text': current_text
+                    })
+                
+                accumulated_response['content'] = merged_content
+                print("accumulated_response", accumulated_response)
                 return {'success': True, 'response': accumulated_response}
                 
             except Exception as error:
+                error_msg = f"Anthropic API call error: {str(error)}"
+                logger.error(error_msg)
+                logger.error(f"Error type: {type(error)}")
+                logger.error(f"Error attributes: {dir(error)}")
+                traceback.print_exc()
+                
+                # Try to get more detailed error information
+                error_details = {
+                    'error_type': str(type(error)),
+                    'error_message': str(error),
+                    'status_code': getattr(error, 'status_code', None),
+                    'response': getattr(error, 'response', None),
+                    'body': getattr(error, 'body', None)
+                }
+                
                 return {
                     'success': False,
                     'error': str(error),
+                    'error_details': error_details,
                     'status_code': getattr(error, 'status_code', None)
                 }
 
@@ -147,13 +231,37 @@ async def anthropic_runmodel(configuration, apikey, execution_time_logs, bridge_
             'success': False,
             'error': str(e)
         }
-        
-async def anthropic_test_model(configuration, api_key) : 
-    anthropic_client = AsyncAnthropic(api_key = api_key)
+    """
+    Simple debug function to test Anthropic API without streaming
+    """
     try:
-        response = await anthropic_client.messages.create(**configuration)
-        return {'success': True, 'response': response.to_dict()}
+        anthropic_client = AsyncAnthropic(api_key=api_key)
+        
+        # Clean configuration
+        config_copy = configuration.copy()
+        if 'stream' in config_copy:
+            del config_copy['stream']
+        
+        logger.info(f"Testing Anthropic API with config: {config_copy}")
+        
+        # Test non-streaming first
+        response = await anthropic_client.messages.create(**config_copy)
+        logger.info("Non-streaming call successful")
+        
+        # Test streaming
+        logger.info("Testing streaming...")
+        async with anthropic_client.messages.stream(**config_copy) as stream:
+            async for event in stream:
+                logger.info(f"Stream event: {event.type}")
+                if event.type == 'message_stop':
+                    break
+        
+        logger.info("Streaming call successful")
+        return {'success': True, 'message': 'Both streaming and non-streaming work'}
+        
     except Exception as error:
+        logger.error(f"Debug test error: {str(error)}")
+        traceback.print_exc()
         return {
             'success': False,
             'error': str(error),
