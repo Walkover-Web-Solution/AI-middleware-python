@@ -327,7 +327,7 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
         body = await request.json()
         org_id = request.state.profile['org']['id']
         user_id = request.state.profile['user']['id']
-        
+        web_search_filter = body.get('web_search_filters')
         # Get existing bridge data
         bridge = await get_bridge_by_id(org_id, bridge_id, version_id)
         if bridge is None:
@@ -390,7 +390,8 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
             'bridgeType': lambda v: True,
             'meta': lambda v: True,
             'fall_back': lambda v: validate_fall_back(v),
-            'guardrails': lambda v: isinstance(v, dict) and 'is_enabled' in v
+            'guardrails': lambda v: isinstance(v, dict) and 'is_enabled' in v,
+            'web_search_filters': lambda v: True
         }
         
         # Update simple fields if they exist in the request
@@ -415,7 +416,8 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
                 configuration = await get_default_values_controller(service, model, current_configuration, config_type)
                 configuration['type'] = new_configuration.get('type', 'chat')
                 new_configuration = configuration
-        
+        if web_search_filter is not None:
+            update_fields['web_search_filters'] = web_search_filter
         # Process configuration updates
         if new_configuration is not None:
             # If model is changing but service isn't provided, get default values
