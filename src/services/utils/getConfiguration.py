@@ -16,7 +16,7 @@ from globals import *
 logger = logging.getLogger(__name__)
 
 async def getConfiguration(configuration, service, bridge_id, apikey, template_id=None, variables={}, 
-                           org_id="", variables_path=None, version_id=None, extra_tools=[], built_in_tools=[], guardrails={}):
+                           org_id="", variables_path=None, version_id=None, extra_tools=[], built_in_tools=[], guardrails={}, web_search_filters={}):
     """
     Get configuration for a bridge with all necessary tools and settings.
     
@@ -169,5 +169,5 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
         "guardrails" : guardrails if guardrails is not None else (result.get("bridges", {}).get("guardrails") or {}),
         "is_embed":result.get("folder_id")!=None,
         "folder_id": result.get("bridges", {}).get("folder_id"),
-        "web_search_filters" : result.get("bridges", {}).get("web_search_filters") or {}
+        "web_search_filters" : web_search_filters or result.get("bridges", {}).get("web_search_filters") or {}
     }
