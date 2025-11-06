@@ -64,15 +64,18 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
     # Setup API key
     service = service.lower() if service else ""
     
-    # Safely extract apikey from nested structure
+    # Safely extract apikey from nested structure for all services
     try:
-        apikey_data = result.get('bridges', {}).get('apikeys', {}).get(service, {})
-        if isinstance(apikey_data, dict) and 'apikey' in apikey_data:
-            result['bridges']['apikeys'][service] = apikey_data['apikey']
-        else:
-            logger.warning(f"API key not found for service: {service}")
+        apikeys_dict = result.get('bridges', {}).get('apikeys', {})
+        
+        # Iterate through all services and extract their API keys
+        for service_name, apikey_data in apikeys_dict.items():
+            if isinstance(apikey_data, dict) and 'apikey' in apikey_data:
+                result['bridges']['apikeys'][service_name] = apikey_data['apikey']
+            else:
+                logger.warning(f"API key not found for service: {service_name}")
     except (KeyError, TypeError) as e:
-        logger.error(f"Error accessing API key for service {service}: {e}")
+        logger.error(f"Error accessing API keys: {e}")
         # Keep the original structure if extraction fails
 
     apikey = setup_api_key(service, result, apikey)
