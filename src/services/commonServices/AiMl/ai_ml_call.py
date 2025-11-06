@@ -9,6 +9,24 @@ class Ai_Ml(BaseService):
         historyParams = {}
         tools = {}
         functionCallRes = {}
+        
+        # Handle image generation type
+        if self.type == 'image':
+            self.customConfig['prompt'] = self.user
+            openAIResponse = await self.image(self.customConfig, self.apikey, service_name['ai_ml'])
+            modelResponse = openAIResponse.get("modelResponse", {})
+            if not openAIResponse.get('success'):
+                if not self.playground:
+                    await self.handle_failure(openAIResponse)
+                raise ValueError(openAIResponse.get('error'))
+            response = await Response_formatter(modelResponse, service_name['ai_ml'], tools, self.type, self.image_data)
+            if not self.playground:
+                historyParams = self.prepare_history_params(response, modelResponse, tools, None)
+                historyParams['message'] = "image generated successfully"
+                historyParams['type'] = 'assistant'
+            return {'success': True, 'modelResponse': modelResponse, 'historyParams': historyParams, 'response': response}
+        
+        # Handle chat/text generation type
         conversation = ConversationService.createAiMlConversation(self.configuration.get('conversation'), self.memory, self.files).get('messages', [])
         if self.reasoning_model:
             self.customConfig["messages"] =  conversation + ([{"role": "user", "content": self.user}] if self.user else []) 
