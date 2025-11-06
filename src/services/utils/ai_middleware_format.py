@@ -257,6 +257,26 @@ async def Response_formatter(response = {}, service = None, tools={}, type='chat
 
             }
         }
+    elif service == service_name['ai_ml'] and type == 'image':
+        image_urls = []
+        for image_data in response.get('data', []):
+            image_urls.append({
+                "revised_prompt": image_data.get('revised_prompt'),
+                "image_url": image_data.get('original_url'),
+                "permanent_url": image_data.get('url'),
+                "size": image_data.get('size')
+            })
+        
+        return {
+            "data": {
+                "image_urls": image_urls
+            },
+            "usage": {
+                "generated_images": response.get("usage", {}).get("generated_images", None),
+                "output_tokens": response.get("usage", {}).get("output_tokens", None),
+                "total_tokens": response.get("usage", {}).get("total_tokens", None)
+            }
+        }
     elif service == service_name['ai_ml']:
         return {
             "data" : {

@@ -19,6 +19,7 @@ from ..openAI.image_model import OpenAIImageModel
 from ..Google.gemini_image_model import gemini_image_model
 from ..Google.gemini_video_model import gemini_video_model
 from ..AiMl.ai_ml_model_run import ai_ml_model_run
+from ..AiMl.ai_ml_image_model import AiMlImageModel
 from concurrent.futures import ThreadPoolExecutor
 from globals import *
 
@@ -343,6 +344,8 @@ class BaseService:
                 response = await OpenAIImageModel(configuration, apikey, self.execution_time_logs, self.timer)
             if service == service_name['gemini']:
                 response = await gemini_image_model(configuration, apikey, self.execution_time_logs, self.timer)
+            if service == service_name['ai_ml']:
+                response = await AiMlImageModel(configuration, apikey, self.execution_time_logs, self.timer, self.image_data)
             if not response['success']:
                 raise ValueError(response['error'])
             return {
