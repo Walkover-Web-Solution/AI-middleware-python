@@ -3,10 +3,9 @@ import traceback
 from ..api_executor import execute_api_call
 from globals import *
 
-
 async def ai_ml_model_run(configuration, apiKey, execution_time_logs, bridge_id, timer, message_id=None, org_id=None, name = "", org_name= "", service = "", count=0, token_calculator=None):
     try:
-        openAI = AsyncOpenAI(api_key=apiKey, base_url='https://backend.ai.ml/openai')
+        openAI = AsyncOpenAI(api_key=apiKey, base_url='https://api.ai.ml/openai')
 
         # Define the API call function
         async def api_call(config):
