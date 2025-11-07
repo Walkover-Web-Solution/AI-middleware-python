@@ -215,10 +215,17 @@ async def get_all_bridges(request):
             bridge_id = bridge.get('_id')
             avg_response_time_data = await find_in_cache(f"{redis_keys['avg_response_time_']}{org_id}_{bridge_id}")
             total_tokens = await find_in_cache(f"{redis_keys['metrix_bridges_']}{bridge_id}")
-            
+            bridge_usage = await find_in_cache(f"{redis_keys['bridgeusedcost_']}{bridge_id}")
+           
             if total_tokens:
-                bridge["total_tokens"] = json.loads(total_tokens)
+                bridge["total_tokens"] = total_tokens
 
+            if bridge_usage:
+                bridge_usage = json.loads(bridge_usage)
+                bridge["bridge_usage"] = bridge_usage.get("usage_value", 0)
+            else:
+                bridge["bridge_usage"] = 0
+            
             avg_response_time[bridge_id] = round(float(avg_response_time_data), 2) if avg_response_time_data else 0
         return JSONResponse(status_code=200, content={
                 "success": True,

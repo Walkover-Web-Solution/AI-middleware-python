@@ -17,10 +17,11 @@ def _build_limit_error(limit_type, current_usage, limit_value):
     }
 
 
-async def _check_limit(limit_type, data,version_id):
+async def _check_limit(limit_type, data, version_id):
     """Check a specific limit type against the provided data with Redis cache first."""
     limit_field = f"{limit_type}_limit"
     usage_field = f"{limit_type}_usage"
+    bridge_id = data.get('_id') or data.get('bridges',{}).get("_id")
     
     # Get limit value from data
     try:
@@ -38,7 +39,7 @@ async def _check_limit(limit_type, data,version_id):
     # Create Redis key based on limit_type and identifier
     identifier = None
     if limit_type == 'bridge':
-        identifier = data.get('_id') or data.get('bridges',{}).get("_id")
+        identifier = bridge_id
     elif limit_type == 'folder':
         identifier = data.get('folder_id')
     elif limit_type == 'apikey':
@@ -49,13 +50,39 @@ async def _check_limit(limit_type, data,version_id):
     
     if identifier:
         # Try to get usage from Redis first bridgeusage_
-        cache_key = f"{redis_keys[f'{limit_type}usedcost_']}{identifier}_{version_id}"
+        cache_key = f"{redis_keys[f'{limit_type}usedcost_']}{identifier}"
         try:
-            cached_usage = await find_in_cache(cache_key)
-            if cached_usage:
-                usage_value = float(json.loads(cached_usage))
+            cached_data = await find_in_cache(cache_key)
+            if cached_data:
+                currentusagedata=json.loads(cached_data)
+                usage_value = float(currentusagedata.get("usage_value", 0))
+                
+                # Add version_id to versions array if not already present
+                versions = currentusagedata.get("versions", [])
+                bridges = currentusagedata.get("bridges", [])
+                
+                if version_id and version_id not in versions:
+                    versions.append(version_id)
+
+                if bridge_id and bridge_id not in bridges:
+                    bridges.append(bridge_id)
+                    
+                    # Different data structure based on limit_type
+                    if limit_type == 'bridge':
+                        updated_data = {
+                            "usage_value": usage_value,
+                            "versions": versions
+                        }
+                    else :
+                        updated_data = {
+                            "usage_value": usage_value,
+                            "versions": versions,
+                            "bridges": bridges
+                        }
+                    
+                    await store_in_cache(cache_key,updated_data)
             else:
-                # Fallback to data and update Redis
+                # If data is not available in Redis, get it from bridge data
                 try:
                     if(limit_type=="apikey"):
                        usage_value=float(data.get("apikeys", {}).get(data.get("service"), {}).get(usage_field, 0) or 0)
@@ -64,21 +91,29 @@ async def _check_limit(limit_type, data,version_id):
                 except (ValueError, TypeError):
                     usage_value = 0.0
                 
-                # Store in Redis for future use
-                await store_in_cache(cache_key, usage_value)
-                logger.info(f"Updated Redis cache for {cache_key}: {usage_value}")
+                # Store in Redis with new data structure based on limit_type
+                if limit_type == 'bridge':
+                    usage_data = {
+                        "usage_value": usage_value,
+                        "versions": [version_id]
+                    }
+                else:
+                    usage_data = {
+                        "usage_value": usage_value,
+                        "versions": [version_id],
+                        "bridges": [bridge_id]
+                    }
+                await store_in_cache(cache_key, usage_data)
                 
         except Exception as e:
-            logger.error(f"Error accessing Redis for {cache_key}: {str(e)}")
-            # Fallback to data
-            try:
-                usage_value = float(data.get(usage_field, 0) or 0)
-            except (ValueError, TypeError):
-                usage_value = 0.0
+            usage_value = 0.0
+               
     else:
-        # No identifier found, use data directly
         try:
-            usage_value = float(data.get(usage_field, 0) or 0)
+            if(limit_type=="apikey"):
+                       usage_value=float(data.get("apikeys", {}).get(data.get("service"), {}).get(usage_field, 0) or 0)
+            else:
+                       usage_value = float(data.get(usage_field, 0) or 0) or float(data.get("bridges",{}).get(usage_field) or 0)
         except (ValueError, TypeError):
             usage_value = 0.0
 
