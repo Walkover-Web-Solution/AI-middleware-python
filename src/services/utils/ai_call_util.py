@@ -85,13 +85,26 @@ async def call_gtwy_agent(args):
             extra_tools=request_body.get('extra_tools', []),
             built_in_tools=request_body.get('built_in_tools')
         )
-        db_config['org_id'] = org_id
-        
         if not db_config.get("success"):
             raise Exception(db_config.get("error", "Configuration fetch failed"))
         
         # Step 3: Update request body with configuration data (like middleware does)
-        request_body.update(db_config)
+        bridge_configurations = db_config.get('bridge_configurations') or {}
+        primary_config = None
+        if bridge_configurations:
+            target_bridge_id = bridge_id or db_config.get('primary_bridge_id')
+            if target_bridge_id and target_bridge_id in bridge_configurations:
+                primary_config = bridge_configurations[target_bridge_id]
+            else:
+                primary_config = next(iter(bridge_configurations.values()))
+        if not primary_config:
+            raise Exception("Unable to resolve bridge configuration")
+
+        request_body.update(primary_config)
+        request_body['org_id'] = org_id
+        request_body['bridge_configurations'] = bridge_configurations
+        if 'primary_bridge_id' in db_config:
+            request_body['primary_bridge_id'] = db_config['primary_bridge_id']
         
         # Step 4: Create data structure for chat function
         # Pass timer state from parent request to maintain latency tracking in recursive calls
@@ -121,7 +134,7 @@ async def call_gtwy_agent(args):
         data_section = response_data.get('response', {}).get('data', {})
         result = data_section.get('content', "")
         message_id = data_section.get('message_id', "")
-        version_id = db_config.get('version_id', None)
+        resolved_version_id = primary_config.get('version_id', None)
         
         # Check for image URLs and include them if present
         image_urls = data_section.get('image_urls')
@@ -142,7 +155,7 @@ async def call_gtwy_agent(args):
             "response": parsed_result,
             "metadata":{
                  "agent_id": bridge_id,
-                 "version_id": version_id,
+                 "version_id": resolved_version_id,
                  "message_id": message_id,
                  "thread_id": args.get('thread_id'),
                  "subthread_id": args.get('subthread_id'),
