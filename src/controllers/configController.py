@@ -223,8 +223,6 @@ async def get_all_bridges(request):
             if bridge_usage:
                 bridge_usage = json.loads(bridge_usage)
                 bridge["bridge_usage"] = bridge_usage.get("usage_value", 0)
-            else:
-                bridge["bridge_usage"] = 0
             
             avg_response_time[bridge_id] = round(float(avg_response_time_data), 2) if avg_response_time_data else 0
         return JSONResponse(status_code=200, content={
