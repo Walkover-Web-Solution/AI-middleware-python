@@ -224,7 +224,7 @@ async def chat(request_body):
                 # Minimal history params for cost update
                 history_params_for_cost = result.get('historyParams') or {
                     'bridge_id': parsed_data.get('bridge_id'),
-                    'folder_id': ((parsed_data.get('state') or {}).get('profile') or {}).get('user', {}).get('folder_id')
+                    'folder_id': parsed_data.get('folder_id')
                 }
                 await metrics_service.update_cost(history_params_for_cost, parsed_data.get('usage'))
             except Exception as e:

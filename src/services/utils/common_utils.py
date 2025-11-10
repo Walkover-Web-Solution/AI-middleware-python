@@ -290,7 +290,8 @@ def build_service_params(parsed_data, custom_config, model_output_config, thread
         "files" : parsed_data['files'],
         "file_data" : parsed_data['file_data'],
         "youtube_url" : parsed_data['youtube_url'],
-        "web_search_filters" : parsed_data['web_search_filters']
+        "web_search_filters" : parsed_data['web_search_filters'],
+        "folder_id": parsed_data.get('folder_id')
 
     }
 
@@ -337,7 +338,8 @@ def build_service_params_for_batch(parsed_data, custom_config, model_output_conf
         "type": parsed_data['configuration'].get('type'),
         "apikey_object_id" : parsed_data['apikey_object_id'],
         "batch" : parsed_data['batch'],
-        "webhook" : parsed_data['batch_webhook']
+        "webhook" : parsed_data['batch_webhook'],
+        "folder_id": parsed_data.get('folder_id')
     }
 
 
