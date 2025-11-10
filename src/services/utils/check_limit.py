@@ -1,6 +1,6 @@
 import logging
 import json
-from ..cache_service import store_in_cache, find_in_cache
+from ..cache_service import store_in_cache, find_in_cache, delete_in_cache
 from src.configs.constant import redis_keys
 
 logger = logging.getLogger(__name__)
@@ -144,3 +144,52 @@ async def check_bridge_api_folder_limits(result, bridge_data,version_id):
             return api_error
 
     return None
+
+# Utility to create related Redis keys to purge based on usage document
+def create_redis_keys(data):
+
+    keys_to_delete = []
+    try:
+        if not isinstance(data, dict):
+            return keys_to_delete
+
+        versions = data.get('versions') or []
+
+        for version in versions:
+            keys_to_delete.append(f"{redis_keys['bridge_data_with_tools_']}{version}")
+            keys_to_delete.append(f"{redis_keys['get_bridge_data_']}{version}")
+
+
+    except Exception as e:
+        logger.error(f"Error creating redis keys from usage data: {str(e)}")
+
+    return keys_to_delete
+
+async def purge_related_bridge_caches(bridge_id: str, bridge_usage: int = -1):
+   
+    try:
+        if not bridge_id:
+            return
+        
+
+        usage_cache_key = f"{redis_keys['bridgeusedcost_']}{bridge_id}"
+        keys_to_delete = []
+
+        usage_cache_value = await find_in_cache(usage_cache_key)
+        if usage_cache_value:
+            try:
+                usage_data = json.loads(usage_cache_value) or {}
+                keys_to_delete.extend(create_redis_keys(usage_data))
+            except Exception:
+                pass
+
+        # Ensure current bridge's own keys are covered
+        keys_to_delete.append(f"{redis_keys['bridge_data_with_tools_']}{bridge_id}")
+        keys_to_delete.append(f"{redis_keys['get_bridge_data_']}{bridge_id}")
+
+        if keys_to_delete:
+            await delete_in_cache(keys_to_delete)
+        if bridge_usage == 0:
+          await delete_in_cache(usage_cache_key)
+    except Exception as e:
+        logger.error(f"Failed purging related bridge caches: {str(e)}")
