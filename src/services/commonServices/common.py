@@ -217,6 +217,18 @@ async def chat(request_body):
             result['response']['usage']['cost'] = parsed_data['usage'].get('expectedCost', 0)
             await process_background_tasks(parsed_data, result, params, thread_info)
         else:
+            # Ensure playground also increments cost usage in caches
+            try:
+                # Populate expectedCost and tokens in usage (no DB writes here)
+                update_usage_metrics(parsed_data, params, latency, result=result, success=True)
+                # Minimal history params for cost update
+                history_params_for_cost = result.get('historyParams') or {
+                    'bridge_id': parsed_data.get('bridge_id'),
+                    'folder_id': ((parsed_data.get('state') or {}).get('profile') or {}).get('user', {}).get('folder_id')
+                }
+                await metrics_service.update_cost(history_params_for_cost, parsed_data.get('usage'))
+            except Exception as e:
+                logger.error(f"Playground cost update error: {str(e)}")
             if parsed_data.get('testcase_data',{}).get('run_testcase', False):
                 from src.services.commonServices.testcases import process_single_testcase_result
                 # Process testcase result and add score to response

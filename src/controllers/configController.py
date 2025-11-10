@@ -15,7 +15,7 @@ from src.configs.model_configuration import model_config_document
 from globals import *
 from src.configs.constant import bridge_ids
 from src.services.utils.ai_call_util import call_ai_middleware
-from src.services.cache_service import find_in_cache
+from src.services.cache_service import find_in_cache, delete_in_cache
 from src.db_services.templateDbservice import get_template
 from src.services.utils.common_utils import validate_json_schema_configuration
 
@@ -529,6 +529,12 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
         await add_bulk_user_entries(user_history)
         if apikey_object_id is not None:
             await try_catch(update_apikey_creds, version_id, apikey_object_id)
+
+        # Clear only the bridge usage cost cache on update
+        try:
+            await delete_in_cache(f"{redis_keys['bridgeusedcost_']}{bridge_id}")
+        except Exception as e:
+            logger.error(f"Failed clearing bridge usage cache on update: {str(e)}")
         
         # Update service in bridge if it was changed
         if service is not None:
