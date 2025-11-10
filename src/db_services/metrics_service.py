@@ -113,13 +113,14 @@ async def update_usage_cost_in_cache(cache_key, cost_increment,limit_type):
             except (json.JSONDecodeError, TypeError, ValueError):
                 usage_value = 0.0
         else:
+            currentusagedata = None
             usage_value = 0.0
         new_usage = usage_value + cost_increment
 
         if limit_type == 'bridge':
-            await store_in_cache(cache_key, {"usage_value": new_usage, "versions": currentusagedata.get("versions", [])})
+            await store_in_cache(cache_key, {"usage_value": new_usage, "versions": currentusagedata.get("versions", []) if currentusagedata else []})
         else:
-            await store_in_cache(cache_key, {"usage_value": new_usage, "versions": currentusagedata.get("versions", []),"bridges": currentusagedata.get("bridges", [])})
+            await store_in_cache(cache_key, {"usage_value": new_usage, "versions": currentusagedata.get("versions", []) if currentusagedata else [], "bridges": currentusagedata.get("bridges", []) if currentusagedata else []})
         
     except Exception as e:
         logger.error(f"Error updating usage cost for key {cache_key}: {str(e)}")
