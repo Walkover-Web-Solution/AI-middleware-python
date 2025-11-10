@@ -385,11 +385,16 @@ class Helper:
         # Extract variables from prompt
         prompt_vars = re.findall(r'{{(.*?)}}', prompt)
 
-        # Determine status for prompt variables
-        final = {
-            var: 'required' if variable_state.get(var) == 'required' else 'optional'
-            for var in prompt_vars
-        }
+        # Determine status for prompt variables based on new structure
+        final = {}
+        for var in prompt_vars:
+            if var in variable_state and isinstance(variable_state[var], dict):
+                # Use the status from the variable_state structure
+                var_status = variable_state[var].get('status', 'optional')
+                final[var] = var_status
+            else:
+                # Default to optional if not found in variable_state
+                final[var] = 'optional'
 
         # Add flattened variable_path keys as required
         for path in flatten_values_only(variable_path):

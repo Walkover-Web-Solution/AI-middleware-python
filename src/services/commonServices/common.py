@@ -34,7 +34,8 @@ from src.services.utils.common_utils import (
     create_history_params,
     add_files_to_parse_data,
     orchestrator_agent_chat,
-    process_background_tasks_for_playground
+    process_background_tasks_for_playground,
+    process_variable_state
 )
 from src.services.utils.guardrails_validator import guardrails_check
 from src.services.utils.rich_text_support import process_chatbot_response
@@ -81,7 +82,10 @@ async def chat(request_body):
         if len(parsed_data['files']) == 0:
             parsed_data['files'] = await add_files_to_parse_data(parsed_data['thread_id'], parsed_data['sub_thread_id'], parsed_data['bridge_id'])
 
-        # Step 6: Prepare Prompt, Variables and Memory
+        # Step 6: Check and add default values for variables based on variable_state
+        process_variable_state(parsed_data)
+        
+        # Step 7: Prepare Prompt, Variables and Memory
         memory, missing_vars = await prepare_prompt(parsed_data, thread_info, model_config, custom_config)
         
 
@@ -91,15 +95,15 @@ async def chat(request_body):
         if missing_vars:
             send_error(parsed_data['bridge_id'], parsed_data['org_id'], missing_vars, error_type='Variable')
         
-        # Step 7: Configure Custom Settings
+        # Step 8: Configure Custom Settings
         custom_config = await configure_custom_settings(
             model_config['configuration'], custom_config, parsed_data['service']
         )
-        # Step 8: Execute Service Handler
+        # Step 9: Execute Service Handler
         params = build_service_params(
             parsed_data, custom_config, model_output_config, thread_info, timer, memory, send_error_to_webhook
         )
-        # Step 9 : json_schema service conversion
+        # Step 10: json_schema service conversion
         if 'response_type' in custom_config and custom_config['response_type'].get('type') == 'json_schema':
             custom_config['response_type'] = restructure_json_schema(custom_config['response_type'], parsed_data['service'])
         

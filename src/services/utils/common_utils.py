@@ -93,7 +93,7 @@ def parse_request_body(request_body):
         "file_data" : body.get('video_data') or {},
         "youtube_url" : body.get('youtube_url') or None,
         "folder_id": body.get('folder_id'),
-        "web_search_filters" : body.get('web_search_filters') or None
+        "web_search_filters" : body.get('web_search_filters') or None,
     }
 
 
@@ -190,6 +190,41 @@ async def manage_threads(parsed_data):
         "sub_thread_id": sub_thread_id,
         "result": result
     }
+
+def process_variable_state(parsed_data):
+    """
+    Check and add default values for variables based on variable_state.
+    
+    Args:
+        parsed_data: Dictionary containing the request data
+        
+    Expected variable_state structure:
+        {
+            'var_name': {
+                'status': 'required',
+                'default_value': 'some_default',
+                'value': ''
+            }
+        }
+    
+    Returns:
+        None (modifies parsed_data in place)
+    """
+    if 'variables_state' in parsed_data and parsed_data['variables_state'] is not None:
+        for var_name, var_state in parsed_data['variables_state'].items():
+            if isinstance(var_state, dict) and 'status' in var_state and 'default_value' in var_state:
+                # Check if variable doesn't exist, is empty/None, or if the value in variable_state is empty
+                current_value = parsed_data['variables'].get(var_name)
+                var_state_value = var_state.get('value', '')
+                
+                # Use default_value if:
+                # 1. Variable doesn't exist in variables
+                # 2. Variable exists but is None or empty string
+                # 3. Variable_state has empty value
+                if (current_value is None or current_value == '' or 
+                    var_name not in parsed_data['variables'] or 
+                    var_state_value == ''):
+                    parsed_data['variables'][var_name] = var_state['default_value']
 
 async def prepare_prompt(parsed_data, thread_info, model_config, custom_config):
     configuration = parsed_data['configuration']
