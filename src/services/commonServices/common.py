@@ -2,7 +2,6 @@ from config import Config
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 import traceback
-from ...db_services import metrics_service as metrics_service
 import pydash as _
 from ..utils.helper import Helper
 from .baseService.utils import sendResponse
@@ -35,7 +34,8 @@ from src.services.utils.common_utils import (
     add_files_to_parse_data,
     orchestrator_agent_chat,
     process_background_tasks_for_playground,
-    process_variable_state
+    process_variable_state,
+    update_cost_in_background
 )
 from src.services.utils.guardrails_validator import guardrails_check
 from src.services.utils.rich_text_support import process_chatbot_response
@@ -241,6 +241,7 @@ async def chat(request_body):
                 result['response']['testcase_result'] = testcase_result
             else:
                 await process_background_tasks_for_playground(result, parsed_data)
+        await update_cost_in_background(parsed_data)
         return JSONResponse(status_code=200, content={"success": True, "response": result["response"]})
     
     except (Exception, ValueError, BadRequestException) as error:

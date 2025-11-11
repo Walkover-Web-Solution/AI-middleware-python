@@ -1,7 +1,7 @@
 import json
 import uuid
 import traceback
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 from fastapi.responses import JSONResponse
 from src.services.utils.time import Timer
 from src.services.commonServices.baseService.utils import axios_work
@@ -25,6 +25,7 @@ from src.db_services.metrics_service import create
 from src.controllers.conversationController import save_sub_thread_id_and_name
 from src.services.utils.ai_middleware_format import send_alert
 from src.services.cache_service import find_in_cache, store_in_cache, client, REDIS_PREFIX
+from src.services.utils.update_and_check_cost import update_cost
 from ..commonServices.baseService.utils import sendResponse
 from src.services.utils.rich_text_support import process_chatbot_response
 from src.db_services.orchestrator_history_service import OrchestratorHistoryService, orchestrator_collector
@@ -325,7 +326,8 @@ def build_service_params(parsed_data, custom_config, model_output_config, thread
         "files" : parsed_data['files'],
         "file_data" : parsed_data['file_data'],
         "youtube_url" : parsed_data['youtube_url'],
-        "web_search_filters" : parsed_data['web_search_filters']
+        "web_search_filters" : parsed_data['web_search_filters'],
+        "folder_id": parsed_data.get('folder_id')
 
     }
 
@@ -372,7 +374,8 @@ def build_service_params_for_batch(parsed_data, custom_config, model_output_conf
         "type": parsed_data['configuration'].get('type'),
         "apikey_object_id" : parsed_data['apikey_object_id'],
         "batch" : parsed_data['batch'],
-        "webhook" : parsed_data['batch_webhook']
+        "webhook" : parsed_data['batch_webhook'],
+        "folder_id": parsed_data.get('folder_id')
     }
 
 
@@ -1109,6 +1112,14 @@ async def process_background_tasks_for_playground(result, parsed_data):
                 
     except Exception as e:
         logger.error(f"Error processing playground testcase: {str(e)}")
+
+
+async def update_cost_in_background(parsed_data):
+    """Kick off the async cost cache update using the data available on parsed_data."""
+    if not isinstance(parsed_data, dict):
+        logger.warning("Skipping background cost update due to invalid parsed data.")
+        return
+
+    asyncio.create_task(update_cost(parsed_data))
+
     
-
-
