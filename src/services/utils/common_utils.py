@@ -1095,10 +1095,10 @@ async def process_background_tasks_for_playground(result, parsed_data):
             # Generate testcase_id immediately and add to response
             new_testcase_id = str(ObjectId())
             result['response']['testcase_id'] = new_testcase_id
-            await sendResponse(parsed_data['response_format'], result['response'], success=True, variables=parsed_data.get('variables',{}))
+            parsed_data['testcase_data']['testcase_id'] = new_testcase_id
+            await sendResponse(parsed_data['response_format'], parsed_data['testcase_data'], success=True, variables=parsed_data.get('variables',{}))
             
             # Add the generated ID to testcase_data for the background task
-            parsed_data['testcase_data']['testcase_id'] = new_testcase_id
             
             # Save testcase data in background using the same function
             async def create_testcase_background():
