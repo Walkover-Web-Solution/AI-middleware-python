@@ -111,6 +111,7 @@ async def chat(request_body):
         # Execute with retry mechanism
         class_obj = await Helper.create_service_handler(params, parsed_data['service'])
         
+        original_exception = None
         try:
             result = await class_obj.execute()
             result['response']['usage'] = params['token_calculator'].get_total_usage()
@@ -120,6 +121,8 @@ async def chat(request_body):
             # Handle exceptions during execution
             execution_failed = True
             original_error = str(execution_exception)
+            original_exception = execution_exception
+            logger.error(f"Initial execution failed with {parsed_data['service']}/{parsed_data['model']}: {original_error}")
             result = {
                 "success": False,
                 "error": original_error,
@@ -187,11 +190,12 @@ async def chat(request_body):
                     result['response']['data']['fallback'] = True
                 
             except Exception as retry_error:
-                # If retry also fails, restore original configuration and continue with original error
+                # If retry also fails, chain the new exception to the original one
+                logger.error(f"Fallback attempt failed with {parsed_data['service']}/{parsed_data['model']}: {retry_error}")
+                # Restore original configuration before raising
                 parsed_data['model'] = original_model
                 parsed_data['service'] = original_service
-                # Note: We don't need to restore class_obj properties since we may have created a new object
-                logger.error(f"Retry mechanism failed: {str(retry_error)}")
+                raise retry_error from original_exception
         
         if not result["success"]:
             raise ValueError(result)
@@ -247,9 +251,27 @@ async def chat(request_body):
             await sendResponse(parsed_data['response_format'], result.get("error", str(error)), variables=parsed_data['variables']) if parsed_data['response_format']['type'] != 'default' else None
             # Process background tasks for error handling
             await process_background_tasks_for_error(parsed_data, error)
-        # Add support contact information to error message
-        error_message = f"{str(error)}. For more support contact us at support@gtwy.ai"
-        raise ValueError(error_message)
+        # Check for a chained exception and create a structured error object
+        if error.__cause__:
+            # Combine both initial and fallback errors into a single string
+            combined_error_string = (
+                f"Initial Error: {str(error.__cause__)} (Type: {type(error.__cause__).__name__}). "
+                f"Fallback Error: {str(error)} (Type: {type(error).__name__}). "
+                f"For more support contact us at support@gtwy.ai"
+            )
+            error_object = {
+                "success": False,
+                "error": combined_error_string,
+            }
+        else:
+            # Single error case
+            error_string = f"{str(error)} (Type: {type(error).__name__}). For more support contact us at support@gtwy.ai"
+            error_object = {
+                "success": False,
+                "error": error_string,
+            }
+
+        raise ValueError(error_object)
 
 
 
