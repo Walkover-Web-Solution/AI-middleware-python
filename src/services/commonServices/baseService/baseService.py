@@ -71,6 +71,7 @@ class BaseService:
         self.file_data = params.get('file_data')
         self.youtube_url = params.get('youtube_url')
         self.web_search_filters = params.get('web_search_filters')
+        self.folder_id = params.get('folder_id')
 
 
     def aiconfig(self):
@@ -246,7 +247,8 @@ class BaseService:
             "firstAttemptError" : model_response.get('firstAttemptError') or '',
             "annotations" : _.get(model_response, self.modelOutputConfig.get('annotations')) or [],
             "fallback_model" : model_response.get('fallback_model') or '',
-            "response":response, 
+            "response":response,
+            "folder_id": self.folder_id
         }
     
     def service_formatter(self, configuration : object, service : str ):  # changes

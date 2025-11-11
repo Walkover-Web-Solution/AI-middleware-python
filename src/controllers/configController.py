@@ -15,7 +15,8 @@ from src.configs.model_configuration import model_config_document
 from globals import *
 from src.configs.constant import bridge_ids
 from src.services.utils.ai_call_util import call_ai_middleware
-from src.services.cache_service import find_in_cache
+from src.services.cache_service import find_in_cache, delete_in_cache
+from src.services.utils.update_and_check_cost import purge_related_bridge_caches
 from src.db_services.templateDbservice import get_template
 from src.services.utils.common_utils import validate_json_schema_configuration
 
@@ -215,10 +216,15 @@ async def get_all_bridges(request):
             bridge_id = bridge.get('_id')
             avg_response_time_data = await find_in_cache(f"{redis_keys['avg_response_time_']}{org_id}_{bridge_id}")
             total_tokens = await find_in_cache(f"{redis_keys['metrix_bridges_']}{bridge_id}")
-            
+            bridge_usage = await find_in_cache(f"{redis_keys['bridgeusedcost_']}{bridge_id}")
+           
             if total_tokens:
-                bridge["total_tokens"] = json.loads(total_tokens)
+                bridge["total_tokens"] = total_tokens
 
+            if bridge_usage:
+                bridge_usage = json.loads(bridge_usage)
+                bridge["bridge_usage"] = bridge_usage.get("usage_value", 0)
+            
             avg_response_time[bridge_id] = round(float(avg_response_time_data), 2) if avg_response_time_data else 0
         return JSONResponse(status_code=200, content={
                 "success": True,
@@ -406,7 +412,7 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
         if 'bridge_limit' in body:
             update_fields['bridge_limit'] = body.get('bridge_limit', 0)
         if 'bridge_usage' in body:
-            update_fields['bridge_usage'] = body.get('bridge_usage', 0)
+            update_fields['bridge_usage'] = body.get('bridge_usage', -1)
         
         # Handle service and model configuration
         if page_config is not None:
@@ -524,6 +530,13 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
         await add_bulk_user_entries(user_history)
         if apikey_object_id is not None:
             await try_catch(update_apikey_creds, version_id, apikey_object_id)
+
+        # Clear bridge-related caches on update (optimized single call)
+        try:
+            # Optimized: purge caches only when usage reset is requested
+            await purge_related_bridge_caches(bridge_id, body.get('bridge_usage', -1))
+        except Exception as e:
+            logger.error(f"Failed clearing bridge related cache on update: {str(e)}")
         
         # Update service in bridge if it was changed
         if service is not None:

@@ -695,12 +695,18 @@ async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None)
             # Append folder_apikeys to bridge_data if found
             if folder_result and folder_result[0].get('folder_apikeys'):
                 bridge_data['folder_apikeys'] = folder_result[0]['folder_apikeys']
-                bridge_data['folder_limit'] = folder_result[0]['folder_limit']
-                bridge_data['folder_usage'] = folder_result[0]['folder_usage']
             else:
                 bridge_data['folder_apikeys'] = {}
+
+            if folder_result and folder_result[0].get('folder_limit'):
+                bridge_data['folder_limit'] = folder_result[0]['folder_limit']
+            else:
                 bridge_data['folder_limit'] = 0
+            if folder_result and folder_result[0].get('folder_usage'):
+                bridge_data['folder_usage'] = folder_result[0]['folder_usage']
+            else :
                 bridge_data['folder_usage'] = 0
+            
         else:
             # No folder_id, set empty folder_apikeys
             bridge_data['folder_apikeys'] = {}
@@ -875,7 +881,9 @@ async def get_all_bridges_in_org(org_id, folder_id, user_id, isEmbedUser):
         'function_ids':1,
         'connected_agent_details':1,
         'bridge_summary': 1,
-        "deletedAt":1
+        "deletedAt":1,
+        "bridge_limit":1,
+        "bridge_usage":1
     })
     bridges_list = await bridge.to_list(length=None)
     for itr in bridges_list:
