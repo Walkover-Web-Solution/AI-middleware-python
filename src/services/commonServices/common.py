@@ -241,6 +241,7 @@ async def chat(request_body):
                 result['response']['testcase_result'] = testcase_result
             else:
                 await process_background_tasks_for_playground(result, parsed_data)
+                await sendResponse(parsed_data['response_format'], parsed_data['testcase_data'], success=True, variables=parsed_data.get('variables',{}))
         return JSONResponse(status_code=200, content={"success": True, "response": result["response"]})
     
     except (Exception, ValueError, BadRequestException) as error:
@@ -275,7 +276,7 @@ async def chat(request_body):
                 "success": False,
                 "error": error_string,
             }
-
+        await sendResponse(parsed_data['response_format'], error_object, success=False, variables=parsed_data.get('variables',{}))
         raise ValueError(error_object)
 
 
