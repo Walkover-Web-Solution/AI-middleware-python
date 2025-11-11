@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, Request, HTTPException
 from fastapi.responses import JSONResponse
 import asyncio
+
 from src.services.commonServices.common import chat, embedding, batch, run_testcases, image, orchestrator_chat
 from src.services.commonServices.baseService.utils import make_request_data
 from ...middlewares.middleware import jwt_middleware
@@ -60,16 +61,42 @@ async def playground_chat_completion_bridge(request: Request, db_config: dict = 
     request.state.is_playground = True
     request.state.version = 2
     data_to_send = await make_request_data(request)
+    org_id = data_to_send['state']['profile']['org']['id']
+    bridge_id = data_to_send.get('body',{}).get('bridge_id')
+    version_id = data_to_send.get('body',{}).get('version_id')
+    channel_id = f"{org_id}_{bridge_id}_{version_id}"
+    flag = data_to_send.get('body',{}).get('flag') or False
+    if not flag:
+        response_format = {
+                        "type": "RTLayer",
+                        "cred": {
+                            "channel": channel_id,
+                            "ttl": 1,
+                            'apikey': Config.RTLAYER_AUTH
+                        }
+                    }
+        data_to_send['body']['configuration']['response_format'] = response_format
     if db_config.get('orchestrator_id'):
         result = await orchestrator_chat(data_to_send)
         return result
-    type = data_to_send.get("body",{}).get('configuration',{}).get('type')
-    if type == 'embedding':
-            result =  await embedding(data_to_send)
-            return result
-    loop = asyncio.get_event_loop()
-    result = await chat(data_to_send)
-    return result
+    # Check if response_format is present and publish to queue
+    if not flag and response_format and response_format.get('type') != 'default':
+        try:
+            # Publish the message to the queue
+            await queue_obj.publish_message(data_to_send)
+            return {"success": True, "message": "Your response will be sent through configured means."}
+        except Exception as e:
+            # Log the error and return a meaningful error response
+            logger.error(f"Failed to publish message: {str(e)}")
+            raise HTTPException(status_code=500, detail="Failed to publish message.")
+    else:
+        type = data_to_send.get("body",{}).get('configuration',{}).get('type')
+        if type == 'embedding':
+                result =  await embedding(data_to_send)
+                return result
+        loop = asyncio.get_event_loop()
+        result = await chat(data_to_send)
+        return result
 
 @router.post('/batch/chat/completion', dependencies=[Depends(auth_and_rate_limit)])
 async def batch_chat_completion(request: Request, db_config: dict = Depends(add_configuration_data_to_body)):
