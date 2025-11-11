@@ -1,7 +1,7 @@
 import logging
 import json
 from ..cache_service import store_in_cache, find_in_cache, delete_in_cache
-from src.configs.constant import redis_keys
+from src.configs.constant import redis_keys, limit_types
 
 logger = logging.getLogger(__name__)
 
@@ -129,17 +129,17 @@ async def check_bridge_api_folder_limits(result, bridge_data,version_id):
 
     folder_identifier = result.get('folder_id')
     if folder_identifier:
-        folder_error = await _check_limit('folder',data=result,version_id=version_id)
+        folder_error = await _check_limit(limit_types['folder'],data=result,version_id=version_id)
         if folder_error:
             return folder_error
 
-    bridge_error = await _check_limit('bridge', data=bridge_data,version_id=version_id)
+    bridge_error = await _check_limit(limit_types['bridge'], data=bridge_data,version_id=version_id)
     if bridge_error:
         return bridge_error
 
     service_identifier = result.get('service')
     if service_identifier and result.get('apikeys') and service_identifier in result['apikeys']:
-        api_error = await _check_limit('apikey', data=result,version_id=version_id)
+        api_error = await _check_limit(limit_types['apikey'], data=result,version_id=version_id)
         if api_error:
             return api_error
 

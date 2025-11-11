@@ -48,3 +48,9 @@ redis_keys = {
     'folderusedcost_' : 'folderusedcost_',
     'apikeyusedcost_' : 'apikeyusedcost_'
 }
+
+limit_types={
+    'bridge': 'bridge',
+    'folder': 'folder',
+    'apikey': 'apikey'
+}
