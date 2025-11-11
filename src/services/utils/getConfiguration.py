@@ -8,7 +8,7 @@ from .getConfiguration_utils import (
     setup_tools, setup_api_key, setup_pre_tools, add_rag_tool,
     add_anthropic_json_schema, add_connected_agents
 )
-from .check_limit import check_bridge_api_folder_limits
+from .update_and_check_cost import check_bridge_api_folder_limits
 
 apiCallModel = db['apicalls']
 from globals import *
