@@ -26,7 +26,7 @@ from src.db_services.metrics_service import create
 from src.controllers.conversationController import save_sub_thread_id_and_name
 from src.services.utils.ai_middleware_format import send_alert
 from src.services.cache_service import find_in_cache, store_in_cache, client, REDIS_PREFIX
-from src.services.utils.update_and_check_cost import update_cost
+from src.services.utils.update_and_check_cost import update_cost,update_last_used
 from ..commonServices.baseService.utils import sendResponse
 from src.services.utils.rich_text_support import process_chatbot_response
 from src.db_services.orchestrator_history_service import OrchestratorHistoryService, orchestrator_collector
@@ -1116,13 +1116,19 @@ async def process_background_tasks_for_playground(result, parsed_data):
     except Exception as e:
         logger.error(f"Error processing playground testcase: {str(e)}")
 
+async def update_cost_and_last_used(parsed_data):
+    try:
+        await update_cost(parsed_data)
+        await update_last_used(parsed_data)
+    except Exception as e:
+        logger.error(f"Error updating cost and last used: {str(e)}")
 
-async def update_cost_in_background(parsed_data):
+async def update_cost_and_last_used_in_background(parsed_data):
     """Kick off the async cost cache update using the data available on parsed_data."""
     if not isinstance(parsed_data, dict):
         logger.warning("Skipping background cost update due to invalid parsed data.")
         return
 
-    asyncio.create_task(update_cost(parsed_data))
+    asyncio.create_task(update_cost_and_last_used(parsed_data))
 
     
