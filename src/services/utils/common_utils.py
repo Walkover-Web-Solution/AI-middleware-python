@@ -30,6 +30,48 @@ from ..commonServices.baseService.utils import sendResponse
 from src.services.utils.rich_text_support import process_chatbot_response
 from src.db_services.orchestrator_history_service import OrchestratorHistoryService, orchestrator_collector
 
+async def handle_agent_transfer(result, request_body, bridge_configurations, chat_function):
+    transfer_agent_config = result.get('transfer_agent_config')
+    
+    # Check if this is a transfer request
+    if not transfer_agent_config or transfer_agent_config.get('action_type') != 'transfer':
+        return None
+    
+    # Extract agent_id and user_query
+    target_agent_id = transfer_agent_config.get('agent_id')
+    user_query = transfer_agent_config.get('user_query')
+    
+    logger.info(f"Transfer detected: agent_id={target_agent_id}, user_query={user_query}")
+    
+    # Check if target agent exists in bridge_configurations
+    if not target_agent_id or target_agent_id not in bridge_configurations:
+        logger.warning(f"Transfer agent {target_agent_id} not found in bridge_configurations")
+        return None
+    
+    # Get the target agent's configuration
+    target_agent_config = bridge_configurations[target_agent_id]
+    
+    logger.info(f"Transferring to agent: {target_agent_config.get('name', target_agent_id)}")
+    
+    # Create a new request body for the transfer agent
+    transfer_body = request_body.get('body', {}).copy()
+    transfer_body.update(target_agent_config)
+    transfer_body['bridge_id'] = target_agent_id
+    transfer_body['user'] = user_query
+    
+    # Create a complete request structure for the transfer agent
+    transfer_request_body = {
+        'body': transfer_body,
+        'state': request_body.get('state', {}).copy(),
+        'path_params': request_body.get('path_params', {})
+    }
+    
+    # Call chat function with the transfer agent's data
+    transfer_result = await chat_function(transfer_request_body)
+    
+    return transfer_result
+
+
 def parse_request_body(request_body):
     body = request_body.get('body', {})
     state = request_body.get('state', {})
@@ -283,7 +325,7 @@ async def prepare_prompt(parsed_data, thread_info, model_config, custom_config):
 async def configure_custom_settings(model_configuration, custom_config, service):
     return await model_config_change(model_configuration, custom_config, service)
 
-def build_service_params(parsed_data, custom_config, model_output_config, thread_info=None, timer=None, memory=None, send_error_to_webhook=None):
+def build_service_params(parsed_data, custom_config, model_output_config, thread_info=None, timer=None, memory=None, send_error_to_webhook=None, bridge_configurations=None):
     token_calculator = TokenCalculator(parsed_data['service'], model_output_config)
     
     return {
@@ -327,7 +369,8 @@ def build_service_params(parsed_data, custom_config, model_output_config, thread
         "file_data" : parsed_data['file_data'],
         "youtube_url" : parsed_data['youtube_url'],
         "web_search_filters" : parsed_data['web_search_filters'],
-        "folder_id": parsed_data.get('folder_id')
+        "folder_id": parsed_data.get('folder_id'),
+        "bridge_configurations": bridge_configurations
 
     }
 

@@ -45,12 +45,29 @@ async def add_configuration_data_to_body(request: Request):
                 guardrails=body.get('guardrails'),
                 web_search_filters=body.get('web_search_filters')
             )
-        if not db_config.get("success"):
-                raise HTTPException(status_code=400, detail={"success": False, "error": db_config["error"]}) 
-        body.update(db_config)
         if orchestrator_id:
+            if not db_config.get("success"):
+                raise HTTPException(status_code=400, detail={"success": False, "error": db_config.get("error")})
+            body.update(db_config)
             db_config['user'] = body.get('user')
             return db_config
+
+        if not db_config.get("success"):
+            raise HTTPException(status_code=400, detail={"success": False, "error": db_config["error"]})
+
+        bridge_configurations = db_config.get('bridge_configurations') or {}
+
+        if not bridge_configurations:
+            raise HTTPException(status_code=400, detail={"success": False, "error": "Unable to resolve bridge configuration"})
+
+        target_bridge_id = bridge_id or db_config.get('primary_bridge_id')
+        if target_bridge_id and target_bridge_id in bridge_configurations:
+            primary_config = bridge_configurations[target_bridge_id]
+        else:
+            primary_config = next(iter(bridge_configurations.values()))
+
+        body.update(primary_config)
+        body['bridge_configurations'] = bridge_configurations
         service = body.get("service")
         model = body.get("configuration").get('model')
         user = body.get("user")

@@ -35,7 +35,8 @@ from src.services.utils.common_utils import (
     orchestrator_agent_chat,
     process_background_tasks_for_playground,
     process_variable_state,
-    update_cost_in_background
+    update_cost_in_background,
+    handle_agent_transfer
 )
 from src.services.utils.guardrails_validator import guardrails_check
 from src.services.utils.rich_text_support import process_chatbot_response
@@ -47,12 +48,57 @@ from src.services.cache_service import find_in_cache
 
 configurationModel = db["configurations"]
 
-@app.post("/chat/{bridge_id}")
-@handle_exceptions
+async def chat_multiple_agents(request_body):
+    try:
+        # Extract bridge configurations from the body
+        body = request_body.get('body', {})
+        bridge_configurations = body.get('bridge_configurations', {})
+        
+        if not bridge_configurations:
+            raise ValueError("No bridge configurations found")
+
+        primary_bridge_id = body.get('bridge_id')
+        
+        if not primary_bridge_id or primary_bridge_id not in bridge_configurations:
+            # Use the first agent as primary
+            primary_bridge_id = next(iter(bridge_configurations.keys()))
+        
+        primary_config = bridge_configurations[primary_bridge_id]
+        
+        # Create a new body for the primary agent
+        primary_body = body.copy()
+        primary_body.update(primary_config)
+        primary_body['bridge_id'] = primary_bridge_id
+        
+        # Create a complete request_body structure for the primary agent
+        primary_request_body = {
+            'body': primary_body,
+            'state': request_body.get('state', {}).copy(),
+            'path_params': request_body.get('path_params', {})
+        }
+        
+        # Call the chat function for the primary agent only
+        result = await chat(primary_request_body)
+        
+        # Return the result directly
+        return result
+        
+    except Exception as error:
+        logger.error(f'Error in chat_multiple_agents: {str(error)}, {traceback.format_exc()}')
+        error_object = {
+            "success": False,
+            "error": f"{str(error)} (Type: {type(error).__name__}). For more support contact us at support@gtwy.ai"
+        }
+        return JSONResponse(status_code=500, content=error_object)
+
+
 async def chat(request_body): 
     result ={}
     class_obj= {}
     try:
+        # Store bridge_configurations for potential transfer logic
+        bridge_configurations = request_body.get('body', {}).get('bridge_configurations', {})
+        
         # Step 1: Parse and validate request body
         parsed_data = parse_request_body(request_body)
         if parsed_data.get('guardrails',{}).get('is_enabled', False):
@@ -101,7 +147,7 @@ async def chat(request_body):
         )
         # Step 9: Execute Service Handler
         params = build_service_params(
-            parsed_data, custom_config, model_output_config, thread_info, timer, memory, send_error_to_webhook
+            parsed_data, custom_config, model_output_config, thread_info, timer, memory, send_error_to_webhook, bridge_configurations
         )
         # Step 10: json_schema service conversion
         if 'response_type' in custom_config and custom_config['response_type'].get('type') == 'json_schema':
@@ -114,6 +160,12 @@ async def chat(request_body):
         original_exception = None
         try:
             result = await class_obj.execute()
+            
+            # Handle agent transfer if transfer configuration is present
+            transfer_result = await handle_agent_transfer(result, request_body, bridge_configurations, chat)
+            if transfer_result is not None:
+                return transfer_result
+            
             result['response']['usage'] = params['token_calculator'].get_total_usage()
             execution_failed = not result["success"]
             original_error = result.get('error', 'Unknown error') if execution_failed else None
@@ -158,7 +210,7 @@ async def chat(request_body):
                         fallback_model_config['configuration'], fallback_custom_config, parsed_data['service']
                     )
                     params = build_service_params(
-                        parsed_data, fallback_custom_config, fallback_model_output_config, thread_info, timer, memory, send_error_to_webhook
+                        parsed_data, fallback_custom_config, fallback_model_output_config, thread_info, timer, memory, send_error_to_webhook, bridge_configurations
                     )
                     # Step 9 : json_schema service conversion
                     if 'response_type' in fallback_custom_config and fallback_custom_config['response_type'].get('type') == 'json_schema':
@@ -410,6 +462,9 @@ async def image(request_body):
     result ={}
     class_obj= {}
     try:
+        # Store bridge_configurations for potential transfer logic
+        bridge_configurations = request_body.get('body', {}).get('bridge_configurations', {})
+        
         # Step 1: Parse and validate request body
         parsed_data = parse_request_body(request_body)
 
@@ -430,7 +485,7 @@ async def image(request_body):
 
         # Step 5: Execute Service Handler
         params = build_service_params(
-            parsed_data, custom_config, model_output_config, thread_info, timer, None, send_error_to_webhook
+            parsed_data, custom_config, model_output_config, thread_info, timer, None, send_error_to_webhook, bridge_configurations
         )
         
         
