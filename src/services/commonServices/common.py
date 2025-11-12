@@ -48,6 +48,7 @@ from src.services.cache_service import find_in_cache
 
 configurationModel = db["configurations"]
 
+@handle_exceptions
 async def chat_multiple_agents(request_body):
     try:
         # Extract bridge configurations from the body
@@ -161,10 +162,13 @@ async def chat(request_body):
         try:
             result = await class_obj.execute()
             
-            # Handle agent transfer if transfer configuration is present
-            transfer_result = await handle_agent_transfer(result, request_body, bridge_configurations, chat)
-            if transfer_result is not None:
-                return transfer_result
+            # Check if agent transfer is needed
+            transfer_agent_config = result.get('transfer_agent_config')
+            if transfer_agent_config and transfer_agent_config.get('action_type') == 'transfer':
+                # Handle agent transfer
+                transfer_result = await handle_agent_transfer(result, request_body, bridge_configurations, chat)
+                if transfer_result is not None:
+                    return transfer_result
             
             result['response']['usage'] = params['token_calculator'].get_total_usage()
             execution_failed = not result["success"]

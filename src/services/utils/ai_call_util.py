@@ -74,12 +74,6 @@ async def call_gtwy_agent(args):
         # All agents should have access to bridge_configurations from the parent
         bridge_configurations = args.get('bridge_configurations')
         
-        if not bridge_configurations:
-            raise Exception(f"bridge_configurations not available for agent: {bridge_id}")
-        
-        if bridge_id not in bridge_configurations:
-            raise Exception(f"Configuration for agent {bridge_id} not found in bridge_configurations")
-        
         # Use pre-fetched configuration data
         logger.info(f"Using pre-fetched configuration for agent: {bridge_id}")
         primary_config = bridge_configurations[bridge_id]

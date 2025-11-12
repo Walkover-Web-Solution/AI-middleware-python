@@ -33,10 +33,6 @@ from src.db_services.orchestrator_history_service import OrchestratorHistoryServ
 async def handle_agent_transfer(result, request_body, bridge_configurations, chat_function):
     transfer_agent_config = result.get('transfer_agent_config')
     
-    # Check if this is a transfer request
-    if not transfer_agent_config or transfer_agent_config.get('action_type') != 'transfer':
-        return None
-    
     # Extract agent_id and user_query
     target_agent_id = transfer_agent_config.get('agent_id')
     user_query = transfer_agent_config.get('user_query')
