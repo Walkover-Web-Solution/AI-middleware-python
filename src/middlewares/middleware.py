@@ -4,6 +4,10 @@ import traceback
 from config import Config
 from src.services.utils.apiservice import fetch
 from src.services.utils.helper import Helper
+from src.services.proxy.Proxyservice import (
+    get_proxy_details_by_token,
+    validate_proxy_pauthkey,
+)
 from src.services.utils.time import Timer
 from globals import *
 
@@ -12,10 +16,7 @@ async def make_data_if_proxy_token_given(req):
     proxy_pauth_token = req.headers.get('pauthkey')
 
     if proxy_auth_token:
-        headers = {
-            'proxy_auth_token': proxy_auth_token
-        }
-        response_data, rs_header = await fetch("https://routes.msg91.com/api/c/getDetails", "GET", headers)
+        response_data = await get_proxy_details_by_token(proxy_auth_token)
         data = {
             'ip': "9.255.0.55",
             'user': {
@@ -33,7 +34,7 @@ async def make_data_if_proxy_token_given(req):
         return data
 
     if proxy_pauth_token:
-        validation_response = await Helper.validate_proxy_pauthkey(proxy_pauth_token)
+        validation_response = await validate_proxy_pauthkey(proxy_pauth_token)
         if validation_response.get('hasError') or validation_response.get('status') != 'success':
             raise HTTPException(status_code=401, detail="invalid pauthkey")
 

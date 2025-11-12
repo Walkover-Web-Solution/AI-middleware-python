@@ -47,8 +47,10 @@ def handle_exceptions(func):
    
             bridge_id = path_params.get('bridge_id') or body.get("bridge_id")
             org_id = state.get('profile', {}).get('org', {}).get('id')
-            if is_playground == False:
-                await send_error_to_webhook(bridge_id, org_id,error_json, error_type = 'Error')
+            bridge_name = body.get('name')
+            is_embed = body.get('is_embed')
+            user_id = body.get('user_id')
+            await send_error_to_webhook(bridge_id, org_id, error_json, error_type='Error', bridge_name=bridge_name, is_embed=is_embed, user_id=user_id)
             return JSONResponse(
                 status_code=400,
                 content=json.loads(json.dumps(error_json))

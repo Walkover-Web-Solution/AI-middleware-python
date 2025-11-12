@@ -681,10 +681,11 @@ async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None)
                         }
                     }
                 },
-                # Stage 5: Project only folder_apikeys
+                # Stage 5: Project folder_apikeys and type
                 {
                     '$project': {
-                        'folder_apikeys': 1,'folder_limit': { '$ifNull': ['$folder_limit', 0] },'folder_usage': { '$ifNull': ['$folder_usage', 0] }
+                        'folder_apikeys': 1,
+                        'type': 1,'folder_limit': { '$ifNull': ['$folder_limit', 0] },'folder_usage': { '$ifNull': ['$folder_usage', 0] }
                     }
                 }
             ]
@@ -698,20 +699,27 @@ async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None)
             else:
                 bridge_data['folder_apikeys'] = {}
 
+            if folder_result and folder_result[0].get('folder_type'):
+                bridge_data['folder_type'] = folder_result[0]['folder_type']
+            else:
+                bridge_data['folder_type'] = None
+
             if folder_result and folder_result[0].get('folder_limit'):
                 bridge_data['folder_limit'] = folder_result[0]['folder_limit']
             else:
                 bridge_data['folder_limit'] = 0
+                
             if folder_result and folder_result[0].get('folder_usage'):
                 bridge_data['folder_usage'] = folder_result[0]['folder_usage']
             else :
                 bridge_data['folder_usage'] = 0
             
         else:
-            # No folder_id, set empty folder_apikeys
+            # No folder_id, set empty folder_apikeys and folder_type
             bridge_data['folder_apikeys'] = {}
             bridge_data['folder_limit'] = 0
             bridge_data['folder_usage'] = 0
+            bridge_data['folder_type'] = None
        
         # Structure the final response
         response = {

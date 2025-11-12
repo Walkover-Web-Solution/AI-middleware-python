@@ -66,6 +66,31 @@ class Helper:
         if len(key) > 6:
             return key[:3] + '*' * (9) + key[-3:]
         return key
+
+    @staticmethod
+    def extract_embed_user_id(userinfo, org_id):
+        if not userinfo:
+            return None
+
+        data = userinfo.get("data") if isinstance(userinfo, dict) else userinfo
+        if not isinstance(data, list) or not data:
+            return None
+
+        first_entry = data[0]
+        if isinstance(first_entry, dict):
+            mail = first_entry.get("email")
+        else:
+            mail = getattr(first_entry, "email", None)
+
+        if not isinstance(mail, str) or not mail:
+            return None
+
+        cleaned_mail = mail
+        if org_id:
+            cleaned_mail = cleaned_mail.removeprefix(org_id)
+        cleaned_mail = cleaned_mail.removesuffix("@gtwy.ai")
+
+        return cleaned_mail or None
          
 
     @staticmethod
@@ -308,27 +333,9 @@ class Helper:
             prompt += f"\n\nResponse Style Prompt: {response_style['prompt']}"
         return prompt
       
-    async def get_timezone_and_org_name(org_id):
-        cached_data = await find_in_cache(org_id)
-        if cached_data:
-            # Deserialize the cached JSON data
-            cached_result = json.loads(cached_data)
-            return cached_result
-        else:
-            response, _ = await fetch(f"https://routes.msg91.com/api/{Config.PUBLIC_REFERENCEID}/getCompanies?id={org_id}", "GET", {"Authkey": Config.ADMIN_API_KEY}, None, None)
-            cache_key = f"{redis_keys['timezone_and_org_']}{org_id}"
-            await store_in_cache(cache_key, response.get('data', {}).get('data', [{}])[0])
-            return response.get('data', {}).get('data', [{}])[0]
+    # Removed MSG proxy delegation methods: use src.services.proxy.Proxyservice directly
 
-    async def validate_proxy_pauthkey(pauthkey):
-        if not pauthkey:
-            raise ValueError("pauthkey is required for validation")
-        headers = {
-            "authkey": Config.ADMIN_API_KEY,
-            "cauthkey": pauthkey
-        }
-        response, _ = await fetch("https://routes.msg91.com/api/validateCauthKey", "GET", headers, None, None)
-        return response
+    
 
     def sort_bridges(bridges, metrics_data):
         # Create a dictionary to map _id to total tokens
@@ -484,4 +491,4 @@ class Helper:
             "required_params": required_params
         }
 
-
+    
