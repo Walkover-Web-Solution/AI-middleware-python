@@ -1,7 +1,7 @@
 import asyncio
 import json
 from config import Config
-from src.services.commonServices.common import chat, image
+from src.services.commonServices.common import chat_multiple_agents, image
 from aio_pika.abc import AbstractIncomingMessage
 from src.services.utils.logger import logger
 from src.services.utils.common_utils import process_background_tasks
@@ -28,7 +28,8 @@ class Queue(BaseQueue):
         if type == 'image':
             await image(messages)
             return
-        await chat(messages)
+        # Use chat_multiple_agents to handle both single and multiple agents
+        await chat_multiple_agents(messages)
         # return result
 
     async def consume_messages(self):

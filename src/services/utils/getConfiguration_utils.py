@@ -347,9 +347,16 @@ def add_connected_agents(result, tools, tool_id_and_name_mapping):
                     "required_params": [],
                     "parameter": {}
                 },
+                "action_type": {
+                    "description": "transfer: directly return child agent response, conversation: get child response and continue processing",
+                    "type": "string",
+                    "enum": ["transfer", "conversation"],
+                    "required_params": [],
+                    "parameter": {}
+                },
                 **fields
             },
-            "required": ["_query"] + required_params
+            "required": ["_query", "action_type"] + required_params
         })
         
         tool_id_and_name_mapping[name] = {

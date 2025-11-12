@@ -72,6 +72,7 @@ class BaseService:
         self.youtube_url = params.get('youtube_url')
         self.web_search_filters = params.get('web_search_filters')
         self.folder_id = params.get('folder_id')
+        self.bridge_configurations = params.get('bridge_configurations')
 
 
     def aiconfig(self):

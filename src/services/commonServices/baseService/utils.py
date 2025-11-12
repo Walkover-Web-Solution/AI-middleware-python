@@ -247,6 +247,10 @@ async def process_data_and_run_tools(codes_mapping, self):
                     if hasattr(self, 'timer') and hasattr(self.timer, 'getTime'):
                         agent_args["timer_state"] = self.timer.getTime()
                     
+                    # Pass bridge_configurations if available
+                    if hasattr(self, 'bridge_configurations') and self.bridge_configurations:
+                        agent_args["bridge_configurations"] = self.bridge_configurations
+                    
                     task = call_gtwy_agent(agent_args)
                 else: 
                     task = axios_work(tool_data.get("args"), self.tool_id_and_name_mapping[name])
