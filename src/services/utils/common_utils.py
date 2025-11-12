@@ -11,6 +11,7 @@ from ...controllers.conversationController import getThread
 from src.services.utils.token_calculation import TokenCalculator
 import src.db_services.ConfigurationServices as ConfigurationService
 from .helper import Helper
+from src.services.proxy.Proxyservice import get_timezone_and_org_name
 from config import Config
 import pydash as _
 import asyncio
@@ -91,6 +92,8 @@ def parse_request_body(request_body):
         "fall_back" : body.get('fall_back') or {},
         "guardrails" : body.get('bridges', {}).get('guardrails') or {},
         "testcase_data" : body.get('testcase_data') or {},
+        "is_embed" : body.get('is_embed'),
+        "user_id" : body.get('user_id'),
         "file_data" : body.get('video_data') or {},
         "youtube_url" : body.get('youtube_url') or None,
         "folder_id": body.get('folder_id'),
@@ -382,7 +385,7 @@ def build_service_params_for_batch(parsed_data, custom_config, model_output_conf
 async def updateVariablesWithTimeZone(variables, org_id):
     org_name = ''
     async def getTimezoneOfOrg():
-        data = await Helper.get_timezone_and_org_name(org_id)
+        data = await get_timezone_and_org_name(org_id)
         timezone = data.get('timezone') or "+5:30"
         hour, minutes = timezone.split(':')
         return int(hour), int(minutes), data.get('name') or "", (data.get('meta') or {}).get('identifier', '')
@@ -416,9 +419,9 @@ def filter_missing_vars(missing_vars, variables_state):
 def get_service_by_model(model): 
     return next((s for s in model_config_document if model in model_config_document[s]), None)
 
-def send_error(bridge_id, org_id, error_message, error_type):
+def send_error(bridge_id, org_id, error_message, error_type, bridge_name=None, is_embed=None, user_id=None):
     asyncio.create_task(send_error_to_webhook(
-        bridge_id, org_id, error_message, error_type=error_type
+        bridge_id, org_id, error_message, error_type=error_type, bridge_name=bridge_name, is_embed=is_embed, user_id=user_id
     ))
 
 def restructure_json_schema(response_type, service):
@@ -810,7 +813,7 @@ async def orchestrator_agent_chat(agent_config, body=None, user=None):
 
         # Handle missing variables
         if missing_vars:
-            send_error(parsed_data['bridge_id'], parsed_data['org_id'], missing_vars, error_type='Variable')
+            send_error(parsed_data['bridge_id'], parsed_data['org_id'], missing_vars, error_type='Variable', bridge_name=parsed_data.get('name'), is_embed=parsed_data.get('is_embed'), user_id=parsed_data.get('user_id'))
         
         # Step 8: Configure Custom Settings
         custom_config = await configure_custom_settings(
@@ -833,7 +836,7 @@ async def orchestrator_agent_chat(agent_config, body=None, user=None):
             raise ValueError(result)
         
         if result['modelResponse'].get('firstAttemptError'):
-            send_error(parsed_data['bridge_id'], parsed_data['org_id'], result['modelResponse']['firstAttemptError'], error_type='retry_mechanism')
+            send_error(parsed_data['bridge_id'], parsed_data['org_id'], result['modelResponse']['firstAttemptError'], error_type='retry_mechanism', bridge_name=parsed_data.get('name'), is_embed=parsed_data.get('is_embed'), user_id=parsed_data.get('user_id'))
         
         if parsed_data['configuration']['type'] == 'chat':
             if parsed_data['is_rich_text'] and parsed_data['bridgeType'] and parsed_data['reasoning_model'] == False:
