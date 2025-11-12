@@ -1113,6 +1113,12 @@ async def process_background_tasks_for_playground(result, parsed_data):
     except Exception as e:
         logger.error(f"Error processing playground testcase: {str(e)}")
 
+async def update_cost_and_last_used(parsed_data):
+    try:
+        await update_cost(parsed_data)
+        await update_last_used(parsed_data)
+    except Exception as e:
+        logger.error(f"Error updating cost and last used: {str(e)}")
 
 async def update_cost_and_last_used_in_background(parsed_data):
     """Kick off the async cost cache update using the data available on parsed_data."""
@@ -1120,7 +1126,6 @@ async def update_cost_and_last_used_in_background(parsed_data):
         logger.warning("Skipping background cost update due to invalid parsed data.")
         return
 
-    asyncio.create_task(update_cost(parsed_data))
-    asyncio.create_task(update_last_used(parsed_data))
+    asyncio.create_task(update_cost_and_last_used(parsed_data))
 
     
