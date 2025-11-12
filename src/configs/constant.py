@@ -44,6 +44,8 @@ redis_keys = {
     'gpt_memory_' : 'gpt_memory_',
     'timezone_and_org_' : 'timezone_and_org_',
     'conversation_' : 'conversation_',
+    'bridgelastused_' : 'bridgelastused_',
+    'apikeylastused_' : 'apikeylastused_',
     'bridgeusedcost_' : 'bridgeusedcost_',
     'folderusedcost_' : 'folderusedcost_',
     'apikeyusedcost_' : 'apikeyusedcost_'

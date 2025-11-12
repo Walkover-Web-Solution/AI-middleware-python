@@ -35,7 +35,7 @@ from src.services.utils.common_utils import (
     orchestrator_agent_chat,
     process_background_tasks_for_playground,
     process_variable_state,
-    update_cost_in_background
+    update_cost_and_last_used_in_background
 )
 from src.services.utils.guardrails_validator import guardrails_check
 from src.services.utils.rich_text_support import process_chatbot_response
@@ -241,7 +241,7 @@ async def chat(request_body):
                 result['response']['testcase_result'] = testcase_result
             else:
                 await process_background_tasks_for_playground(result, parsed_data)
-        await update_cost_in_background(parsed_data)
+        await update_cost_and_last_used_in_background(parsed_data)
         return JSONResponse(status_code=200, content={"success": True, "response": result["response"]})
     
     except (Exception, ValueError, BadRequestException) as error:

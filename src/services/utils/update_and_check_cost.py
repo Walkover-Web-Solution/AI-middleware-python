@@ -2,7 +2,7 @@ import logging
 import json
 from ..cache_service import store_in_cache, find_in_cache, delete_in_cache
 from src.configs.constant import redis_keys, limit_types
-
+from datetime import datetime
 logger = logging.getLogger(__name__)
 
 def _build_limit_error(limit_type, current_usage, limit_value):
@@ -294,3 +294,53 @@ async def update_cost(parsed_data):
         
     except Exception as e:
         logger.error(f"Error updating cost usage cache: {str(e)}")
+
+
+async def update_last_used(parsed_data):
+    try:
+        if not isinstance(parsed_data, dict):
+            logger.warning("Skipping last used update due to invalid parsed data.")
+            return
+
+        usage_payload = {}
+        raw_usage = parsed_data.get('usage')
+        if isinstance(raw_usage, dict):
+            usage_payload.update(raw_usage)
+
+        history_params = parsed_data.get('historyParams') if isinstance(parsed_data.get('historyParams'), dict) else {}
+
+        service = usage_payload.get('service') or parsed_data.get('service')
+        if service:
+            usage_payload['service'] = service
+
+        apikey_map = usage_payload.get('apikey_object_id')
+        if not isinstance(apikey_map, dict):
+            apikey_map = parsed_data.get('apikey_object_id') if isinstance(parsed_data.get('apikey_object_id'), dict) else {}
+            if apikey_map:
+                usage_payload['apikey_object_id'] = apikey_map
+
+        bridge_id = history_params.get('bridge_id') or parsed_data.get('bridge_id')
+        
+        apikey_id = history_params.get('apikey_id')
+        if not apikey_id and isinstance(apikey_map, dict) and service:
+            apikey_id = apikey_map.get(service)
+        if not apikey_id:
+            fallback_map = parsed_data.get('apikey_object_id')
+            if isinstance(fallback_map, dict) and service:
+                apikey_id = fallback_map.get(service)
+
+        if bridge_id:
+            bridge_usage_key = f"{redis_keys['bridgelastused_']}{bridge_id}"
+            await store_in_cache(bridge_usage_key, datetime.now())
+
+        if apikey_id:
+            api_usage_key = f"{redis_keys['apikeylastused_']}{apikey_id}"
+            await store_in_cache(api_usage_key, datetime.now())
+
+        logger.info(
+            "Updated last used for bridge: %s, apikey: %s",
+            bridge_id,
+            apikey_id,
+        )
+    except Exception as e:
+        logger.error(f"Error updating last used cache: {str(e)}")
