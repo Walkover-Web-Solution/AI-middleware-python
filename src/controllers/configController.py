@@ -220,7 +220,7 @@ async def get_all_bridges(request):
             lastused = await find_in_cache(f"{redis_keys['bridgelastused_']}{bridge_id}")
            
             if total_tokens:
-                bridge["total_tokens"] = total_tokens
+                bridge["total_tokens"] = json.loads(total_tokens)
 
             if bridge_usage:
                 bridge_usage = json.loads(bridge_usage)
