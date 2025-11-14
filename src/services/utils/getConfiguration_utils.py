@@ -299,13 +299,16 @@ def add_anthropic_json_schema(service, configuration, tools):
     configuration['response_type'] = 'default'
     configuration['prompt'] += '\n Always return the response in JSON SChema by calling the function JSON_Schema_Response_Format and if no values available then return json with dummy or default vaules'
 
-def add_connected_agents(result, tools, tool_id_and_name_mapping):
+def add_connected_agents(result, tools, tool_id_and_name_mapping, configuration=None):
     """Add connected agents as tools"""
     connected_agents = result.get('bridges', {}).get('connected_agents', {})
     connected_agent_details = result.get('bridges', {}).get('connected_agent_details', {})
     
     if not connected_agents:
         return
+    
+    # Check if type is orchestrator
+    is_orchestrator = configuration and configuration.get('type') == 'orchestrator'
     
     for bridge_name, bridge_info in connected_agents.items():
         bridge_id_value = bridge_info.get('bridge_id', '')
@@ -335,28 +338,39 @@ def add_connected_agents(result, tools, tool_id_and_name_mapping):
         
         name = makeFunctionName(bridge_name)
 
+        # Build properties dictionary
+        properties = {
+            "_query": {
+                "description": "The query or message to be processed by the connected agent.",
+                "type": "string",
+                "enum": [],
+                "required_params": [],
+                "parameter": {}
+            },
+            **fields
+        }
+        
+        # Add action_type only if type is orchestrator
+        if is_orchestrator:
+            properties["action_type"] = {
+                "description": "transfer: directly return child agent response, conversation: get child response and continue processing",
+                "type": "string",
+                "enum": ["transfer", "conversation"],
+                "required_params": [],
+                "parameter": {}
+            }
+        
+        # Build required list
+        required = ["_query"] + required_params
+        if is_orchestrator:
+            required.append("action_type")
+
         tools.append({
             "type": "function",
             "name": name,
             "description": description,
-            "properties": {
-                "_query": {
-                    "description": "The query or message to be processed by the connected agent.",
-                    "type": "string",
-                    "enum": [],
-                    "required_params": [],
-                    "parameter": {}
-                },
-                "action_type": {
-                    "description": "transfer: directly return child agent response, conversation: get child response and continue processing",
-                    "type": "string",
-                    "enum": ["transfer", "conversation"],
-                    "required_params": [],
-                    "parameter": {}
-                },
-                **fields
-            },
-            "required": ["_query", "action_type"] + required_params
+            "properties": properties,
+            "required": required
         })
         
         tool_id_and_name_mapping[name] = {

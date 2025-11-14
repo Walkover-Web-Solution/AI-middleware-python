@@ -111,7 +111,7 @@ async def _prepare_configuration_response(configuration, service, bridge_id, api
 
     variables, org_name = await updateVariablesWithTimeZone(variables, org_id)
 
-    add_connected_agents(result, tools, tool_id_and_name_mapping)
+    add_connected_agents(result, tools, tool_id_and_name_mapping, configuration)
 
     guardrails_value = guardrails if guardrails is not None else (result.get('bridges', {}).get('guardrails') or {})
     web_search_filters_value = web_search_filters or result.get('bridges', {}).get('web_search_filters') or {}
