@@ -44,3 +44,17 @@ redis_keys = {
     'timezone_and_org_' : 'timezone_and_org_',
     'conversation_' : 'conversation_'
 }
+
+new_agent_service = {
+        "openai":  "gpt-4o",
+        "anthropic": "claude-3-7-sonnet-latest",
+        "groq": "llama-3.3-70b-versatile",
+        "open_router": "deepseek/deepseek-chat-v3-0324:free",
+        "mistral": "mistral-medium-latest",
+        "gemini": "gemini-2.5-flash",
+        "ai_ml": "gpt-oss-20b",
+        "grok": "grok-4-fast",
+        "gemini":"gemini-2.5-flash",
+        "ai_ml": "gpt-oss-20b",
+        "grok": "grok-4-fast"
+}
