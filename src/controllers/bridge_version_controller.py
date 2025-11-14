@@ -69,7 +69,7 @@ async def get_version(request, version_id: str):
         response = await Helper.response_middleware_for_bridge(bridge.get('bridges')['service'],{"success": True,"message": "bridge get successfully","bridge":bridge.get("bridges", {})})
         return response
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e,)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     
 
 async def publish_version(request, version_id):
