@@ -1,9 +1,10 @@
 from fastapi import HTTPException, status
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
+from src.db_services.folder_service import get_folder_data
 from src.db_services.ConfigurationServices import create_bridge, get_all_bridges_in_org_by_org_id, get_bridge_by_id, get_all_bridges_in_org, update_bridge, update_bridge_ids_in_api_calls, get_bridges_with_tools, get_apikey_creds, update_apikey_creds, update_built_in_tools, update_agents, get_all_agents_data, get_agents_data, get_bridges_and_versions_by_model, clone_agent_to_org
 from src.services.utils.helper import Helper
-from src.configs.constant import redis_keys
+from src.configs.constant import new_agent_service, redis_keys
 import json
 from config import Config
 from src.db_services.conversationDbService import storeSystemPrompt, add_bulk_user_entries
@@ -26,6 +27,7 @@ async def create_bridges_controller(request):
         bridgeType = bridges.get('bridgeType') or 'api'
         org_id = request.state.profile['org']['id']
         folder_id = request.state.folder_id if hasattr(request.state, 'folder_id') else None
+        folder_data = await get_folder_data(folder_id)
         user_id = request.state.user_id
         all_bridge = await get_all_bridges_in_org_by_org_id(org_id)
         prompt = "Role: AI Bot\nObjective: Respond logically and clearly, maintaining a neutral, automated tone.\nGuidelines:\nIdentify the task or question first.\nProvide brief reasoning before the answer or action.\nKeep responses concise and contextually relevant.\nAvoid emotion, filler, or self-reference.\nUse examples or placeholders only when helpful."
@@ -118,6 +120,11 @@ async def create_bridges_controller(request):
         }
         if prompt is not None:
             model_data['prompt'] = prompt
+        if folder_data:
+            api_key_object_ids = folder_data.get('apikey_object_id', {})
+            if api_key_object_ids:
+                service = list(api_key_object_ids.keys())[0]
+                model_data['model'] = new_agent_service[service]
         result = await create_bridge({
             "configuration": model_data,
             "name": name,
