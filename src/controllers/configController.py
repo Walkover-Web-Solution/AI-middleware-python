@@ -302,13 +302,14 @@ async def get_all_service_controller():
         "success": True,
         "message": "Get all service successfully",
         "services": {
-            "openai": {"model": "gpt-4o"},
-            "anthropic": {"model": "claude-3-7-sonnet-latest"},
-            "groq": {"model": "llama-3.3-70b-versatile"},
-            "open_router": {"model": "deepseek/deepseek-chat-v3-0324:free"},
-            "mistral": {"model": "mistral-medium-latest"},
-            "gemini" : {"model" : "gemini-2.5-flash"},
-            "ai_ml" : {"model" : "gpt-oss-20b"}
+            "openai": {"model": new_agent_service.get("openai")},
+            "anthropic": {"model": new_agent_service.get("anthropic")},
+            "groq": {"model": new_agent_service.get("groq")},
+            "open_router": {"model": new_agent_service.get("open_router")},
+            "mistral": {"model": new_agent_service.get("mistral")},
+            "gemini" : {"model": new_agent_service.get("gemini")},
+            "ai_ml" : {"model": new_agent_service.get("ai_ml")},
+            "grok" : {"model": new_agent_service.get("grok")}
         }
     }
 
