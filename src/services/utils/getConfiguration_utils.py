@@ -193,7 +193,7 @@ def setup_tools(result, variables_path_bridge, extra_tools):
             tool_id_and_name_mapping[name_of_function] = tool_mapping
     return tools, tool_id_and_name_mapping, {**variables_path_bridge, **variable_path}
 
-def setup_api_key(service, result, apikey):
+def setup_api_key(service, result, apikey, chatbot):
     """Setup API key for the service"""
     db_apikeys = result.get('bridges', {}).get('apikeys', {})
     
@@ -209,7 +209,11 @@ def setup_api_key(service, result, apikey):
     folder_api_key = result.get('bridges', {}).get('folder_apikeys', {}).get(service)
     if folder_api_key:
         db_api_key = folder_api_key
-        
+
+    if chatbot and (service == 'openai'):
+        if not apikey and result.get('bridges', {}).get('configuration', {}).get('model') == 'gpt-5-nano':
+            apikey = Config.OPENAI_API_KEY
+    
     # Validate API key existence
     if not (apikey or db_api_key):
         raise Exception('Could not find api key or Agent is not Published')
