@@ -34,6 +34,16 @@ class TokenCalculator:
                 usage["cachedTokens"] = 0
                 usage["reasoningTokens"] = 0
             
+            case 'grok':
+                # xAI SDK returns SamplingUsage object, access as attributes
+                usage_obj = model_response['usage']
+                usage["inputTokens"] = getattr(usage_obj, 'prompt_tokens', 0)
+                usage["outputTokens"] = getattr(usage_obj, 'completion_tokens', 0)
+                usage["totalTokens"] = getattr(usage_obj, 'total_tokens', 0)
+                # Grok has reasoning tokens and cached tokens
+                usage["cachedTokens"] = getattr(usage_obj, 'cached_prompt_text_tokens', 0)
+                usage["reasoningTokens"] = getattr(usage_obj, 'reasoning_tokens', 0)
+            
             case 'gemini':
                 usage["inputTokens"] = model_response['usage']['prompt_tokens']
                 usage["outputTokens"] = model_response['usage']['completion_tokens']

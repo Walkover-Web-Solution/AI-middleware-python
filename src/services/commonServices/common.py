@@ -2,7 +2,6 @@ from config import Config
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 import traceback
-from ...db_services import metrics_service as metrics_service
 import pydash as _
 from ..utils.helper import Helper
 from .baseService.utils import sendResponse
@@ -34,7 +33,9 @@ from src.services.utils.common_utils import (
     create_history_params,
     add_files_to_parse_data,
     orchestrator_agent_chat,
-    process_background_tasks_for_playground
+    process_background_tasks_for_playground,
+    process_variable_state,
+    update_cost_and_last_used_in_background
 )
 from src.services.utils.guardrails_validator import guardrails_check
 from src.services.utils.rich_text_support import process_chatbot_response
@@ -81,7 +82,10 @@ async def chat(request_body):
         if len(parsed_data['files']) == 0:
             parsed_data['files'] = await add_files_to_parse_data(parsed_data['thread_id'], parsed_data['sub_thread_id'], parsed_data['bridge_id'])
 
-        # Step 6: Prepare Prompt, Variables and Memory
+        # Step 6: Check and add default values for variables based on variable_state
+        process_variable_state(parsed_data)
+        
+        # Step 7: Prepare Prompt, Variables and Memory
         memory, missing_vars = await prepare_prompt(parsed_data, thread_info, model_config, custom_config)
         
 
@@ -89,17 +93,17 @@ async def chat(request_body):
 
         # Handle missing variables
         if missing_vars:
-            send_error(parsed_data['bridge_id'], parsed_data['org_id'], missing_vars, error_type='Variable')
+            send_error(parsed_data['bridge_id'], parsed_data['org_id'], missing_vars, error_type='Variable', bridge_name=parsed_data.get('name'), is_embed=parsed_data.get('is_embed'), user_id=parsed_data.get('user_id'))
         
-        # Step 7: Configure Custom Settings
+        # Step 8: Configure Custom Settings
         custom_config = await configure_custom_settings(
             model_config['configuration'], custom_config, parsed_data['service']
         )
-        # Step 8: Execute Service Handler
+        # Step 9: Execute Service Handler
         params = build_service_params(
             parsed_data, custom_config, model_output_config, thread_info, timer, memory, send_error_to_webhook
         )
-        # Step 9 : json_schema service conversion
+        # Step 10: json_schema service conversion
         if 'response_type' in custom_config and custom_config['response_type'].get('type') == 'json_schema':
             custom_config['response_type'] = restructure_json_schema(custom_config['response_type'], parsed_data['service'])
         
@@ -107,6 +111,7 @@ async def chat(request_body):
         # Execute with retry mechanism
         class_obj = await Helper.create_service_handler(params, parsed_data['service'])
         
+        original_exception = None
         try:
             result = await class_obj.execute()
             result['response']['usage'] = params['token_calculator'].get_total_usage()
@@ -116,6 +121,8 @@ async def chat(request_body):
             # Handle exceptions during execution
             execution_failed = True
             original_error = str(execution_exception)
+            original_exception = execution_exception
+            logger.error(f"Initial execution failed with {parsed_data['service']}/{parsed_data['model']}: {original_error}")
             result = {
                 "success": False,
                 "error": original_error,
@@ -183,17 +190,24 @@ async def chat(request_body):
                     result['response']['data']['fallback'] = True
                 
             except Exception as retry_error:
-                # If retry also fails, restore original configuration and continue with original error
+                # If retry also fails, chain the new exception to the original one
+                logger.error(f"Fallback attempt failed with {parsed_data['service']}/{parsed_data['model']}: {retry_error}")
+                # Restore original configuration before raising
                 parsed_data['model'] = original_model
                 parsed_data['service'] = original_service
-                # Note: We don't need to restore class_obj properties since we may have created a new object
-                logger.error(f"Retry mechanism failed: {str(retry_error)}")
+                raise retry_error from original_exception
         
         if not result["success"]:
             raise ValueError(result)
+        # Add message_id to response
+        result['response']['data']['message_id'] = parsed_data['message_id']
+
+        # Send data to playground
+        if parsed_data['is_playground']:
+            await sendResponse(parsed_data['response_format'], result["response"], success=True, variables=parsed_data.get('variables',{}))
         
         if original_error:
-            send_error(parsed_data['bridge_id'], parsed_data['org_id'], original_error, error_type='retry_mechanism')
+            send_error(parsed_data['bridge_id'], parsed_data['org_id'], original_error, error_type='retry_mechanism', bridge_name=parsed_data.get('name'), is_embed=parsed_data.get('is_embed'), user_id=parsed_data.get('user_id'))
         
         if parsed_data['configuration']['type'] == 'chat':
             if parsed_data['is_rich_text'] and parsed_data['bridgeType'] and parsed_data['reasoning_model'] == False:
@@ -205,7 +219,6 @@ async def chat(request_body):
         if parsed_data.get('type') != 'image':
             parsed_data['tokens'] = params['token_calculator'].calculate_total_cost(parsed_data['model'], parsed_data['service'])
             result['response']['usage']['cost'] = parsed_data['tokens'].get('total_cost') or 0
-            result['response']['data']['message_id'] = parsed_data['message_id']
         # Create latency object using utility function
         latency = create_latency_object(timer, params)
         if not parsed_data['is_playground']:
@@ -228,6 +241,7 @@ async def chat(request_body):
                 result['response']['testcase_result'] = testcase_result
             else:
                 await process_background_tasks_for_playground(result, parsed_data)
+        await update_cost_and_last_used_in_background(parsed_data)
         return JSONResponse(status_code=200, content={"success": True, "response": result["response"]})
     
     except (Exception, ValueError, BadRequestException) as error:
@@ -243,9 +257,27 @@ async def chat(request_body):
             await sendResponse(parsed_data['response_format'], result.get("error", str(error)), variables=parsed_data['variables']) if parsed_data['response_format']['type'] != 'default' else None
             # Process background tasks for error handling
             await process_background_tasks_for_error(parsed_data, error)
-        # Add support contact information to error message
-        error_message = f"{str(error)}. For more support contact us at support@gtwy.ai"
-        raise ValueError(error_message)
+        # Check for a chained exception and create a structured error object
+        if error.__cause__:
+            # Combine both initial and fallback errors into a single string
+            combined_error_string = (
+                f"Initial Error: {str(error.__cause__)} (Type: {type(error.__cause__).__name__}). "
+                f"Fallback Error: {str(error)} (Type: {type(error).__name__}). "
+                f"For more support contact us at support@gtwy.ai"
+            )
+            error_object = {
+                "success": False,
+                "error": combined_error_string,
+            }
+        else:
+            # Single error case
+            error_string = f"{str(error)} (Type: {type(error).__name__}). For more support contact us at support@gtwy.ai"
+            error_object = {
+                "success": False,
+                "error": error_string,
+            }
+        await sendResponse(parsed_data['response_format'], error_object, success=False, variables=parsed_data.get('variables',{}))
+        raise ValueError(error_object)
 
 
 

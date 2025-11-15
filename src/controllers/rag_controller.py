@@ -176,6 +176,7 @@ async def get_vectors_and_text(request):
         doc_id = body.get('doc_id')
         query = body.get('query')
         top_k = body.get('top_k', 2)
+        score = body.get('score') or 0.1
         
         if query is None and doc_id is None:
             raise HTTPException(status_code=400, detail="Query and Doc_id required.")
@@ -184,7 +185,7 @@ async def get_vectors_and_text(request):
             'query': query, 
             'org_id': org_id,
             'top_k': top_k
-        })
+        }, Flag = False, score = score)
         
         # Check if the operation was successful based on status
         success = text.get('status') == 1
@@ -250,7 +251,7 @@ async def delete_doc(request):
         raise HTTPException(status_code=500, detail = error)
     
 
-async def get_text_from_vectorsQuery(args):
+async def get_text_from_vectorsQuery(args, Flag = True, score = 0.1):
     try:
         doc_id = args.get('Document_id')
         query = args.get('query')
@@ -282,32 +283,61 @@ async def get_text_from_vectorsQuery(args):
             filter={ "docId": doc_id, **additional_query },
             top_k = top_k  # Adjust the number of results as needed
         )
-        print(f"Pinecone query execution time: {time.time() - start_time:.4f} seconds")
-        query_response_ids = [result['id'] for result in query_response['matches']]
+        
+        # Filter results based on score threshold - only include results with score >= threshold
+        # Skip filtering if Flag is True
+        if Flag:
+            filtered_matches = query_response['matches']
+        else:
+            filtered_matches = []
+            
+            for result in query_response['matches']:
+                if result['score'] >= score:
+                    filtered_matches.append(result)
+        
+        query_response_ids = [result['id'] for result in filtered_matches]
+        
+        # Create a dictionary to map id to score and position
+        id_to_score = {result['id']: result['score'] for result in filtered_matches}
+        id_to_position = {result['id']: pos for pos, result in enumerate(filtered_matches)}
+        
         
         # Query MongoDB using query_response_ids
         mongo_query = {"_id": {"$in": [ObjectId(id) for id in query_response_ids] }}
         cursor = rag_model.find(mongo_query)
-        # Create a dictionary to map id to pos so that we can maintain order in mongo results.
-        id_to_position = {id: pos for pos, id in enumerate(query_response_ids)}
         
         mongo_results = await cursor.to_list(length=None)
         mongo_results.sort(key=lambda x: id_to_position.get(str(x.get('_id')), float('inf')))
         
         text = ""
+        results_with_scores = []
         for result in mongo_results:
             text += result.get('data', '')
+            result_id = str(result.get('_id'))
+            result_data = {
+                'id': result_id,
+                'data': result.get('data', '')
+            }
+            # Only add score if Flag is False
+            if not Flag:
+                result_data['score'] = id_to_score.get(result_id, 0.0)
+            results_with_scores.append(result_data)
+        
+        # Build response metadata based on Flag
+        metadata = {"type": "RAG"}
+        if not Flag:
+            metadata["results_with_scores"] = results_with_scores
+            metadata["similarity_scores"] = [{'id': result['id'], 'score': result['score']} for result in filtered_matches]
+        else:
+            metadata["results"] = [{'id': item['id'], 'data': item['data']} for item in results_with_scores]
         
         return {
             'response': text,
-            'metadata': {
-               "type": "RAG"
-            },
+            'metadata': metadata,
             'status': 1
         }
         
     except Exception as error:
-        print(f"Error in get_text_from_vectorsQuery: {error}")
         return {
             'response': str(error),
             'metadata': {

@@ -11,6 +11,7 @@ from ..anthrophic.antrophicModelRun import anthropic_runmodel
 from ..Mistral.mistral_model_run import mistral_model_run
 from ....configs.constant import service_name
 from ..groq.groqModelRun import groq_runmodel
+from ..grok.grokModelRun import grok_runmodel
 from ..Google.gemini_modelrun import gemini_modelrun
 from ..openRouter.openRouter_modelrun import openrouter_modelrun
 from ....configs.constant import service_name
@@ -70,6 +71,7 @@ class BaseService:
         self.file_data = params.get('file_data')
         self.youtube_url = params.get('youtube_url')
         self.web_search_filters = params.get('web_search_filters')
+        self.folder_id = params.get('folder_id')
 
 
     def aiconfig(self):
@@ -101,7 +103,7 @@ class BaseService:
             tools[function_response['name']] = function_response['content']
         
             match service:
-                case 'openai_completion' | 'groq' | 'open_router' | 'mistral' | 'gemini' | 'ai_ml':
+                case 'openai_completion' | 'groq' | 'grok' | 'open_router' | 'mistral' | 'gemini' | 'ai_ml':
                     assistant_tool_calls = response['choices'][0]['message']['tool_calls'][index]
                     configuration['messages'].append({'role': 'assistant', 'content': None, 'tool_calls': [assistant_tool_calls]})
                     tool_calls_id = assistant_tool_calls['id']
@@ -200,6 +202,7 @@ class BaseService:
         if self.service in [
             service_name['openai'],
             service_name['groq'],
+            service_name['grok'],
             service_name['anthropic'],
             service_name['open_router'],
             service_name['mistral'],
@@ -210,7 +213,7 @@ class BaseService:
 
             if funcModelResponse and self.service != service_name['openai']:
                 _.set_(model_response, self.modelOutputConfig['message'], _.get(funcModelResponse, self.modelOutputConfig['message']))
-                if self.service in [service_name['openai_completion'],service_name['groq'], service_name['open_router'], service_name['gemini'], service_name['ai_ml']]:
+                if self.service in [service_name['openai_completion'], service_name['groq'], service_name['grok'], service_name['open_router'], service_name['gemini'], service_name['ai_ml']]:
                     _.set_(model_response, self.modelOutputConfig['tools'], _.get(funcModelResponse, self.modelOutputConfig['tools']))
 
     def prepare_history_params(self,response, model_response, tools, transfer_agent_config=None):
@@ -244,7 +247,8 @@ class BaseService:
             "firstAttemptError" : model_response.get('firstAttemptError') or '',
             "annotations" : _.get(model_response, self.modelOutputConfig.get('annotations')) or [],
             "fallback_model" : model_response.get('fallback_model') or '',
-            "response":response, 
+            "response":response,
+            "folder_id": self.folder_id
         }
     
     def service_formatter(self, configuration : object, service : str ):  # changes
@@ -253,7 +257,7 @@ class BaseService:
             if configuration.get('tools', '') :
                 if service == service_name['anthropic']:
                     new_config['tool_choice'] =  configuration.get('tool_choice', {'type': 'auto'})
-                elif service == service_name['openai_completion'] or service == service_name['groq'] or service == service_name['ai_ml']:
+                elif service == service_name['openai_completion'] or service == service_name['groq'] or service == service_name['grok'] or service == service_name['ai_ml']:
                     if configuration.get('tool_choice'):
                         if configuration['tool_choice'] not in ['auto', 'none', 'required', 'default']:
                             new_config['tool_choice'] = {"type": "function", "function": {"name": configuration['tool_choice']}}
@@ -287,6 +291,8 @@ class BaseService:
                 response = await loop.run_in_executor(executor, lambda: asyncio.run(anthropic_runmodel(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer, self.name, self.org_name, service, count, self.token_calculator)))
             elif service == service_name['groq']:
                 response = await groq_runmodel(configuration, apikey, self.execution_time_logs, self.bridge_id,  self.timer, self.message_id, self.org_id, self.name, self.org_name, service, count, self.token_calculator)
+            elif service == service_name['grok']:
+                response = await grok_runmodel(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer, self.message_id, self.org_id, self.name, self.org_name, service, count, self.token_calculator)
             elif service == service_name['open_router']:
                 response = await openrouter_modelrun(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer, self.message_id, self.org_id, self.name, self.org_name, service, count, self.token_calculator)
             elif service == service_name['mistral']:

@@ -1,3 +1,4 @@
+import logging
 import src.db_services.ConfigurationServices as ConfigurationService
 from .helper import Helper
 from models.mongo_connection import db
@@ -7,12 +8,15 @@ from .getConfiguration_utils import (
     setup_tools, setup_api_key, setup_pre_tools, add_rag_tool,
     add_anthropic_json_schema, add_connected_agents
 )
+from .update_and_check_cost import check_bridge_api_folder_limits
 
 apiCallModel = db['apicalls']
 from globals import *
 
+logger = logging.getLogger(__name__)
+
 async def getConfiguration(configuration, service, bridge_id, apikey, template_id=None, variables={}, 
-                           org_id="", variables_path=None, version_id=None, extra_tools=[], built_in_tools=[], guardrails={}):
+                           org_id="", variables_path=None, version_id=None, extra_tools=[], built_in_tools=[], guardrails={}, web_search_filters={}, chatbot=False):
     """
     Get configuration for a bridge with all necessary tools and settings.
     
@@ -38,6 +42,12 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
     # Get bridge data
     result, bridge_data, bridge_id = await get_bridge_data(bridge_id, org_id, version_id)
     
+    # Use cached limit checking for better performance
+    limit_error = await check_bridge_api_folder_limits(result.get('bridges'),bridge_data,version_id)
+    if limit_error:
+        return limit_error
+   
+    
     # Validate bridge
     validation_result = await validate_bridge(bridge_data, result)
     if validation_result:
@@ -53,7 +63,22 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
 
     # Setup API key
     service = service.lower() if service else ""
-    apikey = setup_api_key(service, result, apikey)
+    
+    # Safely extract apikey from nested structure for all services
+    try:
+        apikeys_dict = result.get('bridges', {}).get('apikeys', {})
+        
+        # Iterate through all services and extract their API keys
+        for service_name, apikey_data in apikeys_dict.items():
+            if isinstance(apikey_data, dict) and 'apikey' in apikey_data:
+                result['bridges']['apikeys'][service_name] = apikey_data['apikey']
+            else:
+                logger.warning(f"API key not found for service: {service_name}")
+    except (KeyError, TypeError) as e:
+        logger.error(f"Error accessing API keys: {e}")
+        # Keep the original structure if extraction fails
+
+    apikey = setup_api_key(service, result, apikey, chatbot)
     apikey_object_id = result.get('bridges', {}).get('apikey_object_id')
 
     # check type
@@ -138,13 +163,15 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
         "variables": variables,
         "rag_data": rag_data,
         "actions": result.get("bridges", {}).get("actions", []),
-        "name": bridge_data.get("name") or result.get("bridges", {}).get("name") or '',
+        "name": bridge_data.get("bridges", {}).get("name") or result.get("bridges", {}).get("name") or '',
         "org_name": org_name,
         "bridge_id": result['bridges'].get('parent_id', result['bridges'].get('_id')),
         "variables_state": result.get("bridges", {}).get("variables_state", {}),
         "built_in_tools": built_in_tools or result.get("bridges", {}).get("built_in_tools"),
         "fall_back" : result.get("bridges", {}).get("fall_back") or {},
         "guardrails" : guardrails if guardrails is not None else (result.get("bridges", {}).get("guardrails") or {}),
-        "is_embed":result.get("folder_id")!=None,
-        "web_search_filters" : result.get("bridges", {}).get("web_search_filters") or {},
+        "is_embed": result.get("bridges", {}).get("folder_type") == "embed",
+        "user_id": result.get("bridges", {}).get("user_id"),
+        "folder_id": result.get("bridges", {}).get("folder_id"),
+        "web_search_filters" : web_search_filters or result.get("bridges", {}).get("web_search_filters") or {}
     }

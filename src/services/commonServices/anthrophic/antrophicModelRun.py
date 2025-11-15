@@ -54,11 +54,14 @@ async def anthropic_runmodel(configuration, apikey, execution_time_logs, bridge_
                                     'text': ''
                                 }
                             elif content_block.type == 'tool_use':
+                                initial_input = getattr(content_block, 'input', None)
+                                if initial_input is None:
+                                    initial_input = {}
                                 content_blocks[index] = {
                                     'type': 'tool_use',
                                     'id': content_block.id,
                                     'name': content_block.name,
-                                    'input': {}
+                                    'input': initial_input
                                 }
                             elif content_block.type == 'thinking':
                                 content_blocks[index] = {
@@ -70,30 +73,49 @@ async def anthropic_runmodel(configuration, apikey, execution_time_logs, bridge_
                             # Accumulate content
                             index = event.index
                             delta = event.delta
-                            
+
+                            block = content_blocks.get(index)
+                            if not block:
+                                continue
+
                             if delta.type == 'text_delta':
-                                content_blocks[index]['text'] += delta.text
-                            elif delta.type == 'input_json_delta':
+                                block.setdefault('text', '')
+                                block['text'] += delta.text
+                            elif delta.type == 'input_json_delta' and block.get('type') == 'tool_use':
                                 # For tool use, we need to accumulate the JSON string
-                                if 'partial_json' not in content_blocks[index]:
-                                    content_blocks[index]['partial_json'] = ''
-                                content_blocks[index]['partial_json'] += delta.partial_json
+                                block.setdefault('partial_json', '')
+                                block['partial_json'] += delta.partial_json
+                            elif delta.type == 'input_text_delta' and block.get('type') == 'tool_use':
+                                block.setdefault('partial_text', '')
+                                block['partial_text'] += delta.partial_text
                             elif delta.type == 'thinking_delta':
-                                content_blocks[index]['thinking'] += delta.thinking
+                                block.setdefault('thinking', '')
+                                block['thinking'] += delta.thinking
                                 
                         elif event.type == 'content_block_stop':
                             # Finalize content block
                             index = event.index
                             if index in content_blocks:
                                 block = content_blocks[index]
-                                if block['type'] == 'tool_use' and 'partial_json' in block:
-                                    # Parse the accumulated JSON for tool input
-                                    try:
-                                        block['input'] = json.loads(block['partial_json'])
-                                        del block['partial_json']  # Remove temporary field
-                                    except json.JSONDecodeError:
-                                        # If JSON parsing fails, keep as string
-                                        block['input'] = block.get('partial_json', {})
+                                if block['type'] == 'tool_use':
+                                    if 'partial_json' in block:
+                                        # Parse the accumulated JSON for tool input
+                                        try:
+                                            block['input'] = json.loads(block['partial_json'])
+                                        except json.JSONDecodeError:
+                                            # If JSON parsing fails, keep as string
+                                            block['input'] = block.get('partial_json', {})
+                                        finally:
+                                            del block['partial_json']  # Remove temporary field
+                                    if 'partial_text' in block:
+                                        existing_input = block.get('input')
+                                        partial_text = block.pop('partial_text')
+                                        if isinstance(existing_input, str):
+                                            block['input'] = existing_input + partial_text
+                                        elif existing_input in (None, {}, []):
+                                            block['input'] = partial_text
+                                        else:
+                                            block['input'] = partial_text
                                         
                         elif event.type == 'message_delta':
                             # Update message-level information
@@ -111,8 +133,30 @@ async def anthropic_runmodel(configuration, apikey, execution_time_logs, bridge_
                             break
                 
                 # Convert content_blocks dict to ordered list
-                accumulated_response['content'] = [content_blocks[i] for i in sorted(content_blocks.keys())]
-                
+                ordered_content = [content_blocks[i] for i in sorted(content_blocks.keys())]
+
+                merged_content = []
+                current_text_block = None
+
+                for block in ordered_content:
+                    if block.get('type') == 'text':
+                        if current_text_block is None:
+                            current_text_block = {
+                                'type': 'text',
+                                'text': block.get('text', '')
+                            }
+                        else:
+                            current_text_block['text'] += block.get('text', '')
+                    else:
+                        if current_text_block is not None:
+                            merged_content.append(current_text_block)
+                            current_text_block = None
+                        merged_content.append(block)
+
+                if current_text_block is not None:
+                    merged_content.append(current_text_block)
+
+                accumulated_response['content'] = merged_content
                 return {'success': True, 'response': accumulated_response}
                 
             except Exception as error:
