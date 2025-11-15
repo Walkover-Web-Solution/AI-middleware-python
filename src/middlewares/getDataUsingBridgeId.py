@@ -43,7 +43,8 @@ async def add_configuration_data_to_body(request: Request):
                 extra_tools=body.get('extra_tools', []), 
                 built_in_tools=body.get('built_in_tools'),
                 guardrails=body.get('guardrails'),
-                web_search_filters=body.get('web_search_filters')
+                web_search_filters=body.get('web_search_filters'),
+                chatbot=body.get('chatbot', False)
             )
         if not db_config.get("success"):
                 raise HTTPException(status_code=400, detail={"success": False, "error": db_config["error"]}) 

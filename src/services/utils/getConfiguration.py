@@ -16,7 +16,7 @@ from globals import *
 logger = logging.getLogger(__name__)
 
 async def getConfiguration(configuration, service, bridge_id, apikey, template_id=None, variables={}, 
-                           org_id="", variables_path=None, version_id=None, extra_tools=[], built_in_tools=[], guardrails={}, web_search_filters={}):
+                           org_id="", variables_path=None, version_id=None, extra_tools=[], built_in_tools=[], guardrails={}, web_search_filters={}, chatbot=False):
     """
     Get configuration for a bridge with all necessary tools and settings.
     
@@ -78,7 +78,7 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
         logger.error(f"Error accessing API keys: {e}")
         # Keep the original structure if extraction fails
 
-    apikey = setup_api_key(service, result, apikey)
+    apikey = setup_api_key(service, result, apikey, chatbot)
     apikey_object_id = result.get('bridges', {}).get('apikey_object_id')
 
     # check type
