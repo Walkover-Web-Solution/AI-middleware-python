@@ -14,16 +14,22 @@ from ..services.cache_service import find_in_cache, store_in_cache
 
 async def getThread(thread_id, sub_thread_id, org_id, bridge_id, bridgeType):
     try:
-        chats = await chatbotDbService.find(org_id, thread_id, sub_thread_id, bridge_id)
-        if bridgeType:
-            filtered_chats = []
-            for chat in chats:
-                if chat['is_reset']:
-                    filtered_chats = []
-                else:
-                    filtered_chats.append(chat)
-            chats = filtered_chats
-        chats = await add_tool_call_data_in_history(chats)
+        # Try to get conversations from new consolidated table first
+        chats = await chatbotDbService.find_conversation_logs(org_id, thread_id, sub_thread_id)
+        
+        # If no data in new table, fallback to old table
+        if not chats:
+            chats = await chatbotDbService.find(org_id, thread_id, sub_thread_id, bridge_id)
+            if bridgeType:
+                filtered_chats = []
+                for chat in chats:
+                    if chat['is_reset']:
+                        filtered_chats = []
+                    else:
+                        filtered_chats.append(chat)
+                chats = filtered_chats
+            chats = await add_tool_call_data_in_history(chats)
+        
         return chats
     except Exception as err:
         logger.error(f"Error in getting thread:, {str(err)}, {traceback.format_exc()}")
@@ -115,6 +121,86 @@ async def savehistory(thread_id, sub_thread_id, userMessage, botMessage, org_id,
         return list(result)
     except Exception as error:
         logger.error(f"saveconversation error=>, {str(error)}, {traceback.format_exc()}")
+        raise error
+
+
+async def savehistory_consolidated(conversation_data):
+    """
+    Save conversation history to the new consolidated conversation_logs table
+    
+    Args:
+        conversation_data: Dictionary containing all conversation log data including:
+            - thread_id, sub_thread_id, org_id, version_id, message_id
+            - user, llm_message, chatbot_message, updated_chatbot_message
+            - tools_call_data, image_urls, urls, AiConfig, fallback_model
+            - service, model, status, tokens, variables, latency
+            - error, firstAttemptError, finish_reason, parent_id
+            
+    Returns:
+        Integer ID of created record or None if failed
+    """
+    try:
+        # Send data through RT layer
+        messages_for_rt = []
+        
+        # User message
+        if conversation_data.get('user'):
+            messages_for_rt.append({
+                'role': 'user',
+                'content': conversation_data['user'],
+                'created_at': str(datetime.now()),
+                'createdAt': str(datetime.now()),
+                'tools_call_data': conversation_data.get('tools_call_data'),
+                'urls': conversation_data.get('urls', [])
+            })
+        
+        # Tools call
+        if conversation_data.get('tools_call_data'):
+            messages_for_rt.append({
+                'role': 'tools_call',
+                'content': '',
+                'created_at': str(datetime.now()),
+                'createdAt': str(datetime.now()),
+                'function': {},
+                'tools_call_data': conversation_data.get('tools_call_data')
+            })
+        
+        # Assistant message
+        if conversation_data.get('chatbot_message') or conversation_data.get('llm_message'):
+            messages_for_rt.append({
+                'role': 'assistant',
+                'content': conversation_data.get('chatbot_message') or conversation_data.get('llm_message'),
+                'created_at': str(datetime.now()),
+                'createdAt': str(datetime.now()),
+                'image_urls': conversation_data.get('image_urls')
+            })
+        
+        # Only send to RT layer if messages exist
+        if messages_for_rt and conversation_data.get('bridge_id'):
+            # Send to RT layer
+            response_format_copy = {
+                'cred': {
+                    'channel': conversation_data['org_id'] + conversation_data.get('bridge_id', ''),
+                    'apikey': Config.RTLAYER_AUTH,
+                    'ttl': '1'
+                },
+                'type': 'RTLayer'
+            }
+            dataToSend = {
+                'Thread': {
+                    "thread_id": conversation_data['thread_id'],
+                    "sub_thread_id": conversation_data['sub_thread_id'],
+                    "bridge_id": conversation_data.get('bridge_id', '')
+                },
+                "Messages": messages_for_rt
+            }
+            await sendResponse(response_format_copy, dataToSend, True)
+        
+        # Save to database
+        result = await chatbotDbService.createConversationLog(conversation_data)
+        return result
+    except Exception as error:
+        logger.error(f"savehistory_consolidated error=>, {str(error)}, {traceback.format_exc()}")
         raise error
 
 async def add_tool_call_data_in_history(chats):

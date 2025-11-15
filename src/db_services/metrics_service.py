@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 
 from models.index import combined_models
 from sqlalchemy import and_
-from ..controllers.conversationController import savehistory
+from ..controllers.conversationController import savehistory, savehistory_consolidated
 from .conversationDbService import insertRawData, timescale_metrics
 from ..services.cache_service import find_in_cache, store_in_cache
 from globals import *
@@ -110,48 +110,64 @@ async def create(dataset, history_params, version_id, thread_info={}):
             thread_id = thread_info.get('thread_id')
             sub_thread_id = thread_info.get('sub_thread_id')
             conversations = thread_info.get('result', [])
-        result = await try_catch (
-            savehistory,
-            history_params['thread_id'], history_params['sub_thread_id'], history_params['user'], history_params['message'],
-            history_params['org_id'], history_params['bridge_id'], history_params['model'],
-            history_params['channel'], history_params['type'], history_params['actor'],
-            history_params.get('tools'),history_params.get('chatbot_message'),history_params.get('tools_call_data'),history_params.get('message_id'), version_id, history_params.get('image_urls'), history_params.get('revised_prompt'), history_params.get('urls'), history_params.get('AiConfig'), history_params.get('annotations'), history_params.get('fallback_model')
-        )
-        response = history_params.get('response',{})
-
-        # Save conversations to Redis with TTL of 30 days
-        if 'error' not in dataset[0] and conversations:
-                await save_conversations_to_redis(conversations, version_id, thread_id, sub_thread_id, history_params)
         
-        chat_id = result[0]
-        dataset[0]['chat_id'] = chat_id
-        dataset[0]['message_id'] = history_params.get('message_id')
-
-        insert_ai_data_in_pg = [
-            {
-                'org_id': data_object['orgId'],
-                'authkey_name': data_object.get('apikey_object_id', {}).get(data_object['service'], '') if data_object.get('apikey_object_id') else '',
-                'latency': data_object.get('latency', 0),
-                'service': data_object['service'],
-                'status': data_object.get('success', False),
-                'error': data_object.get('error', '') if not data_object.get('success', False) else '',
-                'model': data_object['model'],
+        response = history_params.get('response',{})
+        
+        # Prepare consolidated conversation log data
+        data_object = dataset[0]
+        
+        # Parse latency JSON to extract over_all_time
+        latency_data = {}
+        try:
+            if isinstance(data_object.get('latency'), str):
+                latency_data = json.loads(data_object.get('latency', '{}'))
+            else:
+                latency_data = data_object.get('latency', {})
+        except:
+            latency_data = {}
+        
+        conversation_log_data = {
+            'llm_message': history_params.get('message', ''),
+            'user': history_params.get('user', ''),
+            'chatbot_message': history_params.get('chatbot_message', ''),
+            'updated_chatbot_message': None,
+            'error': str(data_object.get('error', '')) if not data_object.get('success', False) else None,
+            'user_feedback': 0,
+            'tools_call_data': history_params.get('tools_call_data', []),
+            'message_id': str(history_params.get('message_id')),
+            'sub_thread_id': history_params.get('sub_thread_id'),
+            'thread_id': history_params.get('thread_id'),
+            'version_id': version_id,
+            'image_urls': history_params.get('image_urls', []),
+            'urls': history_params.get('urls', []),
+            'AiConfig': history_params.get('AiConfig'),
+            'fallback_model': history_params.get('fallback_model'),
+            'org_id': data_object.get('orgId'),
+            'service': data_object.get('service'),
+            'model': data_object.get('model'),
+            'status': data_object.get('success', False),
+            'tokens': {
                 'input_tokens': data_object.get('inputTokens', 0),
                 'output_tokens': data_object.get('outputTokens', 0),
-                'expected_cost': data_object.get('expectedCost', 0),
-                'created_at': datetime.now(),
-                'chat_id': data_object.get('chat_id'),
-                'message_id': data_object.get('message_id'),
-                'variables': data_object.get('variables') or {},
-                'is_present': 'prompt' in data_object,
-                'id' : str(uuid.uuid4()),
-                'firstAttemptError' : history_params.get('firstAttemptError'),
-                'finish_reason' : response.get('data', {}).get('finish_reason')
-            }
-            for data_object in dataset
-        ]
-        await insertRawData(insert_ai_data_in_pg)
-        latency = json.loads(dataset[0].get('latency', 0)).get('over_all_time') or 0
+                'expected_cost': data_object.get('expectedCost', 0)
+            },
+            'variables': data_object.get('variables') or {},
+            'latency': latency_data,
+            'firstAttemptError': history_params.get('firstAttemptError'),
+            'finish_reason': response.get('data', {}).get('finish_reason'),
+            'parent_id': history_params.get('parent_id'),
+            'bridge_id': history_params.get('bridge_id')
+        }
+        
+        # Save consolidated conversation log
+        result_id = await savehistory_consolidated(conversation_log_data)
+        
+        # Save conversations to Redis with TTL of 30 days
+        if 'error' not in dataset[0] and conversations:
+            await save_conversations_to_redis(conversations, version_id, thread_id, sub_thread_id, history_params)
+        
+        # Extract latency for metrics (use already parsed latency_data)
+        latency = latency_data.get('over_all_time', 0) if latency_data else 0
         metrics_data = [
             {
                 'org_id': data_object['orgId'],

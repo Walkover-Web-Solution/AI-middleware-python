@@ -102,3 +102,36 @@ class OrchestratorHistory(Base):
     variables = Column(JSON, nullable=True)  # {"bridge_id": variables_json}
     image_urls = Column(ARRAY(JSON), nullable=True)  # {"bridge_id": [image_urls]}
     ai_config = Column(JSON, nullable=True)  # {"bridge_id": ai_config_json}
+
+class ConversationLog(Base):
+    __tablename__ = 'conversation_logs'
+    __table_args__ = {'extend_existing': True}
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    llm_message = Column(Text, nullable=True)
+    user = Column(Text, nullable=True)
+    chatbot_message = Column(Text, nullable=True)
+    updated_chatbot_message = Column(Text, nullable=True)
+    error = Column(Text, nullable=True)
+    user_feedback = Column(Integer, nullable=True, default=0)
+    tools_call_data = Column(JSON, nullable=True, default=[])
+    message_id = Column(String, nullable=True)
+    sub_thread_id = Column(String, nullable=True)
+    thread_id = Column(String, nullable=True)
+    version_id = Column(String, nullable=True)
+    image_urls = Column(JSON, nullable=True, default=[])
+    urls = Column(JSON, nullable=True, default=[])
+    AiConfig = Column(JSON, nullable=True)
+    fallback_model = Column(JSON, nullable=True)
+    org_id = Column(String, nullable=True)
+    service = Column(String, nullable=True)
+    model = Column(String, nullable=True)
+    status = Column(Boolean, nullable=True, default=False)
+    tokens = Column(JSON, nullable=True)
+    variables = Column(JSON, nullable=True)
+    latency = Column(JSON, nullable=True)
+    firstAttemptError = Column(Text, nullable=True)
+    finish_reason = Column(String, nullable=True)
+    parent_id = Column(String, nullable=True)
+    created_at = Column(DateTime, nullable=False, default=func.now())
+    updated_at = Column(DateTime, nullable=False, default=func.now(), onupdate=func.now())
