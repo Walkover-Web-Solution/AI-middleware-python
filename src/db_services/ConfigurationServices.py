@@ -699,8 +699,8 @@ async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None)
             else:
                 bridge_data['folder_apikeys'] = {}
 
-            if folder_result and folder_result[0].get('folder_type'):
-                bridge_data['folder_type'] = folder_result[0]['folder_type']
+            if folder_result and folder_result[0].get('type'):
+                bridge_data['folder_type'] = folder_result[0]['type']
             else:
                 bridge_data['folder_type'] = None
 
