@@ -46,7 +46,8 @@ app = FastAPI()
 from src.services.utils.helper import Helper
 from src.services.commonServices.testcases import run_testcases as run_bridge_testcases
 from globals import *
-from src.services.cache_service import find_in_cache
+from src.services.cache_service import find_in_cache, store_in_cache
+from src.configs.constant import redis_keys
 
 configurationModel = db["configurations"]
 
@@ -62,6 +63,17 @@ async def chat_multiple_agents(request_body):
 
         primary_bridge_id = body.get('bridge_id')
         
+        # Check Redis cache for previously used agent with same thread_id and sub_thread_id
+        thread_id = body.get('thread_id')
+        sub_thread_id = body.get('sub_thread_id') or thread_id
+        
+        if thread_id and sub_thread_id:
+            redis_key = f"{redis_keys['last_transffered_agent_']}{primary_bridge_id}_{thread_id}_{sub_thread_id}"
+            cached_agent_id = await find_in_cache(redis_key)
+            if cached_agent_id and cached_agent_id in bridge_configurations:
+                primary_bridge_id = cached_agent_id
+                logger.info(f"Using cached agent {cached_agent_id} for thread {thread_id}_{sub_thread_id}")
+        
         if not primary_bridge_id or primary_bridge_id not in bridge_configurations:
             # Use the first agent as primary
             primary_bridge_id = next(iter(bridge_configurations.keys()))
@@ -72,6 +84,8 @@ async def chat_multiple_agents(request_body):
         primary_body = body.copy()
         primary_body.update(primary_config)
         primary_body['bridge_id'] = primary_bridge_id
+        # Store the original primary_bridge_id for Redis key consistency
+        primary_body['primary_bridge_id'] = primary_bridge_id
         
         # Create a complete request_body structure for the primary agent
         primary_request_body = {
@@ -339,6 +353,19 @@ async def chat(request_body):
             else:
                 await process_background_tasks_for_playground(result, parsed_data)
         await update_cost_and_last_used_in_background(parsed_data)
+        
+        # Save agent bridge_id to Redis for 3 days (259200 seconds)
+        thread_id = parsed_data.get('thread_id')
+        sub_thread_id = parsed_data.get('sub_thread_id')
+        bridge_id = parsed_data.get('bridge_id')
+        original_primary_bridge_id = request_body.get('body', {}).get('primary_bridge_id')
+        
+        if thread_id and sub_thread_id and bridge_id:
+            # Use original primary bridge_id in key for consistency, but save current bridge_id as value
+            redis_key = f"{redis_keys['last_transffered_agent_']}{original_primary_bridge_id}_{thread_id}_{sub_thread_id}"
+            await store_in_cache(redis_key, bridge_id, ttl=259200)  # 3 days
+            logger.info(f"Cached agent {bridge_id} for thread {thread_id}_{sub_thread_id} with key based on original primary {original_primary_bridge_id}")
+        
         return JSONResponse(status_code=200, content={"success": True, "response": result["response"]})
     
     except (Exception, ValueError, BadRequestException) as error:
