@@ -130,7 +130,7 @@ async def create(dataset, history_params, version_id, thread_info={}):
             'llm_message': history_params.get('message', ''),
             'user': history_params.get('user', ''),
             'chatbot_message': history_params.get('chatbot_message', ''),
-            'updated_chatbot_message': None,
+            'updated_llm_message': None,
             'error': str(data_object.get('error', '')) if not data_object.get('success', False) else None,
             'user_feedback': 0,
             'tools_call_data': history_params.get('tools_call_data', []),

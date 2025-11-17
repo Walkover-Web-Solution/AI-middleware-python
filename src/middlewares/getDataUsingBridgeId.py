@@ -44,7 +44,7 @@ async def add_configuration_data_to_body(request: Request):
                 built_in_tools=body.get('built_in_tools'),
                 guardrails=body.get('guardrails'),
                 web_search_filters=body.get('web_search_filters'),
-                orchestrator_flag = body.get('orchestrator_flag')
+                orchestrator_flag = body.get('orchestrator_flag'),
                 chatbot=body.get('chatbot', False)
             )
         if orchestrator_id:

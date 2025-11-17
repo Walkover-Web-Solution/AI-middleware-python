@@ -119,7 +119,7 @@ async def savehistory_consolidated(conversation_data):
     Args:
         conversation_data: Dictionary containing all conversation log data including:
             - thread_id, sub_thread_id, org_id, version_id, message_id
-            - user, llm_message, chatbot_message, updated_chatbot_message
+            - user, llm_message, chatbot_message, updated_llm_message
             - tools_call_data, image_urls, urls, AiConfig, fallback_model
             - service, model, status, tokens, variables, latency
             - error, firstAttemptError, finish_reason, parent_id

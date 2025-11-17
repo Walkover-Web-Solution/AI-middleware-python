@@ -37,7 +37,6 @@ from src.services.utils.common_utils import (
     orchestrator_agent_chat,
     process_background_tasks_for_playground,
     process_variable_state,
-    update_cost_in_background,
     handle_agent_transfer,
     update_cost_and_last_used_in_background
 )
