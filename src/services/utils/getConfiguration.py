@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 async def _prepare_configuration_response(configuration, service, bridge_id, apikey, template_id=None,
                                           variables=None, org_id="", variables_path=None, version_id=None,
                                           extra_tools=None, built_in_tools=None, guardrails=None,
-                                          web_search_filters=None, orchestrator_flag=None):
+                                          web_search_filters=None, orchestrator_flag=None, chatbot=False):
     """Internal helper to build configuration response for a single bridge."""
 
     variables = variables or {}
@@ -222,7 +222,7 @@ async def _collect_connected_agent_configs(result, org_id, visited):
     return aggregated_configs
 
 async def getConfiguration(configuration, service, bridge_id, apikey, template_id=None, variables={}, 
-                           org_id="", variables_path=None, version_id=None, extra_tools=[], built_in_tools=[], guardrails={}, web_search_filters={}, orchestrator_flag=None):
+                           org_id="", variables_path=None, version_id=None, extra_tools=[], built_in_tools=[], guardrails={}, web_search_filters={}, orchestrator_flag=None, chatbot=False):
     """
     Get configuration for a bridge with all necessary tools and settings.
     """
@@ -241,7 +241,8 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
         built_in_tools,
         guardrails,
         web_search_filters,
-        orchestrator_flag
+        orchestrator_flag,
+        chatbot
     )
 
     if error:
