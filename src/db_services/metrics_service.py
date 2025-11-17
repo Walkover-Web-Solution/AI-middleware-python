@@ -133,7 +133,8 @@ async def create(dataset, history_params, version_id, thread_info={}):
             'finish_reason': response.get('data', {}).get('finish_reason'),
             'parent_id': history_params.get('parent_id') or '',
             'child_id': history_params.get('child_id'),
-            'bridge_id': history_params.get('bridge_id')
+            'bridge_id': history_params.get('bridge_id'),
+            'prompt': history_params.get('prompt')
         }
         
         # Save consolidated conversation log

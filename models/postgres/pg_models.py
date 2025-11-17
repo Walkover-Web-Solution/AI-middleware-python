@@ -135,5 +135,6 @@ class ConversationLog(Base):
     finish_reason = Column(String, nullable=True)
     parent_id = Column(String, nullable=True)
     child_id = Column(String, nullable=True)
+    prompt = Column(JSON, nullable=True)
     created_at = Column(DateTime, nullable=False, default=func.now())
     updated_at = Column(DateTime, nullable=False, default=func.now(), onupdate=func.now())

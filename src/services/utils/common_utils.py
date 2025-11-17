@@ -422,6 +422,12 @@ async def process_background_tasks(parsed_data, result, params, thread_info, tra
                     history_entry['history_params']['child_id'] = transfer_chain[idx + 1]['bridge_id']
                 else:
                     history_entry['history_params']['child_id'] = None
+                
+                # Add prompt from bridge_configurations if available
+                agent_bridge_id = history_entry['bridge_id']
+                if bridge_configs and agent_bridge_id in bridge_configs:
+                    agent_config = bridge_configs[agent_bridge_id].get('configuration', {})
+                    history_entry['history_params']['prompt'] = agent_config.get('prompt')
             
             # Save history to database
             asyncio.create_task(create(
@@ -708,7 +714,8 @@ def create_history_params(parsed_data, error=None, class_obj=None):
         "folder_id": parsed_data.get('folder_id'),
         "folder_limit": parsed_data.get('folder_limit', 0),
         "parent_id": parsed_data.get('parent_bridge_id', ''),
-        "child_id": None
+        "child_id": None,
+        "prompt": parsed_data['configuration'].get('prompt')
     }
 
 

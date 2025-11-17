@@ -250,7 +250,8 @@ class BaseService:
             "annotations" : _.get(model_response, self.modelOutputConfig.get('annotations')) or [],
             "fallback_model" : model_response.get('fallback_model') or '',
             "response":response,
-            "folder_id": self.folder_id
+            "folder_id": self.folder_id,
+            "prompt": self.configuration.get('prompt')
         }
     
     def service_formatter(self, configuration : object, service : str ):  # changes
