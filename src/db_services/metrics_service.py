@@ -78,30 +78,6 @@ async def save_conversations_to_redis(conversations, version_id, thread_id, sub_
         logger.error(f"Error saving conversations to Redis: {str(error)}")
         logger.error(traceback.format_exc())
 
-def end_of_today():
-    today = datetime.now()
-    return datetime(today.year, today.month, today.day, 23, 59, 59, 999)
-
-async def find(org_id, start_time=None, end_time=None, limit=None, offset=None):
-    date_filter = and_(start_time, end_time) if start_time and end_time else and_(start_of_today(), end_of_today())
-    query_options = {
-        'where': {
-            'org_id': org_id,
-            'created_at': date_filter
-        },
-        'limit': limit,
-        'offset': offset
-    }
-    model = timescale.daily_data if start_time and end_time else timescale.five_minute_data
-    return await model.find_all(**query_options)
-
-async def find_one(id):
-    model = timescale.raw_data
-    return await model.find_by_pk(id)
-
-async def find_one_pg(id):
-    model = postgres.raw_data
-    return await model.find_by_pk(id)
 
 async def create(dataset, history_params, version_id, thread_info={}):
     try:
@@ -156,6 +132,7 @@ async def create(dataset, history_params, version_id, thread_info={}):
             'firstAttemptError': history_params.get('firstAttemptError'),
             'finish_reason': response.get('data', {}).get('finish_reason'),
             'parent_id': history_params.get('parent_id') or '',
+            'child_id': history_params.get('child_id'),
             'bridge_id': history_params.get('bridge_id')
         }
         

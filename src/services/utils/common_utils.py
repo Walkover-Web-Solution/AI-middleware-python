@@ -408,11 +408,20 @@ async def process_background_tasks(parsed_data, result, params, thread_info, tra
             'parent_id': parsed_data.get('parent_bridge_id', '')
         }
         TRANSFER_HISTORY[transfer_request_id].append(current_history_data)
+        
         # Save all transfer history (each agent in the chain)
-        for history_entry in TRANSFER_HISTORY[transfer_request_id]:
-            # Update parent_id in history_params
+        transfer_chain = TRANSFER_HISTORY[transfer_request_id]
+        for idx, history_entry in enumerate(transfer_chain):
+            # Update parent_id and child_id in history_params based on chain position
             if history_entry['history_params']:
+                # Set parent_id from the previous entry's bridge_id
                 history_entry['history_params']['parent_id'] = history_entry.get('parent_id', '')
+                
+                # Set child_id from the next entry's bridge_id (None if last in chain)
+                if idx < len(transfer_chain) - 1:
+                    history_entry['history_params']['child_id'] = transfer_chain[idx + 1]['bridge_id']
+                else:
+                    history_entry['history_params']['child_id'] = None
             
             # Save history to database
             asyncio.create_task(create(
@@ -426,9 +435,10 @@ async def process_background_tasks(parsed_data, result, params, thread_info, tra
         del TRANSFER_HISTORY[transfer_request_id]
     else:
         # Regular flow (no transfer or first agent that didn't transfer)
-        # Always set parent_id in history_params for consistency
+        # Always set parent_id and child_id in history_params for consistency
         if result.get('historyParams'):
             result['historyParams']['parent_id'] = parsed_data.get('parent_bridge_id', '')
+            result['historyParams']['child_id'] = None
         
         # Save single history entry
         asyncio.create_task(create(
@@ -696,7 +706,9 @@ def create_history_params(parsed_data, error=None, class_obj=None):
         "message_id": parsed_data['message_id'],
         "AiConfig": class_obj.aiconfig() if class_obj else None,
         "folder_id": parsed_data.get('folder_id'),
-        "folder_limit": parsed_data.get('folder_limit', 0)
+        "folder_limit": parsed_data.get('folder_limit', 0),
+        "parent_id": parsed_data.get('parent_bridge_id', ''),
+        "child_id": None
     }
 
 

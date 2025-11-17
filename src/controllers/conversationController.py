@@ -122,7 +122,7 @@ async def savehistory_consolidated(conversation_data):
             - user, llm_message, chatbot_message, updated_llm_message
             - tools_call_data, image_urls, urls, AiConfig, fallback_model
             - service, model, status, tokens, variables, latency
-            - error, firstAttemptError, finish_reason, parent_id
+            - error, firstAttemptError, finish_reason, parent_id, child_id
             
     Returns:
         Integer ID of created record or None if failed
