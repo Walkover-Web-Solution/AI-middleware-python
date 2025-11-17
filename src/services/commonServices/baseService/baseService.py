@@ -234,6 +234,7 @@ class BaseService:
             'org_id': self.org_id,
             'bridge_id': self.bridge_id,
             'model': model_response.get('model') or self.configuration.get('model'),
+            'service': self.service,
             'channel': 'chat',
             'type': "assistant",
             'actor': "user",

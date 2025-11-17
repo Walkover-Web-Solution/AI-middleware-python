@@ -177,6 +177,15 @@ async def chat(request_body):
                 # Get the correct version_id from bridge_configurations for this agent
                 current_version_id = bridge_configurations.get(parsed_data['bridge_id'], {}).get('version_id', parsed_data['version_id'])
                 
+                # Calculate tokens and create latency BEFORE storing history for transfer
+                if parsed_data.get('type') != 'image':
+                    parsed_data['tokens'] = params['token_calculator'].calculate_total_cost(parsed_data['model'], parsed_data['service'])
+                    result['response']['usage']['cost'] = parsed_data['tokens'].get('total_cost') or 0
+                
+                # Create latency and update usage metrics BEFORE storing history for transfer
+                latency = create_latency_object(timer, params)
+                update_usage_metrics(parsed_data, params, latency, result=result, success=True)
+                
                 # Store current agent's history data before transferring
                 current_history_data = {
                     'bridge_id': parsed_data['bridge_id'],
