@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 async def _prepare_configuration_response(configuration, service, bridge_id, apikey, template_id=None,
                                           variables=None, org_id="", variables_path=None, version_id=None,
                                           extra_tools=None, built_in_tools=None, guardrails=None,
-                                          web_search_filters=None):
+                                          web_search_filters=None, orchestrator_flag=None):
     """Internal helper to build configuration response for a single bridge."""
 
     variables = variables or {}
@@ -111,7 +111,7 @@ async def _prepare_configuration_response(configuration, service, bridge_id, api
 
     variables, org_name = await updateVariablesWithTimeZone(variables, org_id)
 
-    add_connected_agents(result, tools, tool_id_and_name_mapping, configuration)
+    add_connected_agents(result, tools, tool_id_and_name_mapping, orchestrator_flag)
 
     guardrails_value = guardrails if guardrails is not None else (result.get('bridges', {}).get('guardrails') or {})
     web_search_filters_value = web_search_filters or result.get('bridges', {}).get('web_search_filters') or {}
@@ -222,7 +222,7 @@ async def _collect_connected_agent_configs(result, org_id, visited):
     return aggregated_configs
 
 async def getConfiguration(configuration, service, bridge_id, apikey, template_id=None, variables={}, 
-                           org_id="", variables_path=None, version_id=None, extra_tools=[], built_in_tools=[], guardrails={}, web_search_filters={}):
+                           org_id="", variables_path=None, version_id=None, extra_tools=[], built_in_tools=[], guardrails={}, web_search_filters={}, orchestrator_flag=None):
     """
     Get configuration for a bridge with all necessary tools and settings.
     """
@@ -240,7 +240,8 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
         extra_tools,
         built_in_tools,
         guardrails,
-        web_search_filters
+        web_search_filters,
+        orchestrator_flag
     )
 
     if error:
