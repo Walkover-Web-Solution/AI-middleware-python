@@ -61,7 +61,7 @@ async def _prepare_configuration_response(configuration, service, bridge_id, api
     except (KeyError, TypeError) as e:
         logger.error(f"Error accessing API keys: {e}")
 
-    apikey = setup_api_key(service, result, apikey)
+    apikey = setup_api_key(service, result, apikey, chatbot)
     apikey_object_id = result.get('bridges', {}).get('apikey_object_id')
 
     # Handle image type early return
