@@ -3,6 +3,8 @@ from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 import traceback
 import pydash as _
+import uuid
+import asyncio
 from ..utils.helper import Helper
 from .baseService.utils import sendResponse
 from ..utils.ai_middleware_format import Response_formatter
@@ -99,9 +101,16 @@ async def chat(request_body):
     try:
         # Store bridge_configurations for potential transfer logic
         bridge_configurations = request_body.get('body', {}).get('bridge_configurations', {})
-        
         # Step 1: Parse and validate request body
         parsed_data = parse_request_body(request_body)
+        
+        # Initialize or retrieve transfer_request_id for tracking transfers
+        transfer_request_id = parsed_data.get('transfer_request_id') or str(uuid.uuid1())
+        parsed_data['transfer_request_id'] = transfer_request_id
+        
+        # Initialize transfer history for this request if not exists
+        if transfer_request_id not in TRANSFER_HISTORY:
+            TRANSFER_HISTORY[transfer_request_id] = []
         if parsed_data.get('guardrails',{}).get('is_enabled', False):
             guardrails_result = await guardrails_check(parsed_data)
             if guardrails_result is not None:
@@ -165,8 +174,29 @@ async def chat(request_body):
             # Check if agent transfer is needed
             transfer_agent_config = result.get('transfer_agent_config')
             if transfer_agent_config and transfer_agent_config.get('action_type') == 'transfer':
+                # Get the correct version_id from bridge_configurations for this agent
+                current_version_id = bridge_configurations.get(parsed_data['bridge_id'], {}).get('version_id', parsed_data['version_id'])
+                
+                # Store current agent's history data before transferring
+                current_history_data = {
+                    'bridge_id': parsed_data['bridge_id'],
+                    'history_params': result.get('historyParams'),
+                    'dataset': [parsed_data['usage']],
+                    'version_id': current_version_id,
+                    'thread_info': thread_info,
+                    'parent_id': parsed_data.get('parent_bridge_id', '')
+                }
+                TRANSFER_HISTORY[transfer_request_id].append(current_history_data)
+                
                 # Handle agent transfer
-                transfer_result = await handle_agent_transfer(result, request_body, bridge_configurations, chat)
+                transfer_result = await handle_agent_transfer(
+                    result, 
+                    request_body, 
+                    bridge_configurations, 
+                    chat, 
+                    current_bridge_id=parsed_data['bridge_id'],
+                    transfer_request_id=transfer_request_id
+                )
                 if transfer_result is not None:
                     return transfer_result
             
@@ -284,7 +314,9 @@ async def chat(request_body):
             # Update usage metrics for successful API calls
             update_usage_metrics(parsed_data, params, latency, result=result, success=True)
             result['response']['usage']['cost'] = parsed_data['usage'].get('expectedCost', 0)
-            await process_background_tasks(parsed_data, result, params, thread_info)
+            
+            # Process background tasks (handles both transfer and non-transfer cases)
+            await process_background_tasks(parsed_data, result, params, thread_info, transfer_request_id, bridge_configurations)
         else:
             if parsed_data.get('testcase_data',{}).get('run_testcase', False):
                 from src.services.commonServices.testcases import process_single_testcase_result
@@ -471,6 +503,14 @@ async def image(request_body):
         
         # Step 1: Parse and validate request body
         parsed_data = parse_request_body(request_body)
+        
+        # Initialize or retrieve transfer_request_id for tracking transfers
+        transfer_request_id = parsed_data.get('transfer_request_id') or str(uuid.uuid1())
+        parsed_data['transfer_request_id'] = transfer_request_id
+        
+        # Initialize transfer history for this request if not exists
+        if transfer_request_id not in TRANSFER_HISTORY:
+            TRANSFER_HISTORY[transfer_request_id] = []
 
         # Step 2: Initialize Timer
         timer = initialize_timer(parsed_data['state'])
@@ -507,7 +547,8 @@ async def image(request_body):
             await sendResponse(parsed_data['response_format'], result["response"], success=True, variables=parsed_data.get('variables',{}))
             # Update usage metrics for successful API calls
             update_usage_metrics(parsed_data, params, latency, result=result, success=True)
-            await process_background_tasks(parsed_data, result, params, None)
+            # Process background tasks (handles both transfer and non-transfer cases)
+            await process_background_tasks(parsed_data, result, params, thread_info, transfer_request_id, bridge_configurations)
         return JSONResponse(status_code=200, content={"success": True, "response": result["response"]})
     
     except (Exception, ValueError, BadRequestException) as error:

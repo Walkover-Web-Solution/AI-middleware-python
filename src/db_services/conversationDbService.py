@@ -5,7 +5,7 @@ from sqlalchemy import func, and_ , insert, delete, or_ , update, select
 from sqlalchemy.exc import SQLAlchemyError
 from ..services.cache_service import find_in_cache, store_in_cache
 from datetime import datetime
-from models.postgres.pg_models import Conversation, RawData, system_prompt_versionings, user_bridge_config_history
+from models.postgres.pg_models import Conversation, RawData, system_prompt_versionings, user_bridge_config_history, ConversationLog
 from models.Timescale.timescale_models import Metrics_model
 from sqlalchemy.sql import text
 from globals import *
@@ -26,6 +26,30 @@ def createBulk(conversations_data):
         logger.error(f"Error in creating bulk conversations: {str(err)}")
         session.rollback()
     finally : 
+        session.close()
+
+
+async def createConversationLog(conversation_log_data):
+    """
+    Create a single consolidated conversation log entry
+    
+    Args:
+        conversation_log_data: Dictionary containing all conversation data
+        
+    Returns:
+        Integer ID of created record or None if failed
+    """
+    session = pg['session']()
+    try:
+        conversation_log = ConversationLog(**conversation_log_data)
+        session.add(conversation_log)
+        session.commit()
+        return conversation_log.id
+    except Exception as err:
+        logger.error(f"Error in creating conversation log: {str(err)}")
+        session.rollback()
+        return None
+    finally:
         session.close()
 
 
@@ -76,6 +100,91 @@ async def find(org_id, thread_id, sub_thread_id, bridge_id):
         return []
     finally:
         session.close()
+
+
+async def find_conversation_logs(org_id, thread_id, sub_thread_id, bridge_id):
+    """
+    Find conversation logs from the new consolidated conversation_logs table
+    
+    Args:
+        org_id: Organization ID
+        thread_id: Thread ID
+        sub_thread_id: Sub-thread ID
+        bridge_id: Bridge ID
+        
+    Returns:
+        List of conversation logs formatted for response
+    """
+    try:
+        session = pg['session']()
+        logs = (
+            session.query(ConversationLog)
+            .filter(
+                and_(
+                    ConversationLog.org_id == org_id,
+                    ConversationLog.thread_id == thread_id,
+                    ConversationLog.sub_thread_id == sub_thread_id,
+                    ConversationLog.bridge_id == bridge_id,
+                    ConversationLog.status == True  # Only successful conversations
+                )
+            )
+            .order_by(ConversationLog.created_at.desc())
+            .limit(9)
+            .all()
+        )
+        
+        # Convert logs to conversation format expected by the application
+        conversations = []
+        for log in reversed(logs):
+            # Add user message
+            if log.user:
+                conversations.append({
+                    'content': log.user,
+                    'role': 'user',
+                    'createdAt': log.created_at,
+                    'id': log.id,
+                    'function': None,
+                    'is_reset': False,
+                    'tools_call_data': log.tools_call_data,
+                    'error': '',
+                    'urls': log.urls or []
+                })
+            
+            # Add tools_call if present
+            if log.tools_call_data:
+                conversations.append({
+                    'content': '',
+                    'role': 'tools_call',
+                    'createdAt': log.created_at,
+                    'id': log.id,
+                    'function': {},
+                    'is_reset': False,
+                    'tools_call_data': log.tools_call_data,
+                    'error': '',
+                    'urls': []
+                })
+            
+            # Add assistant message
+            if log.chatbot_message or log.llm_message:
+                conversations.append({
+                    'content': log.chatbot_message or log.llm_message,
+                    'role': 'assistant',
+                    'createdAt': log.created_at,
+                    'id': log.id,
+                    'function': {},
+                    'is_reset': False,
+                    'tools_call_data': None,
+                    'error': '',
+                    'urls': []
+                })
+        
+        return conversations
+    except Exception as e:
+        logger.error(f"Error in finding conversation logs: {str(e)}")
+        return []
+    finally:
+        session.close()
+
 async def calculate_average_response_time(org_id, bridge_id):
     try:
         session = pg['session']()
