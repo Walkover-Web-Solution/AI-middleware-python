@@ -88,10 +88,11 @@ async def jwt_middleware(request: Request):
                 check_token['org']['id'] = str(check_token['org']['id'])
                 request.state.profile = check_token
                 request.state.org_id = str(check_token.get('org', {}).get('id'))
-                if isinstance(check_token['user'].get('meta'), str):
-                    request.state.embed = False
+                meta = check_token['user'].get('meta', {})
+                if isinstance(meta, dict):
+                    request.state.embed = meta.get('type', False) == 'embed' or False
                 else:
-                    request.state.embed = check_token['user'].get('meta', {}).get('type', False) == 'embed' or False
+                    request.state.embed = False
                 request.state.folder_id = check_token.get('extraDetails', {}).get('folder_id', None)
                 request.state.user_id = check_token['user'].get('id')
                 return 
