@@ -33,7 +33,12 @@ async def add_configuration_data_to_body(request: Request):
             orchestrator_flag = body.get('orchestrator_flag'),
             chatbot=body.get('chatbot', False)
         )
-
+        
+        # Check if getConfiguration returned an error response
+        if not db_config.get('success', True) or db_config.get('error'):
+            # Return the actual error from getConfiguration directly
+            raise HTTPException(status_code=400, detail=db_config)
+        
         bridge_configurations = db_config.get('bridge_configurations') or {}
 
         if not bridge_configurations:
@@ -63,6 +68,7 @@ async def add_configuration_data_to_body(request: Request):
     except HTTPException as he:
          raise he
     except Exception as e:
+        
         logger.error(f"Error in get_data: {str(e)}, {traceback.format_exc()}")
         raise HTTPException(status_code=400, detail={"success": False, "error": "Error in getting data: "+ str(e)})
     
