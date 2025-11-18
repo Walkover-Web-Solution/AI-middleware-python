@@ -602,12 +602,20 @@ async def image(request_body):
         if not isinstance(error, BadRequestException):
             logger.error(f'Error in image service: {str(error)}, {traceback.format_exc()}')
         if not parsed_data['is_playground']:
+            # Update parsed_data with thread_info if available and thread_id/sub_thread_id are None
+            if 'thread_info' in locals() and thread_info:
+                if not parsed_data.get('thread_id') and thread_info.get('thread_id'):
+                    parsed_data['thread_id'] = thread_info['thread_id']
+                if not parsed_data.get('sub_thread_id') and thread_info.get('sub_thread_id'):
+                    parsed_data['sub_thread_id'] = thread_info['sub_thread_id']
+            
             # Create latency object and update usage metrics
-            latency = create_latency_object(timer, params)
-            update_usage_metrics(parsed_data, params, latency, error=error, success=False)
+            latency = create_latency_object(timer, params) if 'params' in locals() and params else None
+            if latency:
+                update_usage_metrics(parsed_data, params, latency, error=error, success=False)
             
             # Create history parameters
-            parsed_data['historyParams'] = create_history_params(parsed_data, error, class_obj)
+            parsed_data['historyParams'] = create_history_params(parsed_data, error, class_obj, thread_info if 'thread_info' in locals() else None)
             await sendResponse(parsed_data['response_format'], result.get("modelResponse", str(error)), variables=parsed_data['variables']) if parsed_data['response_format']['type'] != 'default' else None
             # Process background tasks for error handling
             await process_background_tasks_for_error(parsed_data, error)

@@ -228,6 +228,8 @@ async def manage_threads(parsed_data):
     else:
         thread_id = str(uuid.uuid1())
         sub_thread_id = thread_id
+        parsed_data['thread_id'] = thread_id
+        parsed_data['sub_thread_id'] = sub_thread_id
         parsed_data['gpt_memory'] = False
         result = []
     
@@ -685,7 +687,7 @@ def update_usage_metrics(parsed_data, params, latency, result=None, error=None, 
     return parsed_data['usage']
 
 
-def create_history_params(parsed_data, error=None, class_obj=None):
+def create_history_params(parsed_data, error=None, class_obj=None, thread_info=None):
     """
     Create history parameters for error tracking and logging.
     
@@ -693,13 +695,18 @@ def create_history_params(parsed_data, error=None, class_obj=None):
         parsed_data: Dictionary containing parsed request data
         error: Optional error object
         class_obj: Optional class object with aiconfig method
+        thread_info: Optional thread_info dictionary containing thread_id and sub_thread_id
         
     Returns:
         Dictionary containing history parameters
     """
+    # Use thread_info if available and parsed_data doesn't have thread_id/sub_thread_id
+    thread_id = parsed_data.get('thread_id') or (thread_info.get('thread_id') if thread_info else None)
+    sub_thread_id = parsed_data.get('sub_thread_id') or (thread_info.get('sub_thread_id') if thread_info else None)
+    
     return {
-        "thread_id": parsed_data['thread_id'],
-        "sub_thread_id": parsed_data['sub_thread_id'],
+        "thread_id": thread_id,
+        "sub_thread_id": sub_thread_id,
         "user": parsed_data['user'],
         "message": None,
         "org_id": parsed_data['org_id'],
