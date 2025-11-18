@@ -320,7 +320,7 @@ async def chat(request_body):
         result['response']['data']['message_id'] = parsed_data['message_id']
 
         # Send data to playground
-        if parsed_data['is_playground']:
+        if parsed_data.get('is_playground') and parsed_data.get('body', {}).get('bridge_configurations', {}).get('playground_response_format'):
             await sendResponse(parsed_data['body']['bridge_configurations']['playground_response_format'], result["response"], success=True, variables=parsed_data.get('variables',{}))
         
         if original_error:
@@ -411,7 +411,9 @@ async def chat(request_body):
                 "success": False,
                 "error": error_string,
             }
-        await sendResponse(parsed_data['body']['bridge_configurations']['playground_response_format'], error_object, success=False, variables=parsed_data.get('variables',{}))
+        # Send error response to playground if in playground mode
+        if parsed_data.get('is_playground') and parsed_data.get('body', {}).get('bridge_configurations', {}).get('playground_response_format'):
+            await sendResponse(parsed_data['body']['bridge_configurations']['playground_response_format'], error_object, success=False, variables=parsed_data.get('variables',{}))
         raise ValueError(error_object)
 
 

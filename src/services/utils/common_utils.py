@@ -22,7 +22,7 @@ from globals import *
 from src.services.utils.send_error_webhook import send_error_to_webhook
 from src.services.commonServices.queueService.queueLogService import sub_queue_obj
 from src.services.commonServices.baseService.utils import make_request_data_and_publish_sub_queue
-from src.db_services.metrics_service import create
+from src.db_services.metrics_service import create, create_orchestrator
 from src.controllers.conversationController import save_sub_thread_id_and_name
 from src.services.utils.ai_middleware_format import send_alert
 from src.services.cache_service import find_in_cache, store_in_cache, client, REDIS_PREFIX
@@ -147,6 +147,7 @@ def parse_request_body(request_body):
         "web_search_filters" : body.get('web_search_filters') or None,
         "parent_bridge_id": body.get('parent_bridge_id'),
         "transfer_request_id": body.get('transfer_request_id'),
+        "orchestrator_flag": body.get('orchestrator_flag'),
     }
 
 
@@ -390,7 +391,11 @@ async def process_background_tasks(parsed_data, result, params, thread_info, tra
     """
     Process background tasks for saving history and publishing to queue.
     Handles both regular flow and transfer chain scenarios.
+    Also handles orchestrator mode where multiple agents are saved in a single entry.
     """
+    # Check if orchestrator_flag is enabled (from body or parsed_data)
+    orchestrator_flag = parsed_data.get('orchestrator_flag') or parsed_data.get('body', {}).get('orchestrator_flag')
+    
     # Check if this is part of a transfer chain
     is_transfer_chain = transfer_request_id and transfer_request_id in TRANSFER_HISTORY and len(TRANSFER_HISTORY[transfer_request_id]) > 0
     
@@ -413,31 +418,46 @@ async def process_background_tasks(parsed_data, result, params, thread_info, tra
         
         # Save all transfer history (each agent in the chain)
         transfer_chain = TRANSFER_HISTORY[transfer_request_id]
-        for idx, history_entry in enumerate(transfer_chain):
-            # Update parent_id and child_id in history_params based on chain position
-            if history_entry['history_params']:
-                # Set parent_id from the previous entry's bridge_id
-                history_entry['history_params']['parent_id'] = history_entry.get('parent_id', '')
-                
-                # Set child_id from the next entry's bridge_id (None if last in chain)
-                if idx < len(transfer_chain) - 1:
-                    history_entry['history_params']['child_id'] = transfer_chain[idx + 1]['bridge_id']
-                else:
-                    history_entry['history_params']['child_id'] = None
-                
-                # Add prompt from bridge_configurations if available
-                agent_bridge_id = history_entry['bridge_id']
-                if bridge_configs and agent_bridge_id in bridge_configs:
-                    agent_config = bridge_configs[agent_bridge_id].get('configuration', {})
-                    history_entry['history_params']['prompt'] = agent_config.get('prompt')
+        
+        # If orchestrator_flag is true, save all agents in a single orchestrator entry
+        if orchestrator_flag:
+            # Update history_params with prompts from bridge_configurations
+            for idx, history_entry in enumerate(transfer_chain):
+                if history_entry['history_params']:
+                    agent_bridge_id = history_entry['bridge_id']
+                    if bridge_configs and agent_bridge_id in bridge_configs:
+                        agent_config = bridge_configs[agent_bridge_id].get('configuration', {})
+                        history_entry['history_params']['prompt'] = agent_config.get('prompt')
             
-            # Save history to database
-            asyncio.create_task(create(
-                history_entry['dataset'],
-                history_entry['history_params'],
-                history_entry['version_id'],
-                history_entry['thread_info']
-            ))
+            # Save all agents in a single orchestrator entry
+            asyncio.create_task(create_orchestrator(transfer_chain, thread_info))
+        else:
+            # Regular transfer chain - save each agent separately
+            for idx, history_entry in enumerate(transfer_chain):
+                # Update parent_id and child_id in history_params based on chain position
+                if history_entry['history_params']:
+                    # Set parent_id from the previous entry's bridge_id
+                    history_entry['history_params']['parent_id'] = history_entry.get('parent_id', '')
+                    
+                    # Set child_id from the next entry's bridge_id (None if last in chain)
+                    if idx < len(transfer_chain) - 1:
+                        history_entry['history_params']['child_id'] = transfer_chain[idx + 1]['bridge_id']
+                    else:
+                        history_entry['history_params']['child_id'] = None
+                    
+                    # Add prompt from bridge_configurations if available
+                    agent_bridge_id = history_entry['bridge_id']
+                    if bridge_configs and agent_bridge_id in bridge_configs:
+                        agent_config = bridge_configs[agent_bridge_id].get('configuration', {})
+                        history_entry['history_params']['prompt'] = agent_config.get('prompt')
+                
+                # Save history to database
+                asyncio.create_task(create(
+                    history_entry['dataset'],
+                    history_entry['history_params'],
+                    history_entry['version_id'],
+                    history_entry['thread_info']
+                ))
         
         # Clean up transfer history
         del TRANSFER_HISTORY[transfer_request_id]

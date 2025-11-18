@@ -5,7 +5,7 @@ from sqlalchemy import func, and_ , insert, delete, or_ , update, select
 from sqlalchemy.exc import SQLAlchemyError
 from ..services.cache_service import find_in_cache, store_in_cache
 from datetime import datetime
-from models.postgres.pg_models import Conversation, RawData, system_prompt_versionings, user_bridge_config_history, ConversationLog
+from models.postgres.pg_models import Conversation, RawData, system_prompt_versionings, user_bridge_config_history, ConversationLog, OrchestratorConversationLog
 from models.Timescale.timescale_models import Metrics_model
 from sqlalchemy.sql import text
 from globals import *
@@ -47,6 +47,31 @@ async def createConversationLog(conversation_log_data):
         return conversation_log.id
     except Exception as err:
         logger.error(f"Error in creating conversation log: {str(err)}")
+        session.rollback()
+        return None
+    finally:
+        session.close()
+
+
+async def createOrchestratorConversationLog(orchestrator_log_data):
+    """
+    Create a single orchestrator conversation log entry with aggregated data from multiple agents
+    
+    Args:
+        orchestrator_log_data: Dictionary containing orchestrator conversation log data
+            where each field is a dictionary keyed by bridge_id
+        
+    Returns:
+        Integer ID of created record or None if failed
+    """
+    session = pg['session']()
+    try:
+        orchestrator_log = OrchestratorConversationLog(**orchestrator_log_data)
+        session.add(orchestrator_log)
+        session.commit()
+        return orchestrator_log.id
+    except Exception as err:
+        logger.error(f"Error in creating orchestrator conversation log: {str(err)}")
         session.rollback()
         return None
     finally:

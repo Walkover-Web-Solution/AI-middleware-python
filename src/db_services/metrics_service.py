@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from models.index import combined_models
 from sqlalchemy import and_
 from ..controllers.conversationController import savehistory, savehistory_consolidated
-from .conversationDbService import insertRawData, timescale_metrics
+from .conversationDbService import insertRawData, timescale_metrics, createOrchestratorConversationLog
 from ..services.cache_service import find_in_cache, store_in_cache
 from globals import *
 # from src.services.utils.send_error_webhook import send_error_to_webhook
@@ -193,5 +193,185 @@ async def create(dataset, history_params, version_id, thread_info={}):
     except Exception as error:
         logger.error(f'Error during bulk insert of Ai middleware, {str(error)}')
 
+
+async def create_orchestrator(transfer_chain, thread_info={}):
+    """
+    Create orchestrator conversation log entry by aggregating data from multiple agents.
+    Each field will be a dictionary keyed by bridge_id.
+    
+    Args:
+        transfer_chain: List of history entries from TRANSFER_HISTORY, each containing:
+            - bridge_id: The bridge_id for this agent
+            - history_params: History parameters for this agent
+            - dataset: Usage data for this agent
+            - version_id: Version ID for this agent
+            - thread_info: Thread information
+        thread_info: Thread information dict containing thread_id and sub_thread_id
+        
+    Returns:
+        Integer ID of created record or None if failed
+    """
+    try:
+        if not transfer_chain or len(transfer_chain) == 0:
+            logger.warning("Empty transfer chain provided to create_orchestrator")
+            return None
+        
+        thread_id = thread_info.get('thread_id') if thread_info else None
+        sub_thread_id = thread_info.get('sub_thread_id') if thread_info else None
+        
+        # Initialize aggregated data structures
+        aggregated_data = {
+            'llm_message': {},
+            'user': {},
+            'chatbot_message': {},
+            'updated_llm_message': {},
+            'prompt': {},
+            'error': {},
+            'tools_call_data': {},
+            'message_id': {},
+            'version_id': {},
+            'bridge_id': {},
+            'image_urls': [],
+            'urls': [],
+            'AiConfig': {},
+            'fallback_model': {},
+            'model': {},
+            'status': {},
+            'tokens': {},
+            'variables': {},
+            'latency': {},
+            'firstAttemptError': {},
+            'finish_reason': {},
+            'agents_path': []
+        }
+        
+        # Common fields (same for all agents)
+        org_id = None
+        service = None
+        
+        # Aggregate data from all agents in the transfer chain
+        for history_entry in transfer_chain:
+            bridge_id = history_entry.get('bridge_id')
+            if not bridge_id:
+                continue
+                
+            history_params = history_entry.get('history_params', {})
+            dataset = history_entry.get('dataset', [{}])
+            version_id = history_entry.get('version_id')
+            
+            if not dataset or len(dataset) == 0:
+                continue
+                
+            data_object = dataset[0]
+            
+            # Extract common fields from first valid entry
+            if org_id is None:
+                org_id = data_object.get('orgId') or history_params.get('org_id')
+            if service is None:
+                service = data_object.get('service') or history_params.get('service')
+            
+            # Parse latency JSON
+            latency_data = {}
+            try:
+                if isinstance(data_object.get('latency'), str):
+                    latency_data = json.loads(data_object.get('latency', '{}'))
+                else:
+                    latency_data = data_object.get('latency', {})
+            except:
+                latency_data = {}
+            
+            response = history_params.get('response', {})
+            
+            # Aggregate data by bridge_id
+            aggregated_data['llm_message'][bridge_id] = history_params.get('message', '')
+            aggregated_data['user'][bridge_id] = history_params.get('user', '')
+            aggregated_data['chatbot_message'][bridge_id] = history_params.get('chatbot_message', '')
+            aggregated_data['updated_llm_message'][bridge_id] = None
+            aggregated_data['prompt'][bridge_id] = history_params.get('prompt')
+            aggregated_data['error'][bridge_id] = str(data_object.get('error', '')) if not data_object.get('success', False) else None
+            aggregated_data['tools_call_data'][bridge_id] = history_params.get('tools_call_data', [])
+            aggregated_data['message_id'][bridge_id] = str(history_params.get('message_id', ''))
+            aggregated_data['version_id'][bridge_id] = version_id
+            aggregated_data['bridge_id'][bridge_id] = bridge_id
+            aggregated_data['model'][bridge_id] = data_object.get('model') or history_params.get('model')
+            aggregated_data['status'][bridge_id] = data_object.get('success', False)
+            aggregated_data['tokens'][bridge_id] = {
+                'input': data_object.get('inputTokens', 0),
+                'output': data_object.get('outputTokens', 0),
+                'expected_cost': data_object.get('expectedCost', 0)
+            }
+            aggregated_data['variables'][bridge_id] = data_object.get('variables') or {}
+            aggregated_data['latency'][bridge_id] = latency_data.get('over_all_time', 0) if latency_data else 0
+            aggregated_data['firstAttemptError'][bridge_id] = history_params.get('firstAttemptError')
+            aggregated_data['finish_reason'][bridge_id] = response.get('data', {}).get('finish_reason')
+            aggregated_data['AiConfig'][bridge_id] = history_params.get('AiConfig')
+            aggregated_data['fallback_model'][bridge_id] = history_params.get('fallback_model') or {}
+            
+            # Handle image_urls and urls as arrays of objects
+            image_urls = history_params.get('image_urls', [])
+            if image_urls:
+                aggregated_data['image_urls'].append({bridge_id: image_urls})
+            
+            urls = history_params.get('urls', [])
+            if urls:
+                aggregated_data['urls'].append({bridge_id: urls})
+            
+            # Add bridge_id to agents_path
+            if bridge_id not in aggregated_data['agents_path']:
+                aggregated_data['agents_path'].append(bridge_id)
+        
+        # Get thread_id and sub_thread_id from first entry if not in thread_info
+        if not thread_id and transfer_chain:
+            first_history_params = transfer_chain[0].get('history_params', {})
+            thread_id = first_history_params.get('thread_id')
+            sub_thread_id = first_history_params.get('sub_thread_id') or thread_id
+        
+        if not thread_id:
+            logger.error("Missing thread_id in orchestrator history")
+            return None
+        
+        if not sub_thread_id:
+            sub_thread_id = thread_id
+        
+        # Prepare orchestrator conversation log data
+        orchestrator_log_data = {
+            'llm_message': aggregated_data['llm_message'],
+            'user': aggregated_data['user'],
+            'chatbot_message': aggregated_data['chatbot_message'],
+            'updated_llm_message': aggregated_data['updated_llm_message'],
+            'prompt': aggregated_data['prompt'],
+            'error': aggregated_data['error'],
+            'tools_call_data': aggregated_data['tools_call_data'],
+            'message_id': aggregated_data['message_id'],
+            'sub_thread_id': sub_thread_id,
+            'thread_id': thread_id,
+            'version_id': aggregated_data['version_id'],
+            'bridge_id': aggregated_data['bridge_id'],
+            'image_urls': aggregated_data['image_urls'],
+            'urls': aggregated_data['urls'],
+            'AiConfig': aggregated_data['AiConfig'],
+            'fallback_model': aggregated_data['fallback_model'],
+            'org_id': org_id,
+            'service': service,
+            'model': aggregated_data['model'],
+            'status': aggregated_data['status'],
+            'tokens': aggregated_data['tokens'],
+            'variables': aggregated_data['variables'],
+            'latency': aggregated_data['latency'],
+            'firstAttemptError': aggregated_data['firstAttemptError'],
+            'finish_reason': aggregated_data['finish_reason'],
+            'agents_path': aggregated_data['agents_path']
+        }
+        
+        # Save orchestrator conversation log
+        result_id = await createOrchestratorConversationLog(orchestrator_log_data)
+        print(result_id)
+        return result_id
+        
+    except Exception as error:
+        logger.error(f'Error during orchestrator conversation log creation: {str(error)}')
+        logger.error(traceback.format_exc())
+        return None
+
 # Exporting functions
-__all__ = ["find", "create", "find_one", "find_one_pg"]
+__all__ = ["find", "create", "create_orchestrator", "find_one", "find_one_pg"]
