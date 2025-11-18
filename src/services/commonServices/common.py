@@ -69,7 +69,15 @@ async def chat_multiple_agents(request_body):
         
         if thread_id and sub_thread_id:
             redis_key = f"{redis_keys['last_transffered_agent_']}{primary_bridge_id}_{thread_id}_{sub_thread_id}"
-            cached_agent_id = await find_in_cache(redis_key)
+            cached_agent_id_raw = await find_in_cache(redis_key)
+            # Parse JSON string to remove extra quotes added by store_in_cache
+            cached_agent_id = None
+            if cached_agent_id_raw:
+                try:
+                    cached_agent_id = json.loads(cached_agent_id_raw)
+                except (json.JSONDecodeError, TypeError):
+                    # If parsing fails, use the raw value as fallback
+                    cached_agent_id = cached_agent_id_raw.strip('"') if isinstance(cached_agent_id_raw, str) else cached_agent_id_raw
             if cached_agent_id and cached_agent_id in bridge_configurations:
                 primary_bridge_id = cached_agent_id
                 logger.info(f"Using cached agent {cached_agent_id} for thread {thread_id}_{sub_thread_id}")
@@ -363,7 +371,10 @@ async def chat(request_body):
         if thread_id and sub_thread_id and bridge_id:
             # Use original primary bridge_id in key for consistency, but save current bridge_id as value
             redis_key = f"{redis_keys['last_transffered_agent_']}{original_primary_bridge_id}_{thread_id}_{sub_thread_id}"
-            await store_in_cache(redis_key, bridge_id, ttl=259200)  # 3 days
+            # Ensure bridge_id is a clean string without extra quotes
+            bridge_id_to_save = str(bridge_id).strip('"\'') if bridge_id else None
+            if bridge_id_to_save:
+                await store_in_cache(redis_key, bridge_id_to_save, ttl=259200)  # 3 days
             logger.info(f"Cached agent {bridge_id} for thread {thread_id}_{sub_thread_id} with key based on original primary {original_primary_bridge_id}")
         
         return JSONResponse(status_code=200, content={"success": True, "response": result["response"]})
