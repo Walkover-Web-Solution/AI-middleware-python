@@ -15,60 +15,44 @@ from globals import *
 
 logger = logging.getLogger(__name__)
 
-async def getConfiguration(configuration, service, bridge_id, apikey, template_id=None, variables={}, 
-                           org_id="", variables_path=None, version_id=None, extra_tools=[], built_in_tools=[], guardrails={}, web_search_filters={}, chatbot=False):
-    """
-    Get configuration for a bridge with all necessary tools and settings.
-    
-    Args:
-        configuration: Configuration to merge with database configuration
-        service: Service name
-        bridge_id: Bridge ID
-        apikey: API key
-        template_id: Template ID
-        variables: Variables to use
-        org_id: Organization ID
-        variables_path: Variables path
-        version_id: Version ID
-        extra_tools: Extra tools to include
-        built_in_tools: Built-in tools to include
-        
-    Returns:
-        Dictionary with configuration and related data
-    """
-    # Initialize variables
-    RTLayer = False
-    
-    # Get bridge data
-    result, bridge_data, bridge_id = await get_bridge_data(bridge_id, org_id, version_id)
-    
-    # Use cached limit checking for better performance
-    limit_error = await check_bridge_api_folder_limits(result.get('bridges'),bridge_data,version_id)
+async def _prepare_configuration_response(configuration, service, bridge_id, apikey, template_id=None,
+                                          variables=None, org_id="", variables_path=None, version_id=None,
+                                          extra_tools=None, built_in_tools=None, guardrails=None,
+                                          web_search_filters=None, orchestrator_flag=None, chatbot=False):
+    """Internal helper to build configuration response for a single bridge."""
+
+    variables = variables or {}
+    extra_tools = extra_tools or []
+    built_in_tools = built_in_tools or []
+    web_search_filters = web_search_filters or {}
+
+    # Fetch bridge data
+    result, bridge_data, resolved_bridge_id = await get_bridge_data(bridge_id, org_id, version_id)
+
+    # Limit checks
+    limit_error = await check_bridge_api_folder_limits(result.get('bridges'), bridge_data, version_id)
     if limit_error:
-        return limit_error
-   
-    
+        return limit_error, None, None, resolved_bridge_id
+
     # Validate bridge
     validation_result = await validate_bridge(bridge_data, result)
     if validation_result:
-        return validation_result
-    
-    # Setup configuration
+        return validation_result, None, None, resolved_bridge_id
+
+    # Setup configuration and service
     configuration, service = setup_configuration(configuration, result, service)
 
-    if service == 'openai_response':   
+    if service == 'openai_response':
         service = 'openai'
-    if bridge_data.get('bridges', {}).get('openai_completion'):
-        service = 'openai_completion'     
+    if result.get('bridges', {}).get('openai_completion'):
+        service = 'openai_completion'
 
-    # Setup API key
     service = service.lower() if service else ""
-    
-    # Safely extract apikey from nested structure for all services
+
+    # Normalize API keys
     try:
         apikeys_dict = result.get('bridges', {}).get('apikeys', {})
-        
-        # Iterate through all services and extract their API keys
+
         for service_name, apikey_data in apikeys_dict.items():
             if isinstance(apikey_data, dict) and 'apikey' in apikey_data:
                 result['bridges']['apikeys'][service_name] = apikey_data['apikey']
@@ -76,76 +60,63 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
                 logger.warning(f"API key not found for service: {service_name}")
     except (KeyError, TypeError) as e:
         logger.error(f"Error accessing API keys: {e}")
-        # Keep the original structure if extraction fails
 
     apikey = setup_api_key(service, result, apikey, chatbot)
     apikey_object_id = result.get('bridges', {}).get('apikey_object_id')
 
-    # check type
+    # Handle image type early return
     if configuration['type'] == 'image':
-        return{
-        'success': True,
-        'configuration': configuration,
-        'service': service,
-        'apikey': apikey,
-        'apikey_object_id': apikey_object_id,
-        'RTLayer': RTLayer,
-        "bridge_id": result['bridges'].get('parent_id', result['bridges'].get('_id')),
-        "version_id": version_id or result.get('bridges', {}).get('published_version_id'),
+        image_config = {
+            'configuration': configuration,
+            'service': service,
+            'apikey': apikey,
+            'apikey_object_id': apikey_object_id,
+            'RTLayer': False,
+            'bridge_id': result['bridges'].get('parent_id', result['bridges'].get('_id')),
+            'version_id': version_id or result.get('bridges', {}).get('published_version_id'),
         }
-    
-    # Setup tool choice
+        return None, image_config, result, resolved_bridge_id
+
+    # Tool choice
     configuration['tool_choice'] = setup_tool_choice(configuration, result, service)
-    
-    # Get bridge and variables path
+
     bridge = result.get('bridges')
     variables_path_bridge = bridge.get('variables_path', {})
-    
-    # Setup tools and tool mappings
+
     tools, tool_id_and_name_mapping, variables_path_bridge = setup_tools(result, variables_path_bridge, extra_tools)
     configuration.pop('tools', None)
     configuration['tools'] = tools
-    
-    # Check for RTLayer
+
     RTLayer = True if configuration and 'RTLayer' in configuration else False
-    
-    # Get template content
+
     template_content = await ConfigurationService.get_template_by_id(template_id) if template_id else None
-    
-    # Setup pre-tools
+
     pre_tools_name, pre_tools_args = setup_pre_tools(bridge, result, variables)
-    
-    # Get RAG data and memory context
+
     rag_data = bridge.get('rag_data')
     gpt_memory_context = bridge.get('gpt_memory_context')
     gpt_memory = result.get('bridges', {}).get('gpt_memory')
-    
-    # Apply tone and response style
+
     tone = configuration.get('tone', {})
     responseStyle = configuration.get('responseStyle', {})
     configuration['prompt'] = Helper.append_tone_and_response_style_prompts(
         configuration['prompt'], tone, responseStyle
     )
-    
-    # Add RAG tool if needed
+
     add_rag_tool(tools, tool_id_and_name_mapping, rag_data)
-    
-    # Add Anthropic JSON schema if needed
     add_anthropic_json_schema(service, configuration, tools)
-    
-    # Add document description to prompt
+
     if rag_data:
         configuration['prompt'] = Helper.add_doc_description_to_prompt(configuration['prompt'], rag_data)
-    
-    # Update variables with timezone
-    variables, org_name = await updateVariablesWithTimeZone(variables, org_id)
-    
-    # Add connected agents
-    add_connected_agents(result, tools, tool_id_and_name_mapping)
 
-    # Return final configuration
-    return {
-        'success': True,
+    variables, org_name = await updateVariablesWithTimeZone(variables, org_id)
+
+    add_connected_agents(result, tools, tool_id_and_name_mapping, orchestrator_flag)
+
+    guardrails_value = guardrails if guardrails is not None else (result.get('bridges', {}).get('guardrails') or {})
+    web_search_filters_value = web_search_filters or result.get('bridges', {}).get('web_search_filters') or {}
+
+    base_config = {
         'configuration': configuration,
         'pre_tools': {'name': pre_tools_name, 'args': pre_tools_args} if pre_tools_name else None,
         'service': service,
@@ -153,25 +124,151 @@ async def getConfiguration(configuration, service, bridge_id, apikey, template_i
         'apikey_object_id': apikey_object_id,
         'RTLayer': RTLayer,
         'template': template_content.get('template') if template_content else None,
-        "user_reference": result.get("bridges", {}).get("user_reference", ""),
-        "variables_path": variables_path or variables_path_bridge,
-        "tool_id_and_name_mapping": tool_id_and_name_mapping,
-        "gpt_memory": gpt_memory,
-        "version_id": version_id or result.get('bridges', {}).get('published_version_id'),
-        "gpt_memory_context": gpt_memory_context,
-        "tool_call_count": result.get("bridges", {}).get("tool_call_count", 3),
-        "variables": variables,
-        "rag_data": rag_data,
-        "actions": result.get("bridges", {}).get("actions", []),
-        "name": bridge_data.get("bridges", {}).get("name") or result.get("bridges", {}).get("name") or '',
-        "org_name": org_name,
-        "bridge_id": result['bridges'].get('parent_id', result['bridges'].get('_id')),
-        "variables_state": result.get("bridges", {}).get("variables_state", {}),
-        "built_in_tools": built_in_tools or result.get("bridges", {}).get("built_in_tools"),
-        "fall_back" : result.get("bridges", {}).get("fall_back") or {},
-        "guardrails" : guardrails if guardrails is not None else (result.get("bridges", {}).get("guardrails") or {}),
-        "is_embed": result.get("bridges", {}).get("folder_type") == "embed",
-        "user_id": result.get("bridges", {}).get("user_id"),
-        "folder_id": result.get("bridges", {}).get("folder_id"),
-        "web_search_filters" : web_search_filters or result.get("bridges", {}).get("web_search_filters") or {}
+        'user_reference': result.get('bridges', {}).get('user_reference', ''),
+        'variables_path': variables_path or variables_path_bridge,
+        'tool_id_and_name_mapping': tool_id_and_name_mapping,
+        'gpt_memory': gpt_memory,
+        'version_id': version_id or result.get('bridges', {}).get('published_version_id'),
+        'gpt_memory_context': gpt_memory_context,
+        'tool_call_count': result.get('bridges', {}).get('tool_call_count', 3),
+        'variables': variables,
+        'rag_data': rag_data,
+        'actions': result.get('bridges', {}).get('actions', []),
+        'name': bridge_data.get('name') or result.get('bridges', {}).get('name') or '',
+        'org_name': org_name,
+        'bridge_id': result['bridges'].get('parent_id', result['bridges'].get('_id')),
+        'variables_state': result.get('bridges', {}).get('variables_state', {}),
+        'built_in_tools': built_in_tools or result.get('bridges', {}).get('built_in_tools'),
+        'fall_back': result.get('bridges', {}).get('fall_back') or {},
+        'guardrails': guardrails_value,
+        'is_embed': result.get('folder_id') is not None,
+        'folder_id': result.get('bridges', {}).get('folder_id'),
+        'web_search_filters': web_search_filters_value
     }
+
+    return None, base_config, result, resolved_bridge_id
+
+
+async def _collect_connected_agent_configs(result, org_id, visited):
+    """Recursively collect configurations for connected agents."""
+
+    if not result:
+        return {}
+
+    bridge_payload = result.get('bridges', {})
+    connected_agents = bridge_payload.get('connected_agents', {})
+    connected_agent_details = bridge_payload.get('connected_agent_details', {})
+
+    aggregated_configs = {}
+
+    for _, agent_info in connected_agents.items():
+        bridge_id_value = agent_info.get('bridge_id')
+        if not bridge_id_value or bridge_id_value in visited:
+            continue
+
+        agent_details = connected_agent_details.get(bridge_id_value, {})
+        merged_info = {**agent_details, **agent_info}
+
+        version_id_value = merged_info.get('version_id')
+        configuration_override = merged_info.get('configuration') if isinstance(merged_info.get('configuration'), dict) else None
+        service_override = merged_info.get('service')
+        apikey_override = merged_info.get('apikey')
+        template_id_override = merged_info.get('template_id')
+        variables_override = merged_info.get('variables') if isinstance(merged_info.get('variables'), dict) else {}
+        variables_path_override = merged_info.get('variables_path')
+        extra_tools_override = merged_info.get('extra_tools') if isinstance(merged_info.get('extra_tools'), list) else []
+        built_in_tools_override = merged_info.get('built_in_tools') if isinstance(merged_info.get('built_in_tools'), list) else []
+        web_search_filters_override = merged_info.get('web_search_filters') if isinstance(merged_info.get('web_search_filters'), dict) else {}
+        guardrails_override = merged_info['guardrails'] if 'guardrails' in merged_info else None
+
+        try:
+            error, child_config, child_result, resolved_child_id = await _prepare_configuration_response(
+                configuration_override,
+                service_override,
+                bridge_id_value,
+                apikey_override,
+                template_id_override,
+                variables_override,
+                org_id,
+                variables_path_override,
+                version_id_value,
+                extra_tools_override,
+                built_in_tools_override,
+                guardrails_override,
+                web_search_filters_override
+            )
+        except Exception as exc:
+            logger.error(f"Error fetching configuration for connected agent {bridge_id_value}: {exc}")
+            continue
+
+        if error:
+            logger.error(f"Skipping connected agent {bridge_id_value} due to error response: {error}")
+            continue
+
+        key = bridge_id_value or resolved_child_id
+        resolved_id = resolved_child_id or bridge_id_value
+
+        if resolved_id:
+            child_config['bridge_id'] = resolved_id
+            visited.add(resolved_id)
+        if bridge_id_value:
+            visited.add(bridge_id_value)
+
+        aggregated_configs[key] = child_config
+
+        nested = await _collect_connected_agent_configs(child_result, org_id, visited)
+        aggregated_configs.update(nested)
+
+    return aggregated_configs
+
+async def getConfiguration(configuration, service, bridge_id, apikey, template_id=None, variables={}, 
+                           org_id="", variables_path=None, version_id=None, extra_tools=[], built_in_tools=[], guardrails={}, web_search_filters={}, orchestrator_flag=None, chatbot=False):
+    """
+    Get configuration for a bridge with all necessary tools and settings.
+    """
+
+    error, base_config, result, resolved_bridge_id = await _prepare_configuration_response(
+        configuration,
+        service,
+        bridge_id,
+        apikey,
+        template_id,
+        variables,
+        org_id,
+        variables_path,
+        version_id,
+        extra_tools,
+        built_in_tools,
+        guardrails,
+        web_search_filters,
+        orchestrator_flag,
+        chatbot
+    )
+
+    if error:
+        return error
+
+    config_key = resolved_bridge_id or base_config.get('bridge_id') or bridge_id
+
+    if base_config.get('bridge_id') != config_key and config_key:
+        base_config['bridge_id'] = config_key
+
+    visited = set()
+    for identifier in (bridge_id, resolved_bridge_id, config_key):
+        if identifier:
+            visited.add(identifier)
+
+    connected_configs = await _collect_connected_agent_configs(result, org_id, visited)
+
+    bridge_configurations = {}
+    if config_key:
+        bridge_configurations[config_key] = base_config
+
+    bridge_configurations.update(connected_configs)
+
+    response_payload = {'success': True, 'bridge_configurations': bridge_configurations}
+
+    if config_key:
+        response_payload['primary_bridge_id'] = config_key
+
+    return response_payload

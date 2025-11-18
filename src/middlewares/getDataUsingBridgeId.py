@@ -1,6 +1,5 @@
 from fastapi import Request, HTTPException
 from src.services.utils.getConfiguration import getConfiguration
-from src.services.utils.getOrchestratorConfiguration import getOrchestratorConfiguration
 from globals import *
 from src.configs.model_configuration import model_config_document
 
@@ -12,46 +11,42 @@ async def add_configuration_data_to_body(request: Request):
         chatbotData = getattr(request.state, "chatbot", None)
         if chatbotData:
             body.update(chatbotData)
-        # Check for orchestrator_id first
-        orchestrator_id = body.get('orchestrator_id')
-        
-        if orchestrator_id:
-            # Handle orchestrator configuration
-            db_config = await getOrchestratorConfiguration( 
-                orchestrator_id, 
-                org_id, 
-                body.get('variables', {}), 
-                body.get('variables_path'),
-                body.get('playground', False)
-            )
+        # Handle bridge configuration
+        bridge_id = body.get('agent_id') or body.get("bridge_id") or request.path_params.get('bridge_id') or getattr(request.state, 'chatbot', {}).get('bridge_id', None)
+        if chatbotData:
+            del request.state.chatbot
+        version_id = body.get('version_id') or request.path_params.get('version_id')
+        db_config = await getConfiguration(
+            body.get('configuration'), 
+            body.get('service'), 
+            bridge_id, 
+            body.get('apikey'), 
+            body.get('template_id'), 
+            body.get('variables', {}), 
+            org_id, 
+            body.get('variables_path'), 
+            version_id=version_id, 
+            extra_tools=body.get('extra_tools', []), 
+            built_in_tools=body.get('built_in_tools'),
+            guardrails=body.get('guardrails'),
+            web_search_filters=body.get('web_search_filters'),
+            orchestrator_flag = body.get('orchestrator_flag'),
+            chatbot=body.get('chatbot', False)
+        )
+
+        bridge_configurations = db_config.get('bridge_configurations') or {}
+
+        if not bridge_configurations:
+            raise HTTPException(status_code=400, detail={"success": False, "error": "Unable to resolve bridge configuration"})
+
+        target_bridge_id = bridge_id or db_config.get('primary_bridge_id')
+        if target_bridge_id and target_bridge_id in bridge_configurations:
+            primary_config = bridge_configurations[target_bridge_id]
         else:
-            # Handle regular bridge configuration
-            bridge_id = body.get('agent_id') or body.get("bridge_id") or request.path_params.get('bridge_id') or getattr(request.state, 'chatbot', {}).get('bridge_id', None)
-            if chatbotData:
-                del request.state.chatbot
-            version_id = body.get('version_id') or request.path_params.get('version_id')
-            db_config = await getConfiguration(
-                body.get('configuration'), 
-                body.get('service'), 
-                bridge_id, 
-                body.get('apikey'), 
-                body.get('template_id'), 
-                body.get('variables', {}), 
-                org_id, 
-                body.get('variables_path'), 
-                version_id=version_id, 
-                extra_tools=body.get('extra_tools', []), 
-                built_in_tools=body.get('built_in_tools'),
-                guardrails=body.get('guardrails'),
-                web_search_filters=body.get('web_search_filters'),
-                chatbot=body.get('chatbot', False)
-            )
-        if not db_config.get("success"):
-                raise HTTPException(status_code=400, detail={"success": False, "error": db_config["error"]}) 
-        body.update(db_config)
-        if orchestrator_id:
-            db_config['user'] = body.get('user')
-            return db_config
+            primary_config = next(iter(bridge_configurations.values()))
+
+        body.update(primary_config)
+        body['bridge_configurations'] = bridge_configurations
         service = body.get("service")
         model = body.get("configuration").get('model')
         user = body.get("user")

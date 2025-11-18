@@ -3,6 +3,8 @@ from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 import traceback
 import pydash as _
+import uuid
+import asyncio
 from ..utils.helper import Helper
 from .baseService.utils import sendResponse
 from ..utils.ai_middleware_format import Response_formatter
@@ -35,6 +37,7 @@ from src.services.utils.common_utils import (
     orchestrator_agent_chat,
     process_background_tasks_for_playground,
     process_variable_state,
+    handle_agent_transfer,
     update_cost_and_last_used_in_background
 )
 from src.services.utils.guardrails_validator import guardrails_check
@@ -43,18 +46,93 @@ app = FastAPI()
 from src.services.utils.helper import Helper
 from src.services.commonServices.testcases import run_testcases as run_bridge_testcases
 from globals import *
-from src.services.cache_service import find_in_cache
+from src.services.cache_service import find_in_cache, store_in_cache
+from src.configs.constant import redis_keys
 
 configurationModel = db["configurations"]
 
-@app.post("/chat/{bridge_id}")
 @handle_exceptions
+async def chat_multiple_agents(request_body):
+    try:
+        # Extract bridge configurations from the body
+        body = request_body.get('body', {})
+        bridge_configurations = body.get('bridge_configurations', {})
+        
+        if not bridge_configurations:
+            raise ValueError("No bridge configurations found")
+
+        primary_bridge_id = body.get('bridge_id')
+        
+        # Check Redis cache for previously used agent with same thread_id and sub_thread_id
+        thread_id = body.get('thread_id')
+        sub_thread_id = body.get('sub_thread_id') or thread_id
+        
+        if thread_id and sub_thread_id:
+            redis_key = f"{redis_keys['last_transffered_agent_']}{primary_bridge_id}_{thread_id}_{sub_thread_id}"
+            cached_agent_id_raw = await find_in_cache(redis_key)
+            # Parse JSON string to remove extra quotes added by store_in_cache
+            cached_agent_id = None
+            if cached_agent_id_raw:
+                try:
+                    cached_agent_id = json.loads(cached_agent_id_raw)
+                except (json.JSONDecodeError, TypeError):
+                    # If parsing fails, use the raw value as fallback
+                    cached_agent_id = cached_agent_id_raw.strip('"') if isinstance(cached_agent_id_raw, str) else cached_agent_id_raw
+            if cached_agent_id and cached_agent_id in bridge_configurations:
+                primary_bridge_id = cached_agent_id
+                logger.info(f"Using cached agent {cached_agent_id} for thread {thread_id}_{sub_thread_id}")
+        
+        if not primary_bridge_id or primary_bridge_id not in bridge_configurations:
+            # Use the first agent as primary
+            primary_bridge_id = next(iter(bridge_configurations.keys()))
+        
+        primary_config = bridge_configurations[primary_bridge_id]
+        
+        # Create a new body for the primary agent
+        primary_body = body.copy()
+        primary_body.update(primary_config)
+        primary_body['bridge_id'] = primary_bridge_id
+        # Store the original primary_bridge_id for Redis key consistency
+        primary_body['primary_bridge_id'] = primary_bridge_id
+        
+        # Create a complete request_body structure for the primary agent
+        primary_request_body = {
+            'body': primary_body,
+            'state': request_body.get('state', {}).copy(),
+            'path_params': request_body.get('path_params', {})
+        }
+        
+        # Call the chat function for the primary agent only
+        result = await chat(primary_request_body)
+        
+        # Return the result directly
+        return result
+        
+    except Exception as error:
+        logger.error(f'Error in chat_multiple_agents: {str(error)}, {traceback.format_exc()}')
+        error_object = {
+            "success": False,
+            "error": f"{str(error)} (Type: {type(error).__name__}). For more support contact us at support@gtwy.ai"
+        }
+        return JSONResponse(status_code=500, content=error_object)
+
+
 async def chat(request_body): 
     result ={}
     class_obj= {}
     try:
+        # Store bridge_configurations for potential transfer logic
+        bridge_configurations = request_body.get('body', {}).get('bridge_configurations', {})
         # Step 1: Parse and validate request body
         parsed_data = parse_request_body(request_body)
+        
+        # Initialize or retrieve transfer_request_id for tracking transfers
+        transfer_request_id = parsed_data.get('transfer_request_id') or str(uuid.uuid1())
+        parsed_data['transfer_request_id'] = transfer_request_id
+        
+        # Initialize transfer history for this request if not exists
+        if transfer_request_id not in TRANSFER_HISTORY:
+            TRANSFER_HISTORY[transfer_request_id] = []
         if parsed_data.get('guardrails',{}).get('is_enabled', False):
             guardrails_result = await guardrails_check(parsed_data)
             if guardrails_result is not None:
@@ -101,7 +179,7 @@ async def chat(request_body):
         )
         # Step 9: Execute Service Handler
         params = build_service_params(
-            parsed_data, custom_config, model_output_config, thread_info, timer, memory, send_error_to_webhook
+            parsed_data, custom_config, model_output_config, thread_info, timer, memory, send_error_to_webhook, bridge_configurations
         )
         # Step 10: json_schema service conversion
         if 'response_type' in custom_config and custom_config['response_type'].get('type') == 'json_schema':
@@ -114,6 +192,45 @@ async def chat(request_body):
         original_exception = None
         try:
             result = await class_obj.execute()
+            
+            # Check if agent transfer is needed
+            transfer_agent_config = result.get('transfer_agent_config')
+            if transfer_agent_config and transfer_agent_config.get('action_type') == 'transfer':
+                # Get the correct version_id from bridge_configurations for this agent
+                current_version_id = bridge_configurations.get(parsed_data['bridge_id'], {}).get('version_id', parsed_data['version_id'])
+                
+                # Calculate tokens and create latency BEFORE storing history for transfer
+                if parsed_data.get('type') != 'image':
+                    parsed_data['tokens'] = params['token_calculator'].calculate_total_cost(parsed_data['model'], parsed_data['service'])
+                    result['response']['usage']['cost'] = parsed_data['tokens'].get('total_cost') or 0
+                
+                # Create latency and update usage metrics BEFORE storing history for transfer
+                latency = create_latency_object(timer, params)
+                update_usage_metrics(parsed_data, params, latency, result=result, success=True)
+                
+                # Store current agent's history data before transferring
+                current_history_data = {
+                    'bridge_id': parsed_data['bridge_id'],
+                    'history_params': result.get('historyParams'),
+                    'dataset': [parsed_data['usage']],
+                    'version_id': current_version_id,
+                    'thread_info': thread_info,
+                    'parent_id': parsed_data.get('parent_bridge_id', '')
+                }
+                TRANSFER_HISTORY[transfer_request_id].append(current_history_data)
+                
+                # Handle agent transfer
+                transfer_result = await handle_agent_transfer(
+                    result, 
+                    request_body, 
+                    bridge_configurations, 
+                    chat, 
+                    current_bridge_id=parsed_data['bridge_id'],
+                    transfer_request_id=transfer_request_id
+                )
+                if transfer_result is not None:
+                    return transfer_result
+            
             result['response']['usage'] = params['token_calculator'].get_total_usage()
             execution_failed = not result["success"]
             original_error = result.get('error', 'Unknown error') if execution_failed else None
@@ -158,7 +275,7 @@ async def chat(request_body):
                         fallback_model_config['configuration'], fallback_custom_config, parsed_data['service']
                     )
                     params = build_service_params(
-                        parsed_data, fallback_custom_config, fallback_model_output_config, thread_info, timer, memory, send_error_to_webhook
+                        parsed_data, fallback_custom_config, fallback_model_output_config, thread_info, timer, memory, send_error_to_webhook, bridge_configurations
                     )
                     # Step 9 : json_schema service conversion
                     if 'response_type' in fallback_custom_config and fallback_custom_config['response_type'].get('type') == 'json_schema':
@@ -228,7 +345,9 @@ async def chat(request_body):
             # Update usage metrics for successful API calls
             update_usage_metrics(parsed_data, params, latency, result=result, success=True)
             result['response']['usage']['cost'] = parsed_data['usage'].get('expectedCost', 0)
-            await process_background_tasks(parsed_data, result, params, thread_info)
+            
+            # Process background tasks (handles both transfer and non-transfer cases)
+            await process_background_tasks(parsed_data, result, params, thread_info, transfer_request_id, bridge_configurations)
         else:
             if parsed_data.get('testcase_data',{}).get('run_testcase', False):
                 from src.services.commonServices.testcases import process_single_testcase_result
@@ -242,6 +361,22 @@ async def chat(request_body):
             else:
                 await process_background_tasks_for_playground(result, parsed_data)
         await update_cost_and_last_used_in_background(parsed_data)
+        
+        # Save agent bridge_id to Redis for 3 days (259200 seconds)
+        thread_id = parsed_data.get('thread_id')
+        sub_thread_id = parsed_data.get('sub_thread_id')
+        bridge_id = parsed_data.get('bridge_id')
+        original_primary_bridge_id = request_body.get('body', {}).get('primary_bridge_id')
+        
+        if thread_id and sub_thread_id and bridge_id:
+            # Use original primary bridge_id in key for consistency, but save current bridge_id as value
+            redis_key = f"{redis_keys['last_transffered_agent_']}{original_primary_bridge_id}_{thread_id}_{sub_thread_id}"
+            # Ensure bridge_id is a clean string without extra quotes
+            bridge_id_to_save = str(bridge_id).strip('"\'') if bridge_id else None
+            if bridge_id_to_save:
+                await store_in_cache(redis_key, bridge_id_to_save, ttl=259200)  # 3 days
+            logger.info(f"Cached agent {bridge_id} for thread {thread_id}_{sub_thread_id} with key based on original primary {original_primary_bridge_id}")
+        
         return JSONResponse(status_code=200, content={"success": True, "response": result["response"]})
     
     except (Exception, ValueError, BadRequestException) as error:
@@ -410,8 +545,19 @@ async def image(request_body):
     result ={}
     class_obj= {}
     try:
+        # Store bridge_configurations for potential transfer logic
+        bridge_configurations = request_body.get('body', {}).get('bridge_configurations', {})
+        
         # Step 1: Parse and validate request body
         parsed_data = parse_request_body(request_body)
+        
+        # Initialize or retrieve transfer_request_id for tracking transfers
+        transfer_request_id = parsed_data.get('transfer_request_id') or str(uuid.uuid1())
+        parsed_data['transfer_request_id'] = transfer_request_id
+        
+        # Initialize transfer history for this request if not exists
+        if transfer_request_id not in TRANSFER_HISTORY:
+            TRANSFER_HISTORY[transfer_request_id] = []
 
         # Step 2: Initialize Timer
         timer = initialize_timer(parsed_data['state'])
@@ -430,7 +576,7 @@ async def image(request_body):
 
         # Step 5: Execute Service Handler
         params = build_service_params(
-            parsed_data, custom_config, model_output_config, thread_info, timer, None, send_error_to_webhook
+            parsed_data, custom_config, model_output_config, thread_info, timer, None, send_error_to_webhook, bridge_configurations
         )
         
         
@@ -448,7 +594,8 @@ async def image(request_body):
             await sendResponse(parsed_data['response_format'], result["response"], success=True, variables=parsed_data.get('variables',{}))
             # Update usage metrics for successful API calls
             update_usage_metrics(parsed_data, params, latency, result=result, success=True)
-            await process_background_tasks(parsed_data, result, params, None)
+            # Process background tasks (handles both transfer and non-transfer cases)
+            await process_background_tasks(parsed_data, result, params, thread_info, transfer_request_id, bridge_configurations)
         return JSONResponse(status_code=200, content={"success": True, "response": result["response"]})
     
     except (Exception, ValueError, BadRequestException) as error:

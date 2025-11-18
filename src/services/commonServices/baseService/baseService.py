@@ -72,6 +72,7 @@ class BaseService:
         self.youtube_url = params.get('youtube_url')
         self.web_search_filters = params.get('web_search_filters')
         self.folder_id = params.get('folder_id')
+        self.bridge_configurations = params.get('bridge_configurations')
 
 
     def aiconfig(self):
@@ -233,6 +234,7 @@ class BaseService:
             'org_id': self.org_id,
             'bridge_id': self.bridge_id,
             'model': model_response.get('model') or self.configuration.get('model'),
+            'service': self.service,
             'channel': 'chat',
             'type': "assistant",
             'actor': "user",
@@ -248,7 +250,8 @@ class BaseService:
             "annotations" : _.get(model_response, self.modelOutputConfig.get('annotations')) or [],
             "fallback_model" : model_response.get('fallback_model') or '',
             "response":response,
-            "folder_id": self.folder_id
+            "folder_id": self.folder_id,
+            "prompt": self.configuration.get('prompt')
         }
     
     def service_formatter(self, configuration : object, service : str ):  # changes

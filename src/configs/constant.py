@@ -48,7 +48,8 @@ redis_keys = {
     'apikeylastused_' : 'apikeylastused_',
     'bridgeusedcost_' : 'bridgeusedcost_',
     'folderusedcost_' : 'folderusedcost_',
-    'apikeyusedcost_' : 'apikeyusedcost_'
+    'apikeyusedcost_' : 'apikeyusedcost_',
+    'last_transffered_agent_' : 'last_transffered_agent_'
 }
 
 limit_types={
