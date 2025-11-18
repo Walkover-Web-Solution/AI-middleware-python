@@ -85,6 +85,7 @@ async def playground_chat_completion_bridge(request: Request, db_config: dict = 
     if not flag and response_format and response_format.get('type') != 'default':
         try:
             # Publish the message to the queue
+            data_to_send['body']['bridge_configurations']['playground_response_format'] = response_format
             await queue_obj.publish_message(data_to_send)
             return {"success": True, "message": "Your response will be sent through configured means."}
         except Exception as e:

@@ -321,7 +321,7 @@ async def chat(request_body):
 
         # Send data to playground
         if parsed_data['is_playground']:
-            await sendResponse(parsed_data['response_format'], result["response"], success=True, variables=parsed_data.get('variables',{}))
+            await sendResponse(parsed_data['body']['bridge_configurations']['playground_response_format'], result["response"], success=True, variables=parsed_data.get('variables',{}))
         
         if original_error:
             send_error(parsed_data['bridge_id'], parsed_data['org_id'], original_error, error_type='retry_mechanism', bridge_name=parsed_data.get('name'), is_embed=parsed_data.get('is_embed'), user_id=parsed_data.get('user_id'))
