@@ -117,7 +117,7 @@ async def create(dataset, history_params, version_id, thread_info={}):
             'image_urls': history_params.get('image_urls', []),
             'urls': history_params.get('urls', []),
             'AiConfig': history_params.get('AiConfig'),
-            'fallback_model': history_params.get('fallback_model'),
+            'fallback_model': history_params.get('fallback_model') or {},
             'org_id': data_object.get('orgId') or history_params.get('org_id'),
             'service': data_object.get('service') or history_params.get('service'),
             'model': data_object.get('model') or history_params.get('model'),

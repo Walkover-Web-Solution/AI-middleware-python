@@ -248,7 +248,7 @@ class BaseService:
             'AiConfig' : self.customConfig,
             "firstAttemptError" : model_response.get('firstAttemptError') or '',
             "annotations" : _.get(model_response, self.modelOutputConfig.get('annotations')) or [],
-            "fallback_model" : model_response.get('fallback_model') or '',
+            "fallback_model" : (self.bridge_configurations.get(self.bridge_id, {}).get('fall_back') if self.bridge_configurations and self.bridge_id else None) or '',
             "response":response,
             "folder_id": self.folder_id,
             "prompt": self.configuration.get('prompt')
