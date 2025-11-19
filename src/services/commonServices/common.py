@@ -411,7 +411,7 @@ async def chat(request_body):
                 "success": False,
                 "error": error_string,
             }
-        if parsed_data['is_playground']:
+        if parsed_data['is_playground'] and parsed_data['body']['bridge_configurations'].get('playground_response_format'):
             await sendResponse(parsed_data['body']['bridge_configurations']['playground_response_format'], error_object, success=False, variables=parsed_data.get('variables',{}))
         raise ValueError(error_object)
 
