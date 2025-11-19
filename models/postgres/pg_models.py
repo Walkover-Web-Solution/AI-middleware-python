@@ -103,6 +103,40 @@ class OrchestratorHistory(Base):
     image_urls = Column(ARRAY(JSON), nullable=True)  # {"bridge_id": [image_urls]}
     ai_config = Column(JSON, nullable=True)  # {"bridge_id": ai_config_json}
 
+class OrchestratorConversationLog(Base):
+    __tablename__ = 'orchestrator_conversation_logs'
+    __table_args__ = {'extend_existing': True}
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    llm_message = Column(JSON, nullable=True)  # {"bridge_id": "message"}
+    user = Column(JSON, nullable=True)  # {"bridge_id": "user"}
+    chatbot_message = Column(JSON, nullable=True)  # {"bridge_id": "chatbot_message"}
+    updated_llm_message = Column(JSON, nullable=True)  # {"bridge_id": "updated_llm_message"}
+    prompt = Column(JSON, nullable=True)  # {"bridge_id": "prompt"}
+    error = Column(JSON, nullable=True)  # {"bridge_id": "error"}
+    tools_call_data = Column(JSON, nullable=True, default={})  # {"bridge_id": tools_call_data}
+    message_id = Column(JSON, nullable=True)  # {"bridge_id": "message_id"}
+    sub_thread_id = Column(String, nullable=True)
+    thread_id = Column(String, nullable=True)
+    version_id = Column(JSON, nullable=True)  # {"bridge_id": "version_id"}
+    bridge_id = Column(JSON, nullable=True)  # {"bridge_id": "bridge_id"}
+    image_urls = Column(JSON, nullable=True, default=[])  # [{"bridge_id": ["url1", "url2"]}]
+    urls = Column(JSON, nullable=True, default=[])  # [{"bridge_id": ["url1", "url2"]}]
+    AiConfig = Column(JSON, nullable=True)  # {"bridge_id": AiConfig}
+    fallback_model = Column(JSON, nullable=True)  # {"bridge_id": "fallback_model"}
+    org_id = Column(String, nullable=True)
+    service = Column(String, nullable=True)
+    model = Column(JSON, nullable=True)  # {"bridge_id": "model"}
+    status = Column(JSON, nullable=True, default={})  # {"bridge_id": true/false}
+    tokens = Column(JSON, nullable=True)  # {"bridge_id": {"input": 120, "output": 30}}
+    variables = Column(JSON, nullable=True)  # {"bridge_id": variables}
+    latency = Column(JSON, nullable=True)  # {"bridge_id": latency}
+    firstAttemptError = Column(JSON, nullable=True)  # {"bridge_id": "error"}
+    finish_reason = Column(JSON, nullable=True)  # {"bridge_id": "finish_reason"}
+    created_at = Column(DateTime, nullable=False, default=func.now())
+    updated_at = Column(DateTime, nullable=False, default=func.now(), onupdate=func.now())
+    agents_path = Column(ARRAY(String), nullable=True, default=[])
+
 class ConversationLog(Base):
     __tablename__ = 'conversation_logs'
     __table_args__ = {'extend_existing': True}
