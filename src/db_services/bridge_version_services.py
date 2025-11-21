@@ -481,7 +481,7 @@ async def get_all_connected_agents(id: str, org_id: str, type: str):
                 return doc, 'version'
         else:
             doc = await configurationModel.find_one({'_id': ObjectId(doc_id), 'org_id': org_id})
-        
+            return doc, 'bridge'
         return None, None
     
     async def process_agent(agent_id: str, parent_ids: list = None, doc_type: str = None):
