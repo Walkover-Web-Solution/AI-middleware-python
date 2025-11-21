@@ -892,7 +892,8 @@ async def get_all_bridges_in_org(org_id, folder_id, user_id, isEmbedUser):
         "deletedAt":1,
         "bridge_limit":1,
         "bridge_usage":1,
-        'last_used': 1
+        'last_used': 1,
+        'variables_path':1
     })
     bridges_list = await bridge.to_list(length=None)
     for itr in bridges_list:

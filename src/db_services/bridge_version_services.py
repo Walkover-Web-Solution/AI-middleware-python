@@ -524,7 +524,7 @@ async def get_all_connected_agents(id: str, org_id: str):
                     continue
                 
                 # Check for bridge_id or version_id in connected agent
-                child_id = agent_info.get('bridge_id') or agent_info.get('version_id')
+                child_id =  agent_info.get('version_id') or agent_info.get('bridge_id')
                 if child_id:
                     # Add to current agent's children
                     if child_id not in agents_map[agent_id]['childAgents']:
