@@ -319,10 +319,7 @@ async def chat(request_body):
         # Add message_id to response
         result['response']['data']['message_id'] = parsed_data['message_id']
 
-        # Send data to playground
-        if parsed_data.get('is_playground') and parsed_data.get('body', {}).get('bridge_configurations', {}).get('playground_response_format'):
-            await sendResponse(parsed_data['body']['bridge_configurations']['playground_response_format'], result["response"], success=True, variables=parsed_data.get('variables',{}))
-        
+
         if original_error:
             send_error(parsed_data['bridge_id'], parsed_data['org_id'], original_error, error_type='retry_mechanism', bridge_name=parsed_data.get('name'), is_embed=parsed_data.get('is_embed'), user_id=parsed_data.get('user_id'))
         
@@ -336,6 +333,11 @@ async def chat(request_body):
         if parsed_data.get('type') != 'image':
             parsed_data['tokens'] = params['token_calculator'].calculate_total_cost(parsed_data['model'], parsed_data['service'])
             result['response']['usage']['cost'] = parsed_data['tokens'].get('total_cost') or 0
+        
+        # Send data to playground
+        if parsed_data.get('is_playground') and parsed_data.get('body', {}).get('bridge_configurations', {}).get('playground_response_format'):
+            await sendResponse(parsed_data['body']['bridge_configurations']['playground_response_format'], result["response"], success=True, variables=parsed_data.get('variables',{}))
+        
         # Create latency object using utility function
         latency = create_latency_object(timer, params)
         if not parsed_data['is_playground']:
