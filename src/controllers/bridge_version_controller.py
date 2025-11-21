@@ -199,7 +199,8 @@ async def suggest_model(request, version_id):
 async def get_connected_agents(request, id: str):
     try:
         org_id = request.state.profile['org']['id']
-        result = await get_all_connected_agents(id, org_id)
+        type = request.query_params.get('type')
+        result = await get_all_connected_agents(id, org_id, type)
         return JSONResponse({'success': True, 'data': result})
     except Exception as e:
         logger.error(f"Error in get_connected_agents: {str(e)}, {traceback.format_exc()}")

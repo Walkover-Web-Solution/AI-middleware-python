@@ -460,7 +460,7 @@ async def get_comparison_score(org_id, version_id):
     
     return response
 
-async def get_all_connected_agents(id: str, org_id: str):
+async def get_all_connected_agents(id: str, org_id: str, type: str):
     """
     Recursively finds all connected agents for a given bridge_id or version_id.
     Returns a structured map of agents with their parent-child relationships.
@@ -468,21 +468,23 @@ async def get_all_connected_agents(id: str, org_id: str):
     agents_map = {}
     visited = set()
     
-    async def fetch_document(doc_id: str):
+    async def fetch_document(doc_id: str, doc_type: str = None):
         """Fetch document from either configurations or configuration_versions"""
-        # Try configurations first (bridges)
-        doc = await configurationModel.find_one({'_id': ObjectId(doc_id), 'org_id': org_id})
-        if doc:
-            return doc, 'bridge'
-        
-        # Try configuration_versions
-        doc = await version_model.find_one({'_id': ObjectId(doc_id), 'org_id': org_id})
-        if doc:
-            return doc, 'version'
+        # If doc_type is specified, use it directly
+        if doc_type == 'bridge':
+            doc = await configurationModel.find_one({'_id': ObjectId(doc_id), 'org_id': org_id})
+            if doc:
+                return doc, 'bridge'
+        elif doc_type == 'version':
+            doc = await version_model.find_one({'_id': ObjectId(doc_id), 'org_id': org_id})
+            if doc:
+                return doc, 'version'
+        else:
+            doc = await configurationModel.find_one({'_id': ObjectId(doc_id), 'org_id': org_id})
         
         return None, None
     
-    async def process_agent(agent_id: str, parent_ids: list = None):
+    async def process_agent(agent_id: str, parent_ids: list = None, doc_type: str = None):
         """Recursively process an agent and its connected agents"""
         if agent_id in visited:
             # If already visited, just update parent relationship
@@ -495,7 +497,7 @@ async def get_all_connected_agents(id: str, org_id: str):
         visited.add(agent_id)
         
         # Fetch the agent document
-        doc, doc_type = await fetch_document(agent_id)
+        doc, doc_type = await fetch_document(agent_id, doc_type)
         if not doc:
             return
         
@@ -524,16 +526,19 @@ async def get_all_connected_agents(id: str, org_id: str):
                     continue
                 
                 # Check for bridge_id or version_id in connected agent
-                child_id =  agent_info.get('version_id') or agent_info.get('bridge_id')
+                child_id = agent_info.get('version_id') or agent_info.get('bridge_id')
                 if child_id:
                     # Add to current agent's children
                     if child_id not in agents_map[agent_id]['childAgents']:
                         agents_map[agent_id]['childAgents'].append(child_id)
                     
+                    # Determine child type based on which ID is present
+                    child_type = 'version' if agent_info.get('version_id') else 'bridge'
+                    
                     # Recursively process the child agent
-                    await process_agent(child_id, [agent_id])
+                    await process_agent(child_id, [agent_id], child_type)
     
     # Start processing from the initial id
-    await process_agent(id)
+    await process_agent(id, None, type)
     
     return agents_map
