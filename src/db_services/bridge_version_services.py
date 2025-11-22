@@ -1,5 +1,5 @@
 from src.db_services.conversationDbService import add_bulk_user_entries
-from models.mongo_connection import db
+from models.mongo_connection import db, client
 from bson import ObjectId, errors
 import traceback
 import json
@@ -146,7 +146,8 @@ async def publish(org_id, version_id, user_id):
     variable_path = get_version_data.get('variables_path', {})
     agent_variables = Helper.get_req_opt_variables_in_prompt(prompt, variable_state, variable_path)
     transformed_agent_variables = Helper.transform_agent_variable_to_tool_call_format(agent_variables)
-
+    bridge_data = await get_bridges_without_tools(bridge_id = parent_id, org_id = org_id)
+    previous_published_version_id = bridge_data.get('bridges', {}).get('published_version_id', None)
     await delete_in_cache(f"{redis_keys['bridge_data_with_tools_']}{parent_id}")
 
     if not parent_id:
@@ -179,12 +180,40 @@ async def publish(org_id, version_id, user_id):
     }
     
     
-    await configurationModel.update_one(
-        {'_id': ObjectId(parent_id)},
-        {'$set': updated_configuration}
-    )
-    
-    await version_model.update_one({'_id': ObjectId(published_version_id)}, {'$set': {'is_drafted': False}})
+    # Start a transaction for atomic updates with rollback capability
+    async with await client.start_session() as session:
+        async with session.start_transaction():
+            try:
+                # Update configuration
+                await configurationModel.update_one(
+                    {'_id': ObjectId(parent_id)},
+                    {'$set': updated_configuration},
+                    session=session
+                )
+                
+                # Update published version status
+                await version_model.update_one(
+                    {'_id': ObjectId(published_version_id)}, 
+                    {'$set': {'is_drafted': False}},
+                    session=session
+                )
+                
+                # Update previous published version status only if it exists
+                if previous_published_version_id:
+                    await version_model.update_one(
+                        {'_id': ObjectId(previous_published_version_id)}, 
+                        {'$set': {'is_drafted': True}},
+                        session=session
+                    )
+                
+                # Commit transaction if all updates succeed
+                await session.commit_transaction()
+                
+            except Exception as e:
+                # Rollback transaction if any update fails
+                await session.abort_transaction()
+                logger.error(f"Transaction failed and rolled back: {str(e)}")
+                raise BadRequestException(f"Failed to publish version: {str(e)}")
     await add_bulk_user_entries([{
                 'user_id': user_id,
                 'org_id': org_id,
