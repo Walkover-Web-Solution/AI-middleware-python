@@ -2,7 +2,7 @@ import json
 import asyncio
 from fastapi import HTTPException, status
 from fastapi.responses import JSONResponse
-from ..db_services.bridge_version_services import create_bridge_version, update_bridges, get_version_with_tools, publish, get_comparison_score, delete_bridge_version
+from ..db_services.bridge_version_services import create_bridge_version, update_bridges, get_version_with_tools, publish, get_comparison_score, delete_bridge_version, get_all_connected_agents
 from src.services.utils.helper import Helper
 from ..db_services.ConfigurationServices import get_bridges_with_tools, update_bridge, get_bridges_without_tools
 from bson import ObjectId
@@ -195,4 +195,14 @@ async def suggest_model(request, version_id):
     except Exception as e: 
         logger.error(f"Error in suggest_model: {str(e)}, {traceback.format_exc()}")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail= {'model' : None, 'error' : str(e) })
+
+async def get_connected_agents(request, id: str):
+    try:
+        org_id = request.state.profile['org']['id']
+        type = request.query_params.get('type')
+        result = await get_all_connected_agents(id, org_id, type)
+        return JSONResponse({'success': True, 'data': result})
+    except Exception as e:
+        logger.error(f"Error in get_connected_agents: {str(e)}, {traceback.format_exc()}")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     
