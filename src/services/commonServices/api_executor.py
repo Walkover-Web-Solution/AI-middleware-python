@@ -69,7 +69,11 @@ async def check_space_issue(response, service=None):
     if service == service_name['openai_completion'] or service == service_name['groq'] or service == service_name['grok'] or service == service_name['open_router'] or service == service_name['mistral'] or service == service_name['gemini'] or service == service_name['ai_ml']:
         content = response.get("choices", [{}])[0].get("message", {}).get("content", None)
     elif service == service_name['anthropic']:
-        content = response.get("content", [{}])[0].get("text", None)
+        content = response.get("content", [{}])
+        if content:
+            content = content[0].get("text", None)
+        else:
+            content = None
     elif service == service_name['openai']:
         output_list = response.get("output", [])
         if output_list:
