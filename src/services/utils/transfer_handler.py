@@ -23,16 +23,15 @@ def check_transfer_from_codes_mapping(codes_mapping: Dict[str, Any], tool_id_and
             tool_name = tool_data.get('name', '')
             
             if tool_name in tool_id_and_name_mapping:
-                agent_id = tool_id_and_name_mapping[tool_name].get('agent_id', '')
+                agent_id = tool_id_and_name_mapping[tool_name].get('agent_id', tool_id_and_name_mapping[tool_name].get('bridge_id', ''))
             
             transfer_config = {
                 "agent_id": agent_id,
                 "tool_name": tool_name,
-                "user_query": args.get('user_query', ''),
+                "user_query": args.get('_query', ''),
                 "action_type": action_type,
                 "all_arguments": args,
-                "tool_call_id": tool_call_id,
-                "function_name": tool_name
+                "tool_call_id": tool_call_id
             }
             
             return True, transfer_config
