@@ -134,7 +134,7 @@ async def _prepare_configuration_response(configuration, service, bridge_id, api
         'variables': variables,
         'rag_data': rag_data,
         'actions': result.get('bridges', {}).get('actions', []),
-        'name': bridge_data.get('name') or result.get('bridges', {}).get('name') or '',
+        'name': bridge_data.get('name') or bridge_data.get('bridges', {}).get('name') or '',
         'org_name': org_name,
         'bridge_id': result['bridges'].get('parent_id', result['bridges'].get('_id')),
         'variables_state': result.get('bridges', {}).get('variables_state', {}),
