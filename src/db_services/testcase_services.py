@@ -106,3 +106,51 @@ async def delete_current_testcase_history(version_id):
     except Exception as e: 
         logger.error(f"Error in deleting current testcase history: {str(e)}")
         traceback.print_exc()
+
+async def parse_and_save_testcases(testcases_data, bridge_id: str):
+    """Process AI-generated test cases and save them to database"""
+    saved_testcase_ids = []
+    
+    try:
+        test_cases = testcases_data.get('test_cases', [])
+        if not test_cases:
+            return saved_testcase_ids
+        
+        # Convert dict with numbered keys to list
+        if isinstance(test_cases, dict) and all(key.isdigit() for key in test_cases.keys()):
+            test_cases = [test_cases[key] for key in sorted(test_cases.keys(), key=int)]
+        
+        for i, test_case in enumerate(test_cases, 1):
+            try:
+                user_input = test_case.get('UserInput')
+                expected_output = test_case.get('ExpectedOutput')
+                
+                if not user_input or not expected_output:
+                    logger.warning(f"Skipping test case {i}: missing UserInput or ExpectedOutput")
+                    continue
+                
+                # Convert dict expected_output to string
+                if isinstance(expected_output, dict):
+                    expected_output = str(expected_output)
+                
+                testcase_data = {
+                    "bridge_id": bridge_id,
+                    "conversation": [{"role": "user", "content": str(user_input)}],
+                    "type": "response",
+                    "expected": {"response": str(expected_output)},
+                    "matching_type": "contains"
+                }
+                
+                result = await create_testcase(testcase_data)
+                saved_testcase_ids.append(str(result.inserted_id))
+                logger.info(f"Saved test case {i} with ID: {result.inserted_id}")
+                    
+            except Exception as case_error:
+                logger.error(f"Error processing test case {i}: {str(case_error)}")
+                continue
+                
+    except Exception as e:
+        logger.error(f"Error processing test cases: {str(e)}")
+        raise HTTPException(status_code=500, detail={"success": False, "error": f"Error processing test cases: {str(e)}"})
+    
+    return saved_testcase_ids
