@@ -148,7 +148,8 @@ def validate_required_params(data_to_update):
             valid_keys.update(data_to_update["properties"].keys())
         if "parameter" in data_to_update and isinstance(data_to_update["parameter"], dict):
             valid_keys.update(data_to_update["parameter"].keys())
-        
+        if "fields" in data_to_update and isinstance(data_to_update["fields"], dict):
+            valid_keys.update(data_to_update["fields"].keys())
         data_to_update["required_params"] = [key for key in data_to_update["required_params"] if key in valid_keys]
 
     for key, value in data_to_update.items():
