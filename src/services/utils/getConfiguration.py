@@ -134,14 +134,15 @@ async def _prepare_configuration_response(configuration, service, bridge_id, api
         'variables': variables,
         'rag_data': rag_data,
         'actions': result.get('bridges', {}).get('actions', []),
-        'name': bridge_data.get('name') or result.get('bridges', {}).get('name') or '',
+        'name': bridge_data.get('name') or bridge_data.get('bridges', {}).get('name') or '',
         'org_name': org_name,
         'bridge_id': result['bridges'].get('parent_id', result['bridges'].get('_id')),
         'variables_state': result.get('bridges', {}).get('variables_state', {}),
         'built_in_tools': built_in_tools or result.get('bridges', {}).get('built_in_tools'),
         'fall_back': result.get('bridges', {}).get('fall_back') or {},
         'guardrails': guardrails_value,
-        'is_embed': result.get('folder_id') is not None,
+        "is_embed": result.get('bridges', {}).get("folder_type") == 'embed',
+        "user_id": result.get("bridges", {}).get("user_id"),
         'folder_id': result.get('bridges', {}).get('folder_id'),
         'web_search_filters': web_search_filters_value
     }

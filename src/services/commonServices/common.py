@@ -117,6 +117,7 @@ async def chat_multiple_agents(request_body):
         return JSONResponse(status_code=500, content=error_object)
 
 
+@handle_exceptions
 async def chat(request_body): 
     result ={}
     class_obj= {}
@@ -456,6 +457,7 @@ async def orchestrator_chat(request_body):
         traceback.print_exc()
         return JSONResponse(status_code=500, content={"success": False, "error": str(error)})
 
+@handle_exceptions
 async def embedding(request_body):
     result = {}
     try:
@@ -495,6 +497,7 @@ async def embedding(request_body):
     except Exception as error:
         raise ValueError(error)
 
+@handle_exceptions
 async def batch(request_body):
     result ={}
     class_obj= {}
@@ -544,6 +547,7 @@ async def run_testcases(request_body):
         return JSONResponse(status_code=400, content={'success': False, 'error': str(error)})
     
 
+@handle_exceptions
 async def image(request_body):
     result ={}
     class_obj= {}
