@@ -23,94 +23,6 @@ async def getThread(thread_id, sub_thread_id, org_id, bridge_id):
         logger.error(f"Error in getting thread:, {str(err)}, {traceback.format_exc()}")
         raise err
 
-async def savehistory(thread_id, sub_thread_id, userMessage, botMessage, org_id, bridge_id, model_name, type, messageBy, userRole="user", tools={}, chatbot_message = "",tools_call_data = [],message_id = None, version_id = None, image_url = None, revised_prompt = None, urls = None, AiConfig = None, annotations = None, fallback_model = None):
-    try:
-        chatToSave = [{
-            'thread_id': thread_id,
-            'sub_thread_id': sub_thread_id,
-            'org_id': org_id,
-            'model_name': model_name,
-            'message': userMessage or "",
-            'message_by': userRole,
-            'type': type,
-            'bridge_id': bridge_id,
-            'message_id' : message_id,
-            'version_id': version_id,
-            'revised_prompt' : revised_prompt,
-            'urls' : urls,
-            'AiConfig' : AiConfig,
-            'fallback_model' : fallback_model
-        }]
-        
-        if tools:
-            chatToSave.append({
-                'thread_id': thread_id,
-                'sub_thread_id': sub_thread_id,
-                'org_id': org_id,
-                'model_name': model_name,
-                'message': "",
-                'message_by': "tools_call",
-                'type': type,
-                'bridge_id': bridge_id,
-                'function': tools,
-                'tools_call_data': tools_call_data,
-                'message_id' : message_id,
-                'version_id': version_id
-            })
-
-        if botMessage is not None:
-            chatToSave.append({
-                'thread_id': thread_id,
-                'sub_thread_id': sub_thread_id,
-                'org_id': org_id,
-                'model_name': model_name,
-                'message': botMessage or "",
-                'message_by': messageBy,
-                'type': type,
-                'bridge_id': bridge_id,
-                'function': botMessage if messageBy == "tool_calls" else {},
-                'chatbot_message' : chatbot_message or "",
-                'message_id' : message_id,
-                'revised_prompt' : revised_prompt,
-                "image_urls" : image_url,
-                'version_id': version_id,
-                "annotations" : annotations,
-                "fallback_model" : fallback_model
-            })
-        # sending data through rt layer
-        chatbotSaveCopy = copy.deepcopy(chatToSave)
-        for item in chatbotSaveCopy:
-            item["role"] = item.pop("message_by")
-            item["content"] = item.pop("message")
-            if item.get('created_at') is None:
-                item['created_at'] = str(datetime.now())
-            if item.get('createdAt') is None:
-                item['createdAt'] = str(datetime.now())
-
-        response_format_copy = {
-            'cred' : {
-                'channel': org_id + bridge_id,
-                'apikey': Config.RTLAYER_AUTH,
-                'ttl': '1'
-            },
-            'type' : 'RTLayer'
-        }
-        dataToSend={
-            'Thread':{
-                "thread_id" : thread_id,
-                "sub_thread_id": sub_thread_id,
-                "bridge_id":bridge_id
-            },
-            "Messages":chatbotSaveCopy
-        }
-        await sendResponse(response_format_copy, dataToSend, True)
-
-        result = chatbotDbService.createBulk(chatToSave)
-        return list(result)
-    except Exception as error:
-        logger.error(f"saveconversation error=>, {str(error)}, {traceback.format_exc()}")
-        raise error
-
 
 async def savehistory_consolidated(conversation_data):
     """
@@ -120,7 +32,7 @@ async def savehistory_consolidated(conversation_data):
         conversation_data: Dictionary containing all conversation log data including:
             - thread_id, sub_thread_id, org_id, version_id, message_id
             - user, llm_message, chatbot_message, updated_llm_message
-            - tools_call_data, image_urls, urls, AiConfig, fallback_model
+            - tools_call_data, user_urls, llm_urls, AiConfig, fallback_model
             - service, model, status, tokens, variables, latency
             - error, firstAttemptError, finish_reason, parent_id, child_id
             
@@ -225,4 +137,4 @@ async def save_sub_thread_id_and_name(thread_id, sub_thread_id, org_id, thread_f
         logger.error(f"Error in saving sub thread id and name:, {str(err)}")
         return { 'success': False, 'message': str(err) }
 # Exporting the functions
-__all__ = ['getAllThreads', 'savehistory', 'getThread', 'getThreadHistory', 'getChatData']
+__all__ = ['getAllThreads', 'getThread', 'getThreadHistory', 'getChatData']

@@ -651,6 +651,7 @@ def create_latency_object(timer, params):
     return {
         "over_all_time": over_all_time,
         "model_execution_time": sum([log.get("time_taken", 0) for log in params['execution_time_logs']]) or "",
+        # "model_and_tool_execution_time": sum([log.get("time_taken", 0) for log in params['execution_time_logs']]) or "" + sum([log.get("time_taken", 0) for log in params['function_time_logs']]) or "",
         "execution_time_logs": params['execution_time_logs'] or {},
         "function_time_logs": params['function_time_logs'] or {}
     }
@@ -742,7 +743,9 @@ def create_history_params(parsed_data, error=None, class_obj=None, thread_info=N
         "folder_limit": parsed_data.get('folder_limit', 0),
         "parent_id": parsed_data.get('parent_bridge_id', ''),
         "child_id": None,
-        "prompt": parsed_data['configuration'].get('prompt')
+        "prompt": parsed_data['configuration'].get('prompt'),
+        "llm_urls": [],
+        "user_urls": ([{"url": u, "type": "image"} for u in parsed_data.get("images", [])] + [{"url": u, "type": "pdf"} for u in parsed_data.get("files", [])])
     }
 
 

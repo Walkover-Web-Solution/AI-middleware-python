@@ -67,7 +67,7 @@ class BaseService:
         self.send_error_to_webhook = params.get('send_error_to_webhook')
         self.built_in_tools = params.get('built_in_tools')
         self.function_time_logs = params.get('function_time_logs')
-        self.files = params.get('files')
+        self.files = params.get('files') or []
         self.file_data = params.get('file_data')
         self.youtube_url = params.get('youtube_url')
         self.web_search_filters = params.get('web_search_filters')
@@ -242,9 +242,12 @@ class BaseService:
             'chatbot_message' : "",
             'tools_call_data' : self.func_tool_call_data,
             'message_id' : self.message_id,
-            'image_urls' : [{'revised_prompt': img.get('revised_prompt'), 'permanent_url': img.get('url')} for img in model_response.get('data', []) if img.get('url')] or [{'revised_prompt': model_response.get('data',[{}])[0].get('revised_prompt', None), 'permanent_url': model_response.get('data',[{}])[0].get('url', None)}] if model_response.get('data',[{}])[0].get('url') else [],
+            'llm_urls' : [{'revised_prompt': img.get('revised_prompt'), 'permanent_url': img.get('url'), "type":"image"} for img in model_response.get('data', []) if img.get('url')] or [{'revised_prompt': model_response.get('data',[{}])[0].get('revised_prompt', None), 'permanent_url': model_response.get('data',[{}])[0].get('url', None)}] if model_response.get('data',[{}])[0].get('url') else [],
             'revised_prompt' : model_response.get('data',[{}])[0].get('revised_prompt', None),
-            'urls' : (self.image_data or []) + (self.files or []),
+            'user_urls': [
+                *({"url": u, "type": "image"} for u in (self.image_data or [])),
+                *({"url": u, "type": "pdf"} for u in (self.files or []))
+            ],
             'AiConfig' : self.customConfig,
             "firstAttemptError" : model_response.get('firstAttemptError') or '',
             "annotations" : _.get(model_response, self.modelOutputConfig.get('annotations')) or [],

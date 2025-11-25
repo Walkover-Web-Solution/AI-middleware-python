@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 
 from models.index import combined_models
 from sqlalchemy import and_
-from ..controllers.conversationController import savehistory, savehistory_consolidated
+from ..controllers.conversationController import savehistory_consolidated
 from .conversationDbService import insertRawData, timescale_metrics, createOrchestratorConversationLog
 from ..services.cache_service import find_in_cache, store_in_cache
 from globals import *
@@ -114,8 +114,8 @@ async def create(dataset, history_params, version_id, thread_info={}):
             'sub_thread_id': history_params.get('sub_thread_id'),
             'thread_id': history_params.get('thread_id'),
             'version_id': version_id,
-            'image_urls': history_params.get('image_urls', []),
-            'urls': history_params.get('urls', []),
+            'user_urls': history_params.get('user_urls', []),
+            'llm_urls': history_params.get('llm_urls', []),
             'AiConfig': history_params.get('AiConfig'),
             'fallback_model': history_params.get('fallback_model') or {},
             'org_id': data_object.get('orgId') or history_params.get('org_id'),
@@ -138,7 +138,7 @@ async def create(dataset, history_params, version_id, thread_info={}):
         }
         
         # Save consolidated conversation log
-        result_id = await savehistory_consolidated(conversation_log_data)
+        await savehistory_consolidated(conversation_log_data)
         
         # Save conversations to Redis with TTL of 30 days
         if 'error' not in dataset[0] and conversations:

@@ -20,20 +20,20 @@ class ConversationService:
                     else:
                         content = [{"type": "input_text", "text": message['content']}]
                     
-                    if 'urls' in message and isinstance(message['urls'], list):
-                        for url in message['urls']:
+                    if 'urls' in message and isinstance(message['user_urls'], list):
+                        for url in message['user_urls']:
                             if not url.lower().endswith('.pdf'):
                                 content.append({
                                     "type": "input_image",
-                                    "image_url": url
+                                    "image_url": url.get('url')
                                 })
-                            elif url not in files and url not in seen_pdf_urls:
+                            elif url.get('url') not in files and url.get('url') not in seen_pdf_urls:
                                 content.append({
                                     "type": "input_file",
-                                    "file_url": url
+                                    "file_url": url.get('url')
                                 })
                                 # Add to seen URLs to prevent duplicates
-                                seen_pdf_urls.add(url)
+                                seen_pdf_urls.add(url.get('url'))
                     else:
                         # Default behavior for messages without URLs
                         content = message['content']
