@@ -12,7 +12,7 @@ from globals import *
 
 async def validate_bridge(bridge_data, result):
     """Validate bridge status and existence"""
-    bridge_status = bridge_data.get('bridges', {}).get('bridge_status') or bridge_data.get('bridge_status')
+    bridge_status = bridge_data.get('bridges', {}).get('bridge_status') or bridge_data.get('bridge_status',0)
     if bridge_status == 0:
         raise Exception("Bridge is Currently Paused")
     
