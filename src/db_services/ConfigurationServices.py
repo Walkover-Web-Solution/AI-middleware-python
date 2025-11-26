@@ -630,7 +630,7 @@ async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None)
                         'as': 'apikeys_docs'
                     }
                 },
-    # Stage 4: Create folder_apikeys object with apikey, limit, usage, apikey_object_id
+                # Stage 4: Create folder_apikeys object with apikey, limit, usage
                 {
                     '$addFields': {
                         'folder_apikeys': {
@@ -655,52 +655,50 @@ async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None)
                                                                             'cond': {
                                                                                 '$eq': [
                                                                                     '$$doc._id',
-                                                                        {
-                                                                            '$convert': {
-                                                                                'input': '$$item.v',
-                                                                                'to': 'objectId',
-                                                                                'onError': None,
-                                                                                'onNull': None
+                                                                                    {
+                                                                                        '$convert': {
+                                                                                            'input': '$$item.v',
+                                                                                            'to': 'objectId',
+                                                                                            'onError': None,
+                                                                                            'onNull': None
+                                                                                        }
+                                                                                    }
+                                                                                ]
                                                                             }
                                                                         }
-                                                                    ]
-                                                                }
+                                                                    },
+                                                                    0
+                                                                ]
                                                             }
                                                         },
-                                                        0
-                                                    ]
+                                                        'in': {
+                                                            'apikey': '$$matched.apikey',
+                                                            'apikey_limit': { '$ifNull': ['$$matched.apikey_limit', 0] },
+                                                            'apikey_usage': { '$ifNull': ['$$matched.apikey_usage', 0] }
+                                                        }
+                                                    }
                                                 }
-                                            },
-                                            'in': {
-                                                'apikey': '$$matched.apikey',
-                                                'apikey_limit': '$$matched.apikey_limit',
-                                                'apikey_usage': '$$matched.apikey_usage'
                                             }
                                         }
                                     }
-                                }
-                            }
+                                },
+                                {}
+                            ]
                         }
-                    },
-                    {}
-                ]
-            }
-        }
-    },
+                    }
+                },
+                # Stage 5: Project folder_apikeys and type
+                {
+                    '$project': {
+                        'folder_apikeys': 1,
+                        'type': 1,
+                        'folder_limit': { '$ifNull': ['$folder_limit', 0] },
+                        'folder_usage': { '$ifNull': ['$folder_usage', 0] },
+                        'apikey_object_id': 1,
+                    }
+                }
+            ]
 
-    # Stage 5: Project folder_apikeys and type
-    {
-        '$project': {
-            'folder_apikeys': 1,
-            'type': 1,
-            'folder_limit': { '$ifNull': ['$folder_limit', 0] },
-            'folder_usage': { '$ifNull': ['$folder_usage', 0] },
-            'apikey_object_id': 1,
-        }
-    }
-]
-
-            
             # Execute folder pipeline on folders collection
             folder_result = await foldersModel.aggregate(folder_pipeline).to_list(length=None)
             
