@@ -100,7 +100,8 @@ class OrchestratorHistory(Base):
     tokens = Column(JSON, nullable=True)  # {"bridge_id": tokens_json}
     error = Column(JSON, nullable=True)  # {"bridge_id": error_json}
     variables = Column(JSON, nullable=True)  # {"bridge_id": variables_json}
-    image_urls = Column(ARRAY(JSON), nullable=True)  # {"bridge_id": [image_urls]}
+    user_urls = Column(JSON, nullable=True)  # {"bridge_id": [user_urls]}
+    llm_urls = Column(JSON, nullable=True)  # {"bridge_id": [llm_urls]}
     ai_config = Column(JSON, nullable=True)  # {"bridge_id": ai_config_json}
 
 class OrchestratorConversationLog(Base):

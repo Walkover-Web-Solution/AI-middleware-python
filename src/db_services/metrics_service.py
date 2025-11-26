@@ -231,8 +231,8 @@ async def create_orchestrator(transfer_chain, thread_info={}):
             'message_id': {},
             'version_id': {},
             'bridge_id': {},
-            'image_urls': [],
-            'urls': [],
+            'user_urls': [],
+            'llm_urls': [],
             'AiConfig': {},
             'fallback_model': {},
             'model': {},
@@ -307,14 +307,14 @@ async def create_orchestrator(transfer_chain, thread_info={}):
             aggregated_data['AiConfig'][bridge_id] = history_params.get('AiConfig')
             aggregated_data['fallback_model'][bridge_id] = history_params.get('fallback_model') or {}
             
-            # Handle image_urls and urls as arrays of objects
-            image_urls = history_params.get('image_urls', [])
-            if image_urls:
-                aggregated_data['image_urls'].append({bridge_id: image_urls})
+            # Handle user_urls and urls as arrays of objects
+            user_urls = history_params.get('user_urls', [])
+            if user_urls:
+                aggregated_data['user_urls'].append({bridge_id: user_urls})
             
-            urls = history_params.get('urls', [])
+            urls = history_params.get('llm_urls', [])
             if urls:
-                aggregated_data['urls'].append({bridge_id: urls})
+                aggregated_data['llm_urls'].append({bridge_id: urls})
             
             # Add bridge_id to agents_path
             if bridge_id not in aggregated_data['agents_path']:
@@ -347,8 +347,8 @@ async def create_orchestrator(transfer_chain, thread_info={}):
             'thread_id': thread_id,
             'version_id': aggregated_data['version_id'],
             'bridge_id': aggregated_data['bridge_id'],
-            'image_urls': aggregated_data['image_urls'],
-            'urls': aggregated_data['urls'],
+            'user_urls': aggregated_data['user_urls'],
+            'llm_urls': aggregated_data['llm_urls'],
             'AiConfig': aggregated_data['AiConfig'],
             'fallback_model': aggregated_data['fallback_model'],
             'org_id': org_id,

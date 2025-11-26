@@ -1029,7 +1029,7 @@ async def orchestrator_agent_chat(agent_config, body=None, user=None):
                 'tokens': parsed_data.get('tokens'),
                 'error': {'status': False, 'message': None},
                 'variables': parsed_data.get('variables', {}),
-                'image_urls': parsed_data.get('files', []) if parsed_data.get('files') else [],
+                'user_urls': parsed_data.get('files', []) if parsed_data.get('files') else [],
                 'ai_config': params.get('custom_config', {})
             }
             
@@ -1077,7 +1077,7 @@ async def orchestrator_agent_chat(agent_config, body=None, user=None):
                 'latency': latency if 'latency' in locals() else None,
                 'tokens': None,
                 'tool_call_data': None,
-                'image_urls': [],
+                'user_urls': [],
                 'ai_config': params.get('custom_config', {})
             }
             org_id = body.get('org_id') if 'body' in locals() else 'unknown'

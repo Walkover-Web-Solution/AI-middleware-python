@@ -154,7 +154,7 @@ async def find_conversation_logs(org_id, thread_id, sub_thread_id, bridge_id):
                 )
             )
             .order_by(ConversationLog.created_at.desc())
-            .limit(9)
+            .limit(3)
             .all()
         )
         
@@ -172,7 +172,7 @@ async def find_conversation_logs(org_id, thread_id, sub_thread_id, bridge_id):
                     'is_reset': False,
                     'tools_call_data': log.tools_call_data,
                     'error': '',
-                    'urls': log.urls or []
+                    'user_urls': log.user_urls or []
                 })
             
             # Add tools_call if present
@@ -200,7 +200,7 @@ async def find_conversation_logs(org_id, thread_id, sub_thread_id, bridge_id):
                     'is_reset': False,
                     'tools_call_data': None,
                     'error': '',
-                    'urls': []
+                    'llm_urls': log.llm_urls or []
                 })
         
         return conversations

@@ -20,7 +20,7 @@ class ConversationService:
                     else:
                         content = [{"type": "input_text", "text": message['content']}]
                     
-                    if 'urls' in message and isinstance(message['user_urls'], list):
+                    if 'user_urls' in message and isinstance(message['user_urls'], list):
                         for url in message['user_urls']:
                             if not url.lower().endswith('.pdf'):
                                 content.append({
@@ -62,7 +62,7 @@ class ConversationService:
                 threads.append({'role': 'assistant', 'content': [{"type": "text", "text": "memory updated."}]})
             
             # Process image URLs if present
-            image_urls = [url for message in conversation for url in message.get('image_urls', [])]
+            image_urls = [url.get('url') for message in conversation for url in message.get('user_urls', [])]
             images_data = await fetch_images_b64(image_urls) if image_urls else []
             images = {url: data for url, data in zip(image_urls, images_data)}
             
@@ -87,13 +87,20 @@ class ConversationService:
                 content_items = []
                 
                 # Handle image URLs
-                if message.get('image_urls'):
+                if message.get('user_urls'):
                     image_data = [
-                        {'type': 'image', 'source': {'type': 'base64', 'media_type': image_media_type, 'data': image_data}}
-                        for image_url in message.get('image_urls', [])
-                        for image_data, image_media_type in [images.get(image_url)]
-                        if image_url in images
-                    ]
+                                    {
+                                        'type': 'image',
+                                        'source': {
+                                            'type': 'base64',
+                                            'media_type': images[image_url.get("url")][1],
+                                            'data': images[image_url.get("url")][0]
+                                        }
+                                    }
+                                    for image_url in message.get('user_urls', [])
+                                    if image_url.get("url") in images
+                                ]
+
                     content_items.extend(image_data)
                 
                 # Handle URLs array for PDFs and other files
