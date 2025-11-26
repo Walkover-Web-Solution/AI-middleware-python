@@ -630,7 +630,7 @@ async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None)
                         'as': 'apikeys_docs'
                     }
                 },
-                # Stage 4: Create folder_apikeys object
+    # Stage 4: Create folder_apikeys object with apikey, limit, usage, apikey_object_id
                 {
                     '$addFields': {
                         'folder_apikeys': {
@@ -644,51 +644,62 @@ async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None)
                                             'in': {
                                                 'k': '$$item.k',
                                                 'v': {
-                                                    '$arrayElemAt': [
-                                                        {
-                                                            '$map': {
-                                                                'input': {
-                                                                    '$filter': {
-                                                                        'input': '$apikeys_docs',
-                                                                        'cond': {
-                                                                            '$eq': [
-                                                                                '$$this._id',
-                                                                                {
-                                                                                    '$convert': {
-                                                                                        'input': '$$item.v',
-                                                                                        'to': 'objectId',
-                                                                                        'onError': None,
-                                                                                        'onNull': None
-                                                                                    }
-                                                                                }
-                                                                            ]
+                                                    '$let': {
+                                                        'vars': {
+                                                            'matched': {
+                                                                '$arrayElemAt': [
+                                                                    {
+                                                                        '$filter': {
+                                                                            'input': '$apikeys_docs',
+                                                                            'as': 'doc',
+                                                                            'cond': {
+                                                                                '$eq': [
+                                                                                    '$$doc._id',
+                                                                        {
+                                                                            '$convert': {
+                                                                                'input': '$$item.v',
+                                                                                'to': 'objectId',
+                                                                                'onError': None,
+                                                                                'onNull': None
+                                                                            }
                                                                         }
-                                                                    }
-                                                                },
-                                                                'as': 'matched_doc',
-                                                                'in': '$$matched_doc.apikey'
+                                                                    ]
+                                                                }
                                                             }
                                                         },
                                                         0
                                                     ]
                                                 }
+                                            },
+                                            'in': {
+                                                'apikey': '$$matched.apikey',
+                                                'apikey_limit': '$$matched.apikey_limit',
+                                                'apikey_usage': '$$matched.apikey_usage'
                                             }
                                         }
                                     }
-                                },
-                                {}
-                            ]
+                                }
+                            }
                         }
-                    }
-                },
-                # Stage 5: Project folder_apikeys and type
-                {
-                    '$project': {
-                        'folder_apikeys': 1,
-                        'type': 1,'folder_limit': { '$ifNull': ['$folder_limit', 0] },'folder_usage': { '$ifNull': ['$folder_usage', 0] }
-                    }
-                }
-            ]
+                    },
+                    {}
+                ]
+            }
+        }
+    },
+
+    # Stage 5: Project folder_apikeys and type
+    {
+        '$project': {
+            'folder_apikeys': 1,
+            'type': 1,
+            'folder_limit': { '$ifNull': ['$folder_limit', 0] },
+            'folder_usage': { '$ifNull': ['$folder_usage', 0] },
+            'apikey_object_id': 1,
+        }
+    }
+]
+
             
             # Execute folder pipeline on folders collection
             folder_result = await foldersModel.aggregate(folder_pipeline).to_list(length=None)
@@ -696,8 +707,10 @@ async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None)
             # Append folder_apikeys to bridge_data if found
             if folder_result and folder_result[0].get('folder_apikeys'):
                 bridge_data['folder_apikeys'] = folder_result[0]['folder_apikeys']
+                bridge_data['apikey_object_id'] = folder_result[0]['apikey_object_id']
             else:
                 bridge_data['folder_apikeys'] = {}
+                bridge_data['apikey_object_id'] = None
 
             if folder_result and folder_result[0].get('type'):
                 bridge_data['folder_type'] = folder_result[0]['type']
