@@ -88,47 +88,41 @@ class ConversationService:
                 
                 # Handle image URLs
                 if message.get('user_urls'):
-                    image_data = [
-                                    {
-                                        'type': 'image',
-                                        'source': {
-                                            'type': 'base64',
-                                            'media_type': images[image_url.get("url")][1],
-                                            'data': images[image_url.get("url")][0]
-                                        }
+                    image_data = []
+                    for url_info in message['user_urls']:
+                        url = url_info.get("url")
+                        if url in images:
+                            img_type = url_info.get("type")
+                            if img_type == 'image':
+                                image_data.append({
+                                    'type': 'image',
+                                    'source': {
+                                        'type': 'base64',
+                                        'media_type': images[url][1],
+                                        'data': images[url][0]
                                     }
-                                    for image_url in message.get('user_urls', [])
-                                    if image_url.get("url") in images
-                                ]
+                                })
+                            elif img_type == 'pdf':
+                                image_data.append({
+                                    'type': 'document',
+                                    'source': {
+                                        'type': 'url',
+                                        'url': url
+                                    }
+                                })
+                            else:
+                                image_data.append({
+                                    'type': 'image',
+                                    'source': {
+                                        'type': 'url',
+                                        'url': url
+                                    }
+                                })
+
 
                     content_items.extend(image_data)
                 
-                # Handle URLs array for PDFs and other files
-                if message.get('urls') and isinstance(message['urls'], list):
-                    for url in message['urls']:
-                        if url.lower().endswith('.pdf'):
-                            # Only add PDF if not in files array and not seen before
-                            if (files is None or url not in files) and url not in seen_pdf_urls:
-                                content_items.append({
-                                    "type": "document",
-                                    "source": {
-                                        "type": "url",
-                                        "url": url
-                                    }
-                                })
-                                # Add to seen URLs to prevent duplicates
-                                seen_pdf_urls.add(url)
-                        else:
-                            # For non-PDF files (images), add as image
-                            content_items.append({
-                                "type": "image",
-                                "source": {
-                                    "type": "url",
-                                    "url": url
-                                }
-                            })
-                
-                # Add text content
+# Add text content
                 content_items.append({"type": "text", "text": message['content']})
                 
                 threads.append({
