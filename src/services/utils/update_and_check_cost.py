@@ -26,7 +26,7 @@ async def _check_limit(limit_type, data, version_id):
     # Get limit value from data
     try:
         if(limit_type=="apikey"):
-            limit_value=float(data.get("apikeys", {}).get(data.get("service"), {}).get(limit_field, 0) or 0)
+            limit_value=float(data.get("apikeys", {}).get(data.get("service"), {}).get(limit_field, 0) or 0) or float(data.get("folder_apikeys", {}).get(data.get("service"), {}).get(limit_field, 0) or 0)
         else:
             limit_value = float(data.get(limit_field, 0) or 0) or float(data.get("bridges",{}).get(limit_field) or 0)
     except (ValueError, TypeError):
@@ -85,7 +85,7 @@ async def _check_limit(limit_type, data, version_id):
                 # If data is not available in Redis, get it from bridge data
                 try:
                     if(limit_type=="apikey"):
-                       usage_value=float(data.get("apikeys", {}).get(data.get("service"), {}).get(usage_field, 0) or 0)
+                       usage_value=float(data.get("apikeys", {}).get(data.get("service"), {}).get(usage_field, 0) or 0) or float(data.get("folder_apikeys", {}).get(data.get("service"), {}).get(usage_field, 0) or 0)
                     else:
                        usage_value = float(data.get(usage_field, 0) or 0) or float(data.get("bridges",{}).get(usage_field) or 0)
                 except (ValueError, TypeError):
@@ -111,7 +111,7 @@ async def _check_limit(limit_type, data, version_id):
     else:
         try:
             if(limit_type=="apikey"):
-                       usage_value=float(data.get("apikeys", {}).get(data.get("service"), {}).get(usage_field, 0) or 0)
+                       usage_value=float(data.get("apikeys", {}).get(data.get("service"), {}).get(usage_field, 0) or 0) or float(data.get("folder_apikeys", {}).get(data.get("service"), {}).get(usage_field, 0) or 0)
             else:
                        usage_value = float(data.get(usage_field, 0) or 0) or float(data.get("bridges",{}).get(usage_field) or 0)
         except (ValueError, TypeError):
@@ -138,7 +138,10 @@ async def check_bridge_api_folder_limits(result, bridge_data,version_id):
         return bridge_error
 
     service_identifier = result.get('service')
-    if service_identifier and result.get('apikeys') and service_identifier in result['apikeys']:
+    if service_identifier and (
+        (result.get('apikeys') and service_identifier in result.get('apikeys', {})) or
+        (result.get('folder_apikeys') and service_identifier in result.get('folder_apikeys', {}))
+    ):
         api_error = await _check_limit(limit_types['apikey'], data=result,version_id=version_id)
         if api_error:
             return api_error

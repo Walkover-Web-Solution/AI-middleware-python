@@ -51,11 +51,14 @@ async def _prepare_configuration_response(configuration, service, bridge_id, api
 
     # Normalize API keys
     try:
-        apikeys_dict = result.get('bridges', {}).get('apikeys', {})
+        apikeys_dict = (result.get('bridges', {}).get('apikeys', {})) or (result.get('bridges', {}).get('folder_apikeys', {}))
 
         for service_name, apikey_data in apikeys_dict.items():
             if isinstance(apikey_data, dict) and 'apikey' in apikey_data:
-                result['bridges']['apikeys'][service_name] = apikey_data['apikey']
+                if(result.get('bridges', {}).get('folder_apikeys', {})):
+                    result['bridges']['folder_apikeys'][service_name] = apikey_data['apikey']
+                else:
+                    result['bridges']['apikeys'][service_name] = apikey_data['apikey']
             else:
                 logger.warning(f"API key not found for service: {service_name}")
     except (KeyError, TypeError) as e:
