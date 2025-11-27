@@ -4,8 +4,9 @@ from src.services.prebuilt_prompt_service import get_specific_prebuilt_prompt_se
 from src.db_services.ConfigurationServices import get_bridges, get_bridges_with_tools
 from src.configs.constant import bridge_ids
 from src.services.utils.ai_call_util import call_ai_middleware
+from src.db_services.testcase_services import create_testcase, parse_and_save_testcases
 from globals import *
-    
+import re
 
 async def optimize_prompt_controller(request : Request, bridge_id: str):
     try:
@@ -78,4 +79,45 @@ async def function_agrs_using_ai(request):
             
     except Exception as err:
         logger.error("Error calling function function_agrs_using_ai =>", err)
-    
+
+async def generate_additional_test_cases(request: Request, bridge_id: str):
+    try:
+        body = await request.json()            
+        version_id = body.get('version_id')
+        org_id = request.state.profile.get("org",{}).get("id","")
+        
+        result = await get_bridges_with_tools(bridge_id, org_id, version_id)
+        bridge_data = result.get('bridges')
+        
+        if not bridge_data:
+            raise HTTPException(status_code=404, detail={"success": False, "error": "Bridge data not found"})
+        
+        system_prompt = bridge_data.get('configuration',{}).get('prompt', "")
+
+        variables = {
+            "system_prompt": system_prompt
+        }
+        
+        configuration = None
+        updated_prompt = await get_specific_prebuilt_prompt_service(org_id, 'generate_test_cases')
+        if updated_prompt and updated_prompt.get('generate_test_cases'):
+            configuration = {"prompt": updated_prompt['generate_test_cases']}
+
+        user_message = "Generate 10 comprehensive test cases for this AI assistant based on its system prompt and available tools. Each test case should include a UserInput and ExpectedOutput."
+        Testcases = await call_ai_middleware(
+            user_message, 
+            variables=variables, 
+            configuration=configuration, 
+            bridge_id=bridge_ids['generate_test_cases']
+        )
+        saved_testcases = await parse_and_save_testcases(Testcases, bridge_id)        
+        return JSONResponse(status_code=200, content={
+            "success": True,
+            "message": f"Test cases generated and {len(saved_testcases)} saved successfully",
+            "result": Testcases,
+            "saved_testcase_ids": saved_testcases
+        })
+        
+    except Exception as e:
+        raise HTTPException(status_code=400, detail={"success": False, "error": "Error in generating test cases: "+ str(e)})
+
