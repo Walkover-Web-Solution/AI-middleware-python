@@ -410,7 +410,14 @@ async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None)
                 },
                 {
                     '$addFields': {
-                        '_id': { '$toString': '$_id' }
+                        '_id': { '$toString': '$_id' },
+                        'source.nesting.parentDocId': { 
+                            '$cond': {
+                                'if': { '$ne': ['$source.nesting.parentDocId', None] },
+                                'then': { '$toString': '$source.nesting.parentDocId' },
+                                'else': None
+                            }
+                        }
                     }
                 }
             ],
