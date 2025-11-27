@@ -141,7 +141,8 @@ async def create_bridges_controller(request):
             "user_id" : user_id,
             "fall_back" : fall_back,
             "bridge_limit": bridge_limit,
-            "bridge_usage":bridge_usage
+            "bridge_usage":bridge_usage,
+            "bridge_status": 1
         })
         create_version = await create_bridge_version(result['bridge'])
         update_fields = {'versions' : [create_version]}
