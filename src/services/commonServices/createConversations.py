@@ -352,17 +352,21 @@ class ConversationService:
                 if message['role'] != "tools_call" and message['role'] != "tool":
                     content = [{"type": "text", "text": message['content']}]
                     
-                    if 'urls' in message and isinstance(message['urls'], list):
-                        for url in message['urls']:
+                    if 'user_urls' in message and isinstance(message['user_urls'], list):
+                        for url in message['user_urls']:
                             if url.get('type') == 'image':
                                 content.append({
-                                    "type": "input_image",
-                                    "image_url": url.get('url')
+                                    "type": "image_url",
+                                    "image_url": {
+                                        "url":url.get('url')
+                                    }
                                 })
                             elif url.get('url') not in files and url.get('url') not in seen_pdf_urls:
                                 content.append({
                                     "type": "input_file",
-                                    "file_url": url.get('url')
+                                    "file_url": {
+                                        "url":url.get('url')
+                                    }
                                 })
                                 # Add to seen URLs to prevent duplicates
                                 seen_pdf_urls.add(url.get('url'))
