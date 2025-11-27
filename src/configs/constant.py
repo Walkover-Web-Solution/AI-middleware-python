@@ -25,12 +25,13 @@ bridge_ids = {
     'function_agrs_using_ai' : '67c81a424f3136bfb0e81906',
     'compare_result' : '67ce993c8407023ad4f7b277',
     'generate_description' : '6800d48f7dfc8ddcc495f918',
-    'improve_prompt_optimizer' : '68e4ac02739a8b89ba27b22a'
+    'improve_prompt_optimizer' : '68e4ac02739a8b89ba27b22a',
+    'generate_test_cases' : '68e8d1fbf8c9ba2043cf7afd'
 }
 
 __all__ = ['service_name', 'bridge_ids']
 
-prebuilt_prompt_bridge_id = ['optimze_prompt', 'gpt_memory', 'structured_output_optimizer', 'chatbot_suggestions', 'generate_summary']
+prebuilt_prompt_bridge_id = ['optimze_prompt', 'gpt_memory', 'structured_output_optimizer', 'chatbot_suggestions', 'generate_summary', 'generate_test_cases']
 
 redis_keys = {
     'pdf_url_' : 'pdf_url_',
