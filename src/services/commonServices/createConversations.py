@@ -27,7 +27,7 @@ class ConversationService:
                                     "type": "input_image",
                                     "image_url": url.get('url')
                                 })
-                            elif url.get('url') not in files not in seen_pdf_urls:
+                            elif url.get('url') not in files and url.get('url') not in seen_pdf_urls:
                                 content.append({
                                     "type": "input_file",
                                     "file_url": url.get('url')
