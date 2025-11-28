@@ -1,6 +1,7 @@
 import pydash as _
 from ..baseService.baseService import BaseService
 from src.configs.constant import service_name
+from src.configs.model_configuration import model_config_document
 from ..createConversations import ConversationService
 from ....services.utils.apiservice import  fetch_images_b64
 from src.services.utils.ai_middleware_format import Response_formatter
@@ -27,7 +28,26 @@ class Antrophic(BaseService):
         if not (self.files and len(self.files) > 0):
             self.customConfig["messages"] = conversation + [{"role": "user", "content": (images_input + [{"type": "text", "text": self.user}] if self.user else images_input)}] if images_input or self.user else conversation
         self.customConfig['tools'] = self.tool_call if self.tool_call and len(self.tool_call) != 0 else []
+        
+        # Add web search support for Anthropic
         self.customConfig = self.service_formatter(self.customConfig, service_name['anthropic'])
+        if len(self.built_in_tools) > 0:
+            if 'web_search' in self.built_in_tools and 'tools' in model_config_document[self.service][self.model]['configuration']:
+                if 'tools' not in self.customConfig or self.customConfig['tools'] is None:
+                    self.customConfig['tools'] = []
+                
+                # Use Anthropic's official web search format
+                web_search_tool = {
+                    "type": "web_search_20250305",
+                    "name": "web_search"
+                }
+                
+                # Add allowed domains filtering if provided
+                if self.web_search_filters and isinstance(self.web_search_filters, list):
+                    web_search_tool["allowed_domains"] = self.web_search_filters
+                
+                self.customConfig['tools'].append(web_search_tool)
+        
         antrophic_response = await self.chats(self.customConfig, self.apikey, service_name['anthropic'])
         modelResponse = antrophic_response.get("modelResponse", {})
         

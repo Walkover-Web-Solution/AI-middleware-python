@@ -21,7 +21,10 @@ async def store_in_cache(identifier: str, data: dict, ttl: int = DEFAULT_REDIS_T
 
 async def find_in_cache(identifier: str) -> Union[str, None]:
     try:
-        return await client.get(f"{REDIS_PREFIX}{identifier}")
+        result = await client.get(f"{REDIS_PREFIX}{identifier}")
+        if result and isinstance(result, bytes):
+            return result.decode('utf-8')
+        return result
     except Exception as e:
         logger.error(f"Error finding in cache: {str(e)}")
         return None

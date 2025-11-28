@@ -20,20 +20,20 @@ class ConversationService:
                     else:
                         content = [{"type": "input_text", "text": message['content']}]
                     
-                    if 'urls' in message and isinstance(message['urls'], list):
-                        for url in message['urls']:
-                            if not url.lower().endswith('.pdf'):
+                    if 'user_urls' in message and isinstance(message['user_urls'], list):
+                        for url in message['user_urls']:
+                            if url.get('type') == 'image':
                                 content.append({
                                     "type": "input_image",
-                                    "image_url": url
+                                    "image_url": url.get('url')
                                 })
-                            elif url not in files and url not in seen_pdf_urls:
+                            elif url.get('url') not in files and url.get('url') not in seen_pdf_urls:
                                 content.append({
                                     "type": "input_file",
-                                    "file_url": url
+                                    "file_url": url.get('url')
                                 })
                                 # Add to seen URLs to prevent duplicates
-                                seen_pdf_urls.add(url)
+                                seen_pdf_urls.add(url.get('url'))
                     else:
                         # Default behavior for messages without URLs
                         content = message['content']
@@ -62,7 +62,7 @@ class ConversationService:
                 threads.append({'role': 'assistant', 'content': [{"type": "text", "text": "memory updated."}]})
             
             # Process image URLs if present
-            image_urls = [url for message in conversation for url in message.get('image_urls', [])]
+            image_urls = [url.get('url') for message in conversation for url in message.get('user_urls', [])]
             images_data = await fetch_images_b64(image_urls) if image_urls else []
             images = {url: data for url, data in zip(image_urls, images_data)}
             
@@ -87,39 +87,40 @@ class ConversationService:
                 content_items = []
                 
                 # Handle image URLs
-                if message.get('image_urls'):
-                    image_data = [
-                        {'type': 'image', 'source': {'type': 'base64', 'media_type': image_media_type, 'data': image_data}}
-                        for image_url in message.get('image_urls', [])
-                        for image_data, image_media_type in [images.get(image_url)]
-                        if image_url in images
-                    ]
-                    content_items.extend(image_data)
-                
-                # Handle URLs array for PDFs and other files
-                if message.get('urls') and isinstance(message['urls'], list):
-                    for url in message['urls']:
-                        if url.lower().endswith('.pdf'):
-                            # Only add PDF if not in files array and not seen before
-                            if (files is None or url not in files) and url not in seen_pdf_urls:
-                                content_items.append({
-                                    "type": "document",
-                                    "source": {
-                                        "type": "url",
-                                        "url": url
+                if message.get('user_urls'):
+                    image_data = []
+                    for url_info in message['user_urls']:
+                        url = url_info.get("url")
+                        if url in images:
+                            img_type = url_info.get("type")
+                            if img_type == 'image':
+                                image_data.append({
+                                    'type': 'image',
+                                    'source': {
+                                        'type': 'base64',
+                                        'media_type': images[url][1],
+                                        'data': images[url][0]
                                     }
                                 })
-                                # Add to seen URLs to prevent duplicates
-                                seen_pdf_urls.add(url)
-                        else:
-                            # For non-PDF files (images), add as image
-                            content_items.append({
-                                "type": "image",
-                                "source": {
-                                    "type": "url",
-                                    "url": url
-                                }
-                            })
+                            elif img_type == 'pdf':
+                                image_data.append({
+                                    'type': 'document',
+                                    'source': {
+                                        'type': 'url',
+                                        'url': url
+                                    }
+                                })
+                            else:
+                                image_data.append({
+                                    'type': 'image',
+                                    'source': {
+                                        'type': 'url',
+                                        'url': url
+                                    }
+                                })
+
+
+                    content_items.extend(image_data)
                 
                 # Add text content
                 content_items.append({"type": "text", "text": message['content']})
@@ -170,6 +171,40 @@ class ConversationService:
         except Exception as e:
             logger.error(f"create conversation error=>, {str(e)}, {traceback.format_exc()}")
             raise ValueError(f"Error while creating conversation: {str(e)}")
+
+    @staticmethod
+    def createGrokConversation(conversation, memory, files=None, image_urls=None):
+        try:
+            threads = []
+
+            if memory is not None:
+                threads.append({'role': 'user', 'content': 'provide the summary of the previous conversation stored in the memory?'})
+                threads.append({'role': 'assistant', 'content': f'Summary of previous conversations :  {memory}'})
+
+            for message in conversation or []:
+                if message['role'] in ["tools_call", "tool"]:
+                    continue
+
+                content = [{"type": "text", "text": message['content']}]
+
+                if 'urls' in message and isinstance(message['urls'], list):
+                    for url in message['urls']:
+                        if not url.lower().endswith('.pdf'):
+                            content.append({
+                                "type": "image_url",
+                                "image_url": {"url": url}
+                            })
+
+                threads.append({'role': message['role'], 'content': content})
+
+            return {
+                'success': True,
+                'messages': threads
+            }
+        except Exception as e:
+            traceback.print_exc()
+            logger.error(f"create conversation error=>, {str(e)}")
+            raise ValueError(e.args[0])
 
     @staticmethod
     def createOpenRouterConversation(conversation, memory):
@@ -317,20 +352,24 @@ class ConversationService:
                 if message['role'] != "tools_call" and message['role'] != "tool":
                     content = [{"type": "text", "text": message['content']}]
                     
-                    if 'urls' in message and isinstance(message['urls'], list):
-                        for url in message['urls']:
-                            if not url.lower().endswith('.pdf'):
+                    if 'user_urls' in message and isinstance(message['user_urls'], list):
+                        for url in message['user_urls']:
+                            if url.get('type') == 'image':
                                 content.append({
-                                    "type": "input_image",
-                                    "image_url": url
+                                    "type": "image_url",
+                                    "image_url": {
+                                        "url":url.get('url')
+                                    }
                                 })
-                            elif url not in files and url not in seen_pdf_urls:
+                            elif url.get('url') not in files and url.get('url') not in seen_pdf_urls:
                                 content.append({
                                     "type": "input_file",
-                                    "file_url": url
+                                    "file_url": {
+                                        "url":url.get('url')
+                                    }
                                 })
                                 # Add to seen URLs to prevent duplicates
-                                seen_pdf_urls.add(url)
+                                seen_pdf_urls.add(url.get('url'))
                     else:
                         # Default behavior for messages without URLs
                         content = message['content']

@@ -129,7 +129,7 @@ class BaseQueue:
                     await asyncio.sleep(delay)
 
         logger.error(f"Publish failed to {target_queue} after {max_retries} attempts: {last_error}")
-        return False
+        raise Exception(last_error)
 
     async def _message_handler_wrapper(self, message: AbstractIncomingMessage, process_callback):
         async with message.process():

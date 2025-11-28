@@ -3,7 +3,6 @@ configurationModel = db["configurations"]
 from src.services.utils.testcase_utils import add_prompt_and_conversations, make_conversations_as_per_service
 from src.services.cache_service import make_json_serializable
 from src.services.commonServices.openAI.runModel import openai_test_model
-from src.services.commonServices.anthrophic.antrophicModelRun import anthropic_test_model
 from src.services.commonServices.groq.groqModelRun import groq_test_model
 import pydash as _
 from src.services.commonServices.baseService.utils import  makeFunctionName, make_code_mapping_by_service, validate_tool_call
@@ -35,9 +34,7 @@ async def run_testcase_for_tools(testcase_data, parsed_data, function_names, giv
             case 'openai': 
                 result = await openai_test_model(custom_config, apikey)
             case 'groq' : 
-                result = await groq_test_model(custom_config, apikey)  
-            case 'anthropic' : 
-                result = await anthropic_test_model(custom_config, apikey)   
+                result = await groq_test_model(custom_config, apikey)
                 
         return result['response']
 

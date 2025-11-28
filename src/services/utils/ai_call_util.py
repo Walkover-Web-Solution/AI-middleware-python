@@ -2,6 +2,7 @@ from config import Config
 from .apiservice import fetch
 import json
 import jwt
+from globals import logger
 
 def generate_token(payload, accesskey):
         return jwt.encode(payload, accesskey)
@@ -48,7 +49,6 @@ async def call_gtwy_agent(args):
     try:
         # Import inside function to avoid circular imports
         from src.services.commonServices.common import chat
-        from src.services.utils.getConfiguration import getConfiguration
         request_body = {}
         # Add thread_id and sub_thread_id if provided
         if args.get('thread_id'):
@@ -70,28 +70,18 @@ async def call_gtwy_agent(args):
         if version_id:
             request_body["version_id"] = version_id
         
-        # Step 2: Call the configuration middleware to enrich the data
-        # This simulates what add_configuration_data_to_body does
-        db_config = await getConfiguration(
-            configuration=request_body.get('configuration'),
-            service=request_body.get('service'),
-            bridge_id=bridge_id,
-            apikey=request_body.get('apikey'),
-            template_id=request_body.get('template_id'),
-            variables=variables,
-            org_id=org_id,
-            variables_path=request_body.get('variables_path'),
-            version_id=version_id,
-            extra_tools=request_body.get('extra_tools', []),
-            built_in_tools=request_body.get('built_in_tools')
-        )
-        db_config['org_id'] = org_id
+        # Step 2: Use pre-fetched bridge_configurations data
+        # All agents should have access to bridge_configurations from the parent
+        bridge_configurations = args.get('bridge_configurations')
         
-        if not db_config.get("success"):
-            raise Exception(db_config.get("error", "Configuration fetch failed"))
-        
-        # Step 3: Update request body with configuration data (like middleware does)
-        request_body.update(db_config)
+        # Use pre-fetched configuration data
+        logger.info(f"Using pre-fetched configuration for agent: {bridge_id}")
+        primary_config = bridge_configurations[bridge_id]
+
+        # Step 3: Update request body with configuration data
+        request_body.update(primary_config)
+        request_body['org_id'] = org_id
+        request_body['bridge_configurations'] = bridge_configurations
         
         # Step 4: Create data structure for chat function
         # Pass timer state from parent request to maintain latency tracking in recursive calls
@@ -121,7 +111,7 @@ async def call_gtwy_agent(args):
         data_section = response_data.get('response', {}).get('data', {})
         result = data_section.get('content', "")
         message_id = data_section.get('message_id', "")
-        version_id = db_config.get('version_id', None)
+        resolved_version_id = primary_config.get('version_id', None)
         
         # Check for image URLs and include them if present
         image_urls = data_section.get('image_urls')
@@ -142,7 +132,7 @@ async def call_gtwy_agent(args):
             "response": parsed_result,
             "metadata":{
                  "agent_id": bridge_id,
-                 "version_id": version_id,
+                 "version_id": resolved_version_id,
                  "message_id": message_id,
                  "thread_id": args.get('thread_id'),
                  "subthread_id": args.get('subthread_id'),

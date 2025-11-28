@@ -35,7 +35,8 @@ class OrchestratorHistoryService:
                 tokens=data.get('tokens', {}),
                 error=data.get('error', {}),
                 variables=data.get('variables', {}),
-                image_urls=data.get('image_urls', {}),
+                user_urls=data.get('user_urls', {}),
+                llm_urls=data.get('llm_urls', {}),
                 ai_config=data.get('ai_config', {})
             )
             
@@ -76,7 +77,8 @@ class OrchestratorDataCollector:
                 'tokens': {},
                 'error': {},
                 'variables': {},
-                'image_urls': {},
+                'user_urls': {},
+                'llm_urls': {},
                 'ai_config': {}
             }
     
@@ -113,8 +115,11 @@ class OrchestratorDataCollector:
         if 'variables' in data:
             session_data['variables'][bridge_id] = data['variables']
         
-        if 'image_urls' in data:
-            session_data['image_urls'][bridge_id] = data['image_urls']
+        if 'user_urls' in data:
+            session_data['user_urls'][bridge_id] = data['user_urls']
+        
+        if 'llm_urls' in data:
+            session_data['llm_urls'][bridge_id] = data['llm_urls']
         
         if 'ai_config' in data:
             session_data['ai_config'][bridge_id] = data['ai_config']

@@ -12,7 +12,7 @@ from globals import *
 
 async def validate_bridge(bridge_data, result):
     """Validate bridge status and existence"""
-    bridge_status = bridge_data.get('bridges', {}).get('bridge_status') or bridge_data.get('bridge_status')
+    bridge_status = bridge_data.get('bridges', {}).get('bridge_status') or bridge_data.get('bridge_status',0)
     if bridge_status == 0:
         raise Exception("Bridge is Currently Paused")
     
@@ -193,7 +193,7 @@ def setup_tools(result, variables_path_bridge, extra_tools):
             tool_id_and_name_mapping[name_of_function] = tool_mapping
     return tools, tool_id_and_name_mapping, {**variables_path_bridge, **variable_path}
 
-def setup_api_key(service, result, apikey):
+def setup_api_key(service, result, apikey, chatbot):
     """Setup API key for the service"""
     db_apikeys = result.get('bridges', {}).get('apikeys', {})
     
@@ -209,7 +209,11 @@ def setup_api_key(service, result, apikey):
     folder_api_key = result.get('bridges', {}).get('folder_apikeys', {}).get(service)
     if folder_api_key:
         db_api_key = folder_api_key
-        
+
+    if chatbot and (service == 'openai'):
+        if not apikey and result.get('bridges', {}).get('configuration', {}).get('model') == 'gpt-5-nano':
+            apikey = Config.OPENAI_API_KEY
+    
     # Validate API key existence
     if not (apikey or db_api_key):
         raise Exception('Could not find api key or Agent is not Published')
@@ -299,13 +303,16 @@ def add_anthropic_json_schema(service, configuration, tools):
     configuration['response_type'] = 'default'
     configuration['prompt'] += '\n Always return the response in JSON SChema by calling the function JSON_Schema_Response_Format and if no values available then return json with dummy or default vaules'
 
-def add_connected_agents(result, tools, tool_id_and_name_mapping):
+def add_connected_agents(result, tools, tool_id_and_name_mapping, orchestrator_flag):
     """Add connected agents as tools"""
     connected_agents = result.get('bridges', {}).get('connected_agents', {})
     connected_agent_details = result.get('bridges', {}).get('connected_agent_details', {})
     
     if not connected_agents:
         return
+    
+    # Check if type is orchestrator
+    is_orchestrator = orchestrator_flag or result.get('bridges', {}).get('orchestrator', False)
     
     for bridge_name, bridge_info in connected_agents.items():
         bridge_id_value = bridge_info.get('bridge_id', '')
@@ -335,21 +342,39 @@ def add_connected_agents(result, tools, tool_id_and_name_mapping):
         
         name = makeFunctionName(bridge_name)
 
+        # Build properties dictionary
+        properties = {
+            "_query": {
+                "description": "The query or message to be processed by the connected agent.",
+                "type": "string",
+                "enum": [],
+                "required_params": [],
+                "parameter": {}
+            },
+            **fields
+        }
+        
+        # Add action_type only if type is orchestrator
+        if is_orchestrator:
+            properties["action_type"] = {
+                "description": "transfer: directly return child agent response, conversation: get child response and continue processing",
+                "type": "string",
+                "enum": ["transfer", "conversation"],
+                "required_params": [],
+                "parameter": {}
+            }
+        
+        # Build required list
+        required = ["_query"] + required_params
+        if is_orchestrator:
+            required.append("action_type")
+
         tools.append({
             "type": "function",
             "name": name,
             "description": description,
-            "properties": {
-                "_query": {
-                    "description": "The query or message to be processed by the connected agent.",
-                    "type": "string",
-                    "enum": [],
-                    "required_params": [],
-                    "parameter": {}
-                },
-                **fields
-            },
-            "required": ["_query"] + required_params
+            "properties": properties,
+            "required": required
         })
         
         tool_id_and_name_mapping[name] = {

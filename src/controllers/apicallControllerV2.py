@@ -1,6 +1,6 @@
 from fastapi import Request, HTTPException
 from fastapi.responses import JSONResponse
-from src.db_services.ConfigurationServices import get_bridges, update_bridge, get_bridges_with_tools
+from src.db_services.ConfigurationServices import get_bridges, update_bridge, get_bridges_with_tools, update_bridge_ids_in_api_calls
 from src.services.utils.helper import Helper
 from src.services.utils.apicallUtills import  get_api_data, save_api, delete_api
 import pydash as _
@@ -81,9 +81,10 @@ async def updates_api(request: Request, bridge_id: str):
         body = await request.json()
         version_id = body.get('version_id')
         org_id = request.state.org_id if hasattr(request.state, 'org_id') else None
-        pre_tools = body.get('pre_tools')
+        pre_tool_id = body.get('pre_tools')
+        status = body.get('status')
 
-        if not all([pre_tools is not None, bridge_id, org_id]):
+        if not all([pre_tool_id is not None, bridge_id, org_id]):
             raise HTTPException(status_code=400, detail="Required details must not be empty!!")
     
         model_config = await get_bridges(bridge_id, org_id, version_id)
@@ -92,10 +93,10 @@ async def updates_api(request: Request, bridge_id: str):
             raise HTTPException(status_code=400, detail="bridge id is not found")
     
         data_to_update = {}
-        data_to_update['pre_tools'] = pre_tools
+        data_to_update['pre_tools'] = [pre_tool_id] if status == "1" else []
         result = await update_bridge(bridge_id, data_to_update, version_id)
-
         result = await get_bridges_with_tools(bridge_id, org_id, version_id)
+        await update_bridge_ids_in_api_calls(function_id=pre_tool_id, bridge_id=version_id, add=int(status))
 
         if result.get("success"):
             response = await Helper.response_middleware_for_bridge(result.get('bridges')['service'], {
