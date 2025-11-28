@@ -270,15 +270,13 @@ def process_variable_state(parsed_data):
             if isinstance(var_state, dict) and 'status' in var_state and 'default_value' in var_state:
                 # Check if variable doesn't exist, is empty/None, or if the value in variable_state is empty
                 current_value = parsed_data['variables'].get(var_name)
-                var_state_value = var_state.get('value', '')
                 
                 # Use default_value if:
                 # 1. Variable doesn't exist in variables
                 # 2. Variable exists but is None or empty string
                 # 3. Variable_state has empty value
                 if (current_value is None or current_value == '' or 
-                    var_name not in parsed_data['variables'] or 
-                    var_state_value == ''):
+                    var_name not in parsed_data['variables']):
                     parsed_data['variables'][var_name] = var_state['default_value']
 
 async def prepare_prompt(parsed_data, thread_info, model_config, custom_config):
