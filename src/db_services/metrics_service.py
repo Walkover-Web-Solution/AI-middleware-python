@@ -15,11 +15,6 @@ from src.configs.constant import redis_keys
 
 postgres = combined_models['pg']
 timescale = combined_models['timescale']
-
-def start_of_today():
-    today = datetime.now()
-    return datetime(today.year, today.month, today.day, 0, 0, 0, 0)
-
 async def save_conversations_to_redis(conversations, version_id, thread_id, sub_thread_id, history_params):
     """
     Save conversations to Redis with conversation management logic.

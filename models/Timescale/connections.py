@@ -1,4 +1,3 @@
-import asyncio
 import sqlalchemy.ext.asyncio as sa_async
 from sqlalchemy import text
 from sqlalchemy.ext.declarative import declarative_base
@@ -22,12 +21,6 @@ async def init_async_dbservice():
         print('Connected to the Timescale database.')
     except Exception as error:
         logger.error(f'Unable to connect to the database: {str(error)} {traceback.format_exc()}')
-
-# Example async function to fetch data
-async def fetch_data(query):
-    async with AsyncSession() as session:
-        result = await session.execute(query)
-        return result.fetchall()
 
 # Initialize database connection
 db = {

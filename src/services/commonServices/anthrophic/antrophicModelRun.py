@@ -194,15 +194,3 @@ async def anthropic_runmodel(configuration, apikey, execution_time_logs, bridge_
             'success': False,
             'error': str(e)
         }
-        
-async def anthropic_test_model(configuration, api_key) : 
-    anthropic_client = AsyncAnthropic(api_key = api_key)
-    try:
-        response = await anthropic_client.messages.create(**configuration)
-        return {'success': True, 'response': response.to_dict()}
-    except Exception as error:
-        return {
-            'success': False,
-            'error': str(error),
-            'status_code': getattr(error, 'status_code', None)
-        }
