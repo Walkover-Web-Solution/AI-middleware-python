@@ -33,13 +33,3 @@ async def process_batch_file(batch_input_file, apiKey):
         print(f"Error in process_batch_file: {e}")
         raise
 
-
-async def retrieve_batch_status(batch_id, apiKey):
-    try:
-        openAI = AsyncOpenAI(api_key=apiKey)
-        batch = await openAI.batches.retrieve(batch_id)
-        print(batch)
-        return batch
-    except Exception as e:
-        print(f"Error in retrieve_batch_status: {e}")
-        raise

@@ -17,7 +17,6 @@ from itertools import chain
 from src.services.utils.time import Timer
 from src.services.utils.helper import Helper
 from src.services.utils.nlp import compute_cosine_similarity
-import json
 from src.services.utils.ai_call_util import call_ai_middleware
 from src.services.utils.ai_middleware_format import Response_formatter
 from src.configs.constant import bridge_ids
@@ -59,8 +58,6 @@ async def run_testcases(parsed_data, org_id, bridge_id, chat):
     
     tasks = [
         run_testcase_for_tools(testcase, parsed_data, function_names, custom_config, model_output_config)
-        # if testcase['type'] == 'function'
-        # else run_testcase_for_response(testcase, parsed_data, chat)
         for testcase in testcases_data
     ]
     result = await asyncio.gather(*tasks)
@@ -98,16 +95,6 @@ async def extract_response(response, service):
     # response = json.loads(response.__dict__[' body'].decode('utf-8'))['response']['data']['content']
     
     return response['data'].get('content', '')
-
-async def run_testcase_for_response(testcase_data, parsed_data, chat):
-    timer = Timer()
-    timer.start()
-    parsed_data['configuration']['conversation'] = testcase_data['conversation'][:-1]
-    parsed_data['configuration']['conversation'] = make_conversations_as_per_service(testcase_data['conversation'][:-1], parsed_data['service'])
-    result = await chat({'body': { **parsed_data, 'user' : testcase_data['conversation'][-1]['content']}, 'path_params': { 'bridge_id': parsed_data['version_id'] }, 'state': {'is_playground': True, 'timer' : timer.getTime() , 'version': 2}}) 
-    response = json.loads(result.__dict__['body'].decode('utf-8'))['response']['data']['content']
-    return response
-
 
 async def compare_result(expected, actual, matching_type, response_type):
     if(response_type == 'function'):

@@ -14,21 +14,6 @@ from datetime import timedelta
 pg = models['pg']
 timescale = models['timescale']
 
-    
-def createBulk(conversations_data):
-    session = pg['session']()
-    try:
-        conversations = [Conversation(**data) for data in conversations_data]
-        session.add_all(conversations)
-        session.commit()
-        return [conversation.id for conversation in conversations]
-    except Exception as err :
-        logger.error(f"Error in creating bulk conversations: {str(err)}")
-        session.rollback()
-    finally : 
-        session.close()
-
-
 async def createConversationLog(conversation_log_data):
     """
     Create a single consolidated conversation log entry
@@ -345,32 +330,3 @@ async def timescale_metrics(metrics_data):
             raise e
 
 
-
-async def get_timescale_data(org_id):
-    cache_key = f"metrix_{org_id}"
-    # Attempt to retrieve data from Redis cache
-
-    cached_data = await find_in_cache(cache_key)
-    if cached_data:
-        # Deserialize the cached JSON data
-        cached_result = json.loads(cached_data)
-        return cached_result 
-    else:
-        try:
-            session = timescale['session']()
-            query = text(f"""
-                SELECT bridge_id,
-                        SUM(total_token_count) as total_tokens 
-                FROM fifteen_minute_data 
-                WHERE org_id = :org_id 
-                GROUP BY bridge_id
-            """)
-            result = await session.execute(query, {'org_id': org_id})
-            data = result.fetchall()
-            await store_in_cache(cache_key, data, 86400)
-            return data
-        except Exception as e:
-            session.rollback()
-            raise e
-        finally:
-            session.close()
