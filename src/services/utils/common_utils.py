@@ -1249,7 +1249,7 @@ async def process_background_tasks_for_playground(result, parsed_data):
             new_testcase_id = str(ObjectId())
             result['response']['testcase_id'] = new_testcase_id
             parsed_data['testcase_data']['testcase_id'] = new_testcase_id
-            await sendResponse(parsed_data['response_format'], parsed_data['testcase_data'], success=True, variables=parsed_data.get('variables',{}))
+            await sendResponse(parsed_data['body']['bridge_configurations']['playground_response_format'], parsed_data['testcase_data'], success=True, variables=parsed_data.get('variables',{}))
             
             # Add the generated ID to testcase_data for the background task
             
