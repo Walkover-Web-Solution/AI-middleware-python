@@ -30,6 +30,7 @@ from src.services.utils.update_and_check_cost import update_cost,update_last_use
 from ..commonServices.baseService.utils import sendResponse
 from src.services.utils.rich_text_support import process_chatbot_response
 from src.db_services.orchestrator_history_service import OrchestratorHistoryService, orchestrator_collector
+from src.configs.constant import service_name
 
 async def handle_agent_transfer(result, request_body, bridge_configurations, chat_function, current_bridge_id=None, transfer_request_id=None):
     transfer_agent_config = result.get('transfer_agent_config')
@@ -172,7 +173,13 @@ async def load_model_configuration(model, configuration, service):
     
     # model_obj = modelfunc()
     model_config = model_obj['configuration']
-    model_output_config = model_obj['outputConfig']
+    model_output_config = model_obj.get('outputConfig') or {}
+
+    if service == service_name['grok']:
+        model_output_config.setdefault('message', 'choices[0].message.content')
+        model_output_config.setdefault('tools', 'choices[0].message.tool_calls')
+        model_output_config.setdefault('annotations', 'choices[0].message.annotations')
+        model_obj['outputConfig'] = model_output_config
     
     custom_config = {}
     for key, config in model_config.items():
