@@ -101,7 +101,10 @@ async def anthropic_runmodel(configuration, apikey, execution_time_logs, bridge_
                                     if 'partial_json' in block:
                                         # Parse the accumulated JSON for tool input
                                         try:
-                                            block['input'] = json.loads(block['partial_json'])
+                                            if block['partial_json'] == "":
+                                                block['input'] = {}
+                                            else:
+                                                block['input'] = json.loads(block['partial_json'])
                                         except json.JSONDecodeError:
                                             # If JSON parsing fails, keep as string
                                             block['input'] = block.get('partial_json', {})
