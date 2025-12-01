@@ -204,14 +204,8 @@ async def publish(org_id, version_id, user_id):
                         {'_id': ObjectId(previous_published_version_id)}, 
                         {'$set': {'is_drafted': True}},
                         session=session
-                    )
-                
-                # Commit transaction if all updates succeed
-                await session.commit_transaction()
-                
+                    )                
             except Exception as e:
-                # Rollback transaction if any update fails
-                await session.abort_transaction()
                 logger.error(f"Transaction failed and rolled back: {str(e)}")
                 raise BadRequestException(f"Failed to publish version: {str(e)}")
     await add_bulk_user_entries([{
