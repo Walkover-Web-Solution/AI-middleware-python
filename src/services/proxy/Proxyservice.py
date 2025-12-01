@@ -32,15 +32,16 @@ async def validate_proxy_pauthkey(pauthkey: str) -> Dict[str, Any]:
     if not pauthkey:
         raise ValueError("pauthkey is required for validation")
     headers = {
-        "authkey": Config.ADMIN_API_KEY,
-        "cauthkey": pauthkey,
+        "authkey": Config.ADMIN_API_KEY
     }
     response, _ = await fetch(
         "https://routes.msg91.com/api/validateCauthKey",
-        "GET",
+        "POST",
         headers,
         None,
-        None,
+        {
+            "cAuthKey": pauthkey
+        },
     )
     return response
 
