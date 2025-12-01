@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Request
 from ..middlewares.middleware import jwt_middleware
 from validations.validation import Bridge_update as bridge_update_validation
-from ..controllers.bridge_version_controller import create_version, get_version, publish_version, discard_version, suggest_model, check_testcases, bulk_publish_version, remove_version
+from ..controllers.bridge_version_controller import create_version, get_version, publish_version, discard_version, suggest_model, check_testcases, bulk_publish_version, remove_version, get_connected_agents
 from ..controllers.configController import update_bridge_controller
 router = APIRouter()
 @router.post('/create', dependencies=[Depends(jwt_middleware)])
@@ -38,3 +38,7 @@ async def suggest(request: Request, version_id: str):
 @router.post('/bulk_publish',dependencies=[Depends(jwt_middleware)])
 async def Bulkpublish(request: Request):
     return await bulk_publish_version(request)
+
+@router.get('/connected-agents/{id}', dependencies=[Depends(jwt_middleware)])
+async def connected_agents(request: Request, id: str):
+    return await get_connected_agents(request, id)

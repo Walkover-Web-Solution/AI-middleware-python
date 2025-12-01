@@ -1,9 +1,10 @@
 from fastapi import HTTPException, status
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
+from src.db_services.folder_service import get_folder_data
 from src.db_services.ConfigurationServices import create_bridge, get_all_bridges_in_org_by_org_id, get_bridge_by_id, get_all_bridges_in_org, update_bridge, update_bridge_ids_in_api_calls, get_bridges_with_tools, get_apikey_creds, update_apikey_creds, update_built_in_tools, update_agents, get_all_agents_data, get_agents_data, get_bridges_and_versions_by_model, clone_agent_to_org
 from src.services.utils.helper import Helper
-from src.configs.constant import redis_keys
+from src.configs.constant import new_agent_service, redis_keys
 import json
 from config import Config
 from src.db_services.conversationDbService import storeSystemPrompt, add_bulk_user_entries
@@ -15,7 +16,8 @@ from src.configs.model_configuration import model_config_document
 from globals import *
 from src.configs.constant import bridge_ids
 from src.services.utils.ai_call_util import call_ai_middleware
-from src.services.cache_service import find_in_cache
+from src.services.cache_service import find_in_cache, delete_in_cache
+from src.services.utils.update_and_check_cost import purge_related_bridge_caches
 from src.db_services.templateDbservice import get_template
 from src.services.utils.common_utils import validate_json_schema_configuration
 
@@ -26,6 +28,7 @@ async def create_bridges_controller(request):
         bridgeType = bridges.get('bridgeType') or 'api'
         org_id = request.state.profile['org']['id']
         folder_id = request.state.folder_id if hasattr(request.state, 'folder_id') else None
+        folder_data = await get_folder_data(folder_id)
         user_id = request.state.user_id
         all_bridge = await get_all_bridges_in_org_by_org_id(org_id)
         prompt = "Role: AI Bot\nObjective: Respond logically and clearly, maintaining a neutral, automated tone.\nGuidelines:\nIdentify the task or question first.\nProvide brief reasoning before the answer or action.\nKeep responses concise and contextually relevant.\nAvoid emotion, filler, or self-reference.\nUse examples or placeholders only when helpful."
@@ -118,6 +121,13 @@ async def create_bridges_controller(request):
         }
         if prompt is not None:
             model_data['prompt'] = prompt
+        if folder_data:
+            api_key_object_ids = folder_data.get('apikey_object_id', {})
+            if api_key_object_ids:
+                service = list(api_key_object_ids.keys())[0]
+                model_data['model'] = new_agent_service[service]
+        bridge_limit = bridges.get('bridge_limit', 0)
+        bridge_usage = bridges.get('bridge_usage', 0)
         result = await create_bridge({
             "configuration": model_data,
             "name": name,
@@ -129,7 +139,10 @@ async def create_bridges_controller(request):
             "gpt_memory" : True,
             "folder_id" : folder_id,
             "user_id" : user_id,
-            "fall_back" : fall_back
+            "fall_back" : fall_back,
+            "bridge_limit": bridge_limit,
+            "bridge_usage":bridge_usage,
+            "bridge_status": 1
         })
         create_version = await create_bridge_version(result['bridge'])
         update_fields = {'versions' : [create_version]}
@@ -211,9 +224,19 @@ async def get_all_bridges(request):
             bridge_id = bridge.get('_id')
             avg_response_time_data = await find_in_cache(f"{redis_keys['avg_response_time_']}{org_id}_{bridge_id}")
             total_tokens = await find_in_cache(f"{redis_keys['metrix_bridges_']}{bridge_id}")
-            
+            bridge_usage = await find_in_cache(f"{redis_keys['bridgeusedcost_']}{bridge_id}")
+            lastused = await find_in_cache(f"{redis_keys['bridgelastused_']}{bridge_id}")
+           
             if total_tokens:
                 bridge["total_tokens"] = json.loads(total_tokens)
+
+            if bridge_usage:
+                bridge_usage = json.loads(bridge_usage)
+                bridge["bridge_usage"] = bridge_usage.get("usage_value", 0)
+            
+            # Set last_used from cache, or from database if cache is empty
+            if lastused:
+                bridge["last_used"] = json.loads(lastused)
 
             avg_response_time[bridge_id] = round(float(avg_response_time_data), 2) if avg_response_time_data else 0
         return JSONResponse(status_code=200, content={
@@ -295,13 +318,14 @@ async def get_all_service_controller():
         "success": True,
         "message": "Get all service successfully",
         "services": {
-            "openai": {"model": "gpt-4o"},
-            "anthropic": {"model": "claude-3-7-sonnet-latest"},
-            "groq": {"model": "llama-3.3-70b-versatile"},
-            "open_router": {"model": "deepseek/deepseek-chat-v3-0324:free"},
-            "mistral": {"model": "mistral-medium-latest"},
-            "gemini" : {"model" : "gemini-2.5-flash"},
-            "ai_ml" : {"model" : "gpt-oss-20b"}
+            "openai": {"model": new_agent_service.get("openai")},
+            "anthropic": {"model": new_agent_service.get("anthropic")},
+            "groq": {"model": new_agent_service.get("groq")},
+            "open_router": {"model": new_agent_service.get("open_router")},
+            "mistral": {"model": new_agent_service.get("mistral")},
+            "gemini" : {"model": new_agent_service.get("gemini")},
+            "ai_ml" : {"model": new_agent_service.get("ai_ml")},
+            "grok" : {"model": new_agent_service.get("grok")}
         }
     }
 
@@ -324,7 +348,7 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
         body = await request.json()
         org_id = request.state.profile['org']['id']
         user_id = request.state.profile['user']['id']
-        
+        web_search_filter = body.get('web_search_filters')
         # Get existing bridge data
         bridge = await get_bridge_by_id(org_id, bridge_id, version_id)
         if bridge is None:
@@ -387,7 +411,8 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
             'bridgeType': lambda v: True,
             'meta': lambda v: True,
             'fall_back': lambda v: validate_fall_back(v),
-            'guardrails': lambda v: isinstance(v, dict) and 'is_enabled' in v
+            'guardrails': lambda v: isinstance(v, dict) and 'is_enabled' in v,
+            'web_search_filters': lambda v: True
         }
         
         # Update simple fields if they exist in the request
@@ -395,6 +420,12 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
             value = body.get(field)
             if value is not None and validator(value):
                 update_fields[field] = value
+        
+        # Handle limit keys - default to 0 if not provided
+        if 'bridge_limit' in body:
+            update_fields['bridge_limit'] = body.get('bridge_limit', 0)
+        if 'bridge_usage' in body:
+            update_fields['bridge_usage'] = body.get('bridge_usage', -1)
         
         # Handle service and model configuration
         if page_config is not None:
@@ -406,7 +437,8 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
                 configuration = await get_default_values_controller(service, model, current_configuration, config_type)
                 configuration['type'] = new_configuration.get('type', 'chat')
                 new_configuration = configuration
-        
+        if web_search_filter is not None:
+            update_fields['web_search_filters'] = web_search_filter
         # Process configuration updates
         if new_configuration is not None:
             # If model is changing but service isn't provided, get default values
@@ -511,6 +543,13 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
         await add_bulk_user_entries(user_history)
         if apikey_object_id is not None:
             await try_catch(update_apikey_creds, version_id, apikey_object_id)
+
+        # Clear bridge-related caches on update (optimized single call)
+        try:
+            # Optimized: purge caches only when usage reset is requested
+            await purge_related_bridge_caches(bridge_id, body.get('bridge_usage', -1))
+        except Exception as e:
+            logger.error(f"Failed clearing bridge related cache on update: {str(e)}")
         
         # Update service in bridge if it was changed
         if service is not None:

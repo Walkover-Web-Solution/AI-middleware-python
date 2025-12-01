@@ -1,13 +1,13 @@
 from models.mongo_connection import db
 from bson import ObjectId
-from ..services.cache_service import find_in_cache, store_in_cache, delete_in_cache
+from ..services.cache_service import find_in_cache, store_in_cache, delete_in_cache, make_json_serializable
 import json
 from globals import *
 from bson import errors
 from src.configs.constant import redis_keys
 from config import Config
-from datetime import datetime
 import jwt
+from datetime import datetime
 from ..services.utils.apiservice import fetch
 
 configurationModel = db["configurations"]
@@ -326,7 +326,8 @@ async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None)
                     }
                 },
                 {
-                    '$project': { 'service': 1, 'apikey': 1 }
+                    '$project': { 'service': 1, 'apikey': 1, 'apikey_limit': { '$ifNull': ['$apikey_limit', 0] },
+                     'apikey_usage': { '$ifNull': ['$apikey_usage', 0] } }
                 }
             ],
             'as': 'apikeys_docs'
@@ -369,7 +370,11 @@ async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None)
                                                         }
                                                     },
                                                     'as': 'matched_doc',
-                                                    'in': '$$matched_doc.apikey'
+                                                    'in': {
+                                                    'apikey': '$$matched_doc.apikey',
+                                                    'apikey_limit': '$$matched_doc.apikey_limit', 
+                                                    'apikey_usage': '$$matched_doc.apikey_usage'
+                                                    }       
                                                 }
                                             },
                                             0  # Get the first matched apikey
@@ -405,7 +410,14 @@ async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None)
                 },
                 {
                     '$addFields': {
-                        '_id': { '$toString': '$_id' }
+                        '_id': { '$toString': '$_id' },
+                        'source.nesting.parentDocId': { 
+                            '$cond': {
+                                'if': { '$ne': ['$source.nesting.parentDocId', None] },
+                                'then': { '$toString': '$source.nesting.parentDocId' },
+                                'else': None
+                            }
+                        }
                     }
                 }
             ],
@@ -573,7 +585,9 @@ async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None)
                 {
                     '$addFields': {
                         'apikey_object_id_safe': { '$ifNull': ['$apikey_object_id', {}] },
-                        'has_apikeys': { '$cond': [{ '$eq': [{ '$type': '$apikey_object_id' }, 'object'] }, True, False] }
+                        'has_apikeys': { '$cond': [{ '$eq': [{ '$type': '$apikey_object_id' }, 'object'] }, True, False] },
+                        'folder_limit': { '$ifNull': ['$folder_limit', 0] },
+                        'folder_usage': { '$ifNull': ['$folder_usage', 0] }
                     }
                 },
                 {
@@ -623,7 +637,7 @@ async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None)
                         'as': 'apikeys_docs'
                     }
                 },
-                # Stage 4: Create folder_apikeys object
+                # Stage 4: Create folder_apikeys object with apikey, limit, usage
                 {
                     '$addFields': {
                         'folder_apikeys': {
@@ -637,33 +651,39 @@ async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None)
                                             'in': {
                                                 'k': '$$item.k',
                                                 'v': {
-                                                    '$arrayElemAt': [
-                                                        {
-                                                            '$map': {
-                                                                'input': {
-                                                                    '$filter': {
-                                                                        'input': '$apikeys_docs',
-                                                                        'cond': {
-                                                                            '$eq': [
-                                                                                '$$this._id',
-                                                                                {
-                                                                                    '$convert': {
-                                                                                        'input': '$$item.v',
-                                                                                        'to': 'objectId',
-                                                                                        'onError': None,
-                                                                                        'onNull': None
+                                                    '$let': {
+                                                        'vars': {
+                                                            'matched': {
+                                                                '$arrayElemAt': [
+                                                                    {
+                                                                        '$filter': {
+                                                                            'input': '$apikeys_docs',
+                                                                            'as': 'doc',
+                                                                            'cond': {
+                                                                                '$eq': [
+                                                                                    '$$doc._id',
+                                                                                    {
+                                                                                        '$convert': {
+                                                                                            'input': '$$item.v',
+                                                                                            'to': 'objectId',
+                                                                                            'onError': None,
+                                                                                            'onNull': None
+                                                                                        }
                                                                                     }
-                                                                                }
-                                                                            ]
+                                                                                ]
+                                                                            }
                                                                         }
-                                                                    }
-                                                                },
-                                                                'as': 'matched_doc',
-                                                                'in': '$$matched_doc.apikey'
+                                                                    },
+                                                                    0
+                                                                ]
                                                             }
                                                         },
-                                                        0
-                                                    ]
+                                                        'in': {
+                                                            'apikey': '$$matched.apikey',
+                                                            'apikey_limit': { '$ifNull': ['$$matched.apikey_limit', 0] },
+                                                            'apikey_usage': { '$ifNull': ['$$matched.apikey_usage', 0] }
+                                                        }
+                                                    }
                                                 }
                                             }
                                         }
@@ -674,25 +694,50 @@ async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None)
                         }
                     }
                 },
-                # Stage 5: Project only folder_apikeys
+                # Stage 5: Project folder_apikeys and type
                 {
                     '$project': {
-                        'folder_apikeys': 1
+                        'folder_apikeys': 1,
+                        'type': 1,
+                        'folder_limit': { '$ifNull': ['$folder_limit', 0] },
+                        'folder_usage': { '$ifNull': ['$folder_usage', 0] },
+                        'apikey_object_id': 1,
                     }
                 }
             ]
-            
+
             # Execute folder pipeline on folders collection
             folder_result = await foldersModel.aggregate(folder_pipeline).to_list(length=None)
             
             # Append folder_apikeys to bridge_data if found
             if folder_result and folder_result[0].get('folder_apikeys'):
                 bridge_data['folder_apikeys'] = folder_result[0]['folder_apikeys']
+                bridge_data['apikey_object_id'] = folder_result[0]['apikey_object_id']
             else:
                 bridge_data['folder_apikeys'] = {}
+                bridge_data['apikey_object_id'] = None
+
+            if folder_result and folder_result[0].get('type'):
+                bridge_data['folder_type'] = folder_result[0]['type']
+            else:
+                bridge_data['folder_type'] = None
+
+            if folder_result and folder_result[0].get('folder_limit'):
+                bridge_data['folder_limit'] = folder_result[0]['folder_limit']
+            else:
+                bridge_data['folder_limit'] = 0
+                
+            if folder_result and folder_result[0].get('folder_usage'):
+                bridge_data['folder_usage'] = folder_result[0]['folder_usage']
+            else :
+                bridge_data['folder_usage'] = 0
+            
         else:
-            # No folder_id, set empty folder_apikeys
+            # No folder_id, set empty folder_apikeys and folder_type
             bridge_data['folder_apikeys'] = {}
+            bridge_data['folder_limit'] = 0
+            bridge_data['folder_usage'] = 0
+            bridge_data['folder_type'] = None
        
         # Structure the final response
         response = {
@@ -861,7 +906,12 @@ async def get_all_bridges_in_org(org_id, folder_id, user_id, isEmbedUser):
         'connected_agents':1,
         'function_ids':1,
         'connected_agent_details':1,
-        'bridge_summary': 1 
+        'bridge_summary': 1,
+        "deletedAt":1,
+        "bridge_limit":1,
+        "bridge_usage":1,
+        'last_used': 1,
+        'variables_path':1
     })
     bridges_list = await bridge.to_list(length=None)
     for itr in bridges_list:
@@ -869,7 +919,7 @@ async def get_all_bridges_in_org(org_id, folder_id, user_id, isEmbedUser):
         if "function_ids" in itr and itr["function_ids"]:
             # Convert every ObjectId in the list to a string
             itr["function_ids"] = [str(fid) for fid in itr["function_ids"]]
-    return bridges_list
+    return make_json_serializable(bridges_list)
 
 async def get_all_bridges_in_org_by_org_id(org_id):
     query = {"org_id": org_id}
@@ -882,7 +932,7 @@ async def get_all_bridges_in_org_by_org_id(org_id):
     for bridge in bridges_list:
         bridge['_id'] = str(bridge['_id'])
             
-    return bridges_list
+    return make_json_serializable(bridges_list)
 
 async def get_bridge_by_id(org_id, bridge_id, version_id=None):
     model = version_model if version_id else configurationModel

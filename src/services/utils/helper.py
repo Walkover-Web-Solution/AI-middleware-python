@@ -13,6 +13,7 @@ import jwt
 from ..commonServices.openAI.openai_batch import OpenaiBatch
 from ..commonServices.openAI.openai_response import OpenaiResponse
 from ..commonServices.groq.groqCall import Groq
+from ..commonServices.grok.grokCall import Grok
 from ..commonServices.anthrophic.antrophicCall import Antrophic
 from ..commonServices.openRouter.openRouter_call import OpenRouter
 from ..commonServices.Mistral.mistral_call import Mistral
@@ -65,6 +66,31 @@ class Helper:
         if len(key) > 6:
             return key[:3] + '*' * (9) + key[-3:]
         return key
+
+    @staticmethod
+    def extract_embed_user_id(userinfo, org_id):
+        if not userinfo:
+            return None
+
+        data = userinfo.get("data") if isinstance(userinfo, dict) else userinfo
+        if not isinstance(data, list) or not data:
+            return None
+
+        first_entry = data[0]
+        if isinstance(first_entry, dict):
+            mail = first_entry.get("email")
+        else:
+            mail = getattr(first_entry, "email", None)
+
+        if not isinstance(mail, str) or not mail:
+            return None
+
+        cleaned_mail = mail
+        if org_id:
+            cleaned_mail = cleaned_mail.removeprefix(org_id)
+        cleaned_mail = cleaned_mail.removesuffix("@gtwy.ai")
+
+        return cleaned_mail or None
          
 
     @staticmethod
@@ -207,6 +233,8 @@ class Helper:
             class_obj = Antrophic(params)
         elif service == service_name['groq']:
             class_obj = Groq(params)
+        elif service == service_name['grok']:
+            class_obj = Grok(params)
         elif service == service_name['open_router']:
             class_obj = OpenRouter(params)
         elif service == service_name['mistral']:
@@ -229,7 +257,7 @@ class Helper:
         if modelObj is None:
             raise AttributeError(f"Model function '{model}' not found in model_configuration.")
 
-        if service in ['openai', 'groq', 'ai_ml', 'openai_completion']:
+        if service in ['openai', 'groq', 'grok', 'ai_ml', 'openai_completion']:
             token_cost['input_cost'] = modelObj['outputConfig']['usage'][0]['total_cost'].get('input_cost') or 0
             token_cost['output_cost'] = modelObj['outputConfig']['usage'][0]['total_cost'].get('output_cost') or 0
             token_cost['cache_cost'] = modelObj['outputConfig']['usage'][0]['total_cost'].get('cached_cost') or 0
@@ -305,27 +333,9 @@ class Helper:
             prompt += f"\n\nResponse Style Prompt: {response_style['prompt']}"
         return prompt
       
-    async def get_timezone_and_org_name(org_id):
-        cached_data = await find_in_cache(org_id)
-        if cached_data:
-            # Deserialize the cached JSON data
-            cached_result = json.loads(cached_data)
-            return cached_result
-        else:
-            response, _ = await fetch(f"https://routes.msg91.com/api/{Config.PUBLIC_REFERENCEID}/getCompanies?id={org_id}", "GET", {"Authkey": Config.ADMIN_API_KEY}, None, None)
-            cache_key = f"{redis_keys['timezone_and_org_']}{org_id}"
-            await store_in_cache(cache_key, response.get('data', {}).get('data', [{}])[0])
-            return response.get('data', {}).get('data', [{}])[0]
+    # Removed MSG proxy delegation methods: use src.services.proxy.Proxyservice directly
 
-    async def validate_proxy_pauthkey(pauthkey):
-        if not pauthkey:
-            raise ValueError("pauthkey is required for validation")
-        headers = {
-            "authkey": Config.ADMIN_API_KEY,
-            "cauthkey": pauthkey
-        }
-        response, _ = await fetch("https://routes.msg91.com/api/validateCauthKey", "GET", headers, None, None)
-        return response
+    
 
     def sort_bridges(bridges, metrics_data):
         # Create a dictionary to map _id to total tokens
@@ -382,11 +392,16 @@ class Helper:
         # Extract variables from prompt
         prompt_vars = re.findall(r'{{(.*?)}}', prompt)
 
-        # Determine status for prompt variables
-        final = {
-            var: 'required' if variable_state.get(var) == 'required' else 'optional'
-            for var in prompt_vars
-        }
+        # Determine status for prompt variables based on new structure
+        final = {}
+        for var in prompt_vars:
+            if var in variable_state and isinstance(variable_state[var], dict):
+                # Use the status from the variable_state structure
+                var_status = variable_state[var].get('status', 'optional')
+                final[var] = var_status
+            else:
+                # Default to optional if not found in variable_state
+                final[var] = 'optional'
 
         # Add flattened variable_path keys as required
         for path in flatten_values_only(variable_path):
@@ -476,4 +491,4 @@ class Helper:
             "required_params": required_params
         }
 
-
+    

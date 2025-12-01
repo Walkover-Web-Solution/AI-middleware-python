@@ -1,7 +1,7 @@
 import json
 import uuid
 import traceback
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 from fastapi.responses import JSONResponse
 from src.services.utils.time import Timer
 from src.services.commonServices.baseService.utils import axios_work
@@ -11,6 +11,7 @@ from ...controllers.conversationController import getThread
 from src.services.utils.token_calculation import TokenCalculator
 import src.db_services.ConfigurationServices as ConfigurationService
 from .helper import Helper
+from src.services.proxy.Proxyservice import get_timezone_and_org_name
 from config import Config
 import pydash as _
 import asyncio
@@ -21,13 +22,61 @@ from globals import *
 from src.services.utils.send_error_webhook import send_error_to_webhook
 from src.services.commonServices.queueService.queueLogService import sub_queue_obj
 from src.services.commonServices.baseService.utils import make_request_data_and_publish_sub_queue
-from src.db_services.metrics_service import create
+from src.db_services.metrics_service import create, create_orchestrator
 from src.controllers.conversationController import save_sub_thread_id_and_name
 from src.services.utils.ai_middleware_format import send_alert
 from src.services.cache_service import find_in_cache, store_in_cache, client, REDIS_PREFIX
+from src.services.utils.update_and_check_cost import update_cost,update_last_used
 from ..commonServices.baseService.utils import sendResponse
 from src.services.utils.rich_text_support import process_chatbot_response
 from src.db_services.orchestrator_history_service import OrchestratorHistoryService, orchestrator_collector
+
+async def handle_agent_transfer(result, request_body, bridge_configurations, chat_function, current_bridge_id=None, transfer_request_id=None):
+    transfer_agent_config = result.get('transfer_agent_config')
+    
+    # Extract agent_id and user_query
+    target_agent_id = transfer_agent_config.get('agent_id')
+    user_query = transfer_agent_config.get('user_query')
+    
+    logger.info(f"Transfer detected: agent_id={target_agent_id}, user_query={user_query}")
+    
+    # Check if target agent exists in bridge_configurations
+    if not target_agent_id or target_agent_id not in bridge_configurations:
+        logger.warning(f"Transfer agent {target_agent_id} not found in bridge_configurations")
+        return None
+    
+    # Get the target agent's configuration
+    target_agent_config = bridge_configurations[target_agent_id]
+    
+    logger.info(f"Transferring to agent: {target_agent_config.get('name', target_agent_id)}")
+    
+    # Create a new request body for the transfer agent
+    transfer_body = request_body.get('body', {}).copy()
+    transfer_body.update(target_agent_config)
+    transfer_body['bridge_id'] = target_agent_id
+    transfer_body['user'] = user_query
+    
+    # Pass the parent_id (current bridge_id) and transfer_request_id to the next agent
+    if current_bridge_id:
+        transfer_body['parent_bridge_id'] = current_bridge_id
+    if transfer_request_id:
+        transfer_body['transfer_request_id'] = transfer_request_id
+    
+    # Pass complete bridge_configurations so next agent can look up version_ids
+    transfer_body['bridge_configurations'] = bridge_configurations
+    
+    # Create a complete request structure for the transfer agent
+    transfer_request_body = {
+        'body': transfer_body,
+        'state': request_body.get('state', {}).copy(),
+        'path_params': request_body.get('path_params', {})
+    }
+    
+    # Call chat function with the transfer agent's data
+    transfer_result = await chat_function(transfer_request_body)
+    
+    return transfer_result
+
 
 def parse_request_body(request_body):
     body = request_body.get('body', {})
@@ -90,15 +139,21 @@ def parse_request_body(request_body):
         "fall_back" : body.get('fall_back') or {},
         "guardrails" : body.get('bridges', {}).get('guardrails') or {},
         "testcase_data" : body.get('testcase_data') or {},
+        "is_embed" : body.get('is_embed'),
+        "user_id" : body.get('user_id'),
         "file_data" : body.get('video_data') or {},
         "youtube_url" : body.get('youtube_url') or None,
+        "folder_id": body.get('folder_id'),
         "web_search_filters" : body.get('web_search_filters') or None,
+        "parent_bridge_id": body.get('parent_bridge_id'),
+        "transfer_request_id": body.get('transfer_request_id'),
+        "orchestrator_flag": body.get('orchestrator_flag'),
     }
 
 
 
 def add_default_template(prompt):
-    prompt += ' \n if you need current time in any case (otherwise ignore) - {{current_time_date_and_current_identifier}}'
+    prompt += ' \n ### CURRENT TIME (For reference only) \n{{current_time_date_and_current_identifier}}'
     return prompt
 
 def add_user_in_varaibles(variables, user):
@@ -151,7 +206,6 @@ async def manage_threads(parsed_data):
     thread_id = parsed_data['thread_id']
     sub_thread_id = parsed_data['sub_thread_id']
     bridge_id = parsed_data['bridge_id']
-    bridge_type = parsed_data['bridgeType']
     org_id = parsed_data['org_id']      
     
     if thread_id:
@@ -169,12 +223,14 @@ async def manage_threads(parsed_data):
             logger.info(f"Retrieved conversations from Redis cache: {redis_key}")
         else:
             # Fallback to database if not in cache
-            result = await try_catch(getThread, thread_id, sub_thread_id, org_id, bridge_id, bridge_type)
+            result = await try_catch(getThread, thread_id, sub_thread_id, org_id, bridge_id)
             if result:
                 parsed_data['configuration']["conversation"] = result or []
     else:
         thread_id = str(uuid.uuid1())
         sub_thread_id = thread_id
+        parsed_data['thread_id'] = thread_id
+        parsed_data['sub_thread_id'] = sub_thread_id
         parsed_data['gpt_memory'] = False
         result = []
     
@@ -189,6 +245,39 @@ async def manage_threads(parsed_data):
         "sub_thread_id": sub_thread_id,
         "result": result
     }
+
+def process_variable_state(parsed_data):
+    """
+    Check and add default values for variables based on variable_state.
+    
+    Args:
+        parsed_data: Dictionary containing the request data
+        
+    Expected variable_state structure:
+        {
+            'var_name': {
+                'status': 'required',
+                'default_value': 'some_default',
+                'value': ''
+            }
+        }
+    
+    Returns:
+        None (modifies parsed_data in place)
+    """
+    if 'variables_state' in parsed_data and parsed_data['variables_state'] is not None:
+        for var_name, var_state in parsed_data['variables_state'].items():
+            if isinstance(var_state, dict) and 'status' in var_state and 'default_value' in var_state:
+                # Check if variable doesn't exist, is empty/None, or if the value in variable_state is empty
+                current_value = parsed_data['variables'].get(var_name)
+                
+                # Use default_value if:
+                # 1. Variable doesn't exist in variables
+                # 2. Variable exists but is None or empty string
+                # 3. Variable_state has empty value
+                if (current_value is None or current_value == '' or 
+                    var_name not in parsed_data['variables']):
+                    parsed_data['variables'][var_name] = var_state['default_value']
 
 async def prepare_prompt(parsed_data, thread_info, model_config, custom_config):
     configuration = parsed_data['configuration']
@@ -246,7 +335,7 @@ async def prepare_prompt(parsed_data, thread_info, model_config, custom_config):
 async def configure_custom_settings(model_configuration, custom_config, service):
     return await model_config_change(model_configuration, custom_config, service)
 
-def build_service_params(parsed_data, custom_config, model_output_config, thread_info=None, timer=None, memory=None, send_error_to_webhook=None):
+def build_service_params(parsed_data, custom_config, model_output_config, thread_info=None, timer=None, memory=None, send_error_to_webhook=None, bridge_configurations=None):
     token_calculator = TokenCalculator(parsed_data['service'], model_output_config)
     
     return {
@@ -289,12 +378,103 @@ def build_service_params(parsed_data, custom_config, model_output_config, thread
         "files" : parsed_data['files'],
         "file_data" : parsed_data['file_data'],
         "youtube_url" : parsed_data['youtube_url'],
-        "web_search_filters" : parsed_data['web_search_filters']
+        "web_search_filters" : parsed_data['web_search_filters'],
+        "folder_id": parsed_data.get('folder_id'),
+        "bridge_configurations": bridge_configurations
 
     }
 
-async def process_background_tasks(parsed_data, result, params, thread_info):
-    asyncio.create_task(create([parsed_data['usage']], result["historyParams"], parsed_data['version_id'], thread_info))
+async def process_background_tasks(parsed_data, result, params, thread_info, transfer_request_id=None, bridge_configurations=None):
+
+    """
+    Process background tasks for saving history and publishing to queue.
+    Handles both regular flow and transfer chain scenarios.
+    Also handles orchestrator mode where multiple agents are saved in a single entry.
+    """
+    # Check if orchestrator_flag is enabled (from body or parsed_data)
+    orchestrator_flag = parsed_data.get('orchestrator_flag') or parsed_data.get('body', {}).get('orchestrator_flag')
+    
+    # Check if this is part of a transfer chain
+    is_transfer_chain = transfer_request_id and transfer_request_id in TRANSFER_HISTORY and len(TRANSFER_HISTORY[transfer_request_id]) > 0
+    
+    if is_transfer_chain:
+        # This is the final agent in a transfer chain
+        # Get the correct version_id from bridge_configurations for the final agent
+        bridge_configs = bridge_configurations or {}
+        final_version_id = bridge_configs.get(parsed_data['bridge_id'], {}).get('version_id', parsed_data['version_id'])
+        
+        # Add current agent's history
+        current_history_data = {
+            'bridge_id': parsed_data['bridge_id'],
+            'history_params': result.get('historyParams'),
+            'dataset': [parsed_data['usage']],
+            'version_id': final_version_id,
+            'thread_info': thread_info,
+            'parent_id': parsed_data.get('parent_bridge_id', '')
+        }
+        TRANSFER_HISTORY[transfer_request_id].append(current_history_data)
+        
+        # Save all transfer history (each agent in the chain)
+        transfer_chain = TRANSFER_HISTORY[transfer_request_id]
+        
+        # If orchestrator_flag is true, save all agents in a single orchestrator entry
+        if orchestrator_flag:
+            # Update history_params with prompts from bridge_configurations
+            for idx, history_entry in enumerate(transfer_chain):
+                if history_entry['history_params']:
+                    agent_bridge_id = history_entry['bridge_id']
+                    if bridge_configs and agent_bridge_id in bridge_configs:
+                        agent_config = bridge_configs[agent_bridge_id].get('configuration', {})
+                        history_entry['history_params']['prompt'] = agent_config.get('prompt')
+            
+            # Save all agents in a single orchestrator entry
+            asyncio.create_task(create_orchestrator(transfer_chain, thread_info))
+        else:
+            # Regular transfer chain - save each agent separately
+            for idx, history_entry in enumerate(transfer_chain):
+                # Update parent_id and child_id in history_params based on chain position
+                if history_entry['history_params']:
+                    # Set parent_id from the previous entry's bridge_id
+                    history_entry['history_params']['parent_id'] = history_entry.get('parent_id', '')
+                    
+                    # Set child_id from the next entry's bridge_id (None if last in chain)
+                    if idx < len(transfer_chain) - 1:
+                        history_entry['history_params']['child_id'] = transfer_chain[idx + 1]['bridge_id']
+                    else:
+                        history_entry['history_params']['child_id'] = None
+                    
+                    # Add prompt from bridge_configurations if available
+                    agent_bridge_id = history_entry['bridge_id']
+                    if bridge_configs and agent_bridge_id in bridge_configs:
+                        agent_config = bridge_configs[agent_bridge_id].get('configuration', {})
+                        history_entry['history_params']['prompt'] = agent_config.get('prompt')
+                
+                # Save history to database
+                asyncio.create_task(create(
+                    history_entry['dataset'],
+                    history_entry['history_params'],
+                    history_entry['version_id'],
+                    history_entry['thread_info']
+                ))
+        
+        # Clean up transfer history
+        del TRANSFER_HISTORY[transfer_request_id]
+    else:
+        # Regular flow (no transfer or first agent that didn't transfer)
+        # Always set parent_id and child_id in history_params for consistency
+        if result.get('historyParams'):
+            result['historyParams']['parent_id'] = parsed_data.get('parent_bridge_id', '')
+            result['historyParams']['child_id'] = None
+        
+        # Save single history entry
+        asyncio.create_task(create(
+            [parsed_data['usage']], 
+            result["historyParams"], 
+            parsed_data['version_id'], 
+            thread_info
+        ))
+    
+    # Publish to queue (for both transfer and non-transfer cases)
     data = await make_request_data_and_publish_sub_queue(parsed_data, result, params, thread_info)
     data = make_json_serializable(data)
     await sub_queue_obj.publish_message(data)
@@ -336,19 +516,20 @@ def build_service_params_for_batch(parsed_data, custom_config, model_output_conf
         "type": parsed_data['configuration'].get('type'),
         "apikey_object_id" : parsed_data['apikey_object_id'],
         "batch" : parsed_data['batch'],
-        "webhook" : parsed_data['batch_webhook']
+        "webhook" : parsed_data['batch_webhook'],
+        "folder_id": parsed_data.get('folder_id')
     }
 
 
 async def updateVariablesWithTimeZone(variables, org_id):
     org_name = ''
     async def getTimezoneOfOrg():
-        data = await Helper.get_timezone_and_org_name(org_id)
+        data = await get_timezone_and_org_name(org_id)
         timezone = data.get('timezone') or "+5:30"
         hour, minutes = timezone.split(':')
         return int(hour), int(minutes), data.get('name') or "", (data.get('meta') or {}).get('identifier', '')
     hour, minutes, org_name, identifier = await getTimezoneOfOrg()
-    if 'timezone' in variables:
+    if 'timezone' in variables and variables['timezone']:
         hour, minutes = Helper.get_current_time_with_timezone(variables['timezone'])
         identifier = variables['timezone']
     current_time = datetime.now(timezone.utc)
@@ -377,9 +558,9 @@ def filter_missing_vars(missing_vars, variables_state):
 def get_service_by_model(model): 
     return next((s for s in model_config_document if model in model_config_document[s]), None)
 
-def send_error(bridge_id, org_id, error_message, error_type):
+def send_error(bridge_id, org_id, error_message, error_type, bridge_name=None, is_embed=None, user_id=None):
     asyncio.create_task(send_error_to_webhook(
-        bridge_id, org_id, error_message, error_type=error_type
+        bridge_id, org_id, error_message, error_type=error_type, bridge_name=bridge_name, is_embed=is_embed, user_id=user_id
     ))
 
 def restructure_json_schema(response_type, service):
@@ -468,6 +649,7 @@ def create_latency_object(timer, params):
     return {
         "over_all_time": over_all_time,
         "model_execution_time": sum([log.get("time_taken", 0) for log in params['execution_time_logs']]) or "",
+        # "model_and_tool_execution_time": sum([log.get("time_taken", 0) for log in params['execution_time_logs']]) or "" + sum([log.get("time_taken", 0) for log in params['function_time_logs']]) or "",
         "execution_time_logs": params['execution_time_logs'] or {},
         "function_time_logs": params['function_time_logs'] or {}
     }
@@ -524,7 +706,7 @@ def update_usage_metrics(parsed_data, params, latency, result=None, error=None, 
     return parsed_data['usage']
 
 
-def create_history_params(parsed_data, error=None, class_obj=None):
+def create_history_params(parsed_data, error=None, class_obj=None, thread_info=None):
     """
     Create history parameters for error tracking and logging.
     
@@ -532,13 +714,18 @@ def create_history_params(parsed_data, error=None, class_obj=None):
         parsed_data: Dictionary containing parsed request data
         error: Optional error object
         class_obj: Optional class object with aiconfig method
+        thread_info: Optional thread_info dictionary containing thread_id and sub_thread_id
         
     Returns:
         Dictionary containing history parameters
     """
+    # Use thread_info if available and parsed_data doesn't have thread_id/sub_thread_id
+    thread_id = parsed_data.get('thread_id') or (thread_info.get('thread_id') if thread_info else None)
+    sub_thread_id = parsed_data.get('sub_thread_id') or (thread_info.get('sub_thread_id') if thread_info else None)
+    
     return {
-        "thread_id": parsed_data['thread_id'],
-        "sub_thread_id": parsed_data['sub_thread_id'],
+        "thread_id": thread_id,
+        "sub_thread_id": sub_thread_id,
         "user": parsed_data['user'],
         "message": None,
         "org_id": parsed_data['org_id'],
@@ -549,7 +736,14 @@ def create_history_params(parsed_data, error=None, class_obj=None):
         "actor": "user",
         'tools_call_data': error.args[1] if error and len(error.args) > 1 else None,
         "message_id": parsed_data['message_id'],
-        "AiConfig": class_obj.aiconfig() if class_obj else None
+        "AiConfig": class_obj.aiconfig() if class_obj else None,
+        "folder_id": parsed_data.get('folder_id'),
+        "folder_limit": parsed_data.get('folder_limit', 0),
+        "parent_id": parsed_data.get('parent_bridge_id', ''),
+        "child_id": None,
+        "prompt": parsed_data['configuration'].get('prompt'),
+        "llm_urls": [],
+        "user_urls": ([{"url": u, "type": "image"} for u in parsed_data.get("images", [])] + [{"url": u, "type": "pdf"} for u in parsed_data.get("files", [])])
     }
 
 
@@ -769,7 +963,7 @@ async def orchestrator_agent_chat(agent_config, body=None, user=None):
 
         # Handle missing variables
         if missing_vars:
-            send_error(parsed_data['bridge_id'], parsed_data['org_id'], missing_vars, error_type='Variable')
+            send_error(parsed_data['bridge_id'], parsed_data['org_id'], missing_vars, error_type='Variable', bridge_name=parsed_data.get('name'), is_embed=parsed_data.get('is_embed'), user_id=parsed_data.get('user_id'))
         
         # Step 8: Configure Custom Settings
         custom_config = await configure_custom_settings(
@@ -792,7 +986,7 @@ async def orchestrator_agent_chat(agent_config, body=None, user=None):
             raise ValueError(result)
         
         if result['modelResponse'].get('firstAttemptError'):
-            send_error(parsed_data['bridge_id'], parsed_data['org_id'], result['modelResponse']['firstAttemptError'], error_type='retry_mechanism')
+            send_error(parsed_data['bridge_id'], parsed_data['org_id'], result['modelResponse']['firstAttemptError'], error_type='retry_mechanism', bridge_name=parsed_data.get('name'), is_embed=parsed_data.get('is_embed'), user_id=parsed_data.get('user_id'))
         
         if parsed_data['configuration']['type'] == 'chat':
             if parsed_data['is_rich_text'] and parsed_data['bridgeType'] and parsed_data['reasoning_model'] == False:
@@ -833,7 +1027,7 @@ async def orchestrator_agent_chat(agent_config, body=None, user=None):
                 'tokens': parsed_data.get('tokens'),
                 'error': {'status': False, 'message': None},
                 'variables': parsed_data.get('variables', {}),
-                'image_urls': parsed_data.get('files', []) if parsed_data.get('files') else [],
+                'user_urls': parsed_data.get('files', []) if parsed_data.get('files') else [],
                 'ai_config': params.get('custom_config', {})
             }
             
@@ -881,7 +1075,7 @@ async def orchestrator_agent_chat(agent_config, body=None, user=None):
                 'latency': latency if 'latency' in locals() else None,
                 'tokens': None,
                 'tool_call_data': None,
-                'image_urls': [],
+                'user_urls': [],
                 'ai_config': params.get('custom_config', {})
             }
             org_id = body.get('org_id') if 'body' in locals() else 'unknown'
@@ -1054,9 +1248,10 @@ async def process_background_tasks_for_playground(result, parsed_data):
             # Generate testcase_id immediately and add to response
             new_testcase_id = str(ObjectId())
             result['response']['testcase_id'] = new_testcase_id
+            parsed_data['testcase_data']['testcase_id'] = new_testcase_id
+            await sendResponse(parsed_data['body']['bridge_configurations']['playground_response_format'], parsed_data['testcase_data'], success=True, variables=parsed_data.get('variables',{}))
             
             # Add the generated ID to testcase_data for the background task
-            parsed_data['testcase_data']['testcase_id'] = new_testcase_id
             
             # Save testcase data in background using the same function
             async def create_testcase_background():
@@ -1070,6 +1265,20 @@ async def process_background_tasks_for_playground(result, parsed_data):
                 
     except Exception as e:
         logger.error(f"Error processing playground testcase: {str(e)}")
+
+async def update_cost_and_last_used(parsed_data):
+    try:
+        await update_cost(parsed_data)
+        await update_last_used(parsed_data)
+    except Exception as e:
+        logger.error(f"Error updating cost and last used: {str(e)}")
+
+async def update_cost_and_last_used_in_background(parsed_data):
+    """Kick off the async cost cache update using the data available on parsed_data."""
+    if not isinstance(parsed_data, dict):
+        logger.warning("Skipping background cost update due to invalid parsed data.")
+        return
+
+    asyncio.create_task(update_cost_and_last_used(parsed_data))
+
     
-
-

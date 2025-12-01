@@ -27,7 +27,7 @@ def clean_json(data):
 
 def validate_tool_call(service, response):
     match service: # TODO: Fix validation process.
-        case  'openai_completion' | 'groq' | 'open_router' | 'mistral' | 'gemini'| 'ai_ml':
+        case  'openai_completion' | 'groq' | 'grok' | 'open_router' | 'mistral' | 'gemini'| 'ai_ml':
             tool_calls = response.get('choices', [])[0].get('message', {}).get("tool_calls", [])
             return len(tool_calls) > 0 if tool_calls is not None else False
         case 'openai':
@@ -155,7 +155,7 @@ def tool_call_formatter(configuration: dict, service: str, variables: dict, vari
                 }
             } for transformed_tool in configuration.get('tools', [])
         ]
-    elif service == service_name['groq']:
+    elif service == service_name['groq'] or service == service_name['grok']:
         return [
             {
             "type": "function",
@@ -227,7 +227,7 @@ async def process_data_and_run_tools(codes_mapping, self):
             if not tool_data.get("response"):
                 # if function is present in db/NO response, create task for async processing
                 if self.tool_id_and_name_mapping[name].get('type') == 'RAG':
-                    task = get_text_from_vectorsQuery({**tool_data.get("args"), "org_id": self.org_id}) 
+                    task = get_text_from_vectorsQuery({**tool_data.get("args"), "org_id": self.org_id}, Flag = True) 
                 elif self.tool_id_and_name_mapping[name].get('type') == 'AGENT':
                     agent_args = {
                         "org_id": self.org_id, 
@@ -246,6 +246,10 @@ async def process_data_and_run_tools(codes_mapping, self):
                     # Pass timer state to maintain latency tracking in recursive calls
                     if hasattr(self, 'timer') and hasattr(self.timer, 'getTime'):
                         agent_args["timer_state"] = self.timer.getTime()
+                    
+                    # Pass bridge_configurations if available
+                    if hasattr(self, 'bridge_configurations') and self.bridge_configurations:
+                        agent_args["bridge_configurations"] = self.bridge_configurations
                     
                     task = call_gtwy_agent(agent_args)
                 else: 
@@ -311,7 +315,7 @@ def make_code_mapping_by_service(responses, service):
     codes_mapping = {}
     function_list = []
     match service:
-        case 'openai_completion' | 'groq' | 'open_router' | 'mistral' | 'gemini' | 'ai_ml':
+        case 'openai_completion' | 'groq' | 'grok' | 'open_router' | 'mistral' | 'gemini' | 'ai_ml':
 
             for tool_call in responses['choices'][0]['message']['tool_calls']:
                 name = tool_call['function']['name']
