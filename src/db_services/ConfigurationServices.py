@@ -7,7 +7,7 @@ from bson import errors
 from src.configs.constant import redis_keys
 from config import Config
 import jwt
-from datetime import datetime
+from datetime import datetime, timezone
 from ..services.utils.apiservice import fetch
 
 configurationModel = db["configurations"]
@@ -872,6 +872,10 @@ async def get_template_by_id(template_id):
     
 async def create_bridge(data):
     try:
+        if 'created_at' not in data:
+            data['created_at'] = datetime.now(timezone.utc)
+        if 'updated_at' not in data:
+            data['updated_at'] = datetime.now(timezone.utc)
         result = await configurationModel.insert_one(data)
         return {
             'success': True,
@@ -1253,7 +1257,7 @@ async def clone_agent_to_org(bridge_id, to_shift_org_id, cloned_agents_map=None,
                             new_api_call['org_id'] = to_shift_org_id  # Update org_id
                             new_api_call['function_name'] = duplicate_data['data']['id']  # Update with new script_id
                             new_api_call['bridge_ids'] = [new_bridge_id]  # Update bridge_ids
-                            new_api_call['updated_at'] = datetime.utcnow()  # Update timestamp
+                            new_api_call['updated_at'] = datetime.now(timezone.utc)  # Update timestamp
                             
                             # Insert new API call with new _id
                             new_api_call_result = await apiCallModel.insert_one(new_api_call)
@@ -1268,7 +1272,7 @@ async def clone_agent_to_org(bridge_id, to_shift_org_id, cloned_agents_map=None,
                         new_api_call.pop('_id', None)
                         new_api_call['org_id'] = to_shift_org_id
                         new_api_call['bridge_ids'] = [new_bridge_id]
-                        new_api_call['updated_at'] = datetime.utcnow()
+                        new_api_call['updated_at'] = datetime.now(timezone.utc)
                         
                         new_api_call_result = await apiCallModel.insert_one(new_api_call)
                         cloned_function_ids.append(str(new_api_call_result.inserted_id))

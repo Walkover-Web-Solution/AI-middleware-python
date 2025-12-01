@@ -1,4 +1,5 @@
 from fastapi import HTTPException, status
+from datetime import datetime, timezone
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 from src.db_services.folder_service import get_folder_data
@@ -539,6 +540,10 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
         
         # Perform database updates
         await update_bridge(bridge_id=bridge_id, update_fields=update_fields, version_id=version_id)
+        
+        if version_id and parent_id:
+            await update_bridge(bridge_id=parent_id, update_fields={'updated_at': datetime.now(timezone.utc)})
+
         result = await get_bridges_with_tools(bridge_id, org_id, version_id)
         await add_bulk_user_entries(user_history)
         if apikey_object_id is not None:

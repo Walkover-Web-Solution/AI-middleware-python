@@ -42,7 +42,7 @@ async def update_testcase_by_id(testcase_id, update_data):
     """Update a testcase by _id"""
     try:
         object_id = ObjectId(testcase_id)
-        update_data['updated_at'] = datetime.datetime.utcnow()
+        update_data['updated_at'] = datetime.datetime.now(datetime.timezone.utc)
         result = await testcases_model.update_one(
             {'_id': object_id}, 
             {'$set': update_data}
