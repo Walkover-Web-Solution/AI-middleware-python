@@ -336,29 +336,3 @@ async def guardrails_check(parsed_data: dict) -> dict:
         traceback.print_exc()
         # Don't block the request if there's an error in guardrails (graceful degradation)
         return None
-
-
-def get_available_guardrails_categories() -> dict:
-    """
-    Get all available guardrails categories with their descriptions
-    
-    Returns:
-        dict: Dictionary of category keys with their names and descriptions
-    """
-    return {
-        category: {
-            "name": template["name"],
-            "description": template["description"]
-        }
-        for category, template in GUARDRAILS_TEMPLATES.items()
-    }
-
-
-def get_guardrails_category_keys() -> list:
-    """
-    Get list of all available guardrails category keys
-    
-    Returns:
-        list: List of category keys that can be used in guardrails_config
-    """
-    return list(GUARDRAILS_TEMPLATES.keys())
