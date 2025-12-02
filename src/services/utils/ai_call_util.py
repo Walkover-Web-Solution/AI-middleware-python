@@ -63,8 +63,7 @@ async def call_gtwy_agent(args):
         # Step 1: Update request body with core data
         request_body.update({
             "user": user_message,
-            "bridge_id": bridge_id,
-            "variables": variables
+            "bridge_id": bridge_id
         })
         # If version_id is provided, include it in the request body early
         if version_id:
@@ -80,6 +79,7 @@ async def call_gtwy_agent(args):
 
         # Step 3: Update request body with configuration data
         request_body.update(primary_config)
+        request_body['variables'] = variables
         request_body['org_id'] = org_id
         request_body['bridge_configurations'] = bridge_configurations
         
