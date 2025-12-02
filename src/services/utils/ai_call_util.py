@@ -79,7 +79,18 @@ async def call_gtwy_agent(args):
         primary_config = bridge_configurations[bridge_id]
 
         # Step 3: Update request body with configuration data
+        # Step 3: Update request body with configuration data
+        # Merge variables from config with existing variables (from args) to avoid overwriting
+        config_variables = primary_config.get('variables', {})
+        if isinstance(config_variables, dict):
+            # Create a new dict with config variables, then update with args variables (args take precedence)
+            merged_variables = config_variables.copy()
+            merged_variables.update(variables)
+            variables = merged_variables
+
         request_body.update(primary_config)
+        # Ensure the merged variables are set
+        request_body['variables'] = variables
         request_body['org_id'] = org_id
         request_body['bridge_configurations'] = bridge_configurations
         
