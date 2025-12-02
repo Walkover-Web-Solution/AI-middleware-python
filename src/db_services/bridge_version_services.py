@@ -16,6 +16,7 @@ from ..services.utils.ai_call_util import call_ai_middleware
 from globals import *
 from src.configs.constant import redis_keys
 from typing import Dict, Set, Iterable, Optional
+import tiktoken
 
 configurationModel = db["configurations"]
 version_model = db['configuration_versions']
@@ -142,6 +143,7 @@ async def publish(org_id, version_id, user_id):
     
     parent_id = str(get_version_data.get('parent_id'))
     prompt = get_version_data.get('configuration',{}).get('prompt','')
+    tools = get_version_data.get('configuration',{}).get('tools','')
     variable_state = get_version_data.get('variables_state', {})
     variable_path = get_version_data.get('variables_path', {})
     agent_variables = Helper.get_req_opt_variables_in_prompt(prompt, variable_state, variable_path)
@@ -165,6 +167,8 @@ async def publish(org_id, version_id, user_id):
     
     asyncio.create_task(makeQuestion(parent_id, updated_configuration.get("configuration",{}).get("prompt",""), updated_configuration.get('apiCalls'), save=True))
     asyncio.create_task(delete_current_testcase_history(version_id))
+    asyncio.create_task(get_prompt_enhancer_percentage(parent_id, updated_configuration.get("configuration",{}).get("prompt","")))
+    asyncio.create_task(calculate_and_save_prompt_tokens(parent_id, prompt, tools))
     # delete apicalls from updated_configuration
     del updated_configuration['apiCalls']
     
@@ -433,6 +437,66 @@ async def makeQuestion(parent_id, prompt, functions, save = False):
             {'$set': updated_configuration}
         )
     return expected_questions
+
+async def get_prompt_enhancer_percentage(parent_id, prompt):
+    """Get prompt enhancer percentage using AI middleware and save to configuration"""
+    try:
+        prompt_enhancer_result = await call_ai_middleware(prompt, bridge_id=bridge_ids['prompt_checker'])
+        updated_configuration = {"prompt_enhancer_percentage": prompt_enhancer_result}
+        
+        # Update the document in the configurationModel
+        await configurationModel.update_one(
+            {'_id': ObjectId(parent_id)},
+            {'$set': updated_configuration}
+        )
+        return prompt_enhancer_result
+    except Exception as e:
+        logger.error(f"Error getting prompt enhancer percentage: {str(e)}, {traceback.format_exc()}")
+        return None
+
+def calculate_tokens(text):
+    """Calculate tokens for a given text using tiktoken"""
+    try:
+        encoding = tiktoken.get_encoding("cl100k_base")
+        tokens = encoding.encode(text)
+        return len(tokens)
+    except Exception as e:
+        logger.error(f"Error calculating tokens: {str(e)}, {traceback.format_exc()}")
+        return 0
+
+async def calculate_and_save_prompt_tokens(parent_id, prompt, tools):
+    """Calculate total tokens for prompt and tools, then save to configuration"""
+    try:
+        prompt_tokens = 0
+        tools_tokens = 0
+        
+        # Calculate tokens for prompt
+        if prompt:
+            prompt_tokens = calculate_tokens(str(prompt))
+        
+        # Calculate tokens for tools (handle both list and string formats)
+        if tools:
+            # If tools is a list or dict, convert to JSON string for token counting
+            # If it's already a string, use it directly
+            if isinstance(tools, (list, dict)):
+                tools_json = json.dumps(tools, ensure_ascii=False)
+                tools_tokens = calculate_tokens(tools_json)
+            elif isinstance(tools, str) and tools.strip():
+                tools_tokens = calculate_tokens(tools)
+        
+        # Calculate total tokens
+        prompt_total_tokens = prompt_tokens + tools_tokens
+        
+        # Update the document in the configurationModel
+        updated_configuration = {"prompt_total_tokens": prompt_total_tokens}
+        await configurationModel.update_one(
+            {'_id': ObjectId(parent_id)},
+            {'$set': updated_configuration}
+        )
+        return prompt_total_tokens
+    except Exception as e:
+        logger.error(f"Error calculating and saving prompt tokens: {str(e)}, {traceback.format_exc()}")
+        return None
     
 
 async def get_comparison_score(org_id, version_id):
