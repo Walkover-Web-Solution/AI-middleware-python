@@ -80,6 +80,7 @@ async def call_gtwy_agent(args):
 
         # Step 3: Update request body with configuration data
         request_body.update(primary_config)
+        request_body['variables'] = variables
         request_body['org_id'] = org_id
         request_body['bridge_configurations'] = bridge_configurations
         
