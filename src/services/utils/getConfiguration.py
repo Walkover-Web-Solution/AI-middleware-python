@@ -94,7 +94,15 @@ async def _prepare_configuration_response(configuration, service, bridge_id, api
 
     template_content = await ConfigurationService.get_template_by_id(template_id) if template_id else None
 
-    pre_tools_name, pre_tools_args = setup_pre_tools(bridge, result, variables)
+    # Pre-tools will be set up later in chat_multiple_agents with agent-specific variables
+    pre_tools_name, pre_tools_args = None, None
+    # Store pre_tools_data for later processing
+    pre_tools_data_for_later = None
+    if bridge.get('pre_tools'):
+        api_data = result.get('bridges', {}).get('pre_tools_data', [{}])[0]
+        if api_data:
+            pre_tools_name = api_data.get('function_name', api_data.get('endpoint_name', ""))
+            pre_tools_data_for_later = api_data
 
     rag_data = bridge.get('rag_data')
     gpt_memory_context = bridge.get('gpt_memory_context')
@@ -122,6 +130,7 @@ async def _prepare_configuration_response(configuration, service, bridge_id, api
     base_config = {
         'configuration': configuration,
         'pre_tools': {'name': pre_tools_name, 'args': pre_tools_args} if pre_tools_name else None,
+        'pre_tools_data': pre_tools_data_for_later,  # Store pre_tools_data for later processing
         'service': service,
         'apikey': apikey,
         'apikey_object_id': apikey_object_id,

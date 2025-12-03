@@ -31,6 +31,37 @@ from ..commonServices.baseService.utils import sendResponse
 from src.services.utils.rich_text_support import process_chatbot_response
 from src.db_services.orchestrator_history_service import OrchestratorHistoryService, orchestrator_collector
 
+def setup_agent_pre_tools(parsed_data, bridge_configurations):
+    """
+    Setup pre_tools for the current agent with its own variables.
+    This function populates pre_tools args based on the agent's specific variables.
+    
+    Args:
+        parsed_data: The parsed request data containing bridge_id, variables, and pre_tools
+        bridge_configurations: Dictionary of all agent configurations
+    """
+    current_bridge_id = parsed_data.get('bridge_id')
+    if not current_bridge_id or not bridge_configurations:
+        return
+    
+    current_config = bridge_configurations.get(current_bridge_id, {})
+    pre_tools_data = current_config.get('pre_tools_data')
+    agent_variables = parsed_data.get('variables', {})
+    
+    if pre_tools_data and parsed_data.get('pre_tools'):
+        # Get required params from pre_tools_data
+        required_params = pre_tools_data.get('required_params', [])
+        
+        # Build args from agent's own variables
+        args = {}
+        for param in required_params:
+            if param in agent_variables:
+                args[param] = agent_variables[param]
+        
+        # Update the pre_tools args with agent-specific variables
+        parsed_data['pre_tools']['args'] = args
+        logger.info(f"Set up pre_tools for agent {current_bridge_id} with args: {args}")
+
 async def handle_agent_transfer(result, request_body, bridge_configurations, chat_function, current_bridge_id=None, transfer_request_id=None):
     transfer_agent_config = result.get('transfer_agent_config')
     
