@@ -2,22 +2,29 @@ from anthropic import AsyncAnthropic
 import traceback
 import json
 from ..api_executor import execute_api_call
+from ..baseService.utils import send_message
 # from src.services.utils.unified_token_validator import validate_anthropic_token_limit
 from globals import *
 
 
-async def anthropic_runmodel(configuration, apikey, execution_time_logs, bridge_id, timer, name = "", org_name = "", service = "", count = 0, token_calculator=None):
+async def anthropic_runmodel(configuration, apikey, execution_time_logs, bridge_id, timer, name="", org_name="", service="", count=0, token_calculator=None, response_format=None, stream=False):
     try:
-        # # Validate token count before making API call
-        # model_name = configuration.get('model')
-        # validate_anthropic_token_limit(configuration, model_name, service, apikey)
-        
         # Initialize async client
         anthropic_client = AsyncAnthropic(api_key=apikey)
+        
+        # Determine if streaming to RTLayer should be enabled
+        should_stream_to_rtlayer = (
+            stream and
+            response_format and 
+            response_format.get('type') == 'RTLayer'
+        )
 
         # Define the API call function with streaming
         async def api_call(config):
             try:
+                # Track if we have a tool call
+                has_tool_call = False
+                
                 # Initialize response structure to accumulate streaming data
                 accumulated_response = {
                     'id': '',
@@ -34,8 +41,8 @@ async def anthropic_runmodel(configuration, apikey, execution_time_logs, bridge_
                 content_blocks = {}
                 
                 # Create streaming response (stream method doesn't need 'stream' parameter)
-                async with anthropic_client.messages.stream(**config) as stream:
-                    async for event in stream:
+                async with anthropic_client.messages.stream(**config) as stream_response:
+                    async for event in stream_response:
                         if event.type == 'message_start':
                             # Initialize message with basic info
                             message_data = event.message
@@ -54,6 +61,7 @@ async def anthropic_runmodel(configuration, apikey, execution_time_logs, bridge_
                                     'text': ''
                                 }
                             elif content_block.type == 'tool_use':
+                                has_tool_call = True
                                 initial_input = getattr(content_block, 'input', None)
                                 if initial_input is None:
                                     initial_input = {}
@@ -81,6 +89,15 @@ async def anthropic_runmodel(configuration, apikey, execution_time_logs, bridge_
                             if delta.type == 'text_delta':
                                 block.setdefault('text', '')
                                 block['text'] += delta.text
+                                
+                                # Stream text delta to RTLayer if enabled and no tool call
+                                if should_stream_to_rtlayer and not has_tool_call:
+                                    stream_data = {
+                                        'type': 'delta',
+                                        'delta': delta.text
+                                    }
+                                    await send_message(cred=response_format['cred'], data={'streaming': True, 'chunk': stream_data, 'success': True})
+                                    
                             elif delta.type == 'input_json_delta' and block.get('type') == 'tool_use':
                                 # For tool use, we need to accumulate the JSON string
                                 block.setdefault('partial_json', '')
@@ -135,6 +152,10 @@ async def anthropic_runmodel(configuration, apikey, execution_time_logs, bridge_
                             # Finalize the response
                             break
                 
+                # Send stream end signal if streaming was enabled and no tool call
+                if should_stream_to_rtlayer and not has_tool_call:
+                    await send_message(cred=response_format['cred'], data={'streaming': True, 'done': True, 'success': True})
+                
                 # Convert content_blocks dict to ordered list
                 ordered_content = [content_blocks[i] for i in sorted(content_blocks.keys())]
 
@@ -163,6 +184,9 @@ async def anthropic_runmodel(configuration, apikey, execution_time_logs, bridge_
                 return {'success': True, 'response': accumulated_response}
                 
             except Exception as error:
+                # Send error to RTLayer if streaming was active
+                if should_stream_to_rtlayer:
+                    await send_message(cred=response_format['cred'], data={'streaming': True, 'error': str(error), 'success': False})
                 return {
                     'success': False,
                     'error': str(error),
@@ -176,14 +200,14 @@ async def anthropic_runmodel(configuration, apikey, execution_time_logs, bridge_
             execution_time_logs=execution_time_logs,
             timer=timer,
             bridge_id=bridge_id,
-            message_id=None,  # Adjust if needed
-            org_id=None,      # Adjust if needed
-            alert_on_retry=False,  # Adjust if needed
+            message_id=None,
+            org_id=None,
+            alert_on_retry=False,
             name=name,
             org_name=org_name,
-            service = service,
-            count = count,
-            token_calculator = token_calculator
+            service=service,
+            count=count,
+            token_calculator=token_calculator
         )
 
     except Exception as e:

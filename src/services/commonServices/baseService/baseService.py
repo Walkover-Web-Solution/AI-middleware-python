@@ -73,7 +73,7 @@ class BaseService:
         self.web_search_filters = params.get('web_search_filters')
         self.folder_id = params.get('folder_id')
         self.bridge_configurations = params.get('bridge_configurations')
-
+        self.stream = params.get('stream')
 
     def aiconfig(self):
         return self.customConfig
@@ -292,23 +292,23 @@ class BaseService:
             response = {}
             loop = asyncio.get_event_loop()
             if service == service_name['openai']:
-                response = await openai_response_model(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer, self.message_id, self.org_id, self.name, self.org_name, service, count, self.token_calculator)
+                response = await openai_response_model(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer, self.message_id, self.org_id, self.name, self.org_name, service, count, self.token_calculator, self.response_format, self.stream)
             elif service == service_name['anthropic']:
-                response = await loop.run_in_executor(executor, lambda: asyncio.run(anthropic_runmodel(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer, self.name, self.org_name, service, count, self.token_calculator)))
+                response = await loop.run_in_executor(executor, lambda: asyncio.run(anthropic_runmodel(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer, self.name, self.org_name, service, count, self.token_calculator, self.response_format, self.stream)))
             elif service == service_name['groq']:
-                response = await groq_runmodel(configuration, apikey, self.execution_time_logs, self.bridge_id,  self.timer, self.message_id, self.org_id, self.name, self.org_name, service, count, self.token_calculator)
+                response = await groq_runmodel(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer, self.message_id, self.org_id, self.name, self.org_name, service, count, self.token_calculator, self.response_format, self.stream)
             elif service == service_name['grok']:
-                response = await grok_runmodel(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer, self.message_id, self.org_id, self.name, self.org_name, service, count, self.token_calculator)
+                response = await grok_runmodel(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer, self.message_id, self.org_id, self.name, self.org_name, service, count, self.token_calculator, self.response_format, self.stream)
             elif service == service_name['open_router']:
-                response = await openrouter_modelrun(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer, self.message_id, self.org_id, self.name, self.org_name, service, count, self.token_calculator)
+                response = await openrouter_modelrun(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer, self.message_id, self.org_id, self.name, self.org_name, service, count, self.token_calculator, self.response_format, self.stream)
             elif service == service_name['mistral']:
-                response = await mistral_model_run(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer,self.message_id, self.org_id, self.name, self.org_name, service, count, self.token_calculator)
+                response = await mistral_model_run(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer, self.message_id, self.org_id, self.name, self.org_name, service, count, self.token_calculator, self.response_format, self.stream)
             elif service == service_name['gemini']:
-                response = await gemini_modelrun(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer, self.message_id, self.org_id, self.name, self.org_name, service, count, self.token_calculator)
+                response = await gemini_modelrun(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer, self.message_id, self.org_id, self.name, self.org_name, service, count, self.token_calculator, self.response_format, self.stream)
             elif service == service_name['ai_ml']:
-                response = await ai_ml_model_run(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer, self.message_id, self.org_id, self.name, self.org_name, service, count, self.token_calculator)
+                response = await ai_ml_model_run(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer, self.message_id, self.org_id, self.name, self.org_name, service, count, self.token_calculator, self.response_format, self.stream)
             elif service == service_name['openai_completion']:
-                response = await openai_completion(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer, self.message_id, self.org_id, self.name, self.org_name, service, count, self.token_calculator)
+                response = await openai_completion(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer, self.message_id, self.org_id, self.name, self.org_name, service, count, self.token_calculator, self.response_format, self.stream)
             if not response['success']:
                 raise ValueError(response['error'])
             return {

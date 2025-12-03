@@ -179,6 +179,7 @@ def parse_request_body(request_body):
         "parent_bridge_id": body.get('parent_bridge_id'),
         "transfer_request_id": body.get('transfer_request_id'),
         "orchestrator_flag": body.get('orchestrator_flag'),
+        "stream": body.get('stream') or False,
     }
 
 
@@ -369,6 +370,14 @@ async def configure_custom_settings(model_configuration, custom_config, service)
 def build_service_params(parsed_data, custom_config, model_output_config, thread_info=None, timer=None, memory=None, send_error_to_webhook=None, bridge_configurations=None):
     token_calculator = TokenCalculator(parsed_data['service'], model_output_config)
     
+    # For playground, use playground_response_format (RTLayer) for streaming
+    # For non-playground, use regular response_format
+    response_format = parsed_data['response_format']
+    if parsed_data['is_playground']:
+        playground_response_format = parsed_data.get('body', {}).get('bridge_configurations', {}).get('playground_response_format')
+        if playground_response_format:
+            response_format = playground_response_format
+    
     return {
         "customConfig": custom_config,
         "configuration": parsed_data['configuration'],
@@ -386,7 +395,7 @@ def build_service_params(parsed_data, custom_config, model_output_config, thread
         "modelOutputConfig": model_output_config,
         "playground": parsed_data['is_playground'],
         "template": parsed_data['template'],
-        "response_format": parsed_data['response_format'],
+        "response_format": response_format,
         "execution_time_logs": [],
         "function_time_logs": [],
         "timer": timer,
@@ -411,7 +420,8 @@ def build_service_params(parsed_data, custom_config, model_output_config, thread
         "youtube_url" : parsed_data['youtube_url'],
         "web_search_filters" : parsed_data['web_search_filters'],
         "folder_id": parsed_data.get('folder_id'),
-        "bridge_configurations": bridge_configurations
+        "bridge_configurations": bridge_configurations,
+        "stream": parsed_data.get('stream') or False,
 
     }
 
