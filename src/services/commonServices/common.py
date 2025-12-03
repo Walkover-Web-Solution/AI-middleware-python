@@ -38,7 +38,8 @@ from src.services.utils.common_utils import (
     process_background_tasks_for_playground,
     process_variable_state,
     handle_agent_transfer,
-    update_cost_and_last_used_in_background
+    update_cost_and_last_used_in_background,
+    setup_agent_pre_tools
 )
 from src.services.utils.guardrails_validator import guardrails_check
 from src.services.utils.rich_text_support import process_chatbot_response
@@ -126,6 +127,9 @@ async def chat(request_body):
         bridge_configurations = request_body.get('body', {}).get('bridge_configurations', {})
         # Step 1: Parse and validate request body
         parsed_data = parse_request_body(request_body)
+        
+        # Setup pre_tools for the current agent with its own variables
+        setup_agent_pre_tools(parsed_data, bridge_configurations)
         
         # Initialize or retrieve transfer_request_id for tracking transfers
         transfer_request_id = parsed_data.get('transfer_request_id') or str(uuid.uuid1())
