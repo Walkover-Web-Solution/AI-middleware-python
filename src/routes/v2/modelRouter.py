@@ -2,7 +2,15 @@ from fastapi import APIRouter, Depends, Request, HTTPException
 from fastapi.responses import JSONResponse
 import asyncio
 
-from src.services.commonServices.common import chat_multiple_agents, embedding, batch, run_testcases, image, orchestrator_chat
+from src.services.commonServices.common import (
+    chat_multiple_agents,
+    embedding,
+    batch,
+    run_testcases,
+    image,
+    video,
+    orchestrator_chat
+)
 from src.services.commonServices.baseService.utils import make_request_data
 from ...middlewares.middleware import jwt_middleware
 from ...middlewares.getDataUsingBridgeId import add_configuration_data_to_body
@@ -52,6 +60,10 @@ async def chat_completion(request: Request, db_config: dict = Depends(add_config
             loop = asyncio.get_event_loop()
             result = await image(data_to_send)
             return result
+        if type == 'video':
+            loop = asyncio.get_event_loop()
+            result = await video(data_to_send)
+            return result
         # Always use chat_multiple_agents - it handles both single and multiple agents
         loop = asyncio.get_event_loop()
         result = await chat_multiple_agents(data_to_send)
@@ -96,6 +108,9 @@ async def playground_chat_completion_bridge(request: Request, db_config: dict = 
         type = data_to_send.get("body",{}).get('configuration',{}).get('type')
         if type == 'embedding':
                 result =  await embedding(data_to_send)
+                return result
+        if type == 'video':
+                result = await video(data_to_send)
                 return result
         # Always use chat_multiple_agents - it handles both single and multiple agents
         loop = asyncio.get_event_loop()

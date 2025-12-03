@@ -100,10 +100,13 @@ async def Response_formatter(response = {}, service = None, tools={}, type='chat
             }
         }
     elif service == service_name['gemini'] and type == 'video':
+        payload = (response.get('data') or [{}])[0]
         return {
             "data" : {
-                "content" : response.get('data')[0].get('text_content'),
-                "file_data" : response.get('data')[0].get('file_reference')
+                "content" : payload.get('text_content'),
+                "file_data" : payload.get('file_reference'),
+                "video_files": payload.get('video_files'),
+                "metadata": payload.get('metadata')
             }
         }
     elif service == service_name['openai']:
@@ -275,6 +278,16 @@ async def Response_formatter(response = {}, service = None, tools={}, type='chat
                 "generated_images": response.get("usage", {}).get("generated_images", None),
                 "output_tokens": response.get("usage", {}).get("output_tokens", None),
                 "total_tokens": response.get("usage", {}).get("total_tokens", None)
+            }
+        }
+    elif service == service_name['ai_ml'] and type == 'video':
+        payload = (response.get('data') or [{}])[0]
+        return {
+            "data": {
+                "content": payload.get('text_content'),
+                "video_files": payload.get('video_files'),
+                "metadata": payload.get('metadata'),
+                "provider_url": payload.get('provider_url')
             }
         }
     elif service == service_name['ai_ml']:

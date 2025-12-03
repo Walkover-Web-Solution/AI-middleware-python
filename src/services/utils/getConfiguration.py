@@ -67,9 +67,9 @@ async def _prepare_configuration_response(configuration, service, bridge_id, api
     apikey = setup_api_key(service, result, apikey, chatbot)
     apikey_object_id = result.get('bridges', {}).get('apikey_object_id')
 
-    # Handle image type early return
-    if configuration['type'] == 'image':
-        image_config = {
+    # Handle media-generation specific flows early
+    if configuration['type'] in {'image', 'video'}:
+        media_config = {
             'configuration': configuration,
             'service': service,
             'apikey': apikey,
@@ -78,7 +78,12 @@ async def _prepare_configuration_response(configuration, service, bridge_id, api
             'bridge_id': result['bridges'].get('parent_id', result['bridges'].get('_id')),
             'version_id': version_id or result.get('bridges', {}).get('published_version_id'),
         }
-        return None, image_config, result, resolved_bridge_id
+
+        # Attach any video specific overrides for generation parity with images
+        if configuration['type'] == 'video':
+            media_config['video_settings'] = configuration.get('video_settings', {})
+
+        return None, media_config, result, resolved_bridge_id
 
     # Tool choice
     configuration['tool_choice'] = setup_tool_choice(configuration, result, service)

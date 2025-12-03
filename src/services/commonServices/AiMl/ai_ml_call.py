@@ -25,6 +25,35 @@ class Ai_Ml(BaseService):
                 historyParams['message'] = "image generated successfully"
                 historyParams['type'] = 'assistant'
             return {'success': True, 'modelResponse': modelResponse, 'historyParams': historyParams, 'response': response}
+
+        # Handle video generation type
+        if self.type == 'video':
+            self.customConfig['prompt'] = self.user
+            if self.video_settings:
+                self.customConfig['video_settings'] = self.video_settings
+            if self.image_data:
+                base_content = self.customConfig.get('content', []) or []
+                for url in self.image_data:
+                    if url:
+                        base_content.append({
+                            "type": "image_url",
+                            "image_url": {"url": url}
+                        })
+                self.customConfig['content'] = base_content
+
+            video_response = await self.video(self.customConfig, self.apikey, service_name['ai_ml'], generation=True)
+            modelResponse = video_response.get("modelResponse", {})
+            if not video_response.get('success'):
+                if not self.playground:
+                    await self.handle_failure(video_response)
+                raise ValueError(video_response.get('error'))
+
+            response = await Response_formatter(modelResponse, service_name['ai_ml'], tools, self.type, None)
+            if not self.playground:
+                historyParams = self.prepare_history_params(response, modelResponse, tools, None)
+                historyParams['message'] = "video generated successfully"
+                historyParams['type'] = 'assistant'
+            return {'success': True, 'modelResponse': modelResponse, 'historyParams': historyParams, 'response': response}
         
         # Handle chat/text generation type
         conversation = ConversationService.createAiMlConversation(self.configuration.get('conversation'), self.memory, self.files).get('messages', [])

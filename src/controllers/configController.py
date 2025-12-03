@@ -283,7 +283,8 @@ async def get_all_service_models_controller(service, request):
             "fine-tune": {},
             "reasoning": {},
             "image": {},
-            "embedding": {}
+            "embedding": {},
+            "video": {}
         }
         
         # Iterate through all models in the service

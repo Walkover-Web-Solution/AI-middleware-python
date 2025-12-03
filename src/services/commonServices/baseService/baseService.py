@@ -18,6 +18,8 @@ from ....configs.constant import service_name
 from ..openAI.image_model import OpenAIImageModel
 from ..Google.gemini_image_model import gemini_image_model
 from ..Google.gemini_video_model import gemini_video_model
+from ..Google.gemini_video_generation_model import gemini_video_generation_model
+from ..AiMl.ai_ml_video_model import ai_ml_video_generation_model
 from ..AiMl.ai_ml_model_run import ai_ml_model_run
 from ..AiMl.ai_ml_image_model import AiMlImageModel
 from concurrent.futures import ThreadPoolExecutor
@@ -57,6 +59,7 @@ class BaseService:
         self.token_calculator = params.get('token_calculator')
         self.apikey_object_id = params.get('apikey_object_id')
         self.image_data = params.get('images')
+        self.video_settings = params.get('video_settings') or {}
         self.tool_call_count = params.get('tool_call_count')
         self.text = params.get('text')
         self.tool_id_and_name_mapping = params.get('tool_id_and_name_mapping')
@@ -225,7 +228,42 @@ class BaseService:
         if not original_message and transfer_agent_config:
             agent_name = transfer_agent_config.get('tool_name', 'the agent')
             original_message = f"Query is successfully transferred to agent {agent_name}"
-        
+
+        model_data = model_response.get('data', []) if isinstance(model_response.get('data', []), list) else []
+        image_urls = [
+            {
+                'revised_prompt': item.get('revised_prompt'),
+                'permanent_url': item.get('url'),
+                'type': 'image'
+            }
+            for item in model_data if isinstance(item, dict) and item.get('url')
+        ]
+        if not image_urls and model_data:
+            first = model_data[0] if isinstance(model_data[0], dict) else {}
+            if first.get('url'):
+                image_urls = [{
+                    'revised_prompt': first.get('revised_prompt'),
+                    'permanent_url': first.get('url'),
+                    'type': 'image'
+                }]
+
+        video_urls = []
+        for item in model_data:
+            if not isinstance(item, dict):
+                continue
+            for video_file in item.get('video_files', []) or []:
+                uri = video_file.get('file_uri') or video_file.get('url')
+                if not uri:
+                    continue
+                video_urls.append({
+                    'permanent_url': uri,
+                    'type': 'video',
+                    'mime_type': video_file.get('mime_type')
+                })
+
+        llm_urls = image_urls + video_urls
+        first_entry = model_data[0] if model_data and isinstance(model_data[0], dict) else {}
+
         return {
             'thread_id': self.thread_id,
             'sub_thread_id': self.sub_thread_id,
@@ -242,8 +280,8 @@ class BaseService:
             'chatbot_message' : "",
             'tools_call_data' : self.func_tool_call_data,
             'message_id' : self.message_id,
-            'llm_urls' : [{'revised_prompt': img.get('revised_prompt'), 'permanent_url': img.get('url'), "type":"image"} for img in model_response.get('data', []) if img.get('url')] or [{'revised_prompt': model_response.get('data',[{}])[0].get('revised_prompt', None), 'permanent_url': model_response.get('data',[{}])[0].get('url', None)}] if model_response.get('data',[{}])[0].get('url') else [],
-            'revised_prompt' : model_response.get('data',[{}])[0].get('revised_prompt', None),
+            'llm_urls' : llm_urls,
+            'revised_prompt' : first_entry.get('revised_prompt'),
             'user_urls': [
                 *({"url": u, "type": "image"} for u in (self.image_data or [])),
                 *({"url": u, "type": "pdf"} for u in (self.files or []))
@@ -364,11 +402,24 @@ class BaseService:
             logger.error(f"chats error in image=>, {str(e)}, {traceback.format_exc()}")
             raise ValueError(f"error occurs from {self.service} api {e.args[0]}")
         
-    async def video(self, configuration, apikey, service):
+    async def video(self, configuration, apikey, service, generation=False):
         try:
             response = {}
             if service == service_name['gemini']:
-                response = await gemini_video_model(configuration, apikey, self.execution_time_logs, self.timer, self.file_data)
+                if generation:
+                    response = await gemini_video_generation_model(configuration, apikey, self.execution_time_logs, self.timer, self.video_settings)
+                else:
+                    response = await gemini_video_model(configuration, apikey, self.execution_time_logs, self.timer, self.file_data, prompt=self.user, youtube_url=self.youtube_url)
+            elif service == service_name['ai_ml'] and generation:
+                response = await ai_ml_video_generation_model(
+                    configuration,
+                    apikey,
+                    self.execution_time_logs,
+                    self.timer,
+                    self.video_settings,
+                    prompt=self.user,
+                    image_urls=self.image_data
+                )
             if not response['success']:
                 raise ValueError(response['error'])
             return {

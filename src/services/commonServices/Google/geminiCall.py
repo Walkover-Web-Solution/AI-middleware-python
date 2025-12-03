@@ -22,6 +22,21 @@ class GeminiHandler(BaseService):
                 historyParams = self.prepare_history_params(response, model_response, tools, None)
                 historyParams['message'] = "image generated successfully"
                 historyParams['type'] = 'assistant'
+        elif self.type == 'video' and not (self.file_data or self.youtube_url):
+            self.customConfig['prompt'] = self.user
+            if self.video_settings:
+                self.customConfig['video_settings'] = self.video_settings
+            gemini_response = await self.video(self.customConfig, self.apikey, service_name['gemini'], generation=True)
+            model_response = gemini_response.get("modelResponse", {})
+            if not gemini_response.get('success'):
+                if not self.playground:
+                    await self.handle_failure(gemini_response)
+                raise ValueError(gemini_response.get('error'))
+            response = await Response_formatter(model_response, service_name['gemini'], tools, self.type, None)
+            if not self.playground:
+                historyParams = self.prepare_history_params(response, model_response, tools, None)
+                historyParams['message'] = "video generated successfully"
+                historyParams['type'] = 'assistant'
         elif self.file_data or self.youtube_url:
             self.customConfig['prompt'] = self.user
             if self.youtube_url:
