@@ -94,7 +94,7 @@ async def jwt_middleware(request: Request):
                 else:
                     request.state.embed = False
                 request.state.folder_id = check_token.get('extraDetails', {}).get('folder_id', None)
-                request.state.user_id = check_token['user'].get('id')
+                request.state.user_id = str(check_token['user'].get('id'))
                 return 
             
             raise HTTPException(status_code=404, detail="unauthorized user")        
