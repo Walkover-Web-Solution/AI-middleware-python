@@ -18,7 +18,8 @@ async def get_all_apicalls_controller(request):
                 "org_id": org_id # [?] is it really needed
             })
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e,)
+        logger.error(f"Error in get_all_apicalls_controller: {str(e)}")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     
 
 async def update_apicalls_controller(request, function_id):
