@@ -5,7 +5,7 @@ from sqlalchemy import func, and_ , insert, delete, or_ , update, select
 from sqlalchemy.exc import SQLAlchemyError
 from ..services.cache_service import find_in_cache, store_in_cache
 from datetime import datetime
-from models.postgres.pg_models import Conversation, system_prompt_versionings, user_bridge_config_history, ConversationLog, OrchestratorConversationLog
+from models.postgres.pg_models import system_prompt_versionings, user_bridge_config_history, ConversationLog, OrchestratorConversationLog
 from models.Timescale.timescale_models import Metrics_model
 from sqlalchemy.sql import text
 from globals import *

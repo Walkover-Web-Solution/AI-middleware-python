@@ -29,7 +29,7 @@ from src.services.cache_service import find_in_cache, store_in_cache, client, RE
 from src.services.utils.update_and_check_cost import update_cost,update_last_used
 from ..commonServices.baseService.utils import sendResponse
 from src.services.utils.rich_text_support import process_chatbot_response
-from src.db_services.orchestrator_history_service import OrchestratorHistoryService, orchestrator_collector
+from src.db_services.orchestrator_history_service import orchestrator_collector
 
 def setup_agent_pre_tools(parsed_data, bridge_configurations):
     """
@@ -1077,19 +1077,6 @@ async def orchestrator_agent_chat(agent_config, body=None, user=None):
         cache_key = f"orchestrator_{parsed_data['thread_id']}_{parsed_data['sub_thread_id']}"
         await store_in_cache(cache_key, current_agent_id)
         
-        # Save orchestrator history to PostgreSQL before returning
-        # Only save when this is the final agent call (no transfer_agent_config)
-        if bridge_id and result.get('success') and not result.get('transfer_agent_config'):
-            session_key = thread_id if thread_id else f"global_orchestrator_{org_id}"
-            session_data = orchestrator_collector.get_session_data(session_key)
-            if session_data:
-                try:
-                    await OrchestratorHistoryService.save_orchestrator_history(session_data)
-                    # Clear session data after saving
-                    orchestrator_collector.clear_session(session_key)
-                except Exception as e:
-                    logger.error(f"Failed to save orchestrator history: {str(e)}")
-        
         return JSONResponse(status_code=200, content={"success": True, "response": result["response"]})
         
     except (Exception, ValueError, BadRequestException) as error:
@@ -1127,19 +1114,6 @@ async def orchestrator_agent_chat(agent_config, body=None, user=None):
             await sendResponse(parsed_data['response_format'], result.get("modelResponse", str(error)), variables=parsed_data['variables']) if parsed_data['response_format']['type'] != 'default' else None
             # Process background tasks for error handling
             await process_background_tasks_for_error(parsed_data, error)
-        
-        # Save orchestrator history even in error cases
-        if 'bridge_id' in locals() and bridge_id:
-            org_id = body.get('org_id') if 'body' in locals() else 'unknown'
-            session_key = thread_id if 'thread_id' in locals() and thread_id else f"global_orchestrator_{org_id}"
-            session_data = orchestrator_collector.get_session_data(session_key)
-            if session_data:
-                try:
-                    await OrchestratorHistoryService.save_orchestrator_history(session_data)
-                    # Clear session data after saving
-                    orchestrator_collector.clear_session(session_key)
-                except Exception as e:
-                    logger.error(f"Failed to save orchestrator history in error case: {str(e)}")
         
         # Add support contact information to error message
         error_message = f"{str(error)}. For more support contact us at support@gtwy.ai"
