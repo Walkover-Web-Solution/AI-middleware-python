@@ -1,3 +1,4 @@
+import src.routes.rag_routes
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.exceptions import RequestValidationError
@@ -11,24 +12,15 @@ import src.services.utils.batch_script
 from src.services.utils.batch_script import repeat_function
 from config import Config
 from src.controllers.modelController import router as model_router
-from src.routes.chatBot_routes import router as chatbot_router
-from src.routes.apiCall_routes import router as apiCall_router
-from src.routes.config_routes import router as config_router
-from src.controllers.bridgeController import router as bridge_router
 from src.routes.v2.modelRouter import router as v2_router
+from src.routes.chatBot_routes import router as chatbot_router
 from src.services.commonServices.queueService.queueService import queue_obj
 from src.services.commonServices.queueService.queueLogService import sub_queue_obj
 from src.services.utils.logger import logger
-from src.routes.bridge_version_routes import router as bridge_version
-from src.routes.image_process_routes import router as image_process_routes
-from src.routes.utils_router import router as utils_router
 from src.routes.rag_routes import router as rag_routes
-from src.routes.Internal_routes import router as Internal_routes
-from src.routes.testcase_routes import router as testcase_routes
+from src.routes.image_process_routes import router as image_process_routes
 from models.Timescale.connections import init_async_dbservice
-from src.routes.runagents_routes import router as runagents_routes
-from src.routes.orchestrator_routes import router as orchestrator_routes
-from src.routes.prebuilt_prompt_route import router as prebuilt_prompt_router
+
 from src.configs.model_configuration import init_model_configuration, background_listen_for_changes
 from globals import *
 
@@ -169,19 +161,9 @@ async def stream_data():
 app.include_router(model_router, prefix="/api/v1/model")
 app.include_router(v2_router, prefix="/api/v2/model")
 app.include_router(chatbot_router, prefix="/chatbot")
-app.include_router(bridge_router, prefix="/bridge")
-app.include_router(config_router, prefix="/api/v1/config")
-app.include_router(apiCall_router, prefix="/functions")
-app.include_router(bridge_version, prefix="/bridge/versions" )
 app.include_router(image_process_routes, prefix="/image/processing" )
 app.include_router(image_process_routes, prefix="/files" )
-app.include_router(utils_router, prefix="/utils" )
 app.include_router(rag_routes,prefix="/rag")
-app.include_router(Internal_routes,prefix="/internal")
-app.include_router(testcase_routes, prefix='/testcases')
-app.include_router(runagents_routes, prefix='/publicAgent')
-app.include_router(orchestrator_routes, prefix='/orchestrator')
-app.include_router(prebuilt_prompt_router, prefix='/prebuilt_prompt')
 
 
 if __name__ == "__main__":
