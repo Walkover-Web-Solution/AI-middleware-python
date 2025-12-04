@@ -15,6 +15,20 @@ from globals import *
 
 logger = logging.getLogger(__name__)
 
+def _normalize_apikeys(apikeys_dict, key_type="API"):
+    normalized_keys = {}
+    
+    try:
+        for service_name, apikey_data in apikeys_dict.items():
+            if isinstance(apikey_data, dict) and 'apikey' in apikey_data:
+                normalized_keys[service_name] = apikey_data['apikey']
+            else:
+                logger.warning(f"{key_type} key not found for service: {service_name}")
+    except (KeyError, TypeError) as e:
+        logger.error(f"Error accessing {key_type} keys: {e}")
+    
+    return normalized_keys
+
 async def _prepare_configuration_response(configuration, service, bridge_id, apikey, template_id=None,
                                           variables=None, org_id="", variables_path=None, version_id=None,
                                           extra_tools=None, built_in_tools=None, guardrails=None,
@@ -50,19 +64,14 @@ async def _prepare_configuration_response(configuration, service, bridge_id, api
     service = service.lower() if service else ""
 
     # Normalize API keys
-    try:
-        apikeys_dict = (result.get('bridges', {}).get('apikeys', {})) or (result.get('bridges', {}).get('folder_apikeys', {}))
+    apikeys_dict = result.get('bridges', {}).get('apikeys', {})
+    if apikeys_dict:
+        result['bridges']['apikeys'] = _normalize_apikeys(apikeys_dict, "API")
 
-        for service_name, apikey_data in apikeys_dict.items():
-            if isinstance(apikey_data, dict) and 'apikey' in apikey_data:
-                if(result.get('bridges', {}).get('folder_apikeys', {})):
-                    result['bridges']['folder_apikeys'][service_name] = apikey_data['apikey']
-                else:
-                    result['bridges']['apikeys'][service_name] = apikey_data['apikey']
-            else:
-                logger.warning(f"API key not found for service: {service_name}")
-    except (KeyError, TypeError) as e:
-        logger.error(f"Error accessing API keys: {e}")
+    # Normalize folder API keys
+    folder_apikeys_dict = result.get('bridges', {}).get('folder_apikeys', {})
+    if folder_apikeys_dict:
+        result['bridges']['folder_apikeys'] = _normalize_apikeys(folder_apikeys_dict, "Folder API")
 
     apikey = setup_api_key(service, result, apikey, chatbot)
     apikey_object_id = result.get('bridges', {}).get('apikey_object_id')
