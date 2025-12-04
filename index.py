@@ -8,19 +8,16 @@ import asyncio
 import atatus
 from atatus.contrib.starlette import create_client, Atatus
 from contextlib import asynccontextmanager
-import src.services.utils.batch_script
 from src.services.utils.batch_script import repeat_function
 from config import Config
-from src.controllers.modelController import router as model_router
-from src.routes.v2.modelRouter import router as v2_router
 from src.routes.chatBot_routes import router as chatbot_router
+from src.routes.v2.modelRouter import router as v2_router
 from src.services.commonServices.queueService.queueService import queue_obj
 from src.services.commonServices.queueService.queueLogService import sub_queue_obj
 from src.services.utils.logger import logger
 from src.routes.rag_routes import router as rag_routes
 from src.routes.image_process_routes import router as image_process_routes
 from models.Timescale.connections import init_async_dbservice
-
 from src.configs.model_configuration import init_model_configuration, background_listen_for_changes
 from globals import *
 
@@ -118,27 +115,6 @@ async def healthcheck():
     return JSONResponse(status_code=200, content={
             "status": "OK running good... v1.2",
     })
-            
-
-@app.get("/90-sec")
-async def bloking():
-    try:
-        async def blocking_io_function():
-            await asyncio.sleep(90)  # Sleep for 2 minutes
-            # response = await fetch("https://flow.sokt.io/func/scriDLT6j3lB")
-            # return response
-        result = await blocking_io_function()
-        return JSONResponse(status_code=200, content={
-                "status": "OK running good... v1.1",
-                "api_result": result
-            })
-    except Exception as e:
-        return JSONResponse(status_code=500, content={
-            "status": "Error",
-            "error": str(e)
-        })
-        
-
 
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(exc: RequestValidationError):
@@ -147,18 +123,7 @@ async def validation_exception_handler(exc: RequestValidationError):
         content={"detail": "Custom error message", "errors": exc.errors()},
     )
 
-# New route for streaming data
-@app.get("/stream")
-async def stream_data():
-    async def generate():
-        for i in range(100):
-            yield f"data: {i}\n\n\n"
-            await asyncio.sleep(1)
-
-    return StreamingResponse(generate(), media_type="text/event-stream")
-
 # Include routers
-app.include_router(model_router, prefix="/api/v1/model")
 app.include_router(v2_router, prefix="/api/v2/model")
 app.include_router(chatbot_router, prefix="/chatbot")
 app.include_router(image_process_routes, prefix="/image/processing" )

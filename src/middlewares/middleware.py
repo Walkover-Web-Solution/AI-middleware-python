@@ -2,8 +2,6 @@ import jwt
 from fastapi import Request, HTTPException
 import traceback
 from config import Config
-from src.services.utils.apiservice import fetch
-from src.services.utils.helper import Helper
 from src.services.proxy.Proxyservice import (
     get_proxy_details_by_token,
     validate_proxy_pauthkey,
