@@ -1,33 +1,30 @@
 from models.mongo_connection import db
-from src.services.utils.logger import logger
 from fastapi import HTTPException
 
 
 prebuilt_db  = db['preBuiltPrompts']
-async def get_prebuilt_prompts_service(org_id: str):
+
+async def get_specific_prebuilt_prompt_service(org_id: str, prompt_key: str):
     """
-    Retrieve prebuilt prompts for an organization
+    Retrieve a specific prebuilt prompt for an organization
     
     Args:
         org_id (str): Organization ID
+        prompt_key (str): The key of the prompt to retrieve
         
     Returns:
-        list: List of prebuilt prompts
+        dict: Dictionary containing the prompt key and value, or None if not found
     """
-    try:        
-        # Query prebuilt prompts for the organization
+    try:
+        # Query specific prebuilt prompt for the organization
         query = {"org_id": org_id}
-        document = await prebuilt_db.find_one(query, {"_id": 0})
+        projection = {"_id": 0, f"prebuilt_prompts.{prompt_key}": 1}
+        document = await prebuilt_db.find_one(query, projection)
         
-        prompts = []
-        if document and document.get("prebuilt_prompts"):
-            # Convert the prebuilt_prompts object to a list format
-            for prompt_id, prompt_text in document["prebuilt_prompts"].items():
-                prompts.append({
-                    prompt_id: prompt_text,
-                })
+        if document and document.get("prebuilt_prompts") and document["prebuilt_prompts"].get(prompt_key):
+            return {prompt_key: document["prebuilt_prompts"][prompt_key]}
         
-        return prompts
+        return None
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")

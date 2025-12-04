@@ -12,7 +12,6 @@ import src.services.utils.batch_script
 from src.services.utils.batch_script import repeat_function
 from config import Config
 from src.controllers.modelController import router as model_router
-from src.controllers.bridgeController import router as bridge_router
 from src.routes.v2.modelRouter import router as v2_router
 from src.routes.chatBot_routes import router as chatbot_router
 from src.services.commonServices.queueService.queueService import queue_obj
