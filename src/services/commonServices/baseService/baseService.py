@@ -294,7 +294,7 @@ class BaseService:
             if service == service_name['openai']:
                 response = await openai_response_model(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer, self.message_id, self.org_id, self.name, self.org_name, service, count, self.token_calculator, self.response_format, self.stream)
             elif service == service_name['anthropic']:
-                response = await loop.run_in_executor(executor, lambda: asyncio.run(anthropic_runmodel(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer, self.name, self.org_name, service, count, self.token_calculator, self.response_format, self.stream)))
+                response = await anthropic_runmodel(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer, self.name, self.org_name, service, count, self.token_calculator, self.response_format, self.stream)
             elif service == service_name['groq']:
                 response = await groq_runmodel(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer, self.message_id, self.org_id, self.name, self.org_name, service, count, self.token_calculator, self.response_format, self.stream)
             elif service == service_name['grok']:
@@ -309,6 +309,9 @@ class BaseService:
                 response = await ai_ml_model_run(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer, self.message_id, self.org_id, self.name, self.org_name, service, count, self.token_calculator, self.response_format, self.stream)
             elif service == service_name['openai_completion']:
                 response = await openai_completion(configuration, apikey, self.execution_time_logs, self.bridge_id, self.timer, self.message_id, self.org_id, self.name, self.org_name, service, count, self.token_calculator, self.response_format, self.stream)
+            if hasattr(response, '__aiter__'):
+                return response
+
             if not response['success']:
                 raise ValueError(response['error'])
             return {

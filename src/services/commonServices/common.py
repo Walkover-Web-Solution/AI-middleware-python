@@ -1,6 +1,6 @@
 from config import Config
 from fastapi import FastAPI
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 import traceback
 import pydash as _
 import uuid
@@ -51,6 +51,56 @@ from src.services.cache_service import find_in_cache, store_in_cache
 from src.configs.constant import redis_keys
 
 configurationModel = db["configurations"]
+
+async def stream_generator_wrapper(generator, parsed_data, params, thread_info, transfer_request_id, bridge_configurations, request_body):
+    final_response = None
+    try:
+        async for chunk in generator:
+            if '_internal_final_response' in chunk:
+                final_response = chunk['_internal_final_response']
+                continue
+            
+            # Yield chunk as SSE
+            yield f"data: {json.dumps(chunk)}\n\n"
+            
+        yield "data: [DONE]\n\n"
+        
+        if final_response:
+            # Post-processing
+            result = {
+                "success": True,
+                "response": final_response
+            }
+            
+            # 1. Update usage metrics
+            if parsed_data.get('type') != 'image':
+                 parsed_data['tokens'] = params['token_calculator'].calculate_total_cost(parsed_data['model'], parsed_data['service'])
+                 result['response']['usage']['cost'] = parsed_data['tokens'].get('total_cost') or 0
+            
+            latency = create_latency_object(params['timer'], params)
+            update_usage_metrics(parsed_data, params, latency, result=result, success=True)
+            
+            # 2. Process background tasks
+            await process_background_tasks(parsed_data, result, params, thread_info, transfer_request_id, bridge_configurations)
+            
+            # 3. Update cost and last used
+            await update_cost_and_last_used_in_background(parsed_data)
+            
+            # 4. Cache agent bridge_id
+            thread_id = parsed_data.get('thread_id')
+            sub_thread_id = parsed_data.get('sub_thread_id')
+            bridge_id = parsed_data.get('bridge_id')
+            original_primary_bridge_id = request_body.get('body', {}).get('primary_bridge_id')
+            
+            if thread_id and sub_thread_id and bridge_id:
+                 redis_key = f"{redis_keys['last_transffered_agent_']}{original_primary_bridge_id}_{thread_id}_{sub_thread_id}"
+                 bridge_id_to_save = str(bridge_id).strip('"\'') if bridge_id else None
+                 if bridge_id_to_save:
+                     await store_in_cache(redis_key, bridge_id_to_save, ttl=259200)
+
+    except Exception as e:
+        logger.error(f"Streaming error: {e}")
+        yield f"data: {json.dumps({'error': str(e)})}\n\n"
 
 @handle_exceptions
 async def chat_multiple_agents(request_body):
@@ -197,6 +247,20 @@ async def chat(request_body):
         original_exception = None
         try:
             result = await class_obj.execute()
+            
+            if hasattr(result, '__aiter__'):
+                return StreamingResponse(
+                    stream_generator_wrapper(
+                        result, 
+                        parsed_data, 
+                        params, 
+                        thread_info, 
+                        transfer_request_id, 
+                        bridge_configurations,
+                        request_body
+                    ), 
+                    media_type="text/event-stream"
+                )
             
             # Check if agent transfer is needed
             transfer_agent_config = result.get('transfer_agent_config')

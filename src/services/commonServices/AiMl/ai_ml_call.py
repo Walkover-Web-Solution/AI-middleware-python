@@ -46,12 +46,15 @@ class Ai_Ml(BaseService):
             if 'tools' not in self.customConfig and 'parallel_tool_calls' in self.customConfig:
                 del self.customConfig['parallel_tool_calls']
         openAIResponse = await self.chats(self.customConfig, self.apikey, service_name['ai_ml'])
+        if hasattr(openAIResponse, '__aiter__'):
+            return openAIResponse
         modelResponse = openAIResponse.get("modelResponse", {})
         if not openAIResponse.get('success'):
             if not self.playground:
                 await self.handle_failure(openAIResponse)
             raise ValueError(openAIResponse.get('error'))
-        if len(modelResponse.get('choices', [])[0].get('message', {}).get("tool_calls", [])) > 0:
+        tool_calls = modelResponse.get('choices', [])[0].get('message', {}).get("tool_calls")
+        if tool_calls and len(tool_calls) > 0:
             functionCallRes = await self.function_call(self.customConfig, service_name['ai_ml'], openAIResponse, 0, {})
             if not functionCallRes.get('success'):
                 await self.handle_failure(functionCallRes)
