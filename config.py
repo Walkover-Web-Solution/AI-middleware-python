@@ -17,7 +17,6 @@ class Config:
     DB_PASS = os.getenv('DB_PASS')
     DB_HOST = os.getenv('DB_HOST')
     
-    chatBotFLow = os.getenv('chatBotFLow')
     TIMESCALE_SERVICE_URL = os.getenv('TIMESCALE_SERVICE_URL')
     OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
     SecretKey = os.getenv('SecretKey')
@@ -33,8 +32,6 @@ class Config:
     CHATBOTSECRETKEY = os.getenv('CHATBOTSECRETKEY')
     TEMPLATE_ID = os.getenv('TEMPLATE_ID')
     max_workers = os.getenv('max_workers')
-    MUI_TEMPLATE_ID = os.getenv('MUI_TEMPLATE_ID')
-    MUI_TEMPLATE_ID_WITHOUT_ACTION = os.getenv('MUI_TEMPLATE_ID_WITHOUT_ACTION')
     CHATBOT_OPTIONS_TEMPLATE_ID = os.getenv('CHATBOT_OPTIONS_TEMPLATE_ID')
     QUEUE_CONNECTIONURL = os.getenv('QUEUE_CONNECTIONURL')
     QUEUE_NAME = os.getenv('QUEUE_NAME')

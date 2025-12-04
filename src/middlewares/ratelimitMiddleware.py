@@ -1,7 +1,6 @@
 from ..services.cache_service import find_in_cache, store_in_cache, verify_ttl
 import json
-from fastapi import Request, Response, HTTPException
-from starlette.middleware.base import BaseHTTPMiddleware
+from fastapi import Request, HTTPException
 from src.configs.constant import redis_keys
 
 async def get_nested_value(request: Request, path):

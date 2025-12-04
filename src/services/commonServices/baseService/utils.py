@@ -431,10 +431,6 @@ async def make_request_data_and_publish_sub_queue(parsed_data, result, params, t
             "tokens": parsed_data.get('tokens', {}),
             "bridge_id": parsed_data.get('bridge_id')
         },
-        "get_bridge_avg_response_time": {
-            "org_id": parsed_data.get('org_id'),
-            "bridge_id": parsed_data.get('bridge_id')
-        },
         "chatbot_suggestions" : {
             "response_format": parsed_data.get('response_format'),
             "assistant": suggestion_content,

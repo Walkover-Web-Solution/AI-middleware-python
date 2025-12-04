@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from models.index import combined_models
 from sqlalchemy import and_
 from ..controllers.conversationController import savehistory_consolidated
-from .conversationDbService import insertRawData, timescale_metrics, createOrchestratorConversationLog
+from .conversationDbService import timescale_metrics, createOrchestratorConversationLog
 from ..services.cache_service import find_in_cache, store_in_cache
 from globals import *
 # from src.services.utils.send_error_webhook import send_error_to_webhook

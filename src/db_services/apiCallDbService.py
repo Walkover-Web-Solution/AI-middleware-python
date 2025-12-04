@@ -59,52 +59,7 @@ async def get_all_api_calls_by_org_id(org_id, folder_id, user_id, isEmbedUser):
         else: transformed_data = fields
         api_calls[index]['fields'] = transformed_data
     return api_calls or []
-    
 
-
-async def update_api_call_by_function_id(org_id, function_id, data_to_update):
-    updated_document = await apiCallModel.find_one_and_update(
-        {
-            '_id': ObjectId(function_id),  
-            'org_id': org_id  
-        },
-        {
-            '$set': data_to_update  
-        },
-        return_document=ReturnDocument.AFTER 
-    )
-    
-    if updated_document:
-        updated_document['_id'] = str(updated_document['_id'])
-    else: 
-        raise BadRequestException("Document not found or not modified.")
-    
-    bridge_ids = updated_document.get('bridge_ids') or []
-    version_ids = updated_document.get('version_ids') or []
-    if bridge_ids:
-        await delete_in_cache([f"{redis_keys['get_bridge_data_']}{bridge_id}" for bridge_id in bridge_ids])
-    if version_ids:
-        await delete_in_cache([f"{redis_keys['get_bridge_data_']}{version_id}" for version_id in version_ids])
-    return {
-        "success": True, 
-        "data": updated_document 
-    }
-
-async def get_function_by_id(function_id):
-    try:
-        db_data = await apiCallModel.find_one({"_id": ObjectId(function_id)})
-        if not db_data:
-            raise errors.InvalidId("Function not found.")
-        return db_data
-
-    except errors.InvalidId:
-        raise BadRequestException(f"Invalid function id")
-    except Exception as e:
-        logger.error(f"Error retrieving function by id: {e}")
-        raise BadRequestException(f"Error retrieving function: {str(e)}")
-
-
-async def delete_function_from_apicalls_db(org_id, function_name): # This function is throwing error because result is not defined. 
     bridge_data = await apiCallModel.find_one(
         {'org_id': org_id, 'function_name': function_name},
         {'bridge_ids': 1,'version_ids' : 1, '_id': 1}
