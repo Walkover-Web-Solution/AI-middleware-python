@@ -6,7 +6,7 @@ from src.services.utils.common_utils import updateVariablesWithTimeZone
 from .getConfiguration_utils import (
     validate_bridge, get_bridge_data, setup_configuration, setup_tool_choice,
     setup_tools, setup_api_key, setup_pre_tools, add_rag_tool,
-    add_anthropic_json_schema, add_connected_agents
+    add_anthropic_json_schema, add_connected_agents, add_web_crawling_tool
 )
 from .update_and_check_cost import check_bridge_api_folder_limits
 
@@ -99,6 +99,9 @@ async def _prepare_configuration_response(configuration, service, bridge_id, api
     configuration.pop('tools', None)
     configuration['tools'] = tools
 
+    db_built_in_tools = result.get('bridges', {}).get('built_in_tools') or []
+    active_built_in_tools = built_in_tools or db_built_in_tools or []
+
     RTLayer = True if configuration and 'RTLayer' in configuration else False
 
     template_content = await ConfigurationService.get_template_by_id(template_id) if template_id else None
@@ -127,6 +130,7 @@ async def _prepare_configuration_response(configuration, service, bridge_id, api
     )
 
     add_rag_tool(tools, tool_id_and_name_mapping, rag_data)
+    add_web_crawling_tool(tools, tool_id_and_name_mapping, active_built_in_tools)
     add_anthropic_json_schema(service, configuration, tools)
 
     if rag_data:
@@ -162,7 +166,7 @@ async def _prepare_configuration_response(configuration, service, bridge_id, api
         'org_name': org_name,
         'bridge_id': result['bridges'].get('parent_id', result['bridges'].get('_id')),
         'variables_state': result.get('bridges', {}).get('variables_state', {}),
-        'built_in_tools': built_in_tools or result.get('bridges', {}).get('built_in_tools'),
+        'built_in_tools': active_built_in_tools,
         'fall_back': result.get('bridges', {}).get('fall_back') or {},
         'guardrails': guardrails_value,
         "is_embed": result.get('bridges', {}).get("folder_type") == 'embed',
