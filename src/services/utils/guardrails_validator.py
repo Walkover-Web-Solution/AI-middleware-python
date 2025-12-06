@@ -3,10 +3,10 @@ Guardrails validation system using OpenAI gpt-5-nano model with multiple templat
 """
 import json
 import traceback
-from openai import AsyncOpenAI
 from globals import logger
 from exceptions.bad_request import BadRequestException
 from config import Config
+from src.services.utils.openai_client import get_async_openai_client
 
 
 # Guardrails template definitions
@@ -201,7 +201,7 @@ Active categories being checked: {', '.join(category_names)}"""
         ]
 
         # Initialize OpenAI client
-        client = AsyncOpenAI(api_key=api_key)
+        client = get_async_openai_client(api_key=api_key)
 
         # Call OpenAI gpt-5-nano model
         response = await client.chat.completions.create(

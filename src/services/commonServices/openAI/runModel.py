@@ -1,9 +1,9 @@
-from openai import AsyncOpenAI
 import traceback
 import copy
 from ..api_executor import execute_api_call
 # from src.services.utils.unified_token_validator import validate_openai_token_limit
 from globals import *
+from src.services.utils.openai_client import get_async_openai_client
 
 
 def remove_duplicate_ids_from_input(configuration):
@@ -42,7 +42,7 @@ def remove_duplicate_ids_from_input(configuration):
 
 
 async def openai_test_model(configuration, api_key):
-    openAI = AsyncOpenAI(api_key=api_key)
+    openAI = get_async_openai_client(api_key=api_key)
     try:
         chat_completion = await openAI.chat.completions.create(**configuration)
         return {'success': True, 'response': chat_completion.to_dict()}
@@ -59,7 +59,7 @@ async def openai_response_model(configuration, apiKey, execution_time_logs, brid
         # model_name = configuration.get('model')
         # validate_openai_token_limit(configuration, model_name, 'openai_response')
         
-        client = AsyncOpenAI(api_key=apiKey)
+        client = get_async_openai_client(api_key=apiKey)
 
         # Define the API call function with retry mechanism for duplicate ID errors
         async def api_call_with_retry(config, max_retries=2):
@@ -137,7 +137,7 @@ async def openai_response_model(configuration, apiKey, execution_time_logs, brid
 async def openai_completion(configuration, apiKey, execution_time_logs, bridge_id, timer, message_id=None, org_id=None, name = "", org_name= "", service = "", count=0, token_calculator=None):
     try:
         
-        openAI = AsyncOpenAI(api_key=apiKey)
+        openAI = get_async_openai_client(api_key=apiKey)
 
         # Define the API call function
         async def api_call(config):

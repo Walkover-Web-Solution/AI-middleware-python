@@ -19,6 +19,7 @@ class Config:
     
     TIMESCALE_SERVICE_URL = os.getenv('TIMESCALE_SERVICE_URL')
     OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+    OPENAI_BASE_URL = os.getenv('OPENAI_BASE_URL')
     SecretKey = os.getenv('SecretKey')
     Encreaption_key = os.getenv('Encreaption_key')
     Secret_IV = os.getenv('Secret_IV')
@@ -56,3 +57,4 @@ class Config:
     DOCSTAR_COLLECTION_ID = os.getenv('DOCSTAR_COLLECTION_ID')
     AI_ML_APIKEY = os.getenv('AI_ML_APIKEY')
     AI_MIDDLEWARE_PAUTH_KEY = os.getenv('AI_MIDDLEWARE_PAUTH_KEY')
+    FIRECRAWL_API_KEY = os.getenv('FIRECRAWL_API_KEY')
