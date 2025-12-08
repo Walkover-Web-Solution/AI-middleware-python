@@ -20,6 +20,9 @@ from src.services.cache_service import find_in_cache, delete_in_cache
 from src.services.utils.update_and_check_cost import purge_related_bridge_caches
 from src.db_services.templateDbservice import get_template
 from src.services.utils.common_utils import validate_json_schema_configuration
+from src.middlewares.middleware import check_agent_access_middleware, get_agent_access_role
+from src.services.proxy.Proxyservice import get_proxy_details_by_token, update_user_role
+from src.db_services.ConfigurationServices import configurationModel
 
 async def create_bridges_controller(request):
     try:
@@ -181,6 +184,9 @@ async def create_bridges_using_ai_controller(request):
 
 async def get_bridge(request, bridge_id: str):
     try:
+        # Check agent access permissions
+        await check_agent_access_middleware(request, bridge_id)
+        
         bridge = await get_bridges_with_tools(bridge_id,request.state.profile['org']['id'])
         if(bridge.get('bridges') is None):
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Bridge not found")
@@ -198,6 +204,12 @@ async def get_bridge(request, bridge_id: str):
         all_variables = variables + path_variables
         bridge.get('bridges')['all_varaibles'] = all_variables
         response = await Helper.response_middleware_for_bridge(bridge.get('bridges')['service'], {"success": True,"message": "bridge get successfully","bridge":bridge.get("bridges", {})})
+        
+        # Add access key to response
+        access_role = getattr(request.state, 'access_role', getattr(request.state, 'role_name', None))
+        if isinstance(response, dict):
+            response['access'] = access_role
+        
         return response
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e,)
@@ -219,6 +231,10 @@ async def get_all_bridges(request):
         doctstar_embed_token = Helper.generate_token({ "org_id": Config.DOCSTAR_ORG_ID, "collection_id": Config.DOCSTAR_COLLECTION_ID, "user_id": org_id },Config.DOCSTAR_ACCESS_KEY )
         # metrics_data = await get_timescale_data(org_id)
         # bridges = Helper.sort_bridges(bridges, metrics_data)
+        # Get user_id and role_name for access checking
+        user_id = request.state.user_id if hasattr(request.state, 'user_id') else None
+        original_role_name = request.state.role_name if hasattr(request.state, 'role_name') else None
+        
         avg_response_time = {}
         for bridge in bridges:
             bridge_id = bridge.get('_id')
@@ -239,6 +255,10 @@ async def get_all_bridges(request):
                 bridge["last_used"] = json.loads(lastused)
 
             avg_response_time[bridge_id] = round(float(avg_response_time_data), 2) if avg_response_time_data else 0
+            
+            # Add access role for each bridge
+            access_role = await get_agent_access_role(user_id, org_id, bridge_id, original_role_name)
+            bridge["access"] = access_role
         return JSONResponse(status_code=200, content={
                 "success": True,
                 "message": "Get all bridges successfully",
@@ -354,6 +374,36 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
         if bridge is None:
             raise HTTPException(status_code=404, detail="Bridge not found")
         parent_id = bridge.get('parent_id')
+        
+        # Check user access permissions for updating the bridge
+        # If version_id is provided, use parent_id as bridge_id to check users array
+        # Otherwise, use bridge_id directly
+        if version_id and parent_id:
+            bridge_id_for_access_check = parent_id
+        else:
+            bridge_id_for_access_check = bridge_id
+        
+        if not bridge_id_for_access_check:
+            raise HTTPException(status_code=400, detail="Invalid bridge ID for access check")
+        
+        user_id_str = request.state.user_id if hasattr(request.state, 'user_id') else str(user_id)
+        original_role_name = request.state.role_name if hasattr(request.state, 'role_name') else None
+        
+        # If user is owner, allow update without checking DB
+        if original_role_name == 'owner':
+            # Owner can always update, skip access check
+            pass
+        else:
+            # For non-owners, check access permissions
+            access_role = await get_agent_access_role(user_id_str, org_id, bridge_id_for_access_check, original_role_name)
+            
+            # Only allow updates if user has 'member' access
+            if access_role != 'member':
+                raise HTTPException(
+                    status_code=403, 
+                    detail="You don't have access to update the bridge"
+                )
+        
         current_configuration = bridge.get('configuration', {})
         current_variables_path = bridge.get('variables_path', {})
         function_ids = bridge.get('function_ids') or []
@@ -378,6 +428,43 @@ async def update_bridge_controller(request, bridge_id=None, version_id=None):
         connected_agent_details = body.get('connected_agent_details')
         if connected_agent_details is not None:
             update_fields['connected_agent_details'] = connected_agent_details
+        
+        # Process users array update if bridge_id is provided (not version_id)
+        # Only update bridge's users array, not version
+        users_update = body.get('users')
+        if users_update is not None and bridge_id and not version_id:
+            # Get current bridge to check if users array exists
+            current_bridge = await get_bridge_by_id(org_id, bridge_id, None)
+            if current_bridge:
+                # Check if users array exists in bridge data
+                # Only update if bridge has users array (or create it if needed)
+                user_id_to_update = users_update.get('id')
+                add_user = users_update.get('add')
+                
+                if user_id_to_update is not None and isinstance(add_user, bool):
+                    # Get current users array
+                    current_users = current_bridge.get('users')
+                    
+                    # Initialize users array if it doesn't exist
+                    if current_users is None:
+                        current_users = []
+                    elif not isinstance(current_users, list):
+                        # If users exists but is not a list, initialize as empty list
+                        current_users = []
+                    
+                    user_id_str = str(user_id_to_update)
+                    
+                    if add_user:
+                        # Add user_id to users array if not already present
+                        if not any(str(u) == user_id_str for u in current_users):
+                            current_users.append(user_id_to_update)
+                            # Update bridge directly (not version) - set version_id to None for this update
+                            update_fields['users'] = current_users
+                    else:
+                        # Remove user_id from users array
+                        current_users = [u for u in current_users if str(u) != user_id_str]
+                        # Update bridge directly (not version) - set version_id to None for this update
+                        update_fields['users'] = current_users
         
         # Process API key if provided
         apikey_object_id = body.get('apikey_object_id')
@@ -648,4 +735,105 @@ async def clone_agent_controller(request):
     except Exception as e:
         logger.error(f"Error in clone_agent_controller: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to clone agent: {str(e)}")
+
+async def invite_user_controller(request, bridge_id: str):
+    """Invite user to bridge by updating their role.
+    
+    Requirements:
+    1. Current user must have role_name = 'owner' (checked via proxy API)
+    2. Current user must be owner OR creator of the bridge (created_by field)
+    3. If authorized, update user role via MSG91 API
+    """
+    try:
+        # Get request body
+        body = await request.json()
+        user_id_to_invite = body.get('user_id')
+        role_id = body.get('role_id')
+        
+        if not user_id_to_invite:
+            raise HTTPException(status_code=400, detail="user_id is required")
+        if role_id is None:
+            raise HTTPException(status_code=400, detail="role_id is required")
+        
+        # Get proxy_auth_token from headers
+        proxy_auth_token = request.headers.get('proxy_auth_token')
+        if not proxy_auth_token:
+            raise HTTPException(status_code=401, detail="proxy_auth_token is required")
+        
+        # Step 1: Check if current user has role_name = 'owner' using proxy API
+        try:
+            proxy_details = await get_proxy_details_by_token(proxy_auth_token)
+            current_user_data = proxy_details.get('data', [])
+            if not current_user_data:
+                raise HTTPException(status_code=401, detail="Invalid proxy_auth_token")
+            
+            # Get current company ID
+            current_company_id = current_user_data[0].get('currentCompany', {}).get('id')
+            if not current_company_id:
+                raise HTTPException(status_code=401, detail="Current company not found")
+            
+            # Find role_name from c_companies matching currentCompany.id
+            role_name = None
+            c_companies = current_user_data[0].get('c_companies', [])
+            for company in c_companies:
+                if company.get('id') == current_company_id:
+                    role_name = company.get('role_name')
+                    break
+            
+            if role_name != 'owner':
+                raise HTTPException(status_code=403, detail="Only owners can invite users")
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"Error checking user role: {str(e)}")
+            raise HTTPException(status_code=401, detail="Failed to verify user role")
+        
+        # Step 2: Check if user is owner OR creator of the bridge
+        org_id = request.state.profile['org']['id']
+        current_user_id = request.state.user_id if hasattr(request.state, 'user_id') else str(request.state.profile['user']['id'])
+        
+        # Get bridge to check created_by
+        try:
+            bridge = await get_bridge_by_id(org_id, bridge_id, None)
+            if bridge is None:
+                raise HTTPException(status_code=404, detail="Bridge not found")
+            
+            created_by = bridge.get('created_by')
+            bridge_creator_id = str(created_by) if created_by else None
+            
+            # Check if user is owner OR creator
+            is_owner = role_name == 'owner'
+            is_creator = bridge_creator_id and str(current_user_id) == bridge_creator_id
+            
+            if not (is_owner or is_creator):
+                raise HTTPException(
+                    status_code=403, 
+                    detail="You don't have permission to invite users to this bridge. Only owners or bridge creators can invite users."
+                )
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"Error checking bridge permissions: {str(e)}")
+            raise HTTPException(status_code=500, detail="Failed to verify bridge permissions")
+        
+        # Step 3: Update user role via MSG91 API
+        try:
+            response = await update_user_role(proxy_auth_token, user_id_to_invite, role_id)
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "success": True,
+                    "message": "User role updated successfully",
+                    "data": response
+                }
+            )
+        except Exception as e:
+            logger.error(f"Error updating user role: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Failed to update user role: {str(e)}")
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error in invite_user_controller: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
     

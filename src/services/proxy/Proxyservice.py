@@ -97,3 +97,31 @@ async def get_proxy_details_by_token(proxy_auth_token: str) -> Dict[str, Any]:
     )
     return response_data
 
+
+async def update_user_role(proxy_auth_token: str, user_id: str, role_id: int) -> Dict[str, Any]:
+    """Update user role via MSG91 API.
+
+    Endpoint: POST https://routes.msg91.com/api/c/updateCuserRole
+    Header: { 'proxy_auth_token': <token> }
+    Body: { 'user_id': <user_id>, 'role_id': <role_id> }
+    """
+    if not proxy_auth_token:
+        raise ValueError("proxy_auth_token is required")
+    if not user_id:
+        raise ValueError("user_id is required")
+    if role_id is None:
+        raise ValueError("role_id is required")
+
+    headers = {
+        'proxy_auth_token': proxy_auth_token,
+        'Content-Type': 'application/json'
+    }
+    json_body = {
+        'user_id': user_id,
+        'role_id': role_id
+    }
+    response_data, rs_header = await fetch(
+        "https://routes.msg91.com/api/c/updateCuserRole", "POST", headers, None, json_body
+    )
+    return response_data
+

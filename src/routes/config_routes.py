@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Request
 from ..middlewares.middleware import jwt_middleware
 from validations.validation import Bridge_update as bridge_update_validation
 from ..controllers.configController import create_bridges_controller, get_bridge as get_bridge_controller,  get_all_bridges as get_all_bridges_controller, create_bridges_using_ai_controller
-from ..controllers.configController import get_all_service_models_controller,update_bridge_controller, get_all_service_controller, get_all_in_built_tools_controller, get_bridges_and_versions_by_model_controller, clone_agent_controller
+from ..controllers.configController import get_all_service_models_controller,update_bridge_controller, get_all_service_controller, get_all_in_built_tools_controller, get_bridges_and_versions_by_model_controller, clone_agent_controller, invite_user_controller
 from src.controllers.apicallControllerV2 import creates_api, updates_api
 router = APIRouter()
 
@@ -53,3 +53,7 @@ async def get_bridges_and_versions_by_model(model_name: str):
 @router.post('/clone_agent', dependencies=[Depends(jwt_middleware)])
 async def clone_agent(request: Request):
     return await clone_agent_controller(request)
+
+@router.post('/invite_user/{bridge_id}', dependencies=[Depends(jwt_middleware)])
+async def invite_user(request: Request, bridge_id: str):
+    return await invite_user_controller(request, bridge_id)
