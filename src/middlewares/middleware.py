@@ -13,6 +13,114 @@ from globals import *
 from bson import ObjectId
 from src.db_services.ConfigurationServices import configurationModel
 
+# Define role permissions
+ROLE_PERMISSIONS = {
+    'viewer': [
+        # 'get_all_agents',
+        'get_agent',
+        # 'get_all_service_models',
+        # 'get_all_service',
+        # 'get_all_inbuilt_tools',
+        # 'get_bridges_and_versions_by_model',
+        # 'get_version',
+        # 'get_testcases',
+        # 'suggest_model'
+    ],
+    'member': [
+        # 'get_all_agents',
+        'get_agent',
+        # 'get_all_service_models',
+        # 'get_all_service',
+        # 'get_all_inbuilt_tools',
+        # 'get_bridges_and_versions_by_model',
+        # 'get_version',
+        # 'get_testcases',
+        # 'get_all_orchestrators',
+        # 'get_all_apicalls',
+        # 'update_bridge',
+        # 'update_version',
+        # 'update_api',
+        # 'update_apicalls',
+        'create_agent',
+        # 'create_bridge_using_ai',
+        # 'create_api',
+        # 'create_version',
+        # 'create_testcase',
+        # 'publish_version',
+        # 'discard_version',
+        # 'bulk_publish_version',
+        # 'suggest_model'
+    ],
+    'owner': [
+        'get_all_bridges',
+        'get_bridge',
+        'get_all_service_models',
+        'get_all_service',
+        'get_all_inbuilt_tools',
+        'get_bridges_and_versions_by_model',
+        'get_version',
+        'get_testcases',
+        'get_all_apicalls',
+        'update_bridge',
+        'update_version',
+        'update_api',
+        'update_apicalls',
+        'update_orchestrator',
+        'create_bridge',
+        'create_bridge_using_ai',
+        'create_api',
+        'create_version',
+        'create_testcase',
+        'delete_version',
+        'delete_testcase',
+        'delete_function',
+        'publish_version',
+        'discard_version',
+        'bulk_publish_version',
+        'clone_agent',
+        'invite_user',
+        'check_testcases',
+        'suggest_model'
+    ]
+}
+
+def determine_role_from_permissions(user_permissions):
+    """
+    Determine user role based on their permissions.
+    
+    Logic:
+    1. Check if user has all permissions from 'owner' role -> return 'owner'
+    2. Check if user has all permissions from 'member' role -> return 'member'
+    3. Check if user has all permissions from 'viewer' role -> return 'viewer'
+    4. If no match, return 'viewer' as default
+    
+    Args:
+        user_permissions (list): List of permission strings from JWT token
+        
+    Returns:
+        str: Role name ('owner', 'member', or 'viewer')
+    """
+    if not user_permissions or not isinstance(user_permissions, list):
+        return 'viewer'
+    
+    # Convert to set for faster lookup
+    user_perms_set = set(user_permissions)
+    
+    # Check owner first (highest privilege)
+    if set(ROLE_PERMISSIONS['owner']).issubset(user_perms_set):
+        return 'owner'
+    
+    # Check member
+    if set(ROLE_PERMISSIONS['member']).issubset(user_perms_set):
+        return 'member'
+    
+    # Check viewer
+    if set(ROLE_PERMISSIONS['viewer']).issubset(user_perms_set):
+        return 'viewer'
+    
+    # Default to viewer if no match
+    return 'viewer'
+
 async def make_data_if_proxy_token_given(req):
     proxy_auth_token = req.headers.get('proxy_auth_token')
     proxy_pauth_token = req.headers.get('pauthkey')
@@ -95,7 +203,19 @@ async def jwt_middleware(request: Request):
                 token = request.headers.get('Authorization')
                 if not token:
                     raise HTTPException(status_code=498, detail="invalid token")
-                check_token = jwt.decode(token, Config.SecretKey, algorithms=["HS256"])
+                check_token = jwt.decode(token, 'secret', algorithms=["HS256"])
+                
+                # Determine role_name from permissions in JWT token
+                user_permissions = check_token.get('user', {}).get('permissions', [])
+                determined_role = determine_role_from_permissions(user_permissions)
+                
+                # Set role_name in user object for consistency
+                if 'user' not in check_token:
+                    check_token['user'] = {}
+                check_token['user']['role_name'] = determined_role
+                
+                logger.info(f"Role determined from permissions: {determined_role} for user {check_token.get('user', {}).get('email', 'unknown')}")
+                
             elif request.headers.get('proxy_auth_token') or request.headers.get('pauthkey'):
                 check_token = await make_data_if_proxy_token_given(request)
             print(f"check_token => {check_token}")
