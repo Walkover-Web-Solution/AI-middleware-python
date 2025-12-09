@@ -254,7 +254,7 @@ async def process_data_and_run_tools(codes_mapping, self):
 
                     task = call_gtwy_agent(agent_args)
                 elif self.tool_id_and_name_mapping[name].get('type') == 'WEB_CRAWL':
-                    task = call_firecrawl_scrape(tool_data.get("args"), self.tool_id_and_name_mapping[name])
+                    task = call_firecrawl_scrape(tool_data.get("args"))
                 else: 
                     task = axios_work(tool_data.get("args"), self.tool_id_and_name_mapping[name])
                 tasks.append((tool_call_key, tool_data, task))

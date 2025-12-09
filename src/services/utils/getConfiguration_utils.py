@@ -295,10 +295,6 @@ def add_web_crawling_tool(tools, tool_id_and_name_mapping, built_in_tools):
     if not _should_enable_web_crawling_tool(built_in_tools):
         return
 
-    api_key = Config.FIRECRAWL_API_KEY
-    if not api_key:
-        return
-
     tools.append({
         'type': 'function',
         'name': 'web_crawling',
@@ -327,12 +323,7 @@ def add_web_crawling_tool(tools, tool_id_and_name_mapping, built_in_tools):
 
     tool_id_and_name_mapping['web_crawling'] = {
         'type': 'WEB_CRAWL',
-        'name': 'web_crawling',
-        'url': 'https://api.firecrawl.dev/v2/scrape',
-        'headers': {
-            'Content-Type': 'application/json',
-            'Authorization': f'Bearer {api_key}'
-        }
+        'name': 'web_crawling'
     }
 
 def add_anthropic_json_schema(service, configuration, tools):

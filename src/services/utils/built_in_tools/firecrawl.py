@@ -1,11 +1,22 @@
+from config import Config
 from src.services.utils.apiservice import fetch
 from src.services.utils.logger import logger
 
-async def call_firecrawl_scrape(args, tool_config):
+FIRECRAWL_SCRAPE_URL = "https://api.firecrawl.dev/v2/scrape"
+
+async def call_firecrawl_scrape(args):
     url = (args or {}).get('url') if isinstance(args, dict) else None
     if not url:
         return {
             'response': {'error': 'url is required for web_crawling tool'},
+            'metadata': {'type': 'function'},
+            'status': 0
+        }
+
+    api_key = Config.FIRECRAWL_API_KEY
+    if not api_key:
+        return {
+            'response': {'error': 'web_crawling tool is not configured'},
             'metadata': {'type': 'function'},
             'status': 0
         }
@@ -20,11 +31,17 @@ async def call_firecrawl_scrape(args, tool_config):
         else:
             payload['formats'] = [str(formats)]
 
+    request_headers = {
+        'Content-Type': 'application/json',
+        'Authorization': f'Bearer {api_key}'
+    }
+    endpoint = FIRECRAWL_SCRAPE_URL
+    
     try:
         response, headers = await fetch(
-            tool_config.get('url'),
+            endpoint,
             'POST',
-            tool_config.get('headers', {}),
+            request_headers,
             None,
             payload
         )
