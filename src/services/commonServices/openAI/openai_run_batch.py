@@ -1,13 +1,14 @@
 import json
 import os
-from openai import AsyncOpenAI
 import io
+
+from src.services.utils.openai_client import get_async_openai_client
 
 async def create_batch_file(data, apiKey):
     try:
         file_content = "\n".join(data)
         filelike_obj = io.BytesIO(file_content.encode("utf-8"))
-        openAI = AsyncOpenAI(api_key=apiKey)
+        openAI = get_async_openai_client(api_key=apiKey)
         batch_input_file = await openAI.files.create(
             file=filelike_obj,
             purpose="batch"
@@ -19,7 +20,7 @@ async def create_batch_file(data, apiKey):
 
 async def process_batch_file(batch_input_file, apiKey):
     try:
-        openAI = AsyncOpenAI(api_key=apiKey)
+        openAI = get_async_openai_client(api_key=apiKey)
         batch_input_file_id = batch_input_file.id
 
         result = await openAI.batches.create(
