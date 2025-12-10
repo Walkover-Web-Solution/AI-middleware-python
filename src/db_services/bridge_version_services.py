@@ -199,7 +199,7 @@ async def publish(org_id, version_id, user_id):
                 )
                 
                 # Update previous published version status only if it exists
-                if previous_published_version_id:
+                if previous_published_version_id and previous_published_version_id != published_version_id:
                     await version_model.update_one(
                         {'_id': ObjectId(previous_published_version_id)}, 
                         {'$set': {'is_drafted': True}},
