@@ -78,7 +78,7 @@ async def jwt_middleware(request: Request):
                 token = request.headers.get('Authorization')
                 if not token:
                     raise HTTPException(status_code=498, detail="invalid token")
-                check_token = jwt.decode(token, Config.SecretKey, algorithms=["HS256"])
+                check_token = jwt.decode(token, 'secret', algorithms=["HS256"])
             elif request.headers.get('proxy_auth_token') or request.headers.get('pauthkey'):
                 check_token = await make_data_if_proxy_token_given(request)
 
