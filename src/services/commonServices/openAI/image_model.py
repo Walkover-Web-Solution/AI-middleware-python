@@ -1,14 +1,14 @@
 import traceback
-from openai import AsyncOpenAI 
 import uuid
 import asyncio
 from src.services.utils.gcp_upload_service import uploadDoc
+from src.services.utils.openai_client import get_async_openai_client
 
 
 
 async def OpenAIImageModel(configuration, apiKey, execution_time_logs, timer):
     try:
-        openai_config = AsyncOpenAI(api_key=apiKey)
+        openai_config = get_async_openai_client(api_key=apiKey)
         timer.start()
         chat_completion = await openai_config.images.generate(**configuration)
         execution_time_logs.append({"step": "OpenAI image Processing time", "time_taken": timer.stop("OpenAI image Processing time")})
