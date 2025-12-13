@@ -9,6 +9,8 @@ from ..utils.helper import Helper
 from .baseService.utils import sendResponse
 from ..utils.ai_middleware_format import Response_formatter
 from ..utils.send_error_webhook import send_error_to_webhook
+from src.utils.formatter import render_template_to_html
+from src.utils.constants import RESPONSE_TEMPLATES
 from src.handler.executionHandler import handle_exceptions
 from models.mongo_connection import db
 import json
@@ -339,6 +341,56 @@ async def chat(request_body):
             parsed_data['tokens'] = params['token_calculator'].calculate_total_cost(parsed_data['model'], parsed_data['service'])
             result['response']['usage']['cost'] = parsed_data['tokens'].get('total_cost') or 0
         
+        # Template HTML Generation
+        if parsed_data.get('configuration', {}).get('response_type', {}).get('is_template'):
+             try:
+                response_type = parsed_data['configuration'].get('response_type', {})
+                # 'template_id' is sent from frontend as an array of indices
+                template_ids = response_type.get('template_id', [])
+                
+                # If template_ids is not a list, wrap it? Or assume list.
+                if not isinstance(template_ids, list):
+                    template_ids = [template_ids]
+
+                base_template = None
+                if template_ids and response_type:
+                    # Use the first valid template ID
+                    for tid in template_ids:
+                        try:
+                            t_index = int(tid)
+                            if 0 <= t_index < len(RESPONSE_TEMPLATES):
+                                base_template = RESPONSE_TEMPLATES[t_index]
+                                break
+                        except (ValueError, TypeError):
+                            continue
+                
+                if base_template:
+                     # AI Result Data
+                     ai_data = result.get('response', {}).get('data', {})
+                     
+                     # Unwrap 'item' if present
+                     if isinstance(ai_data, dict) and "item" in ai_data:
+                         ai_data = ai_data["item"]
+                     elif isinstance(ai_data, str):
+                         try:
+                             parsed = json.loads(ai_data)
+                             if isinstance(parsed, dict) and "item" in parsed:
+                                 ai_data = parsed["item"]
+                             else:
+                                 ai_data = parsed
+                         except:
+                             pass
+                         
+                     # Render HTML
+                     html_output = render_template_to_html(base_template, ai_data)
+                     
+                     # Update Result
+                     result['response']['type'] = 'template'
+                     result['response']['html'] = html_output
+                     
+             except Exception as e:
+                logger.error(f"Error rendering template: {str(e)}")
+
         # Send data to playground
         if parsed_data.get('is_playground') and parsed_data.get('body', {}).get('bridge_configurations', {}).get('playground_response_format'):
             await sendResponse(parsed_data['body']['bridge_configurations']['playground_response_format'], result["response"], success=True, variables=parsed_data.get('variables',{}))
