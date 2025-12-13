@@ -12,6 +12,7 @@ from src.controllers.rag_controller import get_text_from_vectorsQuery
 from globals import *
 from src.db_services.ConfigurationServices import get_bridges_without_tools, update_bridge
 from src.services.utils.ai_call_util import call_gtwy_agent
+from src.services.utils.built_in_tools.firecrawl import call_firecrawl_scrape
 from globals import *
 from src.services.cache_service import store_in_cache, find_in_cache, client, REDIS_PREFIX
 from src.configs.constant import redis_keys
@@ -220,7 +221,7 @@ async def process_data_and_run_tools(codes_mapping, self):
         for tool_call_key, tool in codes_mapping.items():
             name = tool['name']
 
-            # Get corresponding function code mapping
+            # Get corresponding function code mapping``
             tool_mapping = {} if self.tool_id_and_name_mapping[name] else {"error": True, "response": "Wrong Function name"}
             tool_data = {**tool, **tool_mapping}
 
@@ -250,8 +251,10 @@ async def process_data_and_run_tools(codes_mapping, self):
                     # Pass bridge_configurations if available
                     if hasattr(self, 'bridge_configurations') and self.bridge_configurations:
                         agent_args["bridge_configurations"] = self.bridge_configurations
-                    
+
                     task = call_gtwy_agent(agent_args)
+                elif self.tool_id_and_name_mapping[name].get('type') == 'WEB_CRAWL':
+                    task = call_firecrawl_scrape(tool_data.get("args"))
                 else: 
                     task = axios_work(tool_data.get("args"), self.tool_id_and_name_mapping[name])
                 tasks.append((tool_call_key, tool_data, task))
@@ -496,5 +499,3 @@ async def save_files_to_redis(thread_id, sub_thread_id, bridge_id, files):
             await store_in_cache(cache_key, files, 604800)
     else:
         await store_in_cache(cache_key, files, 604800)
-
-

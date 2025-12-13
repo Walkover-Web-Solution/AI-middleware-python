@@ -281,6 +281,51 @@ def add_rag_tool(tools, tool_id_and_name_mapping, rag_data):
         "type": "RAG"
     }
 
+def _should_enable_web_crawling_tool(built_in_tools):
+    if not built_in_tools:
+        return False
+    try:
+        normalized = {tool.lower() for tool in built_in_tools}
+    except AttributeError:
+        return False
+    return 'web_crawling' in normalized
+
+def add_web_crawling_tool(tools, tool_id_and_name_mapping, built_in_tools):
+    """Add Firecrawl-based web crawling tool when requested via built-in tools."""
+    if not _should_enable_web_crawling_tool(built_in_tools):
+        return
+
+    tools.append({
+        'type': 'function',
+        'name': 'web_crawling',
+        'description': 'Use this to crawl or scrape website content via Firecrawl. Always provide the `url` argument (must include http/https) and optionally pass a `formats` list if you need specific output formats.',
+        'properties': {
+            'url': {
+                'description': 'Fully qualified URL to scrape (must start with http or https).',
+                'type': 'string',
+                'enum': [],
+                'required_params': [],
+                'parameter': {}
+            },
+            'formats': {
+                'description': 'Optional list of formats to return (e.g., markdown, screenshot).',
+                'type': 'array',
+                'items': {
+                    'type': 'string'
+                },
+                'enum': [],
+                'required_params': [],
+                'parameter': {}
+            }
+        },
+        'required': ['url']
+    })
+
+    tool_id_and_name_mapping['web_crawling'] = {
+        'type': 'WEB_CRAWL',
+        'name': 'web_crawling'
+    }
+
 def add_anthropic_json_schema(service, configuration, tools):
     """Add JSON schema response format for Anthropic service"""
     if (service != 'anthropic' or 
