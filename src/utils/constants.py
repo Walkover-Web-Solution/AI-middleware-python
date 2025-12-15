@@ -47,23 +47,23 @@ RESPONSE_TEMPLATES = [{
           {
             "type": "Button",
             "label": "Yes",
-            "block": true,
+            "block": True,
             "onClickAction": {
               "type": "notification.settings",
               "payload": {
-                "enable": true
+                "enable": True
               }
             }
           },
           {
             "type": "Button",
             "label": "No",
-            "block": true,
+            "block": True,
             "variant": "outline",
             "onClickAction": {
               "type": "notification.settings",
               "payload": {
-                "enable": false
+                "enable": False
               }
             }
           }
@@ -105,9 +105,9 @@ RESPONSE_TEMPLATES = [{
         "children[1].children[0].label",
         "children[1].children[1].label"
       ],
-      "additionalProperties": false
+      "additionalProperties": False
     },
-    "strict": true
+    "strict": True
   },
 
   "html": "<div class=\"relative max-w-xl w-full overflow-hidden rounded-[20px] border border-slate-200 bg-white text-slate-900 shadow-[0_12px_30px_rgba(15,23,42,0.10)] p-6\"><div class=\"space-y-4\"><div class=\"flex flex-col gap-4 p-4 w-full items-center\"><div class=\"flex items-center justify-center rounded-xl p-3 bg-green-400\" style=\"width:40px;height:40px;\"><span class=\"inline-flex h-5 w-5 items-center justify-center\"><span class=\"text-[0.7rem] uppercase tracking-tight\">UserMessage</span></span></div><div class=\"flex flex-col gap-1 w-full items-center\"><h2 class=\"text-xl md:text-2xl font-semibold text-slate-900 tracking-tight\">Hello! How can I assist you today?</h2><p class=\"text-sm text-slate-500\">Need any help or information?</p></div></div><div class=\"flex flex-row gap-3 items-stretch\"><button type=\"button\" class=\"inline-flex items-center justify-center px-5 py-2 text-sm font-medium transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 bg-white text-slate-800 border border-slate-300 hover:bg-slate-50 rounded-full focus:ring-slate-300 w-full\">Ask a Question</button><button type=\"button\" class=\"inline-flex items-center justify-center px-5 py-2 text-sm font-medium transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 bg-white text-slate-800 border border-slate-300 hover:bg-slate-50 rounded-full focus:ring-slate-300 w-full\">Get Support</button></div></div></div>"
@@ -149,7 +149,7 @@ RESPONSE_TEMPLATES = [{
     },
     {
       "type": "Divider",
-      "flush": true
+      "flush": True
     },
     {
       "type": "Row",
@@ -167,7 +167,7 @@ RESPONSE_TEMPLATES = [{
           "value": "weedon@openai.com",
           "editable": {
             "name": "email.to",
-            "required": true,
+            "required": True,
             "placeholder": "name@example.com"
           }
         }
@@ -175,7 +175,7 @@ RESPONSE_TEMPLATES = [{
     },
     {
       "type": "Divider",
-      "flush": true
+      "flush": True
     },
     {
       "type": "Row",
@@ -193,7 +193,7 @@ RESPONSE_TEMPLATES = [{
           "value": "ChatKit Roadmap",
           "editable": {
             "name": "email.subject",
-            "required": true,
+            "required": True,
             "placeholder": "Email subject"
           }
         }
@@ -201,7 +201,7 @@ RESPONSE_TEMPLATES = [{
     },
     {
       "type": "Divider",
-      "flush": true
+      "flush": True
     },
     {
       "type": "Text",
@@ -209,7 +209,7 @@ RESPONSE_TEMPLATES = [{
       "minLines": 9,
       "editable": {
         "name": "email.body",
-        "required": true,
+        "required": True,
         "placeholder": "Write your message…"
       }
     }
@@ -298,9 +298,9 @@ RESPONSE_TEMPLATES = [{
       "children[6].editable.name",
       "children[6].editable.placeholder"
     ],
-    "additionalProperties": false
+    "additionalProperties": False
   },
-  "strict": true
+  "strict": True
 },
 "html":"<div class=\"relative max-w-xl w-full overflow-hidden rounded-[20px] border border-slate-200 bg-white text-slate-900 shadow-[0_12px_30px_rgba(15,23,42,0.10)] p-7\">\n  <div class=\"space-y-4\">\n    <div class=\"flex flex-row gap-3 items-stretch   \">\n  <p class=\"text-xs text-slate-400 font-semibold  \">Welcome Message</p>\n<p class=\"text-sm text-slate-400   \">Hello! How can I assist you today?</p>\n</div>\n<div class=\"relative mx-0\">\n  <div class=\"border-t border-dashed border-slate-200/80\"></div>\n</div>\n<div class=\"flex flex-row gap-3 items-stretch   \">\n  <p class=\"text-xs text-slate-400 font-semibold  \">Quick Actions</p>\n<input\n  type=\"text\"\n  name=\"quickAction1\"\n  class=\"block w-full bg-transparent text-sm   text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-0\"\n  placeholder=\"Type your question...\"\n  value=\"Ask a Question\"\n/>\n</div>\n<div class=\"relative mx-0\">\n  <div class=\"border-t border-dashed border-slate-200/80\"></div>\n</div>\n<div class=\"flex flex-row gap-3 items-stretch   \">\n  <p class=\"text-xs text-slate-400 font-semibold  \">Live Support</p>\n<input\n  type=\"text\"\n  name=\"liveSupport\"\n  class=\"block w-full bg-transparent text-sm   text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-0\"\n  placeholder=\"Type your message...\"\n  value=\"Chat with Support\"\n/>\n</div>\n<div class=\"relative mx-0\">\n  <div class=\"border-t border-dashed border-slate-200/80\"></div>\n</div>\n<textarea\n  name=\"feedback\"\n  rows=\"9\"\n  class=\"block w-full bg-transparent text-sm   text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-0 resize-none leading-relaxed\"\n  placeholder=\"Provide feedback here...\"\n>Feedback</textarea>\n    <div class=\"mt-4 flex justify-end gap-3 px-4 pb-4\">\n  <button\n  type=\"button\"\n  class=\"inline-flex items-center justify-center px-5 py-2 text-sm font-medium transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 bg-white text-slate-800 border border-slate-300 hover:bg-slate-50 rounded-full focus:ring-slate-300 \"\n>\n  Cancel\n</button>\n<button\n  type=\"button\"\n  class=\"inline-flex items-center justify-center px-5 py-2 text-sm font-medium transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 bg-black text-white hover:bg-zinc-900 rounded-full focus:ring-black \"\n>\n  Submit\n</button>\n</div>\n  </div>\n</div>"
 }]

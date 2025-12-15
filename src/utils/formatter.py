@@ -148,9 +148,10 @@ def render_node(node):
                     "pill": True
                 }))
             
+            buttons_html = "\n".join(buttons)
             footer = f"""
 <div class="mt-4 flex justify-end gap-3 px-4 pb-4">
-  {"\n".join(buttons)}
+  {buttons_html}
 </div>
 """.strip()
 
