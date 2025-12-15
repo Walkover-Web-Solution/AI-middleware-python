@@ -210,11 +210,17 @@ def setup_api_key(service, result, apikey, chatbot):
     if folder_api_key:
         db_api_key = folder_api_key
 
-    if chatbot and (service == 'openai'):
-        if not apikey and result.get('bridges', {}).get('configuration', {}).get('model') == 'gpt-5-nano':
-            apikey = Config.OPENAI_API_KEY
-    
     # Validate API key existence
+    if chatbot and (service == 'openai'):
+        model = result.get('bridges', {}).get('configuration', {}).get('model')
+        # If both keys are not present
+        if not (apikey or db_api_key):
+            # Use Config.OPENAI_API_KEY only if model is gpt-5-nano
+            if model == 'gpt-5-nano':
+                apikey = Config.OPENAI_API_KEY_GPT_5_NANO
+            else:
+                raise Exception('Could not find api key or Agent is not Published')
+    
     if not (apikey or db_api_key):
         raise Exception('Could not find api key or Agent is not Published')
     
