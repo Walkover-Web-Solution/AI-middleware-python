@@ -221,6 +221,8 @@ async def handle_fine_tune_model(parsed_data, custom_config):
 
 async def handle_pre_tools(parsed_data):
     if parsed_data['pre_tools']:
+        if parsed_data['pre_tools'].get('args') is None:
+            parsed_data['pre_tools']['args'] = {}
         parsed_data['pre_tools']['args']['user'] = parsed_data['user']
         pre_function_response = await axios_work(
             parsed_data['pre_tools'].get('args', {}),

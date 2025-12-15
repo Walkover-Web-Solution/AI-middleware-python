@@ -40,7 +40,7 @@ redis_keys = {
     'metrix_bridges_' : 'metrix_bridges_',
     'rate_limit_' : 'rate_limit_',
     'files_' : 'files_',
-    'openai_batch_' : 'openai_batch_',
+    'batch_' : 'batch_',
     'avg_response_time_' : 'avg_response_time_',
     'gpt_memory_' : 'gpt_memory_',
     'timezone_and_org_' : 'timezone_and_org_',
