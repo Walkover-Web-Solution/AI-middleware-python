@@ -4,7 +4,8 @@ from ..utils.send_error_webhook import create_response_format
 from ..commonServices.baseService.baseService import sendResponse
 import asyncio
 import json
-from .ai_middleware_format import Response_formatter
+from .ai_middleware_format import  Batch_Response_formatter
+from src.configs.constant import redis_keys
 from globals import *
 
 async def repeat_function():
@@ -42,11 +43,13 @@ async def check_batch_status():
                         file_content = None
                     for index, content in enumerate(file_content):
                         response_body = content["response"]["body"]
-                        formatted_content = await Response_formatter(response=response_body, service='openai', tools={}, type='chat', images=None) # changes
+                        custom_id = content.get("custom_id", None)
+                        formatted_content = await Batch_Response_formatter(response=response_body, service='openai_batch', tools={}, type='chat', images=None, batch_id=batch_id, custom_id=custom_id) # changes
                         file_content[index] = formatted_content
                         
                     await sendResponse(response_format, data=file_content, success = True)
-                await delete_in_cache(batch_id)
+                cache_key = f"{redis_keys['batch_']}{batch_id}"
+                await delete_in_cache(cache_key)
     except Exception as error:
         logger.error(f"An error occurred while checking the batch status: {str(error)}")
         

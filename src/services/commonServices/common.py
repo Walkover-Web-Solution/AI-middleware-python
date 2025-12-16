@@ -534,7 +534,18 @@ async def batch(request_body):
         if not result["success"]:
             raise ValueError(result)
         
-        return JSONResponse(status_code=200, content={"success": True, "response": result["message"]})
+        response_content = {
+            "success": True,
+            "response": result["message"]
+        }
+        
+        # Include batch_id and messages if available
+        if "batch_id" in result:
+            response_content["batch_id"] = result["batch_id"]
+        if "messages" in result:
+            response_content["messages"] = result["messages"]
+        
+        return JSONResponse(status_code=200, content=response_content)
     except Exception as error:
         traceback.print_exc()
         raise ValueError(error)
