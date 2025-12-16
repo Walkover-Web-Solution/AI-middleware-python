@@ -6,6 +6,7 @@ from src.services.commonServices.common import chat_multiple_agents, embedding, 
 from src.services.commonServices.baseService.utils import make_request_data
 from ...middlewares.middleware import jwt_middleware
 from ...middlewares.getDataUsingBridgeId import add_configuration_data_to_body
+from ...middlewares.openAImiddleware import openai_middleware
 from concurrent.futures import ThreadPoolExecutor
 from config import Config
 from src.services.commonServices.queueService.queueService import queue_obj
@@ -57,6 +58,12 @@ async def chat_completion(request: Request, db_config: dict = Depends(add_config
         result = await chat_multiple_agents(data_to_send)
         return result
 
+@router.post('/openai/v1/chat/completions', dependencies=[Depends(openai_middleware)])
+async def openai_sdk_chat_completion(request: Request, db_config: dict = Depends(add_configuration_data_to_body)):
+    """
+    OpenAI SDK-compatible entrypoint that reuses the standard chat completion flow.
+    """
+    return await chat_completion(request, db_config=db_config)
 
 @router.post('/playground/chat/completion/{bridge_id}', dependencies=[Depends(auth_and_rate_limit)])
 async def playground_chat_completion_bridge(request: Request, db_config: dict = Depends(add_configuration_data_to_body)):
