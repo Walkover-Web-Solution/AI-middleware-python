@@ -60,7 +60,7 @@ class OpenaiBatch(BaseService):
             "apikey": self.apikey,
             "webhook" : self.webhook
         }
-        cache_key = f"{redis_keys['openai_batch_']}{batch_file.id}"
+        cache_key = f"{redis_keys['batch_']}{batch_file.id}"
         await store_in_cache(cache_key, batch_json, ttl = 86400)
         return {
             "success": True,
