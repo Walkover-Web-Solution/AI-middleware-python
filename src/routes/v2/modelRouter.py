@@ -1,6 +1,9 @@
 from fastapi import APIRouter, Depends, Request, HTTPException
 from fastapi.responses import JSONResponse
 import asyncio
+import uuid
+import time
+import json
 
 from src.services.commonServices.common import chat_multiple_agents, embedding, batch, run_testcases, image, orchestrator_chat
 from src.services.commonServices.baseService.utils import make_request_data
@@ -22,6 +25,44 @@ async def auth_and_rate_limit(request: Request):
     await jwt_middleware(request)
     await rate_limit(request,key_path='body.bridge_id' , points=100)
     await rate_limit(request,key_path='body.thread_id', points=20)
+
+def _format_openai_response(chat_response: dict, original_payload: dict | None) -> dict:
+    response_data = chat_response.get("response", {}).get("data", {})
+    usage_data = chat_response.get("response", {}).get("usage", {}) or {}
+
+    message_content = response_data.get("content")
+    if isinstance(message_content, list):
+        message_content = "\n".join(
+            chunk.get("text", "") if isinstance(chunk, dict) else str(chunk)
+            for chunk in message_content
+        ).strip()
+
+    finish_reason = response_data.get("finish_reason") or usage_data.get("finish_reason")
+    model = original_payload.get("model") if isinstance(original_payload, dict) else None
+
+    return {
+        "id": f"chatcmpl-{uuid.uuid4().hex}",
+        "object": "chat.completion",
+        "created": int(time.time()),
+        "model": model,
+        "choices": [
+            {
+                "index": 0,
+                "message": {
+                    "role": "assistant",
+                    "content": message_content,
+                },
+                "finish_reason": finish_reason or "stop",
+                "logprobs": None,
+            }
+        ],
+        "usage": {
+            "prompt_tokens": usage_data.get("input_tokens") or usage_data.get("prompt_tokens"),
+            "completion_tokens": usage_data.get("output_tokens") or usage_data.get("completion_tokens"),
+            "total_tokens": usage_data.get("total_tokens"),
+        },
+        "system_fingerprint": None,
+    }
 
 @router.post('/chat/completion', dependencies=[Depends(auth_and_rate_limit)])
 async def chat_completion(request: Request, db_config: dict = Depends(add_configuration_data_to_body)):
@@ -63,7 +104,23 @@ async def openai_sdk_chat_completion(request: Request, db_config: dict = Depends
     """
     OpenAI SDK-compatible entrypoint that reuses the standard chat completion flow.
     """
-    return await chat_completion(request, db_config=db_config)
+    internal_response = await chat_completion(request, db_config=db_config)
+
+    if isinstance(internal_response, JSONResponse):
+        content = internal_response.body
+        try:
+            content_dict = json.loads(content)
+        except Exception:
+            content_dict = {}
+        if not content_dict.get("success", True):
+            raise HTTPException(status_code=500, detail=content_dict)
+        chat_response = content_dict
+    else:
+        chat_response = internal_response
+
+    openai_payload = getattr(request.state, "openai_payload", {})
+    formatted = _format_openai_response(chat_response, openai_payload)
+    return formatted
 
 @router.post('/playground/chat/completion/{bridge_id}', dependencies=[Depends(auth_and_rate_limit)])
 async def playground_chat_completion_bridge(request: Request, db_config: dict = Depends(add_configuration_data_to_body)):

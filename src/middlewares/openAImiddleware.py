@@ -138,6 +138,7 @@ async def openai_middleware(request: Request):
 
     _override_request_body(request, internal_body)
     _set_pauthkey_header(request, token)
+    request.state.openai_payload = payload
 
     await jwt_middleware(request)
     await rate_limit(request, key_path="body.bridge_id", points=100)
