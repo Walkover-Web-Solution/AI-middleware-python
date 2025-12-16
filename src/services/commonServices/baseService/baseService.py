@@ -62,6 +62,7 @@ class BaseService:
         self.tool_id_and_name_mapping = params.get('tool_id_and_name_mapping')
         self.batch = params.get('batch')
         self.webhook = params.get('webhook')
+        self.batch_variables = params.get('batch_variables')
         self.name = params.get('name')
         self.org_name = params.get('org_name')
         self.send_error_to_webhook = params.get('send_error_to_webhook')
