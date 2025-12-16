@@ -25,6 +25,9 @@ async def check_batch_status():
             apikey = id.get('apikey')
             webhook = id.get('webhook')
             batch_id = id.get('id')
+            batch_variables = id.get('batch_variables')  # Retrieve batch_variables from cache
+            custom_id_mapping = id.get('custom_id_mapping', {})  # Get mapping of custom_id to index
+            
             if webhook.get('url') is not None:
                 response_format = create_response_format(webhook.get('url'), webhook.get('headers'))
             openAI = AsyncOpenAI(api_key=apikey)
@@ -45,6 +48,13 @@ async def check_batch_status():
                         response_body = content["response"]["body"]
                         custom_id = content.get("custom_id", None)
                         formatted_content = await Batch_Response_formatter(response=response_body, service='openai_batch', tools={}, type='chat', images=None, batch_id=batch_id, custom_id=custom_id) # changes
+                        
+                        # Add batch_variables to response if available
+                        if batch_variables is not None and custom_id in custom_id_mapping:
+                            variable_index = custom_id_mapping[custom_id]
+                            if variable_index < len(batch_variables):
+                                formatted_content["variables"] = batch_variables[variable_index]
+                        
                         file_content[index] = formatted_content
                         
                     await sendResponse(response_format, data=file_content, success = True)

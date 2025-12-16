@@ -179,6 +179,7 @@ def parse_request_body(request_body):
         "parent_bridge_id": body.get('parent_bridge_id'),
         "transfer_request_id": body.get('transfer_request_id'),
         "orchestrator_flag": body.get('orchestrator_flag'),
+        "batch_variables": body.get('batch_variables'),
     }
 
 
@@ -550,7 +551,8 @@ def build_service_params_for_batch(parsed_data, custom_config, model_output_conf
         "apikey_object_id" : parsed_data['apikey_object_id'],
         "batch" : parsed_data['batch'],
         "webhook" : parsed_data['batch_webhook'],
-        "folder_id": parsed_data.get('folder_id')
+        "folder_id": parsed_data.get('folder_id'),
+        "batch_variables": parsed_data['batch_variables']
     }
 
 
