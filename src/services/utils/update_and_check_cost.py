@@ -127,9 +127,11 @@ async def check_bridge_api_folder_limits(result, bridge_data,version_id):
     if not isinstance(bridge_data, dict):
         return None
 
-    folder_identifier = result.get('folder_id')
+    result_data = result if isinstance(result, dict) else {}
+
+    folder_identifier = result_data.get('folder_id')
     if folder_identifier:
-        folder_error = await _check_limit(limit_types['folder'],data=result,version_id=version_id)
+        folder_error = await _check_limit(limit_types['folder'],data=result_data,version_id=version_id)
         if folder_error:
             return folder_error
 
@@ -137,12 +139,12 @@ async def check_bridge_api_folder_limits(result, bridge_data,version_id):
     if bridge_error:
         return bridge_error
 
-    service_identifier = result.get('service')
+    service_identifier = result_data.get('service')
     if service_identifier and (
-        (result.get('apikeys') and service_identifier in result.get('apikeys', {})) or
-        (result.get('folder_apikeys') and service_identifier in result.get('folder_apikeys', {}))
+        (result_data.get('apikeys') and service_identifier in result_data.get('apikeys', {})) or
+        (result_data.get('folder_apikeys') and service_identifier in result_data.get('folder_apikeys', {}))
     ):
-        api_error = await _check_limit(limit_types['apikey'], data=result,version_id=version_id)
+        api_error = await _check_limit(limit_types['apikey'], data=result_data,version_id=version_id)
         if api_error:
             return api_error
 
