@@ -1,5 +1,7 @@
 import json
+import re
 from typing import Any, Dict, List, Optional
+
 from fastapi import HTTPException, Request
 from .middleware import jwt_middleware
 from .ratelimitMiddleware import rate_limit
@@ -27,10 +29,12 @@ def _normalize_message_content(content: Any) -> Optional[str]:
     if isinstance(content, list):
         text_parts: List[str] = []
         for item in content:
-            if isinstance(item, dict) and item.get("type") == "text":
-                text_value = (item.get("text") or "").strip()
-                if text_value:
-                    text_parts.append(text_value)
+            if isinstance(item, dict):
+                item_type = (item.get("type") or "").lower()
+                if item_type in {"text", "input_text", "output_text"}:
+                    text_value = (item.get("text") or "").strip()
+                    if text_value:
+                        text_parts.append(text_value)
         merged = "\n".join(text_parts).strip()
         return merged or None
 
@@ -47,9 +51,39 @@ def _extract_latest_user_message(messages: List[Dict[str, Any]]) -> Optional[str
     return None
 
 
-def _build_internal_body(payload: Dict[str, Any]) -> Dict[str, Any]:
-    model = payload.get("model")
-    if not isinstance(model, str):
+def _extract_text_from_input(input_value: Any) -> Optional[str]:
+    if isinstance(input_value, str):
+        text = input_value.strip()
+        return text or None
+
+    if isinstance(input_value, dict):
+        return _normalize_message_content(input_value.get("content"))
+
+    if isinstance(input_value, list):
+        segments: List[str] = []
+        for chunk in input_value:
+            if isinstance(chunk, dict):
+                # Prefer nested content array but fall back to text directly
+                content = chunk.get("content")
+                extracted = _normalize_message_content(content)
+                if extracted:
+                    segments.append(extracted)
+                elif isinstance(chunk.get("text"), str):
+                    text_value = chunk["text"].strip()
+                    if text_value:
+                        segments.append(text_value)
+        merged = "\n".join(segments).strip()
+        return merged or None
+
+    return None
+
+
+_AGENT_MODEL_PREFIX = "gtwy-agent"
+_AGENT_ID_PATTERN = re.compile(r"^[a-zA-Z0-9._-]+$")
+
+
+def _parse_agent_identifier(model: Any) -> str:
+    if not isinstance(model, str) or not model.strip():
         raise HTTPException(status_code=400, detail="`model` must be provided.")
 
     if ":" not in model:
@@ -58,16 +92,27 @@ def _build_internal_body(payload: Dict[str, Any]) -> Dict[str, Any]:
             detail="`model` must include the agent identifier in the form gtwy-agent:<id>.",
         )
 
-    _, agent_id = model.split(":", 1)
+    prefix, agent_id = model.split(":", 1)
+    if prefix.strip().lower() != _AGENT_MODEL_PREFIX:
+        raise HTTPException(
+            status_code=400,
+            detail="`model` must start with gtwy-agent:<id> to reference a gateway agent.",
+        )
+
     agent_id = agent_id.strip()
-    if not agent_id:
-        raise HTTPException(status_code=400, detail="Invalid model identifier.")
+    if not agent_id or not _AGENT_ID_PATTERN.match(agent_id):
+        raise HTTPException(status_code=400, detail="Invalid agent identifier supplied.")
+
+    return agent_id
+
+
+def _build_internal_body(payload: Dict[str, Any]) -> Dict[str, Any]:
+    agent_id = _parse_agent_identifier(payload.get("model"))
 
     user_message = _extract_latest_user_message(payload.get("messages", []))
     if not user_message:
         fallback = payload.get("input") or payload.get("prompt")
-        if isinstance(fallback, str) and fallback.strip():
-            user_message = fallback.strip()
+        user_message = _extract_text_from_input(fallback)
     if not user_message:
         raise HTTPException(status_code=400, detail="No user message found in payload.")
 
@@ -131,7 +176,7 @@ def _set_pauthkey_header(request: Request, token: str) -> None:
         del request.__dict__["_headers"]
 
 
-async def openai_middleware(request: Request):
+async def openai_sdk_middleware(request: Request):
     payload = await request.json()
     internal_body = _build_internal_body(payload)
     token = _extract_pauthkey_from_authorization(request)
