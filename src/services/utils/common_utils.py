@@ -65,9 +65,6 @@ def setup_agent_pre_tools(parsed_data, bridge_configurations):
                 # Use the mapped variable to get value from agent_variables
                 if mapped_variable in agent_variables:
                     args[param] = agent_variables[mapped_variable]
-            elif param in agent_variables:
-                # If no mapping exists, use param directly
-                args[param] = agent_variables[param]
         
         # Update the pre_tools args with agent-specific variables
         parsed_data['pre_tools']['args'] = args
