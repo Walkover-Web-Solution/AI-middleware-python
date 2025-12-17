@@ -1,7 +1,5 @@
 import json
-import re
 from typing import Any, Dict, List, Optional
-
 from fastapi import HTTPException, Request
 from .middleware import jwt_middleware
 from .ratelimitMiddleware import rate_limit
@@ -63,7 +61,6 @@ def _extract_text_from_input(input_value: Any) -> Optional[str]:
         segments: List[str] = []
         for chunk in input_value:
             if isinstance(chunk, dict):
-                # Prefer nested content array but fall back to text directly
                 content = chunk.get("content")
                 extracted = _normalize_message_content(content)
                 if extracted:
@@ -78,36 +75,22 @@ def _extract_text_from_input(input_value: Any) -> Optional[str]:
     return None
 
 
-_AGENT_MODEL_PREFIX = "gtwy-agent"
-_AGENT_ID_PATTERN = re.compile(r"^[a-zA-Z0-9._-]+$")
+def _extract_agent_identifier(payload: Dict[str, Any]) -> str:
+    agent_id = payload.get("agent_id") or payload.get("bridge_id")
 
-
-def _parse_agent_identifier(model: Any) -> str:
-    if not isinstance(model, str) or not model.strip():
-        raise HTTPException(status_code=400, detail="`model` must be provided.")
-
-    if ":" not in model:
+    if isinstance(agent_id, str):
+        agent_id = agent_id.strip()
+    if not agent_id:
         raise HTTPException(
             status_code=400,
-            detail="`model` must include the agent identifier in the form gtwy-agent:<id>.",
+            detail="`agent_id` must be included in the request body.",
         )
-
-    prefix, agent_id = model.split(":", 1)
-    if prefix.strip().lower() != _AGENT_MODEL_PREFIX:
-        raise HTTPException(
-            status_code=400,
-            detail="`model` must start with gtwy-agent:<id> to reference a gateway agent.",
-        )
-
-    agent_id = agent_id.strip()
-    if not agent_id or not _AGENT_ID_PATTERN.match(agent_id):
-        raise HTTPException(status_code=400, detail="Invalid agent identifier supplied.")
-
-    return agent_id
+    return str(agent_id)
 
 
 def _build_internal_body(payload: Dict[str, Any]) -> Dict[str, Any]:
-    agent_id = _parse_agent_identifier(payload.get("model"))
+    agent_id = _extract_agent_identifier(payload)
+    llm_model = payload.get("model")
 
     user_message = _extract_latest_user_message(payload.get("messages", []))
     if not user_message:
@@ -123,6 +106,9 @@ def _build_internal_body(payload: Dict[str, Any]) -> Dict[str, Any]:
     configuration = payload.get("configuration") or {}
     if not isinstance(configuration, dict):
         configuration = {}
+
+    if isinstance(llm_model, str) and llm_model.strip():
+        configuration.setdefault("model", llm_model.strip())
 
     response_format = payload.get("response_format")
     if response_format:
