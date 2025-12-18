@@ -1,17 +1,21 @@
 from fastapi import APIRouter, Depends, Request, HTTPException
 from fastapi.responses import JSONResponse
 import asyncio
+import json
 
 from src.services.commonServices.common import chat_multiple_agents, embedding, batch, run_testcases, image, orchestrator_chat
 from src.services.commonServices.baseService.utils import make_request_data
 from ...middlewares.middleware import jwt_middleware
 from ...middlewares.getDataUsingBridgeId import add_configuration_data_to_body
+from ...middlewares.openaiSDKmiddleware import openai_sdk_middleware
+
 from concurrent.futures import ThreadPoolExecutor
 from config import Config
 from src.services.commonServices.queueService.queueService import queue_obj
 from src.middlewares.ratelimitMiddleware import rate_limit
 from models.mongo_connection import db
 from globals import *
+from src.services.utils.openai_sdk_utils import run_openai_chat_and_format
 
 router = APIRouter()
 
@@ -56,6 +60,11 @@ async def chat_completion(request: Request, db_config: dict = Depends(add_config
         loop = asyncio.get_event_loop()
         result = await chat_multiple_agents(data_to_send)
         return result
+
+
+@router.post('/openai/responses', dependencies=[Depends(openai_sdk_middleware)])
+async def openai_sdk_responses(request: Request, db_config: dict = Depends(add_configuration_data_to_body)):
+    return await run_openai_chat_and_format(request, db_config, chat_completion)
 
 
 @router.post('/playground/chat/completion/{bridge_id}', dependencies=[Depends(auth_and_rate_limit)])
