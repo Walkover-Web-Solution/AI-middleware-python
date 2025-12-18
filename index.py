@@ -128,7 +128,6 @@ app.add_middleware(
 # Healthcheck route
 @app.get("/healthcheck")
 async def healthcheck():
-    print("hello from healthcheck")
     return JSONResponse(status_code=200, content={
             "status": "OK running good... v1.2",
     })
