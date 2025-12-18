@@ -191,7 +191,7 @@ async def _collect_connected_agent_configs(result, org_id, visited):
         if not bridge_id_value or bridge_id_value in visited:
             continue
 
-        agent_details = connected_agent_details.get(bridge_id_value, {})
+        agent_details = connected_agent_details.get(bridge_id_value) or {}
         merged_info = {**agent_details, **agent_info}
 
         version_id_value = merged_info.get('version_id')
