@@ -1,180 +1,107 @@
-import os
-import tempfile
-import asyncio
+import json
+import io
 import httpx
-import traceback
 import certifi
-from openai import OpenAI, APIConnectionError, APIError
+from openai import AsyncOpenAI
 
 async def create_batch_file(data, apiKey):
-    temp_file_path = None
     try:
-        # Create a temporary file to store the batch input
         file_content = "\n".join(data)
+        filelike_obj = io.BytesIO(file_content.encode("utf-8"))
         
-        # Write to a temporary file
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.jsonl', delete=False, encoding='utf-8') as temp_file:
-            temp_file.write(file_content)
-            temp_file_path = temp_file.name
+        # Create httpx client with proper production configuration
+        limits = httpx.Limits(
+            max_keepalive_connections=5,
+            max_connections=10,
+            keepalive_expiry=30.0
+        )
         
-        # Use synchronous client in thread pool
-        def upload_file():
-            # Create a custom httpx client with proper configuration for production
-            limits = httpx.Limits(
-                max_keepalive_connections=5,
-                max_connections=10,
-                keepalive_expiry=30.0
+        http_client = httpx.AsyncClient(
+            timeout=httpx.Timeout(60.0, connect=10.0),
+            transport=httpx.AsyncHTTPTransport(
+                retries=3,
+                verify=certifi.where()
+            ),
+            limits=limits,
+            follow_redirects=True
+        )
+        
+        try:
+            openAI = AsyncOpenAI(api_key=apiKey, http_client=http_client)
+            batch_input_file = await openAI.files.create(
+                file=filelike_obj,
+                purpose="batch"
             )
-            
-            http_client = httpx.Client(
-                timeout=httpx.Timeout(60.0, connect=10.0),
-                transport=httpx.HTTPTransport(
-                    retries=3,
-                    verify=certifi.where()
-                ),
-                limits=limits,
-                follow_redirects=True
-            )
-            
-            try:
-                client = OpenAI(
-                    api_key=apiKey,
-                    http_client=http_client,
-                    max_retries=0
-                )
-                with open(temp_file_path, 'rb') as f:
-                    return client.files.create(
-                        file=f,
-                        purpose="batch"
-                    )
-            finally:
-                http_client.close()
-        
-        # Run the synchronous call in a thread pool
-        batch_input_file = await asyncio.to_thread(upload_file)
-        return batch_input_file
-        
-    except APIConnectionError as e:
-        print(f"Connection error in create_batch_file: {e}")
-        print(f"Traceback: {traceback.format_exc()}")
-        raise Exception(f"Failed to connect to OpenAI API: {str(e)}")
-    except APIError as e:
-        print(f"API error in create_batch_file: {e}")
-        print(f"Traceback: {traceback.format_exc()}")
-        raise Exception(f"OpenAI API error: {str(e)}")
+            return batch_input_file
+        finally:
+            await http_client.aclose()
     except Exception as e:
-        print(f"Unexpected error in create_batch_file: {e}")
-        print(f"Traceback: {traceback.format_exc()}")
+        print(f"Error in create_batch_file: {e}")
         raise
-    finally:
-        # Clean up the temporary file
-        if temp_file_path and os.path.exists(temp_file_path):
-            try:
-                os.unlink(temp_file_path)
-            except Exception as e:
-                print(f"Warning: Could not delete temporary file {temp_file_path}: {e}")
 
 async def process_batch_file(batch_input_file, apiKey):
     try:
         batch_input_file_id = batch_input_file.id
         
-        # Use synchronous client in thread pool
-        def create_batch():
-            # Create a custom httpx client with proper configuration for production
-            limits = httpx.Limits(
-                max_keepalive_connections=5,
-                max_connections=10,
-                keepalive_expiry=30.0
-            )
-            
-            http_client = httpx.Client(
-                timeout=httpx.Timeout(60.0, connect=10.0),
-                transport=httpx.HTTPTransport(
-                    retries=3,
-                    verify=certifi.where()
-                ),
-                limits=limits,
-                follow_redirects=True
-            )
-            
-            try:
-                client = OpenAI(
-                    api_key=apiKey,
-                    http_client=http_client,
-                    max_retries=0
-                )
-                return client.batches.create(
-                    input_file_id=batch_input_file_id,
-                    endpoint="/v1/chat/completions",
-                    completion_window="24h"
-                )
-            finally:
-                http_client.close()
+        # Create httpx client with proper production configuration
+        limits = httpx.Limits(
+            max_keepalive_connections=5,
+            max_connections=10,
+            keepalive_expiry=30.0
+        )
         
-        # Run the synchronous call in a thread pool
-        result = await asyncio.to_thread(create_batch)
-        print(result)
-        return result
+        http_client = httpx.AsyncClient(
+            timeout=httpx.Timeout(60.0, connect=10.0),
+            transport=httpx.AsyncHTTPTransport(
+                retries=3,
+                verify=certifi.where()
+            ),
+            limits=limits,
+            follow_redirects=True
+        )
         
-    except APIConnectionError as e:
-        print(f"Connection error in process_batch_file: {e}")
-        print(f"Traceback: {traceback.format_exc()}")
-        raise Exception(f"Failed to connect to OpenAI API: {str(e)}")
-    except APIError as e:
-        print(f"API error in process_batch_file: {e}")
-        print(f"Traceback: {traceback.format_exc()}")
-        raise Exception(f"OpenAI API error: {str(e)}")
+        try:
+            openAI = AsyncOpenAI(api_key=apiKey, http_client=http_client)
+            result = await openAI.batches.create(
+                input_file_id=batch_input_file_id,
+                endpoint="/v1/chat/completions",
+                completion_window="24h"
+            )
+            print(result)
+            return result
+        finally:
+            await http_client.aclose()
     except Exception as e:
-        print(f"Unexpected error in process_batch_file: {e}")
-        print(f"Traceback: {traceback.format_exc()}")
+        print(f"Error in process_batch_file: {e}")
         raise
 
 
 async def retrieve_batch_status(batch_id, apiKey):
     try:
-        # Use synchronous client in thread pool
-        def get_batch():
-            # Create a custom httpx client with proper configuration for production
-            limits = httpx.Limits(
-                max_keepalive_connections=5,
-                max_connections=10,
-                keepalive_expiry=30.0
-            )
-            
-            http_client = httpx.Client(
-                timeout=httpx.Timeout(60.0, connect=10.0),
-                transport=httpx.HTTPTransport(
-                    retries=3,
-                    verify=certifi.where()
-                ),
-                limits=limits,
-                follow_redirects=True
-            )
-            
-            try:
-                client = OpenAI(
-                    api_key=apiKey,
-                    http_client=http_client,
-                    max_retries=0
-                )
-                return client.batches.retrieve(batch_id)
-            finally:
-                http_client.close()
+        # Create httpx client with proper production configuration
+        limits = httpx.Limits(
+            max_keepalive_connections=5,
+            max_connections=10,
+            keepalive_expiry=30.0
+        )
         
-        # Run the synchronous call in a thread pool
-        batch = await asyncio.to_thread(get_batch)
-        print(batch)
-        return batch
+        http_client = httpx.AsyncClient(
+            timeout=httpx.Timeout(60.0, connect=10.0),
+            transport=httpx.AsyncHTTPTransport(
+                retries=3,
+                verify=certifi.where()
+            ),
+            limits=limits,
+            follow_redirects=True
+        )
         
-    except APIConnectionError as e:
-        print(f"Connection error in retrieve_batch_status: {e}")
-        print(f"Traceback: {traceback.format_exc()}")
-        raise Exception(f"Failed to connect to OpenAI API: {str(e)}")
-    except APIError as e:
-        print(f"API error in retrieve_batch_status: {e}")
-        print(f"Traceback: {traceback.format_exc()}")
-        raise Exception(f"OpenAI API error: {str(e)}")
+        try:
+            openAI = AsyncOpenAI(api_key=apiKey, http_client=http_client)
+            batch = await openAI.batches.retrieve(batch_id)
+            print(batch)
+            return batch
+        finally:
+            await http_client.aclose()
     except Exception as e:
-        print(f"Unexpected error in retrieve_batch_status: {e}")
-        print(f"Traceback: {traceback.format_exc()}")
+        print(f"Error in retrieve_batch_status: {e}")
         raise
