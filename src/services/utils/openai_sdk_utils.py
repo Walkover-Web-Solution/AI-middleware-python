@@ -104,12 +104,10 @@ def _format_error_detail(
     param: Optional[str] = None,
 ) -> Dict[str, Any]:
     return {
-        "error": {
-            "message": message,
-            "type": error_type,
-            "param": param,
-            "code": code,
-        }
+        "message": message,
+        "type": error_type,
+        "param": param,
+        "code": code
     }
 
 

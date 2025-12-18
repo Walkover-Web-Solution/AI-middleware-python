@@ -29,23 +29,13 @@ def _normalize_message_content(content: Any) -> Optional[str]:
         for item in content:
             if isinstance(item, dict):
                 item_type = (item.get("type") or "").lower()
-                if item_type in {"text", "input_text", "output_text"}:
+                if item_type in {"text", "input_text"}:
                     text_value = (item.get("text") or "").strip()
                     if text_value:
                         text_parts.append(text_value)
         merged = "\n".join(text_parts).strip()
         return merged or None
 
-    return None
-
-
-def _extract_latest_user_message(messages: List[Dict[str, Any]]) -> Optional[str]:
-    for message in reversed(messages or []):
-        if message.get("role") != "user":
-            continue
-        normalized = _normalize_message_content(message.get("content"))
-        if normalized:
-            return normalized
     return None
 
 
@@ -92,47 +82,26 @@ def _build_internal_body(payload: Dict[str, Any]) -> Dict[str, Any]:
     agent_id = _extract_agent_identifier(payload)
     llm_model = payload.get("model")
 
-    user_message = _extract_latest_user_message(payload.get("messages", []))
-    if not user_message:
-        fallback = payload.get("input") or payload.get("prompt")
-        user_message = _extract_text_from_input(fallback)
+    user_message = _extract_text_from_input(payload.get("input"))
+
     if not user_message:
         raise HTTPException(status_code=400, detail="No user message found in payload.")
 
-    metadata = payload.get("metadata") or {}
-    if not isinstance(metadata, dict):
-        metadata = {}
-
     configuration = payload.get("configuration") or {}
-    if not isinstance(configuration, dict):
-        configuration = {}
 
     if isinstance(llm_model, str) and llm_model.strip():
         configuration.setdefault("model", llm_model.strip())
 
-    response_format = payload.get("response_format")
-    if response_format:
-        if isinstance(response_format, dict):
-            configuration.setdefault("response_format", response_format)
-        elif isinstance(response_format, str):
-            configuration.setdefault(
-                "response_format",
-                {
-                    "type": response_format,
-                    "cred": {},
-                },
-            )
-
     internal_body: Dict[str, Any] = {
         "agent_id": agent_id,
         "bridge_id": agent_id,
+
         "user": user_message,
         "messages": payload.get("messages", []),
         "thread_id": payload.get("conversation_id")
-        or payload.get("thread_id")
-        or metadata.get("thread_id"),
-        "sub_thread_id": payload.get("sub_thread_id") or metadata.get("sub_thread_id"),
-        "variables": payload.get("variables") or metadata.get("variables") or {},
+        or payload.get("thread_id") or None,
+        "sub_thread_id": payload.get("sub_thread_id") or None,
+        "variables": payload.get("variables") or {},
         "configuration": configuration,
         "attachments": payload.get("attachments", []),
     }
