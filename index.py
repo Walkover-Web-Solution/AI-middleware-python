@@ -39,12 +39,16 @@ if (Config.ENVIROMENT or "").upper() == 'PRODUCTION' and Config.ATATUS_LICENSE_K
         from atatus.contrib.starlette import create_client, Atatus as _Atatus
         logger.info("Initializing Atatus client...")
         atatus_client = create_client({
-            'APP_NAME': 'Python - GTWY - Backend - PROD',
-            'LICENSE_KEY': Config.ATATUS_LICENSE_KEY,
-            'ANALYTICS': True,
-            'ANALYTICS_CAPTURE_OUTGOING': True,
-            'LOG_BODY': 'all'
+            "APP_NAME": "Python - GTWY - Backend - PROD",
+            "LICENSE_KEY": Config.ATATUS_LICENSE_KEY,
+            "ANALYTICS": True,
+            "ANALYTICS_CAPTURE_OUTGOING": True,
+            "LOG_BODY": "response",
+            "INSTRUMENTATIONS": {
+                "httpx": False,
+            },
         })
+
         AtatusMiddleware = _Atatus
     except Exception as e:
         logger.error(f"Failed to initialize Atatus: {e}")
