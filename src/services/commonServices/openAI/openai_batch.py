@@ -93,7 +93,7 @@ class OpenaiBatch(BaseService):
             "batch_variables": batch_variables,
             "custom_id_mapping": {item["custom_id"]: idx for idx, item in enumerate(message_mappings)}
         }
-        cache_key = f"{redis_keys['openai_batch_']}{batch_file.id}"
+        cache_key = f"{redis_keys['batch_']}{batch_file.id}"
         await store_in_cache(cache_key, batch_json, ttl = 86400)
         return {
             "success": True,

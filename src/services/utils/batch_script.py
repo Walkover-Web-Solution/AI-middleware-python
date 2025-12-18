@@ -20,7 +20,7 @@ async def repeat_function():
 async def check_batch_status():
     try:
         print("Batch Script running...")
-        batch_ids = await find_in_cache_with_prefix('openai_batch_')
+        batch_ids = await find_in_cache_with_prefix('batch_')
         if batch_ids is None:
             return
         for id in batch_ids:
@@ -96,7 +96,7 @@ async def check_batch_status():
                         has_success = any(item.get("status_code") is None or item.get("status_code", 200) < 400 for item in file_content)
                         
                         await sendResponse(response_format, data=file_content, success=has_success)
-                    cache_key = f"{redis_keys['openai_batch_']}{batch_id}"
+                    cache_key = f"{redis_keys['batch_']}{batch_id}"
                     await delete_in_cache(cache_key)
             finally:
                 # Ensure http_client is properly closed
