@@ -45,9 +45,23 @@ async def check_batch_status():
                         print(f"JSON decoding error: {e}")
                         file_content = None
                     for index, content in enumerate(file_content):
-                        response_body = content["response"]["body"]
+                        response = content.get("response", {})
+                        response_body = response.get("body", {})
+                        status_code = response.get("status_code", 200)
                         custom_id = content.get("custom_id", None)
-                        formatted_content = await Batch_Response_formatter(response=response_body, service='openai_batch', tools={}, type='chat', images=None, batch_id=batch_id, custom_id=custom_id) # changes
+                        
+                        # Check if response contains an error (status_code >= 400 or error in body)
+                        if status_code >= 400 or "error" in response_body:
+                            # Handle error response
+                            formatted_content = {
+                                "custom_id": custom_id,
+                                "batch_id": batch_id,
+                                "error": response_body.get("error", response_body),
+                                "status_code": status_code
+                            }
+                        else:
+                            # Handle successful response
+                            formatted_content = await Batch_Response_formatter(response=response_body, service='openai_batch', tools={}, type='chat', images=None, batch_id=batch_id, custom_id=custom_id)
                         
                         # Add batch_variables to response if available
                         if batch_variables is not None and custom_id in custom_id_mapping:
@@ -56,8 +70,11 @@ async def check_batch_status():
                                 formatted_content["variables"] = batch_variables[variable_index]
                         
                         file_content[index] = formatted_content
-                        
-                    await sendResponse(response_format, data=file_content, success = True)
+                    
+                    # Check if all responses are errors
+                    has_success = any(item.get("status_code") is None or item.get("status_code", 200) < 400 for item in file_content)
+                    
+                    await sendResponse(response_format, data=file_content, success=has_success)
                 cache_key = f"{redis_keys['batch_']}{batch_id}"
                 await delete_in_cache(cache_key)
     except Exception as error:
