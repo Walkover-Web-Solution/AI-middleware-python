@@ -12,7 +12,29 @@ async def Response_formatter(response = {}, service = None, tools={}, type='chat
                             tools_data[key] = json.loads(value)
                         except json.JSONDecodeError:
                             pass
-    if service == service_name['openai'] and (type != 'image' and type != 'embedding'):
+    if service == 'openai_batch':
+        return {
+            "data" : {
+                "id" : response.get("id", None),
+                "content" : response.get("choices", [{}])[0].get("message", {}).get("content", None),
+                "model" : response.get("model", None),
+                "role" : response.get("choices", [{}])[0].get("message", {}).get("role", None),
+                "tools_data": tools_data or {},
+                "images" : images,
+                "annotations" : response.get("choices", [{}])[0].get("message", {}).get("annotations", None),
+                "fallback" : response.get('fallback') or False,
+                "firstAttemptError" : response.get('firstAttemptError') or '',
+                "finish_reason" : finish_reason_mapping(response.get("choices", [{}])[0].get("finish_reason", ""))
+            },
+            "usage" : {
+                "input_tokens" : response.get("usage", {}).get("prompt_tokens", None),
+                "output_tokens" : response.get("usage", {}).get("completion_tokens", None),
+                "total_tokens" : response.get("usage", {}).get("total_tokens", None),
+                "cached_tokens" : response.get("usage", {}).get("prompt_tokens_details",{}).get('cached_tokens')
+
+            }
+        }
+    elif service == service_name['openai'] and (type != 'image' and type != 'embedding'):
         return {
             "data": {
                 "id": response.get("id", None),
@@ -325,3 +347,16 @@ def finish_reason_mapping(finish_reason):
         "tool_use": "tool_call",      #anthropic
     }
     return finish_reason_mapping.get(finish_reason, "other")
+
+async def Batch_Response_formatter(response = {}, service = None, tools={}, type='chat', images = None, batch_id = None, custom_id = None):
+    """
+    Formatter specifically for batch responses that includes batch_id and custom_id for easy mapping
+    """
+    # Get the base formatted response
+    formatted_response = await Response_formatter(response=response, service=service, tools=tools, type=type, images=images)
+    print(formatted_response)
+    # Add batch_id and custom_id to the response for mapping
+    formatted_response["batch_id"] = batch_id
+    formatted_response["custom_id"] = custom_id
+    
+    return formatted_response
