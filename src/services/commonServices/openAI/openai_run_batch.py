@@ -3,6 +3,7 @@ import tempfile
 import asyncio
 import httpx
 import traceback
+import certifi
 from openai import OpenAI, APIConnectionError, APIError
 
 async def create_batch_file(data, apiKey):
@@ -18,10 +19,21 @@ async def create_batch_file(data, apiKey):
         
         # Use synchronous client in thread pool
         def upload_file():
-            # Create a custom httpx client with proper configuration
+            # Create a custom httpx client with proper configuration for production
+            limits = httpx.Limits(
+                max_keepalive_connections=5,
+                max_connections=10,
+                keepalive_expiry=30.0
+            )
+            
             http_client = httpx.Client(
-                timeout=60.0,
-                transport=httpx.HTTPTransport(retries=3)
+                timeout=httpx.Timeout(60.0, connect=10.0),
+                transport=httpx.HTTPTransport(
+                    retries=3,
+                    verify=certifi.where()
+                ),
+                limits=limits,
+                follow_redirects=True
             )
             
             try:
@@ -68,9 +80,21 @@ async def process_batch_file(batch_input_file, apiKey):
         
         # Use synchronous client in thread pool
         def create_batch():
+            # Create a custom httpx client with proper configuration for production
+            limits = httpx.Limits(
+                max_keepalive_connections=5,
+                max_connections=10,
+                keepalive_expiry=30.0
+            )
+            
             http_client = httpx.Client(
-                timeout=60.0,
-                transport=httpx.HTTPTransport(retries=3)
+                timeout=httpx.Timeout(60.0, connect=10.0),
+                transport=httpx.HTTPTransport(
+                    retries=3,
+                    verify=certifi.where()
+                ),
+                limits=limits,
+                follow_redirects=True
             )
             
             try:
@@ -110,9 +134,21 @@ async def retrieve_batch_status(batch_id, apiKey):
     try:
         # Use synchronous client in thread pool
         def get_batch():
+            # Create a custom httpx client with proper configuration for production
+            limits = httpx.Limits(
+                max_keepalive_connections=5,
+                max_connections=10,
+                keepalive_expiry=30.0
+            )
+            
             http_client = httpx.Client(
-                timeout=60.0,
-                transport=httpx.HTTPTransport(retries=3)
+                timeout=httpx.Timeout(60.0, connect=10.0),
+                transport=httpx.HTTPTransport(
+                    retries=3,
+                    verify=certifi.where()
+                ),
+                limits=limits,
+                follow_redirects=True
             )
             
             try:
