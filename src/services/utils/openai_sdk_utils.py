@@ -82,16 +82,14 @@ def _extract_text_from_input(input_value: Any) -> Optional[str]:
 
 
 def _extract_agent_identifier(payload: Dict[str, Any]) -> str:
-    agent_id = payload.get("agent_id") or payload.get("bridge_id")
-
-    if isinstance(agent_id, str):
-        agent_id = agent_id.strip()
+    agent_id = payload.get("agent_id")
+    agent_id = agent_id.strip()
     if not agent_id:
         raise HTTPException(
             status_code=400,
             detail="`agent_id` must be included in the request body.",
         )
-    return str(agent_id)
+    return agent_id
 
 
 async def build_and_override_request_body(request: Request) -> None:

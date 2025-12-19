@@ -59,7 +59,7 @@ async def chat_completion(request: Request, db_config: dict = Depends(add_config
         result = await chat_multiple_agents(data_to_send)
         return result
 
-@router.post('/openai/v1/responses', dependencies=[Depends(openai_sdk_middleware)])
+@router.post('/openai/responses', dependencies=[Depends(openai_sdk_middleware)])
 async def openai_sdk_responses(request: Request, db_config: dict = Depends(add_configuration_data_to_body)):
     return await run_openai_chat_and_format(request, db_config, chat_completion)
 
