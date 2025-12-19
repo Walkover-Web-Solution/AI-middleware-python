@@ -53,18 +53,22 @@ def setup_agent_pre_tools(parsed_data, bridge_configurations):
         required_params = pre_tools_data.get('required_params', [])
         
         # Get variables_path mapping for the current agent
-        variables_path = current_config.get('variables_path', {}).get(pre_tools_data.get('function_name'))
+        function_name = pre_tools_data.get('function_name')
+        variables_path = current_config.get('variables_path', {}).get(function_name, {}) if function_name else {}
         
         # Build args from agent's own variables
         args = {}
         for param in required_params:
             # Check if there's a mapping in variables_path for this param
-            if param in variables_path:
+            if variables_path and param in variables_path:
                 # Get the mapped variable name
                 mapped_variable = variables_path[param]
                 # Use the mapped variable to get value from agent_variables
                 if mapped_variable in agent_variables:
                     args[param] = agent_variables[mapped_variable]
+            elif param in agent_variables:
+                # If no mapping exists, use param directly
+                args[param] = agent_variables[param]
         
         # Update the pre_tools args with agent-specific variables
         parsed_data['pre_tools']['args'] = args
@@ -230,10 +234,9 @@ async def handle_fine_tune_model(parsed_data, custom_config):
 
 async def handle_pre_tools(parsed_data):
     if parsed_data['pre_tools']:
-        if 'args' not in parsed_data['pre_tools']:
+        if parsed_data['pre_tools'].get('args') is None:
             parsed_data['pre_tools']['args'] = {}
-        if parsed_data.get('user'):
-            parsed_data['pre_tools']['args']['user'] = parsed_data['user']
+        parsed_data['pre_tools']['args']['user'] = parsed_data['user']
         pre_function_response = await axios_work(
             parsed_data['pre_tools'].get('args', {}),
             {
