@@ -17,7 +17,7 @@ class OpenaiCompletion(BaseService):
                 if not self.playground:
                     await self.handle_failure(gemini_response)
                 raise ValueError(gemini_response.get('error'))
-            response = await Response_formatter(model_response, service_name['openai_completion'], tools, self.type, self.image_data)
+            response = await Response_formatter(model_response, service_name['openai_completion'], tools, self.type, self.image_data, self.expects_json)
             if not self.playground:
                 historyParams = self.prepare_history_params(response, model_response, tools, None)
                 historyParams['message'] = "image generated successfully"
@@ -54,7 +54,7 @@ class OpenaiCompletion(BaseService):
                     raise ValueError(functionCallRes.get('error'))
                 self.update_model_response(model_response, functionCallRes)
                 tools = functionCallRes.get("tools", {})
-            response = await Response_formatter(model_response, service_name['openai_completion'], tools, self.type, self.image_data)
+            response = await Response_formatter(model_response, service_name['openai_completion'], tools, self.type, self.image_data, self.expects_json)
             if not self.playground:
                 transfer_config = functionCallRes.get('transfer_agent_config') if functionCallRes else None
                 historyParams = self.prepare_history_params(response, model_response, tools, transfer_config)

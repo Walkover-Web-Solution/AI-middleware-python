@@ -62,7 +62,7 @@ class Grok(BaseService):
             self.update_model_response(model_response, function_call_response)
             tools = function_call_response.get("tools", {})
 
-        response = await Response_formatter(model_response, service_name['grok'], tools, self.type, self.image_data)
+        response = await Response_formatter(model_response, service_name['grok'], tools, self.type, self.image_data, self.expects_json)
 
         if not self.playground:
             transfer_config = function_call_response.get('transfer_agent_config') if function_call_response else None
