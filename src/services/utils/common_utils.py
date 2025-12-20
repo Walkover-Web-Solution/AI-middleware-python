@@ -30,6 +30,7 @@ from src.services.utils.update_and_check_cost import update_cost,update_last_use
 from ..commonServices.baseService.utils import sendResponse
 from src.services.utils.rich_text_support import process_chatbot_response
 from src.db_services.orchestrator_history_service import orchestrator_collector
+from src.utils.constants import RESPONSE_TEMPLATES
 
 def setup_agent_pre_tools(parsed_data, bridge_configurations):
     """
@@ -595,10 +596,49 @@ def send_error(bridge_id, org_id, error_message, error_type, bridge_name=None, i
     ))
 
 def restructure_json_schema(response_type, service):
+    # Handle Template IDs -> Generate Schema
+    if 'template_id' in response_type:
+        template_ids = response_type['template_id']
+        if not isinstance(template_ids, list):
+            template_ids = [template_ids]
+            
+        schemas = []
+        for tid in template_ids:
+            try:
+                t_index = int(tid)
+                if 0 <= t_index < len(RESPONSE_TEMPLATES):
+                    template_obj = RESPONSE_TEMPLATES[t_index]
+                    # We assume each template object in constants.py has a 'json_schema' key
+                    # containing the schema for that template.
+                    if 'json_schema' in template_obj:
+                         schemas.append(template_obj['json_schema'])
+            except (ValueError, TypeError):
+                continue
+        
+        if schemas:
+             if len(schemas) == 1:
+                 response_type['json_schema'] = schemas[0]
+             else:
+                 response_type['json_schema'] = {
+                     "name": "ui_components_response", # Generic name
+                     "strict": True,
+                     "schema": {
+                         "type": "object",
+                         "properties": {
+                             "item": {
+                                 "anyOf": [s['schema'] for s in schemas]
+                             }
+                         },
+                         "required": ["item"],
+                         "additionalProperties": False
+                     }
+                 }
+    
     match service:
         case 'openai':
             schema = response_type.get('json_schema', {})
-            del response_type['json_schema']
+            if 'json_schema' in response_type:
+                del response_type['json_schema']
             for key, value in schema.items():
                 response_type[key] = value
             return response_type
