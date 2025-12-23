@@ -60,7 +60,7 @@ limit_types={
 }
 
 new_agent_service = {
-        "openai":  "gpt-4o",
+        "openai":  "gpt-5-nano",
         "anthropic": "claude-3-7-sonnet-latest",
         "groq": "llama-3.3-70b-versatile",
         "open_router": "deepseek/deepseek-chat-v3-0324:free",
