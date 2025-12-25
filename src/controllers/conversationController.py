@@ -42,32 +42,23 @@ async def savehistory_consolidated(conversation_data):
     try:
         # Send data through RT layer with sensitive data removed (first)
         if conversation_data.get('bridge_id'):
-            # Create a deep copy to avoid modifying the original data
-            conversation_data_copy = copy.deepcopy(conversation_data)
-            
             # Remove apikey from fallback_model if it exists
-            if conversation_data_copy.get('fallback_model') and isinstance(conversation_data_copy['fallback_model'], dict):
-                if 'apikey' in conversation_data_copy['fallback_model']:
-                    del conversation_data_copy['fallback_model']['apikey']
-            
-            # Remove apikey from AiConfig.fallback_model if it exists
-            if conversation_data_copy.get('AiConfig') and isinstance(conversation_data_copy['AiConfig'], dict):
-                if conversation_data_copy['AiConfig'].get('fallback_model') and isinstance(conversation_data_copy['AiConfig']['fallback_model'], dict):
-                    if 'apikey' in conversation_data_copy['AiConfig']['fallback_model']:
-                        del conversation_data_copy['AiConfig']['fallback_model']['apikey']
+            if conversation_data.get('fallback_model') and isinstance(conversation_data['fallback_model'], dict):
+                if 'apikey' in conversation_data['fallback_model']:
+                    del conversation_data['fallback_model']['apikey']
             
             # Send to RT layer
-            org_id = str(conversation_data_copy.get('org_id', '')) if conversation_data_copy.get('org_id') else ''
+            org_id = str(conversation_data.get('org_id', '')) if conversation_data.get('org_id') else ''
             response_format_copy = {
                 'cred': {
-                    'channel': org_id + conversation_data_copy.get('bridge_id', ''),
+                    'channel': org_id + conversation_data.get('bridge_id', ''),
                     'apikey': Config.RTLAYER_AUTH,
                     'ttl': '1'
                 },
                 'type': 'RTLayer'
             }
             # Send conversation data with same keys as DB (but without apikey)
-            await sendResponse(response_format_copy, conversation_data_copy, True)
+            await sendResponse(response_format_copy, conversation_data, True)
         
         # Save to database after sending response (with apikey intact)
         result = await chatbotDbService.createConversationLog(conversation_data)
