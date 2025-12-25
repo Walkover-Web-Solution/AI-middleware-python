@@ -1,8 +1,6 @@
 import src.db_services.ConfigurationServices as ConfigurationService
 from src.services.utils.helper import Helper
-from bson import ObjectId
 from models.mongo_connection import db
-from src.services.utils.common_utils import updateVariablesWithTimeZone
 from src.services.commonServices.baseService.utils import makeFunctionName
 from src.services.utils.service_config_utils import tool_choice_function_name_formatter
 from config import Config
@@ -196,7 +194,7 @@ def setup_tools(result, variables_path_bridge, extra_tools):
 def setup_api_key(service, result, apikey, chatbot):
     """Setup API key for the service"""
     db_apikeys = result.get('bridges', {}).get('apikeys', {})
-    
+    db_apikeys_object_id = result.get('bridges', {}).get('apikey_object_id', {})
     # Get API key for the service
     db_api_key = db_apikeys.get(service)
 
@@ -231,6 +229,7 @@ def setup_api_key(service, result, apikey, chatbot):
         fallback_apikey = db_apikeys.get(fallback_service)
         if fallback_apikey:
             result['bridges']['fall_back']['apikey'] = Helper.decrypt(fallback_apikey)
+            result['bridges']['fall_back']['apikey_object_id'] = db_apikeys_object_id.get(fallback_service)
     
     # Use provided API key or decrypt from database
     return apikey if apikey else Helper.decrypt(db_api_key)
