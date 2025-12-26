@@ -94,7 +94,7 @@ def process_api_call_tool(api_data, variables_path_bridge):
     tool_mapping = {
         "url": f"https://flow.sokt.io/func/{api_data.get('script_id')}",
         "headers": {},
-        "name": api_data.get('title')
+        "name": api_data.get('script_id')
     }
     
     # Process variables filled by gateway
