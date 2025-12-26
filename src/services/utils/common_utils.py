@@ -53,8 +53,8 @@ def setup_agent_pre_tools(parsed_data, bridge_configurations):
         required_params = pre_tools_data.get('required_params', [])
         
         # Get variables_path mapping for the current agent
-        function_name = pre_tools_data.get('function_name')
-        variables_path = current_config.get('variables_path', {}).get(function_name, {}) if function_name else {}
+        script_id = pre_tools_data.get('script_id')
+        variables_path = current_config.get('variables_path', {}).get(script_id, {}) if script_id else {}
         
         # Build args from agent's own variables
         args = {}

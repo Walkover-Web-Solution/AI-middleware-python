@@ -59,7 +59,7 @@ def setup_tool_choice(configuration, result, service):
     # Find tool choice from API calls
     for _, api_data in result.get('bridges', {}).get('apiCalls', {}).items():
         if api_data['_id'] in tool_choice_ids:
-            toolchoice = makeFunctionName(api_data.get('endpoint_name') or api_data.get('function_name'))
+            toolchoice = api_data.get('title')
             break
     if not toolchoice:
         connected_agents = result.get('bridges',{}).get('connected_agents',{})
@@ -84,7 +84,7 @@ def setup_tool_choice(configuration, result, service):
 
 def process_api_call_tool(api_data, variables_path_bridge):
     """Process a single API call and convert it to a tool format"""
-    name_of_function = makeFunctionName(api_data.get('endpoint_name') or api_data.get("function_name"))
+    name_of_function = api_data.get('title')
     
     # Skip if status is paused and no function name
     if api_data.get('status') == 0 and not name_of_function:
@@ -92,26 +92,15 @@ def process_api_call_tool(api_data, variables_path_bridge):
     
     # Setup tool mapping
     tool_mapping = {
-        "url": f"https://flow.sokt.io/func/{api_data.get('function_name')}",
+        "url": f"https://flow.sokt.io/func/{api_data.get('script_id')}",
         "headers": {},
-        "name": api_data.get('function_name')
+        "name": api_data.get('title')
     }
     
     # Process variables filled by gateway
-    variables_fill_by_gtwy = list(variables_path_bridge.get(api_data.get("function_name"), {}).keys())
+    variables_fill_by_gtwy = list(variables_path_bridge.get(api_data.get("script_id"), {}).keys())
     
-    # Process properties based on version
-    if api_data.get("version") == 'v2':
-        properties = api_data.get("fields", {})
-    else:
-        properties = {
-            item["variable_name"]: {
-                "description": item.get("description", ""), 
-                "enum": [] if(item.get("enum") == '') else item.get("enum", []),
-                "type": "string",
-                "parameter": {}
-            } for item in api_data.get('fields', {})
-        }
+    properties = api_data.get("fields", {})
     
     # Remove properties that are filled by gateway
     for key in variables_fill_by_gtwy:
@@ -244,7 +233,7 @@ def setup_pre_tools(bridge, result, variables):
     if api_data is None:
         raise Exception("Didn't find the pre_function")
     
-    name = api_data.get('function_name', api_data.get('endpoint_name', ""))
+    name = api_data.get('title')
     required_params = api_data.get('required_params', [])
     
     args = {}
