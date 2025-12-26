@@ -100,18 +100,7 @@ def process_api_call_tool(api_data, variables_path_bridge):
     # Process variables filled by gateway
     variables_fill_by_gtwy = list(variables_path_bridge.get(api_data.get("script_id"), {}).keys())
     
-    # Process properties based on version
-    if api_data.get("version") == 'v2':
-        properties = api_data.get("fields", {})
-    else:
-        properties = {
-            item["variable_name"]: {
-                "description": item.get("description", ""), 
-                "enum": [] if(item.get("enum") == '') else item.get("enum", []),
-                "type": "string",
-                "parameter": {}
-            } for item in api_data.get('fields', {})
-        }
+    properties = api_data.get("fields", {})
     
     # Remove properties that are filled by gateway
     for key in variables_fill_by_gtwy:
