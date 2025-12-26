@@ -45,7 +45,7 @@ async def run_testcase_for_tools(testcase_data, parsed_data, function_names, giv
 
 async def run_testcases(parsed_data, org_id, bridge_id, chat):
     functions = await get_all_api_calls_by_org_id(org_id)
-    function_names = {makeFunctionName(func['endpoint_name'] or func['function_name']): func['_id'] for func in functions}
+    function_names = {func['title']: func['_id'] for func in functions}
         
     testcases_data = await get_testcases(bridge_id)
     # version_data = (await get_bridges_with_tools_and_apikeys(None, parsed_data['org_id'], version_id))['bridges']
