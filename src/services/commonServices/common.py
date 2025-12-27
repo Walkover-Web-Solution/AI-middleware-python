@@ -45,7 +45,6 @@ from src.services.utils.guardrails_validator import guardrails_check
 from src.services.utils.rich_text_support import process_chatbot_response
 app = FastAPI()
 from src.services.utils.helper import Helper
-from src.services.commonServices.testcases import run_testcases as run_bridge_testcases
 from globals import *
 from src.services.cache_service import find_in_cache, store_in_cache
 from src.configs.constant import redis_keys
@@ -549,17 +548,6 @@ async def batch(request_body):
     except Exception as error:
         traceback.print_exc()
         raise ValueError(error)
-    
-    
-async def run_testcases(request_body):
-    try:
-        parsed_data = parse_request_body(request_body)
-        org_id = request_body['state']['profile']['org']['id']
-        result = await run_bridge_testcases(parsed_data, org_id, parsed_data['body']['bridge_id'], chat)
-        return JSONResponse(content={'success': True, 'response': {'testcases_result': dict(result)}})
-    except Exception as error:
-        logger.error(f'Error in running testcases, {str(error)}, {traceback.format_exc()}')
-        return JSONResponse(status_code=400, content={'success': False, 'error': str(error)})
     
 
 @handle_exceptions

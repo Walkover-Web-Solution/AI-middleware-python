@@ -44,7 +44,8 @@ async def _check_limit(limit_type, data, version_id):
         identifier = data.get('folder_id')
     elif limit_type == 'apikey':
         service = data.get('service')
-        identifier = data.get('apikey_object_id',{}).get(service)
+        apikey_object_id = data.get('apikey_object_id') or {}
+        identifier = apikey_object_id.get(service)
     
     usage_value = 0.0
     

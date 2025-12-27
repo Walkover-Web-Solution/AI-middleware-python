@@ -94,13 +94,6 @@ async def clear_cache(request) -> JSONResponse:
         logger.error(f"Error clearing cache: {str(error)}")
         return JSONResponse(status_code=500, content={"message": f"Error clearing cache: {error}"})
 
-async def store_in_cache_for_batch(identifier: str, data: dict, ttl: int = DEFAULT_REDIS_TTL) -> bool:
-    try:
-        return await client.set(f"{identifier}", json.dumps(data), ex=int(ttl))
-    except Exception as e:
-        logger.error(f"Error storing in cache: {str(e)}")
-        return False
-
 async def find_in_cache_with_prefix(prefix: str) -> Union[List[str], None]:
     try:
         pattern = f"{REDIS_PREFIX}{prefix}*"
@@ -124,4 +117,4 @@ def make_json_serializable(data):
     except (TypeError, OverflowError):
         return str(data)
 
-__all__ = ['delete_in_cache', 'store_in_cache', 'find_in_cache', 'find_in_cache_and_expire', 'store_in_cache_permanent_until_read', 'verify_ttl', 'clear_cache','store_in_cache_for_batch', 'find_in_cache_for_batch']
+__all__ = ['delete_in_cache', 'store_in_cache', 'find_in_cache', 'find_in_cache_and_expire', 'store_in_cache_permanent_until_read', 'verify_ttl', 'clear_cache']

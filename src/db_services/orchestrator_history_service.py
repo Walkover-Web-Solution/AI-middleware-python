@@ -1,58 +1,5 @@
-from models.postgres.pg_connection import Session
-from models.postgres.pg_models import OrchestratorHistory
 from src.services.utils.logger import logger
-from datetime import datetime
 from typing import Dict, Optional
-import json
-
-class OrchestratorHistoryService:
-    """Service for managing orchestrator history in PostgreSQL"""
-    
-    @staticmethod
-    async def save_orchestrator_history(data: Dict) -> Optional[int]:
-        """
-        Save orchestrator history to PostgreSQL
-        
-        Args:
-            data: Dictionary containing orchestrator history data
-            
-        Returns:
-            Integer ID of created record or None if failed
-        """
-        session = Session()
-        try:
-            # Create new orchestrator history record
-            orchestrator_record = OrchestratorHistory(
-                org_id=data.get('org_id'),
-                thread_id=data.get('thread_id'),
-                sub_thread_id=data.get('sub_thread_id', data.get('thread_id')),
-                model_name=data.get('model_name', {}),
-                orchestrator_id=data.get('orchestrator_id'),
-                user=data.get('user', {}),
-                response=data.get('response', {}),
-                tool_call_data=data.get('tool_call_data', {}),
-                latency=data.get('latency', {}),
-                tokens=data.get('tokens', {}),
-                error=data.get('error', {}),
-                variables=data.get('variables', {}),
-                user_urls=data.get('user_urls', {}),
-                llm_urls=data.get('llm_urls', {}),
-                ai_config=data.get('ai_config', {})
-            )
-            
-            session.add(orchestrator_record)
-            session.commit()
-            
-            record_id = orchestrator_record.id
-            logger.info(f"Orchestrator history saved with ID: {record_id}")
-            return record_id
-            
-        except Exception as e:
-            session.rollback()
-            logger.error(f"Error saving orchestrator history: {str(e)}")
-            return None
-        finally:
-            session.close()
 
 # Global object to store orchestrator data by bridge_id during execution
 class OrchestratorDataCollector:

@@ -6,7 +6,6 @@ from config import Config
 from ..routes.v2.modelRouter import chat_completion
 import json
 from .getDataUsingBridgeId import add_configuration_data_to_body
-from ..db_services.conversationDbService import reset_and_mode_chat_history
 from ..services.commonServices.baseService.utils import sendResponse
 from ..services.utils.time import Timer
 from src.services.utils.apiservice import fetch
@@ -143,15 +142,6 @@ async def reset_chatBot(request: Request, botId: str):
     channelId = f"{botId}{thread_id.strip() if thread_id and thread_id.strip() else userId}{sub_thread_id.strip() if sub_thread_id and sub_thread_id.strip() else userId}"
     channelId = channelId.replace(" ", "_")
     bridges = await ConfigurationServices.get_bridge_by_slugname(org_id, slugName)
-    bridge_id = str(bridges.get('_id', ''))
-    if purpose == 'is_reset':
-        result = await reset_and_mode_chat_history(org_id, bridge_id, thread_id, 'is_reset', True)
-        id = f"{thread_id}_{ version_id or bridge_id}"
-        gpt_memory = bridges.get('gpt_momery')
-        if gpt_memory:
-            response = await fetch("https://flow.sokt.io/func/scrixTV20rkF", "POST", None, None, {"threadID": id})
-
-
 
     response_format = {
             "type": "RTLayer",
@@ -166,8 +156,5 @@ async def reset_chatBot(request: Request, botId: str):
             "role": "reset"
         }
     }
-    if result['success']:
-        await sendResponse(response_format, response, True)
-        return JSONResponse(status_code=200, content={'success': True, 'message': 'Chatbot reset successfully'})
-    else:
-        return JSONResponse(status_code=400, content={'success': False, 'message': 'Error resetting chatbot'})
+    await sendResponse(response_format, response, True)
+    return JSONResponse(status_code=200, content={'success': True, 'message': 'Chatbot reset successfully'})

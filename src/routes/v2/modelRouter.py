@@ -1,8 +1,7 @@
 from fastapi import APIRouter, Depends, Request, HTTPException
-from fastapi.responses import JSONResponse
 import asyncio
 
-from src.services.commonServices.common import chat_multiple_agents, embedding, batch, run_testcases, image, orchestrator_chat
+from src.services.commonServices.common import chat_multiple_agents, embedding, batch, image, orchestrator_chat
 from src.services.commonServices.baseService.utils import make_request_data
 from ...middlewares.middleware import jwt_middleware
 from ...middlewares.getDataUsingBridgeId import add_configuration_data_to_body
@@ -10,7 +9,6 @@ from concurrent.futures import ThreadPoolExecutor
 from config import Config
 from src.services.commonServices.queueService.queueService import queue_obj
 from src.middlewares.ratelimitMiddleware import rate_limit
-from models.mongo_connection import db
 from globals import *
 
 router = APIRouter()

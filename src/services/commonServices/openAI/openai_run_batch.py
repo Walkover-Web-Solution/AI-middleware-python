@@ -36,7 +36,6 @@ async def create_batch_file(data, apiKey):
             return batch_input_file
         finally:
             await http_client.aclose()
-
     except Exception as e:
         # More useful debug than just {e}
         print("Error in create_batch_file:", repr(e))
