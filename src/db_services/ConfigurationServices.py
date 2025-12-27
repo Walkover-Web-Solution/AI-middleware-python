@@ -208,13 +208,13 @@ async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None)
                 },
                 {
                     '$project': { 'service': 1, 'apikey': 1, 'apikey_limit': { '$ifNull': ['$apikey_limit', 0] },
-                     'apikey_usage': { '$ifNull': ['$apikey_usage', 0] } }
+                     'apikey_usage': { '$ifNull': ['$apikey_usage', 0] }, 'status': {'$ifNull': ['$status', None]} }
                 }
             ],
             'as': 'apikeys_docs'
         }
     },
-    # Stage 5: Map each service to its corresponding apikey, handling empty case
+    # Stage 5: Map each service to its corresponding apikey and status, handling empty case
     {
         '$addFields': {
             'apikeys': {
@@ -267,9 +267,64 @@ async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None)
                     },
                     {}
                 ]
+            },
+            'apikey_status': {
+                '$cond': [
+                    { '$gt' : [ {'$size': '$apikeys_array'}, 0] },
+                    {
+                        '$arrayToObject': {
+                            '$map': {
+                                'input': '$apikeys_array',
+                                'as': 'item',
+                                'in': [
+                                    '$$item.k',
+                                    {
+                                        '$let': {
+                                            'vars': {
+                                                'matched': {
+                                                    '$arrayElemAt': [
+                                                        {
+                                                            '$filter': {
+                                                                'input': '$apikeys_docs',
+                                                                'as': 'doc',
+                                                                'cond': {
+                                                                    '$eq': [
+                                                                        '$$doc._id',
+                                                                        {
+                                                                            '$convert': {
+                                                                                'input': '$$item.v',
+                                                                                'to': 'objectId',
+                                                                                'onError': None,
+                                                                                'onNull': None
+                                                                            }
+                                                                        }
+                                                                    ]
+                                                                }
+                                                            }
+                                                        },
+                                                        0
+                                                    ]
+                                                }
+                                            },
+                                            'in': {
+                                                '$cond': [
+                                                    { '$ne' : ['$$matched', None] },
+                                                    '$$matched.status',
+                                                    None
+                                                ]
+                                            }
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    },
+                    {}
+                ]
             }
         }
     },
+    
     # Stage 6: Lookup 'rag_parent_datas' using 'doc_ids'
     {
         '$lookup': {
