@@ -3,7 +3,7 @@ from config import Config
 from src.services.utils.apiservice import fetch
 from src.configs.constant import service_name
 
-async def Response_formatter(response = {}, service = None, tools={}, type='chat', images = None):
+async def Response_formatter(response = {}, service = None, tools={}, type='chat', images = None, isBatch = False):
     tools_data = tools
     if isinstance(tools_data, dict):
                 for key, value in tools_data.items():
@@ -12,7 +12,8 @@ async def Response_formatter(response = {}, service = None, tools={}, type='chat
                             tools_data[key] = json.loads(value)
                         except json.JSONDecodeError:
                             pass
-    if service == 'openai_batch':
+    if (service == 'openai' or service == 'groq' or service == 'mistral' or service == 'ai_ml') and isBatch:
+        # Batch responses for OpenAI-compatible services (OpenAI, Groq, Mistral, AI/ML)
         return {
             "data" : {
                 "id" : response.get("id", None),
@@ -32,6 +33,60 @@ async def Response_formatter(response = {}, service = None, tools={}, type='chat
                 "total_tokens" : response.get("usage", {}).get("total_tokens", None),
                 "cached_tokens" : response.get("usage", {}).get("prompt_tokens_details",{}).get('cached_tokens')
 
+            }
+        }
+    elif service == 'gemini' and isBatch:
+        # Gemini batch responses have a different structure
+        candidates = response.get("candidates", [{}])
+        content_parts = candidates[0].get("content", {}).get("parts", [{}]) if candidates else [{}]
+        
+        return {
+            "data" : {
+                "id" : response.get("key", None),  # Use the key from batch response as ID
+                "content" : content_parts[0].get("text", None) if content_parts else None,
+                "model" : response.get("modelVersion", None),
+                "role" : candidates[0].get("content", {}).get("role", "model") if candidates else "model",
+                "tools_data": tools_data or {},
+                "images" : images,
+                "annotations" : None,
+                "fallback" : response.get('fallback') or False,
+                "firstAttemptError" : response.get('firstAttemptError') or '',
+                "finish_reason" : finish_reason_mapping(candidates[0].get("finishReason", "") if candidates else "")
+            },
+            "usage" : {
+                "input_tokens" : response.get("usageMetadata", {}).get("promptTokenCount", None),
+                "output_tokens" : response.get("usageMetadata", {}).get("candidatesTokenCount", None),
+                "total_tokens" : response.get("usageMetadata", {}).get("totalTokenCount", None),
+                "cached_tokens" : response.get("usageMetadata", {}).get("cachedContentTokenCount", None)
+            }
+        }
+    elif service == 'anthropic' and isBatch:
+        # Anthropic batch responses follow standard Anthropic message format
+        content_blocks = response.get("content", [])
+        text_content = next((block.get("text") for block in content_blocks if block.get("type") == "text"), None)
+        
+        return {
+            "data" : {
+                "id" : response.get("id", None),
+                "content" : text_content,
+                "model" : response.get("model", None),
+                "role" : response.get("role", "assistant"),
+                "tools_data": tools_data or {},
+                "images" : images,
+                "annotations" : None,
+                "fallback" : response.get('fallback') or False,
+                "firstAttemptError" : response.get('firstAttemptError') or '',
+                "finish_reason" : finish_reason_mapping(response.get("stop_reason", ""))
+            },
+            "usage" : {
+                "input_tokens" : response.get("usage", {}).get("input_tokens", None),
+                "output_tokens" : response.get("usage", {}).get("output_tokens", None),
+                "total_tokens" : (
+                    response.get("usage", {}).get("input_tokens", 0) + 
+                    response.get("usage", {}).get("output_tokens", 0)
+                ),
+                "cache_read_input_tokens" : response.get("usage", {}).get("cache_read_input_tokens", None),
+                "cache_creation_input_tokens" : response.get("usage", {}).get("cache_creation_input_tokens", None)
             }
         }
     elif service == service_name['openai'] and (type != 'image' and type != 'embedding'):
@@ -348,15 +403,19 @@ def finish_reason_mapping(finish_reason):
     }
     return finish_reason_mapping.get(finish_reason, "other")
 
-async def Batch_Response_formatter(response = {}, service = None, tools={}, type='chat', images = None, batch_id = None, custom_id = None):
+async def Batch_Response_formatter(response = {}, service = None, tools={}, type='chat', images = None, batch_id = None, custom_id = None, isBatch = True):
     """
     Formatter specifically for batch responses that includes batch_id and custom_id for easy mapping
+    
+    Args:
+        isBatch: Boolean flag to indicate this is a batch response (default: True)
     """
-    # Get the base formatted response
-    formatted_response = await Response_formatter(response=response, service=service, tools=tools, type=type, images=images)
+    # Get the base formatted response with isBatch flag
+    formatted_response = await Response_formatter(response=response, service=service, tools=tools, type=type, images=images, isBatch=isBatch)
     print(formatted_response)
     # Add batch_id and custom_id to the response for mapping
     formatted_response["batch_id"] = batch_id
     formatted_response["custom_id"] = custom_id
+    formatted_response["isBatch"] = isBatch
     
     return formatted_response
