@@ -11,6 +11,11 @@ import re
 from src.configs.model_configuration import model_config_document
 import jwt
 from ..commonServices.openAI.openai_batch import OpenaiBatch
+from ..commonServices.Google.gemini_batch import GeminiBatch
+from ..commonServices.anthrophic.anthropic_batch import AnthropicBatch
+from ..commonServices.groq.groq_batch import GroqBatch
+from ..commonServices.Mistral.mistral_batch import MistralBatch
+from ..commonServices.AiMl.ai_ml_batch import AiMlBatch
 from ..commonServices.openAI.openai_response import OpenaiResponse
 from ..commonServices.groq.groqCall import Groq
 from ..commonServices.grok.grokCall import Grok
@@ -303,12 +308,16 @@ class Helper:
         class_obj = None
         if service == service_name['openai']:
             class_obj = OpenaiBatch(params)
-        # elif service == service_name['gemini']:
-        #     class_obj = GeminiHandler(params)
-        # elif service == service_name['anthropic']:
-        #     class_obj = Antrophic(params)
-        # elif service == service_name['groq']:
-        #     class_obj = Groq(params)
+        elif service == service_name['gemini']:
+            class_obj = GeminiBatch(params)
+        elif service == service_name['anthropic']:
+            class_obj = AnthropicBatch(params)
+        elif service == service_name['groq']:
+            class_obj = GroqBatch(params)
+        elif service == service_name['mistral']:
+            class_obj = MistralBatch(params)
+        elif service == service_name['ai_ml']:
+            class_obj = AiMlBatch(params)
         else:
             raise ValueError(f"Unsupported batch service: {service}")
             
