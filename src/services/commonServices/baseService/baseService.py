@@ -74,6 +74,7 @@ class BaseService:
         self.web_search_filters = params.get('web_search_filters')
         self.folder_id = params.get('folder_id')
         self.bridge_configurations = params.get('bridge_configurations')
+        self.expects_json = params.get('expects_json') or False
 
 
     def aiconfig(self):
@@ -227,11 +228,14 @@ class BaseService:
             agent_name = transfer_agent_config.get('tool_name', 'the agent')
             original_message = f"Query is successfully transferred to agent {agent_name}"
         
+        # if message is dict (user may expect)
+        serialized_message = json.dumps(original_message) if isinstance(original_message, dict) else original_message
+
         return {
             'thread_id': self.thread_id,
             'sub_thread_id': self.sub_thread_id,
             'user': self.user if self.user else "",
-            'message': original_message,
+            'message': serialized_message,
             'org_id': self.org_id,
             'bridge_id': self.bridge_id,
             'model': model_response.get('model') or self.configuration.get('model'),

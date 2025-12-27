@@ -4,6 +4,7 @@ from models.mongo_connection import db
 from src.services.commonServices.baseService.utils import makeFunctionName
 from src.services.utils.service_config_utils import tool_choice_function_name_formatter
 from config import Config
+from datetime import datetime, timezone
 
 apiCallModel = db['apicalls']
 from globals import *
@@ -377,3 +378,22 @@ def add_connected_agents(result, tools, tool_id_and_name_mapping, orchestrator_f
             "requires_thread_id": bridge_info.get('thread_id', False),
             "version_id": version_id_value
         }
+
+
+def check_if_user_expects_json(created_at, response_type):
+    COMPARE_DATE = Config.JSON_RESPONSE_COMPARISON_DATE
+
+    if response_type not in {"json_schema", "json_object"}:
+        return False
+
+    if created_at:
+        if isinstance(created_at, str):
+            created_at = datetime.fromisoformat(
+                created_at.replace("Z", "+00:00")
+            )
+        elif created_at.tzinfo is None:
+            created_at = created_at.replace(tzinfo=timezone.utc)
+
+        return created_at.date() >= COMPARE_DATE
+    else:
+        return False

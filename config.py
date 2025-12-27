@@ -1,6 +1,6 @@
 import os
 from dotenv import load_dotenv
-
+from datetime import datetime
 load_dotenv(override=True)
 
 
@@ -57,3 +57,7 @@ class Config:
     AI_ML_APIKEY = os.getenv('AI_ML_APIKEY')
     AI_MIDDLEWARE_PAUTH_KEY = os.getenv('AI_MIDDLEWARE_PAUTH_KEY')
     OPENAI_API_KEY_GPT_5_NANO = os.getenv('OPENAI_API_KEY_GPT_5_NANO')
+    JSON_RESPONSE_COMPARISON_DATE = datetime.strptime(
+        os.getenv("JSON_RESPONSE_COMPARISON_DATE"),
+        "%Y-%m-%d",
+    ).date() 

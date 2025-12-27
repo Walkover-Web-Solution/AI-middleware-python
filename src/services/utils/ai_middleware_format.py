@@ -2,9 +2,13 @@ import json
 from config import Config
 from src.services.utils.apiservice import fetch
 from src.configs.constant import service_name
+from src.services.utils.json_parser_utils import maybe_parse_json
 
-async def Response_formatter(response = {}, service = None, tools={}, type='chat', images = None):
+async def Response_formatter(response = {}, service = None, tools={}, type='chat', images = None, expects_json = False):
     tools_data = tools
+
+    data_to_return = {}
+
     if isinstance(tools_data, dict):
                 for key, value in tools_data.items():
                     if isinstance(value, str):
@@ -13,7 +17,7 @@ async def Response_formatter(response = {}, service = None, tools={}, type='chat
                         except json.JSONDecodeError:
                             pass
     if service == 'openai_batch':
-        return {
+        data_to_return = {
             "data" : {
                 "id" : response.get("id", None),
                 "content" : response.get("choices", [{}])[0].get("message", {}).get("content", None),
@@ -35,7 +39,7 @@ async def Response_formatter(response = {}, service = None, tools={}, type='chat
             }
         }
     elif service == service_name['openai'] and (type != 'image' and type != 'embedding'):
-        return {
+        data_to_return = {
             "data": {
                 "id": response.get("id", None),
                 "content": (
@@ -86,10 +90,10 @@ async def Response_formatter(response = {}, service = None, tools={}, type='chat
             }
         }                    
     elif service == service_name['gemini'] and (type !='image' and type != 'embedding' and type != 'video'):
-        return {
+        data_to_return = {
             "data" : {
                 "id" : response.get("id", None),
-                "content" : response.get("choices", [{}])[0].get("message", {}).get("content", None),
+                "content" : maybe_parse_json(response.get("choices", [{}])[0].get("message", {}).get("content", None), expects_json),
                 "model" : response.get("model", None),
                 "role" : response.get("choices", [{}])[0].get("message", {}).get("role", None),
                 "tools_data": tools_data or {},
@@ -108,13 +112,13 @@ async def Response_formatter(response = {}, service = None, tools={}, type='chat
             }
         }
     elif service == service_name['openai'] and type == 'embedding':
-         return {
+        data_to_return = {
             "data" : {
                 "embedding" : response.get('data')[0].get('embedding')
             }
         }
     elif service == service_name['gemini'] and type == 'image':
-        return {
+        data_to_return = {
             "data" : {
                 "revised_prompt" : response.get('data')[0].get('text_content'),
                 "image_url" : response.get('data')[0].get('url'),
@@ -122,7 +126,7 @@ async def Response_formatter(response = {}, service = None, tools={}, type='chat
             }
         }
     elif service == service_name['gemini'] and type == 'video':
-        return {
+        data_to_return = {
             "data" : {
                 "content" : response.get('data')[0].get('text_content'),
                 "file_data" : response.get('data')[0].get('file_reference')
@@ -137,14 +141,14 @@ async def Response_formatter(response = {}, service = None, tools={}, type='chat
                 "permanent_url": image_data.get('url')
             })
         
-        return {
+        data_to_return = {
             "data": {
                 "image_urls": image_urls
             }
         }
     
     elif service == service_name['anthropic']:
-        return {
+        data_to_return = {
             "data" : {
                 "id" : response.get("id", None),
                 "content" : response.get("content", [{}])[0].get("text", None),
@@ -168,7 +172,7 @@ async def Response_formatter(response = {}, service = None, tools={}, type='chat
             }
         }
     elif service == service_name['groq']:
-        return {
+        data_to_return = {
             "data" : {
                 "id" : response.get("id", None),
                 "content" : response.get("choices", [{}])[0].get("message", {}).get("content", None),
@@ -185,10 +189,10 @@ async def Response_formatter(response = {}, service = None, tools={}, type='chat
             }
         }
     elif service == service_name['grok']:
-        return {
+        data_to_return = {
             "data": {
                 "id": response.get("id", None),
-                "content": response.get("choices", [{}])[0].get("message", {}).get("content", None),
+                "content" : response.get("choices", [{}])[0].get("message", {}).get("content", None),
                 "model": response.get("model", None),
                 "role": response.get("choices", [{}])[0].get("message", {}).get("role", None),
                 "tools_data": tools_data or {},
@@ -205,7 +209,7 @@ async def Response_formatter(response = {}, service = None, tools={}, type='chat
             }
         }
     elif service == service_name['open_router']:
-        return {
+        data_to_return = {
             "data" : {
                 "id" : response.get("id", None),
                 "content" : response.get("choices", [{}])[0].get("message", {}).get("content", None),
@@ -230,7 +234,7 @@ async def Response_formatter(response = {}, service = None, tools={}, type='chat
             }
         }
     elif service == service_name['openai_completion']:
-        return {
+        data_to_return = {
             "data" : {
                 "id" : response.get("id", None),
                 "content" : response.get("choices", [{}])[0].get("message", {}).get("content", None),
@@ -255,7 +259,7 @@ async def Response_formatter(response = {}, service = None, tools={}, type='chat
             }
         }
     elif service == service_name['mistral']:
-        return {
+        data_to_return = {
             "data" : {
                 "id" : response.get("id", None),
                 "content" : response.get("choices", [{}])[0].get("message", {}).get("content", None),
@@ -289,7 +293,7 @@ async def Response_formatter(response = {}, service = None, tools={}, type='chat
                 "size": image_data.get('size')
             })
         
-        return {
+        data_to_return = {
             "data": {
                 "image_urls": image_urls
             },
@@ -300,7 +304,7 @@ async def Response_formatter(response = {}, service = None, tools={}, type='chat
             }
         }
     elif service == service_name['ai_ml']:
-        return {
+        data_to_return = {
             "data" : {
                 "id" : response.get("id", None),
                 "content" : response.get("choices", [{}])[0].get("message", {}).get("content", None),
@@ -321,6 +325,11 @@ async def Response_formatter(response = {}, service = None, tools={}, type='chat
 
             }
         }
+
+    if data_to_return.get("data", {}).get("content"):
+        data_to_return["data"]["content"] = maybe_parse_json(data_to_return["data"]["content"], expects_json)
+    
+    return data_to_return
 
 async def validateResponse(alert_flag, configration, bridgeId, message_id, org_id):
     if alert_flag:

@@ -31,7 +31,7 @@ class Groq(BaseService):
             self.update_model_response(model_response, functionCallRes)
             tools = functionCallRes.get("tools", {}) 
             
-        response = await Response_formatter(model_response, service_name['groq'], tools, self.type, self.image_data)
+        response = await Response_formatter(model_response, service_name['groq'], tools, self.type, self.image_data, self.expects_json)
         if not self.playground:
             transfer_config = functionCallRes.get('transfer_agent_config') if functionCallRes else None
             historyParams = self.prepare_history_params(response, model_response, tools, transfer_config)
