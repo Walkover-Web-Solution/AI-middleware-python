@@ -55,13 +55,12 @@ for model_name in db:
 
 db['engine'] = engine
 db['session'] = Session
-# db['conversations'] = sa.Table('conversations', sa.MetaData().reflect(bind=engine), autoload_with=engine)
+
 metadata = sa.MetaData()
 
 # Reflect the table from the database
 metadata.reflect(bind=engine)
-# db['conversations'] = metadata.tables['conversations']
-# db['raw_data'] = metadata.tables['raw_data']
+
 
 
 # This dictionary is now ready to be used.

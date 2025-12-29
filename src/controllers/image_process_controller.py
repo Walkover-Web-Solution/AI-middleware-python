@@ -285,9 +285,3 @@ async def _process_video_url(body_dict):
     except Exception as e:
         raise HTTPException(status_code=400, detail={"success": False, "error": f"Error in video URL processing: {str(e)}"})
 
-
-# Keep the video_url_processing function for backward compatibility if needed
-async def video_url_processing(request):
-    """Backward compatibility function - delegates to _process_video_url"""
-    body = await request.json()
-    return await _process_video_url(body)

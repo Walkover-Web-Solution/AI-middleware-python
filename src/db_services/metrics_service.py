@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from models.index import combined_models
 from sqlalchemy import and_
 from ..controllers.conversationController import savehistory_consolidated
-from .conversationDbService import insertRawData, timescale_metrics, createOrchestratorConversationLog
+from .conversationDbService import timescale_metrics, createOrchestratorConversationLog
 from ..services.cache_service import find_in_cache, store_in_cache
 from globals import *
 # from src.services.utils.send_error_webhook import send_error_to_webhook
@@ -15,11 +15,6 @@ from src.configs.constant import redis_keys
 
 postgres = combined_models['pg']
 timescale = combined_models['timescale']
-
-def start_of_today():
-    today = datetime.now()
-    return datetime(today.year, today.month, today.day, 0, 0, 0, 0)
-
 async def save_conversations_to_redis(conversations, version_id, thread_id, sub_thread_id, history_params):
     """
     Save conversations to Redis with conversation management logic.

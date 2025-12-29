@@ -1,8 +1,6 @@
 import src.db_services.ConfigurationServices as ConfigurationService
 from src.services.utils.helper import Helper
-from bson import ObjectId
 from models.mongo_connection import db
-from src.services.utils.common_utils import updateVariablesWithTimeZone
 from src.services.commonServices.baseService.utils import makeFunctionName
 from src.services.utils.service_config_utils import tool_choice_function_name_formatter
 from config import Config
@@ -61,7 +59,7 @@ def setup_tool_choice(configuration, result, service):
     # Find tool choice from API calls
     for _, api_data in result.get('bridges', {}).get('apiCalls', {}).items():
         if api_data['_id'] in tool_choice_ids:
-            toolchoice = makeFunctionName(api_data['endpoint_name'] or api_data['function_name'])
+            toolchoice = api_data.get('title')
             break
     if not toolchoice:
         connected_agents = result.get('bridges',{}).get('connected_agents',{})
@@ -86,7 +84,7 @@ def setup_tool_choice(configuration, result, service):
 
 def process_api_call_tool(api_data, variables_path_bridge):
     """Process a single API call and convert it to a tool format"""
-    name_of_function = makeFunctionName(api_data.get('endpoint_name') or api_data.get("function_name"))
+    name_of_function = api_data.get('title')
     
     # Skip if status is paused and no function name
     if api_data.get('status') == 0 and not name_of_function:
@@ -94,26 +92,15 @@ def process_api_call_tool(api_data, variables_path_bridge):
     
     # Setup tool mapping
     tool_mapping = {
-        "url": f"https://flow.sokt.io/func/{api_data.get('function_name')}",
+        "url": f"https://flow.sokt.io/func/{api_data.get('script_id')}",
         "headers": {},
-        "name": api_data.get('function_name')
+        "name": api_data.get('script_id')
     }
     
     # Process variables filled by gateway
-    variables_fill_by_gtwy = list(variables_path_bridge.get(api_data.get("function_name"), {}).keys())
+    variables_fill_by_gtwy = list(variables_path_bridge.get(api_data.get("script_id"), {}).keys())
     
-    # Process properties based on version
-    if api_data.get("version") == 'v2':
-        properties = api_data.get("fields", {})
-    else:
-        properties = {
-            item["variable_name"]: {
-                "description": item.get("description", ""), 
-                "enum": [] if(item.get("enum") == '') else item.get("enum", []),
-                "type": "string",
-                "parameter": {}
-            } for item in api_data.get('fields', {})
-        }
+    properties = api_data.get("fields", {})
     
     # Remove properties that are filled by gateway
     for key in variables_fill_by_gtwy:
@@ -196,7 +183,7 @@ def setup_tools(result, variables_path_bridge, extra_tools):
 def setup_api_key(service, result, apikey, chatbot):
     """Setup API key for the service"""
     db_apikeys = result.get('bridges', {}).get('apikeys', {})
-    
+    db_apikeys_object_id = result.get('bridges', {}).get('apikey_object_id', {})
     # Get API key for the service
     db_api_key = db_apikeys.get(service)
 
@@ -210,11 +197,17 @@ def setup_api_key(service, result, apikey, chatbot):
     if folder_api_key:
         db_api_key = folder_api_key
 
-    if chatbot and (service == 'openai'):
-        if not apikey and result.get('bridges', {}).get('configuration', {}).get('model') == 'gpt-5-nano':
-            apikey = Config.OPENAI_API_KEY
-    
     # Validate API key existence
+    if chatbot and (service == 'openai'):
+        model = result.get('bridges', {}).get('configuration', {}).get('model')
+        # If both keys are not present
+        if not (apikey or db_api_key):
+            # Use Config.OPENAI_API_KEY only if model is gpt-5-nano
+            if model == 'gpt-5-nano':
+                apikey = Config.OPENAI_API_KEY_GPT_5_NANO
+            else:
+                raise Exception('Could not find api key or Agent is not Published')
+    
     if not (apikey or db_api_key):
         raise Exception('Could not find api key or Agent is not Published')
     
@@ -225,6 +218,7 @@ def setup_api_key(service, result, apikey, chatbot):
         fallback_apikey = db_apikeys.get(fallback_service)
         if fallback_apikey:
             result['bridges']['fall_back']['apikey'] = Helper.decrypt(fallback_apikey)
+            result['bridges']['fall_back']['apikey_object_id'] = db_apikeys_object_id.get(fallback_service)
     
     # Use provided API key or decrypt from database
     return apikey if apikey else Helper.decrypt(db_api_key)
@@ -239,7 +233,7 @@ def setup_pre_tools(bridge, result, variables):
     if api_data is None:
         raise Exception("Didn't find the pre_function")
     
-    name = api_data.get('function_name', api_data.get('endpoint_name', ""))
+    name = api_data.get('title')
     required_params = api_data.get('required_params', [])
     
     args = {}

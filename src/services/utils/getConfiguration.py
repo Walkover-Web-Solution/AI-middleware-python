@@ -42,6 +42,9 @@ async def _prepare_configuration_response(configuration, service, bridge_id, api
 
     # Fetch bridge data
     result, bridge_data, resolved_bridge_id = await get_bridge_data(bridge_id, org_id, version_id)
+    chatbot = True if bridge_data.get('bridges', {}).get('bridgeType') == 'chatbot' else False
+    if not chatbot:
+        chatbot = True if bridge_data.get('bridgeType') == 'chatbot' else False
 
     # Limit checks
     limit_error = await check_bridge_api_folder_limits(result.get('bridges'), bridge_data, version_id)
@@ -115,7 +118,7 @@ async def _prepare_configuration_response(configuration, service, bridge_id, api
         if(api_data.get('folder_id')):
             del api_data['folder_id']
         if api_data:
-            pre_tools_name = api_data.get('function_name', api_data.get('endpoint_name', ""))
+            pre_tools_name = api_data.get('script_id')
             pre_tools_data_for_later = api_data
 
     rag_data = bridge.get('rag_data')
