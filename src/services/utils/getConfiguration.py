@@ -116,7 +116,7 @@ async def _prepare_configuration_response(configuration, service, bridge_id, api
         if(api_data.get('folder_id')):
             del api_data['folder_id']
         if api_data:
-            pre_tools_name = api_data.get('title')
+            pre_tools_name = api_data.get('script_id')
             pre_tools_data_for_later = api_data
 
     rag_data = bridge.get('rag_data')
