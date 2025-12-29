@@ -6,7 +6,7 @@ from src.services.utils.common_utils import updateVariablesWithTimeZone
 from .getConfiguration_utils import (
     validate_bridge, get_bridge_data, setup_configuration, setup_tool_choice,
     setup_tools, setup_api_key, setup_pre_tools, add_rag_tool,
-    add_anthropic_json_schema, add_connected_agents
+    add_anthropic_json_schema, add_connected_agents, check_if_user_expects_json
 )
 from .update_and_check_cost import check_bridge_api_folder_limits
 
@@ -144,6 +144,13 @@ async def _prepare_configuration_response(configuration, service, bridge_id, api
     guardrails_value = guardrails if guardrails is not None else (result.get('bridges', {}).get('guardrails') or {})
     web_search_filters_value = web_search_filters or result.get('bridges', {}).get('web_search_filters') or {}
 
+    # Checking if the User expects JSON
+    created_at = result.get("bridges", {}).get("created_at")
+    response_type = (configuration or {}).get('response_type')
+    if isinstance(response_type, dict):
+        response_type = response_type.get("type")
+    expects_json = check_if_user_expects_json(created_at, response_type)
+
     base_config = {
         'configuration': configuration,
         'pre_tools': {'name': pre_tools_name, 'args': pre_tools_args} if pre_tools_name else None,
@@ -173,7 +180,8 @@ async def _prepare_configuration_response(configuration, service, bridge_id, api
         "is_embed": result.get('bridges', {}).get("folder_type") == 'embed',
         "user_id": result.get("bridges", {}).get("user_id"),
         'folder_id': result.get('bridges', {}).get('folder_id'),
-        'web_search_filters': web_search_filters_value
+        'web_search_filters': web_search_filters_value,
+        'expects_json': expects_json
     }
 
     return None, base_config, result, resolved_bridge_id

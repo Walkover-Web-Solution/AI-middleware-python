@@ -62,7 +62,7 @@ class Antrophic(BaseService):
         
         self.update_model_response(modelResponse, functionCallRes)
         tools = functionCallRes.get("tools", {})
-        response = await Response_formatter(modelResponse, service_name['anthropic'], tools, self.type, self.image_data)
+        response = await Response_formatter(modelResponse, service_name['anthropic'], tools, self.type, self.image_data, self.expects_json)
         if not self.playground:
             transfer_config = functionCallRes.get('transfer_agent_config') if functionCallRes else None
             historyParams = self.prepare_history_params(response, modelResponse, tools, transfer_config)

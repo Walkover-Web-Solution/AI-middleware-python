@@ -97,8 +97,12 @@ async def create(dataset, history_params, version_id, thread_info={}):
         except:
             latency_data = {}
         
+        # if the llm message is dict (because the user might expect that)
+        message = history_params.get("message", "")
+        llm_message = json.dumps(message) if isinstance(message, dict) else message
+
         conversation_log_data = {
-            'llm_message': history_params.get('message', ''),
+            'llm_message': llm_message,
             'user': history_params.get('user', ''),
             'chatbot_message': history_params.get('chatbot_message', ''),
             'updated_llm_message': None,

@@ -18,7 +18,7 @@ class OpenaiResponse(BaseService):
                 if not self.playground:
                     await self.handle_failure(openAIResponse)
                 raise ValueError(openAIResponse.get('error'))
-            response = await Response_formatter(modelResponse, service_name['openai'], tools, self.type, self.image_data)
+            response = await Response_formatter(modelResponse, service_name['openai'], tools, self.type, self.image_data, self.expects_json)
             if not self.playground:
                 historyParams = self.prepare_history_params(response, modelResponse, tools, None)
                 historyParams['message'] = "image generated successfully"
@@ -84,10 +84,10 @@ class OpenaiResponse(BaseService):
                     await self.handle_failure(functionCallRes)
                     raise ValueError(functionCallRes.get('error'))
                 self.update_model_response(modelResponse, functionCallRes)
-                response = await Response_formatter(functionCallRes.get("modelResponse", {}), service_name['openai'], functionCallRes.get("tools", {}), self.type, self.image_data)
+                response = await Response_formatter(functionCallRes.get("modelResponse", {}), service_name['openai'], functionCallRes.get("tools", {}), self.type, self.image_data, self.expects_json)
                 tools = functionCallRes.get("tools", {})
             else:
-                response = await Response_formatter(modelResponse, service_name['openai'], {}, self.type, self.image_data)
+                response = await Response_formatter(modelResponse, service_name['openai'], {}, self.type, self.image_data, self.expects_json)
             
             if not self.playground:
                 transfer_config = functionCallRes.get('transfer_agent_config') if has_function_call and functionCallRes else None
