@@ -51,7 +51,7 @@ async def send_data_middleware(request: Request, botId: str):
                 "type": actionDetails.get('type'),
                 "variable": actionDetails.get('variable')
             }
-            for actionId, actionDetails in bridges.get('actions', {}).items()
+            for actionId, actionDetails in (bridges.get('actions') or {}).items()
         ]
         
         request.state.chatbot = {
