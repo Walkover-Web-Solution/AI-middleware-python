@@ -30,6 +30,7 @@ from src.services.utils.update_and_check_cost import update_cost,update_last_use
 from ..commonServices.baseService.utils import sendResponse
 from src.services.utils.rich_text_support import process_chatbot_response
 from src.db_services.orchestrator_history_service import orchestrator_collector
+from src.services.utils.api_key_status_helper import mark_apikey_status_from_response
 
 def setup_agent_pre_tools(parsed_data, bridge_configurations):
     """
@@ -164,6 +165,7 @@ def parse_request_body(request_body):
         "usage" : {},
         "type" : body.get('configuration',{}).get('type'),
         "apikey_object_id" : body.get('apikey_object_id'),
+        "apikey_status": body.get('apikey_status'),
         "images" : body.get('images'),
         "tool_call_count": body.get('tool_call_count'),
         "tokens" : {},
@@ -1294,12 +1296,8 @@ async def update_cost_and_last_used(parsed_data):
     except Exception as e:
         logger.error(f"Error updating cost and last used: {str(e)}")
 
-async def update_cost_and_last_used_in_background(parsed_data):
-    """Kick off the async cost cache update using the data available on parsed_data."""
-    if not isinstance(parsed_data, dict):
-        logger.warning("Skipping background cost update due to invalid parsed data.")
-        return
 
-    asyncio.create_task(update_cost_and_last_used(parsed_data))
-
-    
+async def update_cost_usage_and_apikey_status_in_background(parsed_data, code, completion_success):
+    if completion_success:
+        asyncio.create_task(update_cost_and_last_used(parsed_data))
+    asyncio.create_task(mark_apikey_status_from_response(parsed_data, code))

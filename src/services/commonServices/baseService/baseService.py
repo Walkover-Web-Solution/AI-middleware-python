@@ -56,6 +56,7 @@ class BaseService:
         self.type = params.get('type')
         self.token_calculator = params.get('token_calculator')
         self.apikey_object_id = params.get('apikey_object_id')
+        self.apikey_status = params.get('apikey_status')
         self.image_data = params.get('images')
         self.tool_call_count = params.get('tool_call_count')
         self.text = params.get('text')
