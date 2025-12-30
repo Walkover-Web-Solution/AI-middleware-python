@@ -1,0 +1,55 @@
+from config import Config
+from src.services.utils.logger import logger
+from src.services.utils.apiservice import fetch
+
+
+async def save_conversation_to_hippocampus(user_message, assistant_message, bridge_id, bridge_name=''):
+    """
+    Save conversation to Hippocampus API for chatbot bridge types.
+    
+    Args:
+        user_message: The user's message content
+        assistant_message: The assistant's response content
+        bridge_id: The bridge/agent ID (used as ownerId)
+        bridge_name: The bridge/agent name (used as title)
+    """
+    try:
+        if not Config.HIPPOCAMPUS_API_KEY or not Config.HIPPOCAMPUS_COLLECTION_ID:
+            logger.warning("Hippocampus API key or collection ID not configured")
+            return
+        
+        # Combine user and assistant messages as content
+        content = f"User: {user_message}\nAssistant: {assistant_message}"
+        
+        # Use bridge_name if available, otherwise fallback to bridge_id
+        title = bridge_name if bridge_name else bridge_id
+        
+        payload = {
+            "collectionId": Config.HIPPOCAMPUS_COLLECTION_ID,
+            "title": title,
+            "ownerId": bridge_id,
+            "content": content,
+            "settings": {
+                "strategy": "custom",
+                "chunkingUrl": "https://flow.sokt.io/func/scriQywSNndU",
+                "chunkSize": 1000
+            }
+        }
+        
+        headers = {
+            "x-api-key": Config.HIPPOCAMPUS_API_KEY,
+            "Content-Type": "application/json"
+        }
+        
+        response_data, response_headers = await fetch(
+            url=Config.HIPPOCAMPUS_API_URL,
+            method="POST",
+            headers=headers,
+            json_body=payload
+        )
+        
+        logger.info(f"Successfully saved conversation to Hippocampus for bridge_id: {bridge_id}")
+                
+    except Exception as e:
+        logger.error(f"Error saving conversation to Hippocampus: {str(e)}")
+
