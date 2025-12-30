@@ -11,10 +11,14 @@ import re
 from src.configs.model_configuration import model_config_document
 import jwt
 from ..commonServices.openAI.openai_batch import OpenaiBatch
+from ..commonServices.Google.gemini_batch import GeminiBatch
+from ..commonServices.anthropic.anthropic_batch import AnthropicBatch
+from ..commonServices.groq.groq_batch import GroqBatch
+from ..commonServices.Mistral.mistral_batch import MistralBatch
 from ..commonServices.openAI.openai_response import OpenaiResponse
 from ..commonServices.groq.groqCall import Groq
 from ..commonServices.grok.grokCall import Grok
-from ..commonServices.anthrophic.antrophicCall import Antrophic
+from ..commonServices.anthropic.anthropicCall import Anthropic
 from ..commonServices.openRouter.openRouter_call import OpenRouter
 from ..commonServices.Mistral.mistral_call import Mistral
 from ...configs.constant import service_name
@@ -230,7 +234,7 @@ class Helper:
         elif service == service_name['gemini']:
             class_obj = GeminiHandler(params)
         elif service == service_name['anthropic']:
-            class_obj = Antrophic(params)
+            class_obj = Anthropic(params)
         elif service == service_name['groq']:
             class_obj = Groq(params)
         elif service == service_name['grok']:
@@ -303,12 +307,14 @@ class Helper:
         class_obj = None
         if service == service_name['openai']:
             class_obj = OpenaiBatch(params)
-        # elif service == service_name['gemini']:
-        #     class_obj = GeminiHandler(params)
-        # elif service == service_name['anthropic']:
-        #     class_obj = Antrophic(params)
-        # elif service == service_name['groq']:
-        #     class_obj = Groq(params)
+        elif service == service_name['gemini']:
+            class_obj = GeminiBatch(params)
+        elif service == service_name['anthropic']:
+            class_obj = AnthropicBatch(params)
+        elif service == service_name['groq']:
+            class_obj = GroqBatch(params)
+        elif service == service_name['mistral']:
+            class_obj = MistralBatch(params)
         else:
             raise ValueError(f"Unsupported batch service: {service}")
             
