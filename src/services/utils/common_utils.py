@@ -192,6 +192,7 @@ def parse_request_body(request_body):
         "transfer_request_id": body.get('transfer_request_id'),
         "orchestrator_flag": body.get('orchestrator_flag'),
         "batch_variables": body.get('batch_variables'),
+        "chatbot_auto_answers": body.get('chatbot_auto_answers')
     }
 
 

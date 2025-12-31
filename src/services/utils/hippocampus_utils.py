@@ -4,14 +4,14 @@ from src.services.utils.logger import logger
 from src.services.utils.apiservice import fetch
 
 
-async def save_conversation_to_hippocampus(user_message, assistant_message, bridge_id, bridge_name=''):
+async def save_conversation_to_hippocampus(user_message, assistant_message, agent_id, bridge_name=''):
     """
     Save conversation to Hippocampus API for chatbot bridge types.
     
     Args:
         user_message: The user's message content
         assistant_message: The assistant's response content
-        bridge_id: The bridge/agent ID (used as ownerId)
+        agent_id: The bridge/agent ID (used as ownerId)
         bridge_name: The bridge/agent name (used as title)
     """
     try:
@@ -24,16 +24,19 @@ async def save_conversation_to_hippocampus(user_message, assistant_message, brid
             "question": user_message,
             "answer": assistant_message
         }
-        content = json.dumps(content_obj)
+        # content = json.dumps(content_obj)
         
-        # Use bridge_name if available, otherwise fallback to bridge_id
-        title = bridge_name if bridge_name else bridge_id
+        # Use bridge_name if available, otherwise fallback to agent_id
+        title = bridge_name if bridge_name else agent_id
         
         payload = {
             "collectionId": Config.HIPPOCAMPUS_COLLECTION_ID,
             "title": title,
-            "ownerId": bridge_id,
-            "content": content,
+            "ownerId": agent_id,
+            "content": content_obj,
+
+
+
             "settings": {
                 "strategy": "custom",
                 "chunkingUrl": "https://flow.sokt.io/func/scriQywSNndU",
@@ -46,6 +49,7 @@ async def save_conversation_to_hippocampus(user_message, assistant_message, brid
             "Content-Type": "application/json"
         }
         
+
         response_data, response_headers = await fetch(
             url=Config.HIPPOCAMPUS_API_URL,
             method="POST",
@@ -53,7 +57,7 @@ async def save_conversation_to_hippocampus(user_message, assistant_message, brid
             json_body=payload
         )
         
-        logger.info(f"Successfully saved conversation to Hippocampus for bridge_id: {bridge_id}")
+        logger.info(f"Successfully saved conversation to Hippocampus for agent_id: {agent_id}")
                 
     except Exception as e:
         logger.error(f"Error saving conversation to Hippocampus: {str(e)}")
