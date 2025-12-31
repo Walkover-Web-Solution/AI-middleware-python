@@ -173,7 +173,8 @@ async def _prepare_configuration_response(configuration, service, bridge_id, api
         "is_embed": result.get('bridges', {}).get("folder_type") == 'embed',
         "user_id": result.get("bridges", {}).get("user_id"),
         'folder_id': result.get('bridges', {}).get('folder_id'),
-        'web_search_filters': web_search_filters_value
+        'web_search_filters': web_search_filters_value,
+        'chatbot_auto_answers': result.get('bridges', {}).get('chatbot_auto_answers')
     }
 
     return None, base_config, result, resolved_bridge_id

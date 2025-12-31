@@ -405,6 +405,11 @@ async def make_request_data(request: Request):
 async def make_request_data_and_publish_sub_queue(parsed_data, result, params, thread_info=None):
     suggestion_content = {'data': {'content': {}}}
     suggestion_content['data']['content'] = result.get('historyParams', {}).get('message')
+    
+    # Extract user and assistant messages for Hippocampus
+    user_message = parsed_data.get('user', '')
+    assistant_message = result.get('historyParams', {}).get('message', '')
+    
     data = {
         "save_sub_thread_id_and_name" : {
             "org_id" : parsed_data.get('org_id'),
@@ -455,6 +460,14 @@ async def make_request_data_and_publish_sub_queue(parsed_data, result, params, t
         },
         "check_chatbot_suggestions" : {
             "bridgeType" : parsed_data.get('bridgeType'),
+        },
+        "save_to_hippocampus" : {
+            "bridgeType" : parsed_data.get('bridgeType'),
+            "user_message" : user_message,
+            "assistant_message" : assistant_message,
+            "bridge_id" : parsed_data.get('bridge_id'),
+            "bridge_name" : parsed_data.get('name', ''),
+            "chatbot_auto_answers": parsed_data.get('chatbot_auto_answers')
         },
         "type" : parsed_data.get('type'),
         "save_files_to_redis" : {
