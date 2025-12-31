@@ -1,3 +1,4 @@
+import json
 from config import Config
 from src.services.utils.logger import logger
 from src.services.utils.apiservice import fetch
@@ -18,8 +19,12 @@ async def save_conversation_to_hippocampus(user_message, assistant_message, brid
             logger.warning("Hippocampus API key or collection ID not configured")
             return
         
-        # Combine user and assistant messages as content
-        content = f"User: {user_message}\nAssistant: {assistant_message}"
+        # Create content as stringified JSON with question and answer
+        content_obj = {
+            "question": user_message,
+            "answer": assistant_message
+        }
+        content = json.dumps(content_obj)
         
         # Use bridge_name if available, otherwise fallback to bridge_id
         title = bridge_name if bridge_name else bridge_id
@@ -32,7 +37,7 @@ async def save_conversation_to_hippocampus(user_message, assistant_message, brid
             "settings": {
                 "strategy": "custom",
                 "chunkingUrl": "https://flow.sokt.io/func/scriQywSNndU",
-                "chunkSize": 1000
+                "chunkSize": 4000
             }
         }
         
