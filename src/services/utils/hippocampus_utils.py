@@ -15,8 +15,8 @@ async def save_conversation_to_hippocampus(user_message, assistant_message, agen
         bridge_name: The bridge/agent name (used as title)
     """
     try:
-        if not Config.HIPPOCAMPUS_API_KEY or not Config.HIPPOCAMPUS_COLLECTION_ID:
-            logger.warning("Hippocampus API key or collection ID not configured")
+        if not Config.HIPPOCAMPUS_API_KEY or not Config.HIPPOCAMPUS_COLLECTION_ID or not Config.HIPPOCAMPUS_API_URL:
+            logger.warning("Hippocampus API key, collection ID, or API URL not configured")
             return
         
         # Create content as stringified JSON with question and answer
@@ -24,7 +24,7 @@ async def save_conversation_to_hippocampus(user_message, assistant_message, agen
             "question": user_message,
             "answer": assistant_message
         }
-        # content = json.dumps(content_obj)
+        content = json.dumps(content_obj)
         
         # Use bridge_name if available, otherwise fallback to agent_id
         title = bridge_name if bridge_name else agent_id
@@ -33,7 +33,7 @@ async def save_conversation_to_hippocampus(user_message, assistant_message, agen
             "collectionId": Config.HIPPOCAMPUS_COLLECTION_ID,
             "title": title,
             "ownerId": agent_id,
-            "content": content_obj,
+            "content": content,
 
 
 
