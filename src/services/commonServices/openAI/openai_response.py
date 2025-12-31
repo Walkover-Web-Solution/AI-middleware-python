@@ -23,6 +23,21 @@ class OpenaiResponse(BaseService):
                 historyParams = self.prepare_history_params(response, modelResponse, tools, None)
                 historyParams['message'] = "image generated successfully"
                 historyParams['type'] = 'assistant'
+        elif self.type == 'audio':
+            # Audio handling for transcription/translation
+            audio_file = self.audio_file  # Use dedicated audio_file field
+            openAIResponse = await self.audio(self.customConfig, self.apikey, service_name['openai'], audio_file)
+            modelResponse = openAIResponse.get("modelResponse", {})
+            if not openAIResponse.get('success'):
+                if not self.playground:
+                    await self.handle_failure(openAIResponse)
+                raise ValueError(openAIResponse.get('error'))
+            response = await Response_formatter(modelResponse, service_name['openai'], tools, self.type, None)
+            if not self.playground:
+                historyParams = self.prepare_history_params(response, modelResponse, tools, None)
+                operation = modelResponse.get('operation', 'audio processing')
+                historyParams['message'] = f"audio {operation} completed successfully"
+                historyParams['type'] = 'assistant'
         else:
             conversation = ConversationService.createOpenAiConversation(self.configuration.get('conversation'), self.memory, self.files).get('messages', [])
             developer = [{"role": "developer", "content": self.configuration['prompt']}] if not self.reasoning_model else []

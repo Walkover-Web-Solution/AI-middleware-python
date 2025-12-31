@@ -34,7 +34,7 @@ async def Response_formatter(response = {}, service = None, tools={}, type='chat
 
             }
         }
-    elif service == service_name['openai'] and (type != 'image' and type != 'embedding'):
+    elif service == service_name['openai'] and (type != 'image' and type != 'embedding' and type != 'audio'):
         return {
             "data": {
                 "id": response.get("id", None),
@@ -126,6 +126,23 @@ async def Response_formatter(response = {}, service = None, tools={}, type='chat
             "data" : {
                 "content" : response.get('data')[0].get('text_content'),
                 "file_data" : response.get('data')[0].get('file_reference')
+            }
+        }
+    elif service == service_name['openai'] and type == 'audio':
+        return {
+            "data": {
+                "id": None,
+                "content": response.get('text'),
+                "model": response.get('model'),
+                "role": "assistant",
+                "finish_reason": "completed",
+                "operation": response.get('operation')
+            },
+            "usage": {
+                "input_tokens": response.get('usage', {}).get('input_tokens'),
+                "input_token_details": response.get('usage', {}).get('input_token_details'),
+                "output_tokens": response.get('usage', {}).get('output_tokens'),
+                "total_tokens": response.get('usage', {}).get('total_tokens'),
             }
         }
     elif service == service_name['openai']:

@@ -630,3 +630,83 @@ async def image(request_body):
             # Process background tasks for error handling
             await process_background_tasks_for_error(parsed_data, error)
         raise ValueError(error)
+
+@handle_exceptions
+async def audio(request_body):
+    result = {}
+    class_obj = {}
+    try:
+        # Store bridge_configurations for potential transfer logic
+        bridge_configurations = request_body.get('body', {}).get('bridge_configurations', {})
+        
+        # Step 1: Parse and validate request body
+        parsed_data = parse_request_body(request_body)
+        
+        # Initialize or retrieve transfer_request_id for tracking transfers
+        transfer_request_id = parsed_data.get('transfer_request_id') or str(uuid.uuid1())
+        parsed_data['transfer_request_id'] = transfer_request_id
+        
+        # Initialize transfer history for this request if not exists
+        if transfer_request_id not in TRANSFER_HISTORY:
+            TRANSFER_HISTORY[transfer_request_id] = []
+
+        # Step 2: Initialize Timer
+        timer = initialize_timer(parsed_data['state'])
+        
+        # Step 3: Load Model Configuration
+        model_config, custom_config, model_output_config = await load_model_configuration(
+            parsed_data['model'], parsed_data['configuration'], parsed_data['service'],
+        )
+        
+        # Step 4: Configure Custom Settings
+        custom_config = await configure_custom_settings(
+            model_config['configuration'], custom_config, parsed_data['service']
+        )
+        # Step 5: Manage Threads
+        thread_info = await manage_threads(parsed_data)
+
+        # Step 6: Execute Service Handler
+        params = build_service_params(
+            parsed_data, custom_config, model_output_config, thread_info, timer, None, send_error_to_webhook, bridge_configurations
+        )
+        
+        class_obj = await Helper.create_service_handler(params, parsed_data['service'])
+        result = await class_obj.execute()
+            
+        if not result["success"]:
+            raise ValueError(result)
+
+        # Create latency object using utility function
+        latency = create_latency_object(timer, params)
+        if not parsed_data['is_playground']:
+            if result.get('response') and result['response'].get('data'):
+                result['response']['data']['id'] = parsed_data['message_id']
+            await sendResponse(parsed_data['response_format'], result["response"], success=True, variables=parsed_data.get('variables',{}))
+            # Update usage metrics for successful API calls
+            update_usage_metrics(parsed_data, params, latency, result=result, success=True)
+            # Process background tasks (handles both transfer and non-transfer cases)
+            await process_background_tasks(parsed_data, result, params, thread_info, transfer_request_id, bridge_configurations)
+        return JSONResponse(status_code=200, content={"success": True, "response": result["response"]})
+    
+    except (Exception, ValueError, BadRequestException) as error:
+        if not isinstance(error, BadRequestException):
+            logger.error(f'Error in audio service: {str(error)}, {traceback.format_exc()}')
+        if not parsed_data['is_playground']:
+            # Update parsed_data with thread_info if available and thread_id/sub_thread_id are None
+            if 'thread_info' in locals() and thread_info:
+                if not parsed_data.get('thread_id') and thread_info.get('thread_id'):
+                    parsed_data['thread_id'] = thread_info['thread_id']
+                if not parsed_data.get('sub_thread_id') and thread_info.get('sub_thread_id'):
+                    parsed_data['sub_thread_id'] = thread_info['sub_thread_id']
+            
+            # Create latency object and update usage metrics
+            latency = create_latency_object(timer, params) if 'params' in locals() and params else None
+            if latency:
+                update_usage_metrics(parsed_data, params, latency, error=error, success=False)
+            
+            # Create history parameters
+            parsed_data['historyParams'] = create_history_params(parsed_data, error, class_obj, thread_info if 'thread_info' in locals() else None)
+            await sendResponse(parsed_data['response_format'], result.get("modelResponse", str(error)), variables=parsed_data['variables']) if parsed_data['response_format']['type'] != 'default' else None
+            # Process background tasks for error handling
+            await process_background_tasks_for_error(parsed_data, error)
+        raise ValueError(error)

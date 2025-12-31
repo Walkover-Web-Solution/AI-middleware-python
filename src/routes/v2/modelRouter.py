@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Request, HTTPException
 import asyncio
 
-from src.services.commonServices.common import chat_multiple_agents, embedding, batch, image, orchestrator_chat
+from src.services.commonServices.common import chat_multiple_agents, embedding, batch, image, orchestrator_chat, audio
 from src.services.commonServices.baseService.utils import make_request_data
 from ...middlewares.middleware import jwt_middleware
 from ...middlewares.getDataUsingBridgeId import add_configuration_data_to_body
@@ -49,6 +49,10 @@ async def chat_completion(request: Request, db_config: dict = Depends(add_config
         if type == 'image':
             loop = asyncio.get_event_loop()
             result = await image(data_to_send)
+            return result
+        if type == 'audio':
+            loop = asyncio.get_event_loop()
+            result = await audio(data_to_send)
             return result
         # Always use chat_multiple_agents - it handles both single and multiple agents
         loop = asyncio.get_event_loop()

@@ -16,6 +16,7 @@ from ..Google.gemini_modelrun import gemini_modelrun
 from ..openRouter.openRouter_modelrun import openrouter_modelrun
 from ....configs.constant import service_name
 from ..openAI.image_model import OpenAIImageModel
+from ..openAI.audio_model import OpenAIAudioModel
 from ..Google.gemini_image_model import gemini_image_model
 from ..Google.gemini_video_model import gemini_video_model
 from ..AiMl.ai_ml_model_run import ai_ml_model_run
@@ -70,10 +71,12 @@ class BaseService:
         self.function_time_logs = params.get('function_time_logs')
         self.files = params.get('files') or []
         self.file_data = params.get('file_data')
+        self.audio_file = params.get('audio_file')
         self.youtube_url = params.get('youtube_url')
         self.web_search_filters = params.get('web_search_filters')
         self.folder_id = params.get('folder_id')
         self.bridge_configurations = params.get('bridge_configurations')
+
 
 
     def aiconfig(self):
@@ -378,4 +381,19 @@ class BaseService:
             }
         except Exception as e:
             logger.error(f"chats error in video=>, {str(e)}, {traceback.format_exc()}")
+            raise ValueError(f"error occurs from {self.service} api {e.args[0]}")
+    
+    async def audio(self, configuration, apikey, service, audio_file):
+        try:
+            response = {}
+            if service == service_name['openai']:
+                response = await OpenAIAudioModel(configuration, apikey, self.execution_time_logs, self.timer, audio_file)
+            if not response['success']:
+                raise ValueError(response['error'])
+            return {
+                'success': True,
+                'modelResponse': response['response']
+            }
+        except Exception as e:
+            logger.error(f"chats error in audio=>, {str(e)}, {traceback.format_exc()}")
             raise ValueError(f"error occurs from {self.service} api {e.args[0]}")
