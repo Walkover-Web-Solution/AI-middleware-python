@@ -3,6 +3,9 @@ from config import Config
 from src.services.utils.logger import logger
 from src.services.utils.apiservice import fetch
 
+# Hardcoded Hippocampus API URL
+HIPPOCAMPUS_API_URL = 'http://hippocampus.gtwy.ai/resource'
+
 
 async def save_conversation_to_hippocampus(user_message, assistant_message, agent_id, bridge_name=''):
     """
@@ -15,8 +18,8 @@ async def save_conversation_to_hippocampus(user_message, assistant_message, agen
         bridge_name: The bridge/agent name (used as title)
     """
     try:
-        if not Config.HIPPOCAMPUS_API_KEY or not Config.HIPPOCAMPUS_COLLECTION_ID or not Config.HIPPOCAMPUS_API_URL:
-            logger.warning("Hippocampus API key, collection ID, or API URL not configured")
+        if not Config.HIPPOCAMPUS_API_KEY or not Config.HIPPOCAMPUS_COLLECTION_ID:
+            logger.warning("Hippocampus API key or collection ID not configured")
             return
         
         # Create content as stringified JSON with question and answer
@@ -51,7 +54,7 @@ async def save_conversation_to_hippocampus(user_message, assistant_message, agen
         
 
         response_data, response_headers = await fetch(
-            url=Config.HIPPOCAMPUS_API_URL,
+            url=HIPPOCAMPUS_API_URL,
             method="POST",
             headers=headers,
             json_body=payload
