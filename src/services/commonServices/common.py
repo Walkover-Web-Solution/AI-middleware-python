@@ -9,6 +9,8 @@ from ..utils.helper import Helper
 from .baseService.utils import sendResponse
 from ..utils.ai_middleware_format import Response_formatter
 from ..utils.send_error_webhook import send_error_to_webhook
+from src.utils.formatter import render_template_to_html
+from src.services.response_template_service import get_multiple_response_templates, FALLBACK_TEMPLATES
 from src.handler.executionHandler import handle_exceptions
 from models.mongo_connection import db
 import json
@@ -338,6 +340,137 @@ async def chat(request_body):
             parsed_data['tokens'] = params['token_calculator'].calculate_total_cost(parsed_data['model'], parsed_data['service'])
             result['response']['usage']['cost'] = parsed_data['tokens'].get('total_cost') or 0
         
+        # Template HTML Generation
+        configuration = parsed_data.get('configuration', {})
+        if isinstance(configuration, str):
+            try:
+                configuration = json.loads(configuration)
+            except (json.JSONDecodeError, TypeError):
+                configuration = {}
+        
+        if isinstance(configuration, dict):
+            # Prefer response_type from custom_config (merged defaults) if available
+            response_type = {}
+            if 'response_type' in locals().get('custom_config', {}):
+                response_type = custom_config['response_type']
+            else:
+                 response_type = configuration.get('response_type', {})
+
+            if isinstance(response_type, str):
+                try:
+                    response_type = json.loads(response_type)
+                except (json.JSONDecodeError, TypeError):
+                    response_type = {}
+            
+            if isinstance(response_type, dict) and response_type.get('is_template', False):
+                try:
+                    # 'template_id' is sent from frontend as an array of indices
+                    template_ids = response_type.get('template_id', [])
+                    
+                    # If template_ids is not a list, wrap it? Or assume list.
+                    if not isinstance(template_ids, list):
+                        template_ids = [template_ids]
+                    
+                    if not template_ids:
+                        logger.warning("Template Rendering: 'is_template' is True but 'template_id' is missing or empty.")
+                    
+                    logger.info(f"Template Rendering: template_ids={template_ids}")
+
+                    base_template = None
+                    if template_ids and response_type:
+                        # Get organization ID from parsed data
+                        org_id = parsed_data.get('org_id', 'default_org')
+                        
+                        # Get templates from database
+                        try:
+                            db_templates = await get_multiple_response_templates(template_ids, org_id)
+                            
+                            # Use the first available template from the requested IDs
+                            for tid in template_ids:
+                                if str(tid) in db_templates:
+                                    base_template = db_templates[str(tid)]
+                                    break
+                                # Fallback: check if it's a numeric index for backward compatibility
+                                elif str(tid) in FALLBACK_TEMPLATES:
+                                    base_template = FALLBACK_TEMPLATES[str(tid)]
+                                    break
+                        except Exception as e:
+                            logger.error(f"Error fetching templates from database: {str(e)}")
+                            # Fallback to hardcoded templates if database fails
+                            for tid in template_ids:
+                                if str(tid) in FALLBACK_TEMPLATES:
+                                    base_template = FALLBACK_TEMPLATES[str(tid)]
+                                    break
+                    
+                    if base_template:
+                        # AI Result Data
+                        ai_data = result.get('response', {}).get('data', {})
+                        ai_data = json.loads(json.dumps(ai_data.get('content', ai_data)))
+                        # Unwrap 'item' if present
+                        if isinstance(ai_data, dict) and "item" in ai_data:
+                            ai_data = ai_data["item"]
+                        elif isinstance(ai_data, str):
+                            try:
+                                parsed = json.loads(ai_data)
+                                if isinstance(parsed, dict) and "item" in parsed:
+                                    ai_data = parsed["item"]
+                                else:
+                                    ai_data = parsed
+                            except:
+                                pass
+                        if len(template_ids) > 1 and isinstance(ai_data, dict):
+                            best_match_template = None
+                            max_matches = -1
+                            
+                            # Use the templates we already fetched from database
+                            for tid in template_ids:
+                                try:
+                                    candidate_template = None
+                                    # Check if template exists in database results
+                                    if str(tid) in db_templates:
+                                        candidate_template = db_templates[str(tid)]
+                                    # Fallback to hardcoded templates
+                                    elif str(tid) in FALLBACK_TEMPLATES:
+                                        candidate_template = FALLBACK_TEMPLATES[str(tid)]
+                                    
+                                    if candidate_template:
+                                        candidate_schema = candidate_template.get('json_schema', {}).get('schema', {}) 
+                                        required_props = candidate_schema.get('properties', {}).keys()
+                                        if not required_props: 
+                                            continue
+                                            
+                                        matches = 0
+                                        for prop in required_props:
+                                            if prop in ai_data:
+                                                matches += 1
+                                        
+                                        # Simple heuristic: most matching keys
+                                        if matches > max_matches:
+                                            max_matches = matches
+                                            best_match_template = candidate_template
+                                            
+                                except (ValueError, TypeError):
+                                    continue
+                            
+                            if best_match_template:
+                                base_template = best_match_template
+                            
+                        # Render HTML
+                        try:
+                            html_output = render_template_to_html(base_template, ai_data)
+                            logger.info(f"Template Rendering: HTML generated length={len(html_output) if html_output else 0}")
+                            
+                            # Update Result
+                            result['response']['type'] = 'template'
+                            result['response']['data']['content'] = html_output
+                        except Exception as render_err:
+                            logger.error(f"Template Rendering Failed in render function: {render_err}")
+                            
+                except Exception as e:
+                    logger.error(f"Error rendering template: {str(e)}")
+            else:
+                 logger.info(f"Template Rendering Skipped: is_template={response_type.get('is_template')} or response_type invalid")
+
         # Send data to playground
         if parsed_data.get('is_playground') and parsed_data.get('body', {}).get('bridge_configurations', {}).get('playground_response_format'):
             await sendResponse(parsed_data['body']['bridge_configurations']['playground_response_format'], result["response"], success=True, variables=parsed_data.get('variables',{}))

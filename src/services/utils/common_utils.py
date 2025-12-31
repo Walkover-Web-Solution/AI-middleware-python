@@ -612,10 +612,37 @@ def send_error(bridge_id, org_id, error_message, error_type, bridge_name=None, i
     ))
 
 def restructure_json_schema(response_type, service):
+    # Handle Template IDs -> Generate Schema
+    if 'template_id' in response_type:
+        template_ids = response_type['template_id']
+        if not isinstance(template_ids, list):
+            template_ids = [template_ids]
+            
+        schemas = []        
+        if schemas:
+             if len(schemas) == 1:
+                 response_type['json_schema'] = schemas[0]
+             else:
+                 response_type['json_schema'] = {
+                     "name": "ui_components_response", # Generic name
+                     "strict": True,
+                     "schema": {
+                         "type": "object",
+                         "properties": {
+                             "item": {
+                                 "anyOf": [s['schema'] for s in schemas]
+                             }
+                         },
+                         "required": ["item"],
+                         "additionalProperties": False
+                     }
+                 }
+    
     match service:
         case 'openai':
             schema = response_type.get('json_schema', {})
-            del response_type['json_schema']
+            if 'json_schema' in response_type:
+                del response_type['json_schema']
             for key, value in schema.items():
                 response_type[key] = value
             return response_type
