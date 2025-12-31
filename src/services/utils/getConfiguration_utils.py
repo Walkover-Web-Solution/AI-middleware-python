@@ -4,6 +4,7 @@ from models.mongo_connection import db
 from src.services.commonServices.baseService.utils import makeFunctionName
 from src.services.utils.service_config_utils import tool_choice_function_name_formatter
 from config import Config
+from src.configs.constant import inbuild_tools
 
 apiCallModel = db['apicalls']
 from globals import *
@@ -273,6 +274,47 @@ def add_rag_tool(tools, tool_id_and_name_mapping, rag_data):
     
     tool_id_and_name_mapping['get_knowledge_base_data'] = {
         "type": "RAG"
+    }
+
+def _should_enable_web_crawling_tool(built_in_tools):
+    if not built_in_tools:
+        return False
+    return inbuild_tools["Gtwy_Web_Search"] in built_in_tools
+
+def add_web_crawling_tool(tools, tool_id_and_name_mapping, built_in_tools, gtwy_web_search_filters=None):
+    """Add Firecrawl-based web crawling tool when requested via built-in tools."""
+    if not _should_enable_web_crawling_tool(built_in_tools):
+        return
+
+    tools.append({
+        'type': 'function',
+        'name': inbuild_tools["Gtwy_Web_Search"],
+        'description': 'Search and extract content from any website URL. This tool scrapes web pages and returns their content in various formats. Use this when you need to: fetch real-time information from websites, extract article content, retrieve documentation, access public web data, or get current information not in your training data. If enum is provided for URL, only use URLs from those allowed domains.',
+        'properties': {
+            'url': {
+                'description': 'The complete URL of the website to scrape (must start with http:// or https://). Example: https://example.com/page',
+                'type': 'string',
+                'enum': gtwy_web_search_filters if (gtwy_web_search_filters and len(gtwy_web_search_filters) > 0) else [],
+                'required_params': [],
+                'parameter': {}
+            },
+            'formats': {
+                'description': 'Optional list of output formats. Available formats include: "markdown" (default, clean text), "html" (raw HTML), "screenshot" (visual capture), "links" (extracted URLs). If not specified, returns markdown format.',
+                'type': 'array',
+                'items': {
+                    'type': 'string'
+                },
+                'enum': [],
+                'required_params': [],
+                'parameter': {}
+            }
+        },
+        'required': ['url']
+    })
+
+    tool_id_and_name_mapping[inbuild_tools["Gtwy_Web_Search"]] = {
+        'type': inbuild_tools["Gtwy_Web_Search"],
+        'name': inbuild_tools["Gtwy_Web_Search"]
     }
 
 def add_anthropic_json_schema(service, configuration, tools):

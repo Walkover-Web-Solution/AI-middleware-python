@@ -6,7 +6,7 @@ from src.services.utils.common_utils import updateVariablesWithTimeZone
 from .getConfiguration_utils import (
     validate_bridge, get_bridge_data, setup_configuration, setup_tool_choice,
     setup_tools, setup_api_key, setup_pre_tools, add_rag_tool,
-    add_anthropic_json_schema, add_connected_agents
+    add_anthropic_json_schema, add_connected_agents, add_web_crawling_tool
 )
 from .update_and_check_cost import check_bridge_api_folder_limits
 
@@ -132,6 +132,9 @@ async def _prepare_configuration_response(configuration, service, bridge_id, api
     )
 
     add_rag_tool(tools, tool_id_and_name_mapping, rag_data)
+    
+    gtwy_web_search_filters = web_search_filters or result.get('bridges', {}).get('gtwy_web_search_filters') or {}
+    add_web_crawling_tool(tools, tool_id_and_name_mapping, built_in_tools or result.get('bridges', {}).get('built_in_tools'), gtwy_web_search_filters)
     add_anthropic_json_schema(service, configuration, tools)
 
     if rag_data:
