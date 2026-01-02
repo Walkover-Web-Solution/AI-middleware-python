@@ -7,7 +7,7 @@ import uuid
 from ...cache_service import store_in_cache
 from src.configs.constant import redis_keys
 from src.services.commonServices.anthropic.anthropicCall import Anthropic
-
+from .anthropic_run_batch import create_batch_requests
 
 class AnthropicBatch(BaseService):
     async def batch_execute(self):
