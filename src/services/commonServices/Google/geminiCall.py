@@ -39,21 +39,72 @@ class GeminiHandler(BaseService):
                 historyParams['type'] = 'assistant'  
         else:
             conversation = ConversationService.createGeminiConversation(self.configuration.get('conversation'), self.memory).get('messages', [])
+            
             if self.reasoning_model:
                 self.customConfig["messages"] =  conversation + ([{"role": "user", "content": self.user}] if self.user else []) 
             else:
-                if not self.image_data:
-                    self.customConfig["messages"] = [ {"role": "developer", "content": self.configuration['prompt']}] + conversation + ([{"role": "user", "content": self.user}] if self.user else []) 
-                else:
-                    self.customConfig["messages"] = [{"role": "developer", "content": self.configuration['prompt']}] + conversation
-                    user_content = []
+                # Check if we have any multimodal content
+                has_multimodal = (self.image_data and isinstance(self.image_data, list)) or \
+                               (self.audio_data and isinstance(self.audio_data, list))
+
+                # Prepare native Gemini contents
+                import google.generativeai as genai
+                from google.generativeai import types
+                
+                system_instruction = self.configuration.get('prompt')
+                contents = []
+
+                # Convert conversation history
+                for msg in conversation:
+                    role = msg.get('role')
+                    content = msg.get('content')
+                    
+                    if role == 'system':
+                        # If system message is in conversation, append to system_instruction
+                        system_instruction = (system_instruction or "") + "\n" + content
+                        continue
+                        
+                    parts = []
+                    if isinstance(content, str):
+                        parts.append(content)
+                    elif isinstance(content, list):
+                        for item in content:
+                            if item.get('type') == 'text':
+                                parts.append(item.get('text', ''))
+                            elif item.get('type') == 'image_url':
+                                parts.append(types.Part.from_uri(
+                                    uri=item.get('image_url', {}).get('url', ''),
+                                    mime_type='image/jpeg'
+                                ))
+                            elif item.get('type') == 'input_audio':
+                                parts.append(types.Part.from_uri(
+                                    uri=item.get('input_audio', {}).get('url', ''),
+                                    mime_type='audio/mp3'
+                                ))
+                    
+                    gemini_role = 'user' if role == 'user' else 'model'
+                    contents.append({'role': gemini_role, 'parts': parts})
+
+                # Add current user message with multimodal content
+                if self.user or self.image_data or self.audio_data:
+                    user_parts = []
                     if self.user:
-                        user_content = [{"type": "text", "text": self.user}]
-                    if isinstance(self.image_data, list):
-                        for image_url in self.image_data:
-                            user_content.append({"type": "image_url", "image_url": {"url": image_url}})
-                    self.customConfig["messages"].append({'role': 'user', 'content': user_content})
-                self.customConfig =self.service_formatter(self.customConfig, service_name['gemini'])
+                        user_parts.append(self.user)
+                    
+                    if self.image_data and isinstance(self.image_data, list):
+                        for url in self.image_data:
+                            user_parts.append(types.Part.from_uri(uri=url, mime_type='image/jpeg'))
+                            
+                    if self.audio_data and isinstance(self.audio_data, list):
+                        for url in self.audio_data:
+                            user_parts.append(types.Part.from_uri(uri=url, mime_type='audio/mp3'))
+                            
+                    if user_parts:
+                        contents.append({'role': 'user', 'parts': user_parts})
+
+                self.customConfig["contents"] = contents
+                self.customConfig["system_instruction"] = system_instruction
+                
                 if 'tools' not in self.customConfig and 'parallel_tool_calls' in self.customConfig:
                     del self.customConfig['parallel_tool_calls']
             gemini_response = await self.chats(self.customConfig, self.apikey, service_name['gemini'])

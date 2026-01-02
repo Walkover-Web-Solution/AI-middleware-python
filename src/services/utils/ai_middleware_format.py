@@ -144,22 +144,21 @@ async def Response_formatter(response = {}, service = None, tools={}, type='chat
         return {
             "data" : {
                 "id" : response.get("id", None),
-                "content" : response.get("choices", [{}])[0].get("message", {}).get("content", None),
-                "model" : response.get("model", None),
-                "role" : response.get("choices", [{}])[0].get("message", {}).get("role", None),
+                "content" : response.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", ""),
+                "model" : response.get("model_version", None),
+                "role" : response.get("candidates", [{}])[0].get("content", {}).get("role", "model"),
                 "tools_data": tools_data or {},
                 "images" : images,
-                "annotations" : response.get("choices", [{}])[0].get("message", {}).get("annotations", None),
+                "annotations" : None,
                 "fallback" : response.get('fallback') or False,
                 "firstAttemptError" : response.get('firstAttemptError') or '',
-                "finish_reason" : finish_reason_mapping(response.get("choices", [{}])[0].get("finish_reason", ""))
+                "finish_reason" : finish_reason_mapping(response.get("candidates", [{}])[0].get("finish_reason", "unknown"))
             },
             "usage" : {
-                "input_tokens" : response.get("usage", {}).get("prompt_tokens", None),
-                "output_tokens" : response.get("usage", {}).get("completion_tokens", None),
-                "total_tokens" : response.get("usage", {}).get("total_tokens", None),
-                "cached_tokens" : response.get("usage", {}).get("prompt_tokens_details",{}).get('cached_tokens')
-
+                "input_tokens" : response.get("usage_metadata", {}).get("prompt_token_count", None),
+                "output_tokens" : response.get("usage_metadata", {}).get("candidates_token_count", None),
+                "total_tokens" : response.get("usage_metadata", {}).get("total_token_count", None),
+                "cached_tokens" : response.get("usage_metadata", {}).get("cached_content_token_count", None)
             }
         }
     elif service == service_name['openai'] and type == 'embedding':

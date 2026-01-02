@@ -1,8 +1,10 @@
 import pydash as _
+import json
 from ..baseService.baseService import BaseService
 from ..createConversations import ConversationService
 from src.configs.constant import service_name
 from src.services.utils.ai_middleware_format import Response_formatter
+from globals import logger
 
 class Mistral(BaseService):
     async def execute(self):
@@ -23,19 +25,38 @@ class Mistral(BaseService):
                 historyParams['type'] = 'assistant'
         else:
             conversation = ConversationService.create_mistral_ai_conversation(self.configuration.get('conversation'), self.memory).get('messages', [])
+            
+            # Fetch and convert audio URLs to base64 if present
+            audio_base64_list = []
+            if self.audio_data and isinstance(self.audio_data, list):
+                from ...utils.apiservice import fetch_audio_b64
+                audio_base64_list = await fetch_audio_b64(self.audio_data)
+            
             if self.reasoning_model:
                 self.customConfig["messages"] =  conversation + ([{"role": "user", "content": self.user}] if self.user else []) 
             else:
-                if not self.image_data:
+                # Check if we have any multimodal content (images or audio)
+                has_multimodal = self.image_data or audio_base64_list
+                
+                if not has_multimodal:
                     self.customConfig["messages"] = [ {"role": "system", "content": self.configuration['prompt']}] + conversation + ([{"role": "user", "content": self.user}] if self.user else []) 
                 else:
                     self.customConfig["messages"] = [{"role": "system", "content": self.configuration['prompt']}] + conversation
                     if self.user:
                         user_content = [{"type": "text", "text": self.user}]
-                        if isinstance(self.image_data, list):
+                        
+                        # Add images if present
+                        if self.image_data and isinstance(self.image_data, list):
                             for image_url in self.image_data:
                                 user_content.append({"type": "image_url", "image_url": {"url": image_url}})
+                        
+                        # Add audio if present (already converted to base64)
+                        if audio_base64_list:
+                            for audio_base64 in audio_base64_list:
+                                user_content.append({"type": "input_audio", "input_audio": audio_base64})
+                        
                         self.customConfig["messages"].append({'role': 'user', 'content': user_content})
+                
                 self.customConfig =self.service_formatter(self.customConfig, service_name['mistral'])
                 if 'tools' not in self.customConfig and 'parallel_tool_calls' in self.customConfig:
                     del self.customConfig['parallel_tool_calls']
