@@ -1,5 +1,4 @@
 from mistralai import Mistral
-from mistralai.models import UserMessage
 import traceback
 from ..api_executor import execute_api_call
 from globals import *
@@ -12,6 +11,7 @@ async def mistral_model_run(configuration, apiKey, execution_time_logs, bridge_i
         # Define the API call function
         async def api_call(config):
             try:
+                print("config", config)
                 chat_completion = await mistral.chat.complete_async(**config)
                 return {'success': True, 'response': chat_completion.model_dump()}
             except Exception as error:

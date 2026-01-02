@@ -28,3 +28,11 @@ async def fetch_images_b64(urls):
     images_data = [base64.b64encode(image.getvalue()).decode('utf-8') for image in images_res]
     images_media_type = [header.get('Content-Type') for header in headers]
     return zip(images_data, images_media_type)
+
+async def fetch_audio_b64(urls):
+    """Fetch audio files from URLs and convert to base64 strings"""
+    if not urls:
+        return []
+    audio_res, headers = zip(*await asyncio.gather(*(fetch(url, image=True) for url in urls)))
+    audio_data = [base64.b64encode(audio.getvalue()).decode('utf-8') for audio in audio_res]
+    return audio_data

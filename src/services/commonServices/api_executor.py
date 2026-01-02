@@ -66,8 +66,15 @@ async def check_space_issue(response, service=None):
     
     
     content = None
-    if service == service_name['openai_completion'] or service == service_name['groq'] or service == service_name['grok'] or service == service_name['open_router'] or service == service_name['mistral'] or service == service_name['gemini'] or service == service_name['ai_ml']:
+    if service == service_name['openai_completion'] or service == service_name['groq'] or service == service_name['grok'] or service == service_name['open_router'] or service == service_name['mistral'] or service == service_name['ai_ml']:
         content = response.get("choices", [{}])[0].get("message", {}).get("content", None)
+    elif service == service_name['gemini']:
+        # Native Gemini structure: candidates[0].content.parts[0].text
+        candidates = response.get("candidates", [])
+        if candidates and candidates[0].get("content", {}).get("parts", []):
+            content = candidates[0].get("content", {}).get("parts", [])[0].get("text", None)
+        else:
+            content = None
     elif service == service_name['anthropic']:
         content = response.get("content", [{}])
         if content:
@@ -99,8 +106,11 @@ async def check_space_issue(response, service=None):
     if parsed_data == '' and content:
         response['alert_flag'] = True
         text = 'AI is Hallucinating and sending \'\n\' please check your prompt and configurations once'
-        if service == service_name['openai_completion'] or service == service_name['groq'] or service == service_name['grok'] or service == service_name['open_router'] or service == service_name['mistral'] or service == service_name['gemini'] or service == service_name['ai_ml']:
+        if service == service_name['openai_completion'] or service == service_name['groq'] or service == service_name['grok'] or service == service_name['open_router'] or service == service_name['mistral'] or service == service_name['ai_ml']:
             response["choices"][0]["message"]["content"] = text
+        elif service == service_name['gemini']:
+             if response.get("candidates") and response["candidates"][0].get("content", {}).get("parts"):
+                 response["candidates"][0]["content"]["parts"][0]["text"] = text
         elif service == service_name['anthropic']:
             response["content"][0]["text"] = text
         elif service == service_name['openai']:
