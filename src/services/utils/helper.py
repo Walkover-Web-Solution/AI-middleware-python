@@ -329,7 +329,7 @@ class Helper:
         return class_obj
     
     def add_doc_description_to_prompt(prompt, rag_data):
-        prompt += '\n Available Knowledge Base :- Here are the available documents to get data when needed call the function get_knowledge_base_data: \n' +  '\n'.join([f"name : {data.get('name')}, description : {data.get('description')},  doc_id : {data.get('_id')} \n" for data in rag_data])    
+        prompt += '\n Available Knowledge Base :- Here are the available documents to get data when needed call the function get_knowledge_base_data: \n' + 'collectionId : ' + '6958fb03d68776036ee6cfae' + ' resourceId : ' + '6958fb6ec31003b4f3491c21' + '\n' + '\n'.join([f"name : {data.get('name')}, description : {data.get('description')},  doc_id : {data.get('_id')} \n" for data in rag_data])    
         return prompt
     
     def append_tone_and_response_style_prompts(prompt, tone, response_style):
