@@ -304,17 +304,12 @@ class Helper:
         return usage
     
     async def create_service_handler_for_batch(params, service):
+        # Currently only supports openai and anthropic
         class_obj = None
         if service == service_name['openai']:
             class_obj = OpenaiBatch(params)
-        elif service == service_name['gemini']:
-            class_obj = GeminiBatch(params)
         elif service == service_name['anthropic']:
             class_obj = AnthropicBatch(params)
-        elif service == service_name['groq']:
-            class_obj = GroqBatch(params)
-        elif service == service_name['mistral']:
-            class_obj = MistralBatch(params)
         else:
             raise ValueError(f"Unsupported batch service: {service}")
             
