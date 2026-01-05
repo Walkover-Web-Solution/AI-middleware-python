@@ -310,6 +310,8 @@ class Helper:
             class_obj = OpenaiBatch(params)
         elif service == service_name['anthropic']:
             class_obj = AnthropicBatch(params)
+        elif service == service_name['gemini']:
+            class_obj = GeminiBatch(params)
         else:
             raise ValueError(f"Unsupported batch service: {service}")
             

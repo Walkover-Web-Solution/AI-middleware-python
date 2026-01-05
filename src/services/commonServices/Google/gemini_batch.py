@@ -35,6 +35,8 @@ class GeminiBatch(BaseService):
             custom_id = str(uuid.uuid4())
 
             # Construct Gemini native format request
+            # Note: system_instruction and generation config are set at batch job level,
+            # not in individual requests
             request_content = {
                 'contents': [
                     {
@@ -44,22 +46,6 @@ class GeminiBatch(BaseService):
                     }
                 ]
             }
-            
-            # Add system instruction 
-            request_content['config'] = {
-                'system_instruction': {
-                    'parts': [{'text': system_prompt}]
-                }
-            }
-            
-            # Add other config from customConfig (like temperature, max_tokens, etc.)
-            if self.customConfig:
-                if 'config' not in request_content:
-                    request_content['config'] = {}
-                # Merge customConfig into config, excluding any messages/prompt fields
-                for key, value in self.customConfig.items():
-                    if key not in ['messages', 'prompt', 'model']:
-                        request_content['config'][key] = value
 
             # Create JSONL entry with key and request
             batch_entry = {
@@ -81,8 +67,9 @@ class GeminiBatch(BaseService):
             message_mappings.append(mapping_item)
 
         # Upload batch file and create batch job
+        # Pass system_prompt and customConfig to be set at batch job level
         uploaded_file = await create_batch_file(batch_requests, self.apikey)
-        batch_job = await process_batch_file(uploaded_file, self.apikey, self.model)
+        batch_job = await process_batch_file(uploaded_file, self.apikey, self.model, system_prompt, self.customConfig)
         
         batch_id = batch_job.name
         batch_json = {

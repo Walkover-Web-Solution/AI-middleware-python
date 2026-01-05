@@ -47,7 +47,7 @@ async def create_batch_file(batch_requests, apiKey):
         print("Cause:", repr(getattr(e, "__cause__", None)))
         raise
 
-async def process_batch_file(uploaded_file, apiKey, model):
+async def process_batch_file(uploaded_file, apiKey, model, system_prompt=None, custom_config=None):
     """
     Creates a batch job using the uploaded file.
     
@@ -55,6 +55,8 @@ async def process_batch_file(uploaded_file, apiKey, model):
         uploaded_file: File object from create_batch_file
         apiKey: Gemini API key
         model: Model name to use for batch processing
+        system_prompt: System instruction to apply to all requests
+        custom_config: Additional configuration (temperature, max_tokens, etc.)
         
     Returns:
         Batch job object
@@ -63,13 +65,37 @@ async def process_batch_file(uploaded_file, apiKey, model):
         # Initialize Gemini client
         client = genai.Client(api_key=apiKey)
         
+        # Build batch config
+        batch_config = {
+            'display_name': f'batch-job-{uuid.uuid4()}',
+        }
+        
+        # Add system instruction if provided
+        if system_prompt:
+            batch_config['system_instruction'] = {
+                'parts': [{'text': system_prompt}]
+            }
+        
+        # Add generation config if custom_config provided
+        if custom_config:
+            generation_config = {}
+            if 'temperature' in custom_config:
+                generation_config['temperature'] = custom_config['temperature']
+            if 'max_tokens' in custom_config:
+                generation_config['max_output_tokens'] = custom_config['max_tokens']
+            if 'top_p' in custom_config:
+                generation_config['top_p'] = custom_config['top_p']
+            if 'top_k' in custom_config:
+                generation_config['top_k'] = custom_config['top_k']
+            
+            if generation_config:
+                batch_config['generation_config'] = generation_config
+        
         # Create batch job with the uploaded file
         batch_job = client.batches.create(
             model=model,
             src=uploaded_file.name,
-            config={
-                'display_name': f'batch-job-{uuid.uuid4()}',
-            }
+            config=batch_config
         )
         print(f"Created batch job: {batch_job.name}")
         return batch_job
