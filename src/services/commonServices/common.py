@@ -409,6 +409,7 @@ async def chat(request_body):
             error_object = {
                 "success": False,
                 "error": combined_error_string,
+                "message_id": parsed_data.get('message_id')
             }
         else:
             # Single error case
@@ -416,6 +417,7 @@ async def chat(request_body):
             error_object = {
                 "success": False,
                 "error": error_string,
+                "message_id": parsed_data.get('message_id')
             }
         if parsed_data['is_playground'] and parsed_data['body']['bridge_configurations'].get('playground_response_format'):
             await sendResponse(parsed_data['body']['bridge_configurations']['playground_response_format'], error_object, success=False, variables=parsed_data.get('variables',{}))
@@ -597,11 +599,11 @@ async def image(request_body):
             raise ValueError(result)
 
         # Create latency object using utility function
+        if result.get('response') and result['response'].get('data'):
+            result['response']['data']['id'] = parsed_data['message_id']
+        await sendResponse(parsed_data['response_format'], result["response"], success=True, variables=parsed_data.get('variables',{}))
         latency = create_latency_object(timer, params)
         if not parsed_data['is_playground']:
-            if result.get('response') and result['response'].get('data'):
-                result['response']['data']['id'] = parsed_data['message_id']
-            await sendResponse(parsed_data['response_format'], result["response"], success=True, variables=parsed_data.get('variables',{}))
             # Update usage metrics for successful API calls
             update_usage_metrics(parsed_data, params, latency, result=result, success=True)
             # Process background tasks (handles both transfer and non-transfer cases)

@@ -7,7 +7,7 @@ from ....db_services import metrics_service
 from .utils import validate_tool_call, tool_call_formatter, sendResponse, make_code_mapping_by_service, process_data_and_run_tools
 from src.configs.serviceKeys import ServiceKeys
 from ..openAI.runModel import openai_response_model, openai_completion
-from ..anthrophic.antrophicModelRun import anthropic_runmodel
+from ..anthropic.anthropicModelRun import anthropic_runmodel
 from ..Mistral.mistral_model_run import mistral_model_run
 from ....configs.constant import service_name
 from ..groq.groqModelRun import groq_runmodel
