@@ -465,7 +465,6 @@ async def make_request_data_and_publish_sub_queue(parsed_data, result, params, t
             "bridgeType" : parsed_data.get('bridgeType'),
         },
         "save_to_hippocampus" : {
-            "bridgeType" : parsed_data.get('bridgeType'),
             "user_message" : user_message,
             "assistant_message" : assistant_message,
             "bridge_id" : parsed_data.get('bridge_id'),
