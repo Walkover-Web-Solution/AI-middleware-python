@@ -38,8 +38,8 @@ from src.services.utils.common_utils import (
     process_background_tasks_for_playground,
     process_variable_state,
     handle_agent_transfer,
-    update_cost_and_last_used_in_background,
-    setup_agent_pre_tools
+    update_cost_usage_and_apikey_status_in_background,
+    setup_agent_pre_tools,
 )
 from src.services.utils.guardrails_validator import guardrails_check
 from src.services.utils.rich_text_support import process_chatbot_response
@@ -121,6 +121,8 @@ async def chat_multiple_agents(request_body):
 async def chat(request_body): 
     result ={}
     class_obj= {}
+    first_execution_error_code = None
+    completion_success = True
     try:
         # Store bridge_configurations for potential transfer logic
         bridge_configurations = request_body.get('body', {}).get('bridge_configurations', {})
@@ -242,6 +244,7 @@ async def chat(request_body):
             # Handle exceptions during execution
             execution_failed = True
             original_error = str(execution_exception)
+            first_execution_error_code = original_error.split()[7]
             original_exception = execution_exception
             logger.error(f"Initial execution failed with {parsed_data['service']}/{parsed_data['model']}: {original_error}")
             result = {
@@ -366,8 +369,8 @@ async def chat(request_body):
                 result['response']['testcase_result'] = testcase_result
             else:
                 await process_background_tasks_for_playground(result, parsed_data)
-        await update_cost_and_last_used_in_background(parsed_data)
         
+
         # Save agent bridge_id to Redis for 3 days (259200 seconds)
         thread_id = parsed_data.get('thread_id')
         sub_thread_id = parsed_data.get('sub_thread_id')
@@ -421,10 +424,11 @@ async def chat(request_body):
             }
         if parsed_data['is_playground'] and parsed_data['body']['bridge_configurations'].get('playground_response_format'):
             await sendResponse(parsed_data['body']['bridge_configurations']['playground_response_format'], error_object, success=False, variables=parsed_data.get('variables',{}))
+        
+        completion_success = False
         raise ValueError(error_object)
-
-
-
+    finally:
+        await update_cost_usage_and_apikey_status_in_background(parsed_data, first_execution_error_code, completion_success)
 @handle_exceptions
 async def orchestrator_chat(request_body): 
     try:
