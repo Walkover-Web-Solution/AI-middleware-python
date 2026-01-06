@@ -34,7 +34,6 @@ from src.services.utils.common_utils import (
     create_latency_object,
     create_history_params,
     add_files_to_parse_data,
-    orchestrator_agent_chat,
     process_background_tasks_for_playground,
     process_variable_state,
     handle_agent_transfer,
@@ -422,45 +421,6 @@ async def chat(request_body):
         if parsed_data['is_playground'] and parsed_data['body']['bridge_configurations'].get('playground_response_format'):
             await sendResponse(parsed_data['body']['bridge_configurations']['playground_response_format'], error_object, success=False, variables=parsed_data.get('variables',{}))
         raise ValueError(error_object)
-
-
-
-@handle_exceptions
-async def orchestrator_chat(request_body): 
-    try:
-        body = request_body.get('body',{})
-        # Extract user query from the request
-        user = body.get('user')
-        thread_id = body.get('thread_id')
-        sub_thread_id = body.get('sub_thread_id', thread_id)
-        body['state'] = request_body.get('state', {})
-
-        master_agent_id = None
-        master_agent_config = None
-        
-        # First try to find in Redis cache
-        if thread_id and sub_thread_id:
-            cached_agent = await find_in_cache(f"orchestrator_{thread_id}_{sub_thread_id}")
-            if cached_agent:
-                master_agent_id = json.loads(cached_agent)
-                master_agent_config = body.get('agent_configurations', {}).get(master_agent_id)
-        
-        # If not found in cache, get from request body
-        if not master_agent_id or not master_agent_config:
-            master_agent_id = body.get('master_agent_id')
-            master_agent_config = body.get('master_agent_config')
-        
-        if not master_agent_id or not master_agent_config:
-            raise ValueError("Master agent configuration not found")
-        
-        # Call master agent with orchestration capabilities directly
-        response = await orchestrator_agent_chat(master_agent_config, body, user)
-        return response
-        
-    except (Exception, ValueError, BadRequestException) as error:
-        print(f"Error in orchestrator_chat: {str(error)}")
-        traceback.print_exc()
-        return JSONResponse(status_code=500, content={"success": False, "error": str(error)})
 
 @handle_exceptions
 async def embedding(request_body):
