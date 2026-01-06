@@ -196,10 +196,28 @@ async def send_message(cred, data ):
     except Exception as e:
         logger.error(f'Unexpected send message error=>, {str(e)}')
 
+def _coerce_json_payload(payload, success):
+    if not success:
+        return payload
+
+    data_section = payload.get('data')
+    if not isinstance(data_section, dict):
+        return payload
+
+    json_content = data_section.get('content')
+    if not isinstance(json_content, str):
+        return payload
+
+    try:
+        data_section['content'] = json.loads(json_content)
+    except json.JSONDecodeError:
+        logger.error("Failed to parse JSON response; returning raw string")
+    return payload
 
 async def sendResponse(response_format, data, success = False, variables={}):
+    formatted = _coerce_json_payload(data, success)
     data_to_send = {
-        'response' if success else 'error': data,
+        'response' if success else 'error': formatted,
         'success': success
     }
     match response_format['type']:
