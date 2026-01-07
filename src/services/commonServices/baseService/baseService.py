@@ -357,6 +357,11 @@ class BaseService:
                 response = await AiMlImageModel(configuration, apikey, self.execution_time_logs, self.timer, self.image_data)
             if not response['success']:
                 raise ValueError(response['error'])
+            
+            # Calculate usage for image models
+            if self.token_calculator and response.get('response'):
+                self.token_calculator.calculate_usage(response['response'])
+            
             return {
                 'success': True,
                 'modelResponse': response['response']

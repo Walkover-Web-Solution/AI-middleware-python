@@ -63,14 +63,18 @@ async def gemini_image_model(configuration, apikey, execution_time_logs, timer):
                             "urls": gcp_urls,
                             "text_content": []
                         }
-                    ]
+                       
+                    ],
+                    "usage": {
+                        "image_count": len(gcp_urls)
+                    }
                 }
             }
 
         else:
             aspect_ratio = configuration.pop('aspect_ratio', None)
             image_size = configuration.pop('image_size', None)
-            print(model, aspect_ratio, image_size)
+           
         # Build the configuration
             config_params = {
                 'response_modalities': ['TEXT', 'IMAGE']
@@ -114,7 +118,7 @@ async def gemini_image_model(configuration, apikey, execution_time_logs, timer):
                         real_time=True,
                         content_type="image/png"
                     )
-
+            
             return {
                 "success": True,
                 "response": {
@@ -123,7 +127,10 @@ async def gemini_image_model(configuration, apikey, execution_time_logs, timer):
                             "url": gcp_url,
                             "text_content": text_content
                         }
-                    ]
+                    ],
+                    "usage": {
+                        "image_count": 1  # Non-Imagen Gemini models generate 1 image
+                    }
                 }
             }
         

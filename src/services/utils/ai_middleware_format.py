@@ -188,7 +188,8 @@ async def Response_formatter(response = {}, service = None, tools={}, type='chat
             return {
                 "data": {
                     "image_urls": image_urls
-                }
+                },
+                "usage": response.get('usage', {})
             }
         else:
             # Single image from Gemini image model
@@ -197,7 +198,8 @@ async def Response_formatter(response = {}, service = None, tools={}, type='chat
                     "revised_prompt" : text_content,
                     "image_url" : url,
                     "permanent_url" : url,
-                }
+                },
+                "usage": response.get('usage', {})
             }
     elif service == service_name['gemini'] and type == 'video':
         return {
@@ -218,7 +220,8 @@ async def Response_formatter(response = {}, service = None, tools={}, type='chat
         return {
             "data": {
                 "image_urls": image_urls
-            }
+            },
+            "usage": response.get('usage', {})
         }
     
     elif service == service_name['anthropic']:

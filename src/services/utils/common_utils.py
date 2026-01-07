@@ -731,7 +731,10 @@ def update_usage_metrics(parsed_data, params, latency, result=None, error=None, 
         "variables": parsed_data.get('variables') or {},
         "outputTokens": result.get('response', {}).get('usage', {}).get('output_tokens', 0) or 0 if result else 0,
         "inputTokens": result.get('response', {}).get('usage', {}).get('input_tokens', 0) or 0 if result else 0,
-        "total_tokens": result.get('response', {}).get('usage', {}).get('total_tokens', 0) or 0 if result else 0
+        "total_tokens": result.get('response', {}).get('usage', {}).get('total_tokens', 0) or 0 if result else 0,
+        "imageCount": result.get('response', {}).get('usage', {}).get('image_count', 0) or 0 if result else 0,
+        "inputImageTokens": result.get('response', {}).get('usage', {}).get('input_image_tokens', 0) or 0 if result else 0,
+        "outputImageTokens": result.get('response', {}).get('usage', {}).get('output_image_tokens', 0) or 0 if result else 0
     }
     
     # Add success-specific fields
@@ -1047,8 +1050,21 @@ async def orchestrator_agent_chat(agent_config, body=None, user=None):
         if not parsed_data['is_playground']:
             result['response']['usage'] = params['token_calculator'].get_total_usage()
             
-        if parsed_data.get('type') != 'image':
-            parsed_data['tokens'] = Helper.calculate_usage(parsed_data['model'],result["response"],parsed_data['service'])
+        # Calculate tokens and cost for all models (including image models)
+        if parsed_data.get('type') == 'image':
+            # Use image-specific cost calculation
+            parsed_data['tokens'] = params['token_calculator'].calculate_image_cost(
+                parsed_data['model'], 
+                parsed_data['service'],
+                parsed_data.get('configuration', {})
+            )
+        else:
+            # Use standard token-based cost calculation  
+            parsed_data['tokens'] = Helper.calculate_usage(
+                parsed_data['model'],
+                result["response"],
+                parsed_data['service']
+            )
             
         # Create latency object using utility function
         latency = create_latency_object(timer, params)
