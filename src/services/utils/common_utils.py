@@ -532,7 +532,7 @@ async def process_background_tasks_for_error(parsed_data, error):
     tasks = [
         send_alert(data={"org_name" : parsed_data['org_name'], "bridge_name" : parsed_data['name'], "configuration": parsed_data['configuration'], "error": str(error), "message_id": parsed_data['message_id'], "bridge_id": parsed_data['bridge_id'], "message": "Exception for the code", "org_id": parsed_data['org_id']}),
         create([parsed_data['usage']],parsed_data['historyParams'] , parsed_data['version_id']),
-        save_sub_thread_id_and_name(parsed_data['thread_id'], parsed_data['sub_thread_id'], parsed_data['org_id'], parsed_data['thread_flag'], parsed_data['response_format'], parsed_data['bridge_id'], parsed_data['user'])
+        save_sub_thread_id_and_name(parsed_data['thread_id'], parsed_data['sub_thread_id'], parsed_data['org_id'], parsed_data['thread_flag'], parsed_data['response_format'], parsed_data['bridge_id'], parsed_data['user'], parsed_data.get('orchestrator_flag'))
     ]
     # Filter out None values
     await asyncio.gather(*[task for task in tasks if task is not None], return_exceptions=True)

@@ -421,7 +421,8 @@ async def make_request_data_and_publish_sub_queue(parsed_data, result, params, t
             "thread_flag" : parsed_data.get('thread_flag'),
             "response_format" : parsed_data.get('response_format'),
             "bridge_id" : parsed_data.get('bridge_id'),
-            "user" : parsed_data.get('user')
+            "user" : parsed_data.get('user'),
+            "orchestrator_flag": parsed_data.get('orchestrator_flag')
         },
         "metrics_service": {
             "dataset": [parsed_data.get('usage', {})],
