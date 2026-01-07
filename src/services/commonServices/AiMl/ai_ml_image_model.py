@@ -78,6 +78,11 @@ async def AiMlImageModel(configuration, apiKey, execution_time_logs, timer, imag
         # Add usage information if available
         if 'usage' in generation_data['data']:
             response['usage'] = generation_data['data']['usage']
+        else:
+            response['usage'] = {}
+        
+        # Always track image count for cost calculation
+        response['usage']['image_count'] = 1
         
         # Add billed amount if available
         if 'billed_amount_usd' in generation_data['data']:

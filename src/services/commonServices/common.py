@@ -334,9 +334,23 @@ async def chat(request_body):
                 except Exception as e:
                     raise RuntimeError(f"error in chatbot : {e}")
         parsed_data['alert_flag'] = result['modelResponse'].get('alert_flag', False)
-        if parsed_data.get('type') != 'image':
-            parsed_data['tokens'] = params['token_calculator'].calculate_total_cost(parsed_data['model'], parsed_data['service'])
-            result['response']['usage']['cost'] = parsed_data['tokens'].get('total_cost') or 0
+        
+        # Calculate tokens and cost for all models (including image models)
+        if parsed_data.get('type') == 'image':
+            # Use image-specific cost calculation
+            parsed_data['tokens'] = params['token_calculator'].calculate_image_cost(
+                parsed_data['model'], 
+                parsed_data['service'],
+                parsed_data.get('configuration', {})
+            )
+        else:
+            # Use standard token-based cost calculation
+            parsed_data['tokens'] = params['token_calculator'].calculate_total_cost(
+                parsed_data['model'], 
+                parsed_data['service']
+            )
+        
+        result['response']['usage']['cost'] = parsed_data['tokens'].get('total_cost') or 0
         
         # Send data to playground
         if parsed_data.get('is_playground') and parsed_data.get('body', {}).get('bridge_configurations', {}).get('playground_response_format'):
@@ -597,6 +611,31 @@ async def image(request_body):
             
         if not result["success"]:
             raise ValueError(result)
+
+        # Calculate cost for image models
+        parsed_data['tokens'] = params['token_calculator'].calculate_image_cost(
+            parsed_data['model'], 
+            parsed_data['service'],
+            parsed_data.get('configuration', {})
+        )
+        
+        # Get full usage data from token calculator
+        total_usage = params['token_calculator'].get_total_usage()
+        
+        # Update response with complete usage information
+        result['response']['usage'] = {
+            'total_tokens': total_usage.get('total_tokens', 0),
+            'input_tokens': total_usage.get('input_tokens', 0),
+            'output_tokens': total_usage.get('output_tokens', 0),
+            'cached_tokens': total_usage.get('cached_tokens', 0),
+            'cache_read_input_tokens': total_usage.get('cache_read_input_tokens', 0),
+            'cache_creation_input_tokens': total_usage.get('cache_creation_input_tokens', 0),
+            'reasoning_tokens': total_usage.get('reasoning_tokens', 0),
+            'image_count': total_usage.get('image_count', 0),
+            'input_image_tokens': total_usage.get('input_image_tokens', 0),
+            'output_image_tokens': total_usage.get('output_image_tokens', 0),
+            'cost': parsed_data['tokens'].get('total_cost') or 0
+        }
 
         # Create latency object using utility function
         if result.get('response') and result['response'].get('data'):

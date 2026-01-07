@@ -45,12 +45,28 @@ async def OpenAIImageModel(configuration, apiKey, execution_time_logs, timer):
                     content_type='image/png'
                 )
                 
-                # Add GCP URL to response and keep original b64_json
+                # Add GCP URL to response - use same URL for both original and permanent
+                # since there's no OpenAI URL for base64 responses
+                response['data'][i]['original_url'] = gcp_url
                 response['data'][i]['url'] = gcp_url  # Primary URL (GCP)
                
             else:
                 raise ValueError(f"Image data contains neither 'url' nor 'b64_json' key. Available keys: {list(image_data.keys())}")
         
+        # Add usage information for cost calculation
+        if 'usage' not in response:
+            response['usage'] = {}
+        
+        # Track image count for cost calculation
+        response['usage']['image_count'] = len(response.get('data', []))
+        
+        # Extract quality and size from response if available
+        if 'quality' in response:
+            response['usage']['quality'] = response['quality']
+        if 'size' in response:
+            response['usage']['size'] = response['size']
+        
+       
         return {
             'success': True,
             'response': response

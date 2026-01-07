@@ -120,7 +120,10 @@ async def create(dataset, history_params, version_id, thread_info={}):
             'tokens': {
                 'input_tokens': data_object.get('inputTokens', 0),
                 'output_tokens': data_object.get('outputTokens', 0),
-                'expected_cost': data_object.get('expectedCost', 0)
+                'expected_cost': data_object.get('expectedCost', 0),
+                'image_count': data_object.get('imageCount', 0),
+                'input_image_tokens': data_object.get('inputImageTokens', 0),
+                'output_image_tokens': data_object.get('outputImageTokens', 0)
             },
             'variables': data_object.get('variables') or {},
             'latency': latency_data,
@@ -159,6 +162,9 @@ async def create(dataset, history_params, version_id, thread_info={}):
                 'input_tokens': data_object.get('inputTokens', 0) or 0.0,
                 'output_tokens': data_object.get('outputTokens', 0) or 0.0,
                 'total_tokens': data_object.get('total_tokens', 0) or 0.0,
+                'image_count': data_object.get('imageCount', 0) or 0,
+                'input_image_tokens': data_object.get('inputImageTokens', 0) or 0.0,
+                'output_image_tokens': data_object.get('outputImageTokens', 0) or 0.0,
                 'apikey_id': data_object.get('apikey_object_id', {}).get(service, '') if data_object.get('apikey_object_id') else '',
                 'created_at': datetime.now(),
                 'latency': latency,
@@ -293,7 +299,10 @@ async def create_orchestrator(transfer_chain, thread_info={}):
             aggregated_data['tokens'][bridge_id] = {
                 'input': data_object.get('inputTokens', 0),
                 'output': data_object.get('outputTokens', 0),
-                'expected_cost': data_object.get('expectedCost', 0)
+                'expected_cost': data_object.get('expectedCost', 0),
+                'image_count': data_object.get('imageCount', 0),
+                'input_image_tokens': data_object.get('inputImageTokens', 0),
+                'output_image_tokens': data_object.get('outputImageTokens', 0)
             }
             aggregated_data['variables'][bridge_id] = data_object.get('variables') or {}
             aggregated_data['latency'][bridge_id] = latency_data.get('over_all_time', 0) if latency_data else 0
