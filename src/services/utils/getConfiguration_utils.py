@@ -252,24 +252,31 @@ def add_rag_tool(tools, tool_id_and_name_mapping, rag_data):
     tools.append({
         'type': 'function', 
         'name': 'get_knowledge_base_data', 
-        'description': "When user want to take any data from the knowledge, Call this function to get the corresponding document using document id.", 
+        'description': "When user want to take any data from the knowledge, Call this function to get the corresponding collection and resource id", 
         'properties': {
-            "Document_id": {
-                "description": "document id as per your requirement",
+            "resource_id": {
+                "description": "send resource id",
+                "type": "string",
+                "enum": [],
+                "required_params": [],
+                "parameter": {}
+            },
+            "collection_id": {
+                "description": "send collection id",
                 "type": "string",
                 "enum": [],
                 "required_params": [],
                 "parameter": {}
             },
             "query": {
-                "description": "query",
+                "description": "query to ask from the knowledge base",
                 "type": "string",
                 "enum": [],
                 "required_params": [],
                 "parameter": {}
             }
         }, 
-        'required': ['Document_id', 'query']
+        'required': ['resource_id', 'collection_id', 'query']
     })
     
     tool_id_and_name_mapping['get_knowledge_base_data'] = {
