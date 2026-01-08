@@ -252,11 +252,11 @@ async def delete_doc(request):
         raise HTTPException(status_code=500, detail = error)
     
 
-async def get_text_from_vectorsQuery(args, Flag = True, score = 0.1):
+async def get_text_from_vectorsQuery(args, Flag = True, score = 0.1, owner_id = None):
     try:
         query = args.get('query')
         top_k = args.get('top_k', 3)
-        
+        ownerId = owner_id
         # Extract resourceId and collectionId from args
         resource_id = args.get('resource_id')
         collection_id = args.get('collection_id')
@@ -277,7 +277,8 @@ async def get_text_from_vectorsQuery(args, Flag = True, score = 0.1):
         payload = {
             'query': query,
             'resourceId': resource_id,
-            'collectionId': collection_id
+            'collectionId': collection_id,
+            'ownerId': ownerId
         }
         
         # Call Hippocampus API using async fetch

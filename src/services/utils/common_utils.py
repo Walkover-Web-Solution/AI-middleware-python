@@ -192,7 +192,8 @@ def parse_request_body(request_body):
         "transfer_request_id": body.get('transfer_request_id'),
         "orchestrator_flag": body.get('orchestrator_flag'),
         "batch_variables": body.get('batch_variables'),
-        "chatbot_auto_answers": body.get('chatbot_auto_answers')
+        "chatbot_auto_answers": body.get('chatbot_auto_answers'),
+        "owner_id" : state.get('profile', {}).get('owner_id') 
     }
 
 
@@ -427,7 +428,8 @@ def build_service_params(parsed_data, custom_config, model_output_config, thread
         "youtube_url" : parsed_data['youtube_url'],
         "web_search_filters" : parsed_data['web_search_filters'],
         "folder_id": parsed_data.get('folder_id'),
-        "bridge_configurations": bridge_configurations
+        "bridge_configurations": bridge_configurations,
+        "owner_id" : parsed_data.get('owner_id')
 
     }
 
