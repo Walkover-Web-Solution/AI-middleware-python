@@ -329,7 +329,17 @@ class Helper:
         return class_obj
     
     def add_doc_description_to_prompt(prompt, rag_data):
-        prompt += '\n Available Knowledge Base :- Here are the available documents to get data when needed call the function get_knowledge_base_data: \n' + 'collectionId : ' + '6958fb03d68776036ee6cfae' + ' resourceId : ' + '6958fb6ec31003b4f3491c21' + '\n' + '\n'.join([f"name : {data.get('name')}, description : {data.get('description')},  doc_id : {data.get('_id')} \n" for data in rag_data])    
+        prompt += '\n Available Knowledge Base :- Here are the available documents to get data when needed call the function get_knowledge_base_data: \n'
+        
+        for idx, data in enumerate(rag_data, 1):
+            collection_id = data.get('collection_id', '')
+            resource_id = data.get('resource_id', '')
+            collection_description = data.get('description', 'No description available')
+            
+            prompt += f"{idx}. Collection ID: {collection_id}\n"
+            prompt += f"   Resource ID: {resource_id}\n"
+            prompt += f"   Description: {collection_description}\n\n"
+        
         return prompt
     
     def append_tone_and_response_style_prompts(prompt, tone, response_style):
