@@ -164,7 +164,7 @@ def parse_request_body(request_body):
         "usage" : {},
         "type" : body.get('configuration',{}).get('type'),
         "apikey_object_id" : body.get('apikey_object_id'),
-        "images" : [url.get('url') for url in body.get('user_urls', []) if isinstance(url, dict) and url.get('type') == 'image' and url.get('url')],
+        "images" : body.get('images') or [url.get('url') for url in body.get('user_urls', []) if isinstance(url, dict) and url.get('type') == 'image' and url.get('url')],
         "tool_call_count": body.get('tool_call_count'),
         "tokens" : {},
         "memory" : "",
