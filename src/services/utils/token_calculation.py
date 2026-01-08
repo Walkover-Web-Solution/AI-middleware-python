@@ -14,6 +14,15 @@ class TokenCalculator:
             "cache_creation_input_tokens":0,
             "reasoning_tokens": 0
         }
+        # Image-specific token tracking
+        self.image_usage = {
+            "text_input_tokens": 0,
+            "text_output_tokens": 0,
+            "image_input_tokens": 0,
+            "image_output_tokens": 0,
+            "cached_text_input_tokens": 0,
+            "cached_image_input_tokens": 0
+        }
 
     def calculate_usage(self, model_response):
         usage = {}
@@ -86,10 +95,48 @@ class TokenCalculator:
         self.total_usage["cache_creation_input_tokens"] += usage.get("cachingCreationInputTokens") or 0
         self.total_usage["reasoning_tokens"] += usage.get("reasoningTokens") or 0
 
+    def calculate_image_usage(self, model_response):
+        """
+        Calculate usage for image generation models (OpenAI image models)
+        
+        Args:
+            model_response: Response from image generation API
+            
+        Returns:
+            Dictionary with image-specific usage metrics
+        """
+        usage_data = model_response.get('usage', {})
+        
+        # Extract input token details
+        input_tokens_details = usage_data.get('input_tokens_details', {})
+        self.image_usage['text_input_tokens'] = input_tokens_details.get('text_tokens', 0)
+        self.image_usage['image_input_tokens'] = input_tokens_details.get('image_tokens', 0)
+        self.image_usage['cached_text_input_tokens'] = input_tokens_details.get('cached_tokens', 0)
+        
+        # Extract output token details
+        # gpt-image-1.5 has detailed output_tokens_details, others don't
+        output_tokens_details = usage_data.get('output_tokens_details', {})
+        if output_tokens_details:
+            # gpt-image-1.5: has separate text and image tokens in output
+            self.image_usage['text_output_tokens'] = output_tokens_details.get('text_tokens', 0)
+            self.image_usage['image_output_tokens'] = output_tokens_details.get('image_tokens', 0)
+        else:
+            # gpt-image-1 and gpt-image-1-mini: all output tokens are image tokens
+            self.image_usage['text_output_tokens'] = 0
+            self.image_usage['image_output_tokens'] = usage_data.get('output_tokens', 0)
+        
+        # Update total_usage for compatibility
+        self.total_usage['input_tokens'] = usage_data.get('input_tokens', 0)
+        self.total_usage['output_tokens'] = usage_data.get('output_tokens', 0)
+        self.total_usage['total_tokens'] = usage_data.get('total_tokens', 0)
+        
+        return self.image_usage
+
 
     def calculate_total_cost(self, model, service):
         """
         Calculate total cost in dollars using accumulated total_usage
+        Automatically detects image models and uses appropriate calculation
         
         Args:
             model: model name
@@ -99,6 +146,14 @@ class TokenCalculator:
             Dictionary with cost breakdown using total_usage
         """
         model_obj = model_config_document[service][model]
+        
+        # Check if this is an image model
+        is_image_model = model_obj.get('validationConfig', {}).get('type') == 'image'
+        
+        if is_image_model:
+            return self.calculate_image_cost(model, service)
+        
+        # Regular chat model cost calculation
         pricing = model_obj['outputConfig']['usage'][0]['total_cost']
 
         cost = {
@@ -138,6 +193,66 @@ class TokenCalculator:
             cost["reasoning_cost"] + 
             cost["cache_read_cost"] + 
             cost["cache_creation_cost"]
+        )
+        
+        return cost
+    
+    def calculate_image_cost(self, model, service):
+        """
+        Calculate cost for image generation models
+        
+        Args:
+            model: model name
+            service: service name
+            
+        Returns:
+            Dictionary with detailed cost breakdown for image models
+        """
+        model_obj = model_config_document[service][model]
+        pricing = model_obj['outputConfig']['usage'][0]['total_cost']
+        
+        cost = {
+            "text_input_cost": 0,
+            "text_output_cost": 0,
+            "image_input_cost": 0,
+            "image_output_cost": 0,
+            "cached_text_input_cost": 0,
+            "cached_image_input_cost": 0,
+            "total_cost": 0
+        }
+        
+        # Get pricing for text and image tokens
+        text_token_pricing = pricing.get('text_tokens', {})
+        image_token_pricing = pricing.get('image_tokens', {})
+        
+        # Calculate text token costs (per million tokens)
+        if self.image_usage['text_input_tokens'] and text_token_pricing.get('input'):
+            cost['text_input_cost'] = (self.image_usage['text_input_tokens'] / 1_000_000) * text_token_pricing['input']
+        
+        if self.image_usage['text_output_tokens'] and text_token_pricing.get('output'):
+            cost['text_output_cost'] = (self.image_usage['text_output_tokens'] / 1_000_000) * text_token_pricing['output']
+        
+        if self.image_usage['cached_text_input_tokens'] and text_token_pricing.get('cached_input'):
+            cost['cached_text_input_cost'] = (self.image_usage['cached_text_input_tokens'] / 1_000_000) * text_token_pricing['cached_input']
+        
+        # Calculate image token costs (per million tokens)
+        if self.image_usage['image_input_tokens'] and image_token_pricing.get('input'):
+            cost['image_input_cost'] = (self.image_usage['image_input_tokens'] / 1_000_000) * image_token_pricing['input']
+        
+        if self.image_usage['image_output_tokens'] and image_token_pricing.get('output'):
+            cost['image_output_cost'] = (self.image_usage['image_output_tokens'] / 1_000_000) * image_token_pricing['output']
+        
+        if self.image_usage['cached_image_input_tokens'] and image_token_pricing.get('cached_input'):
+            cost['cached_image_input_cost'] = (self.image_usage['cached_image_input_tokens'] / 1_000_000) * image_token_pricing['cached_input']
+        
+        # Calculate total cost (token-based only)
+        cost['total_cost'] = (
+            cost['text_input_cost'] +
+            cost['text_output_cost'] +
+            cost['image_input_cost'] +
+            cost['image_output_cost'] +
+            cost['cached_text_input_cost'] +
+            cost['cached_image_input_cost']
         )
         
         return cost
