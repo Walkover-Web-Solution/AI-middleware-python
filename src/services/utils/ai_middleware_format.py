@@ -195,7 +195,9 @@ async def Response_formatter(response = {}, service = None, tools={}, type='chat
         return {
             "data": {
                 "image_urls": image_urls
-            }
+            },
+            # Preserve usage for token calculation
+            "usage": response.get('usage', {})
         }
     
     elif service == service_name['anthropic']:
