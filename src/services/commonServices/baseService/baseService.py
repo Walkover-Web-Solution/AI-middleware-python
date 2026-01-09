@@ -57,6 +57,7 @@ class BaseService:
         self.token_calculator = params.get('token_calculator')
         self.apikey_object_id = params.get('apikey_object_id')
         self.image_data = params.get('images')
+        self.audio_data = params.get('audios')
         self.tool_call_count = params.get('tool_call_count')
         self.text = params.get('text')
         self.tool_id_and_name_mapping = params.get('tool_id_and_name_mapping')
@@ -247,8 +248,9 @@ class BaseService:
             'llm_urls' : [{'revised_prompt': img.get('revised_prompt'), 'permanent_url': img.get('url'), "type":"image"} for img in model_response.get('data', []) if img.get('url')] or [{'revised_prompt': model_response.get('data',[{}])[0].get('revised_prompt', None), 'permanent_url': model_response.get('data',[{}])[0].get('url', None)}] if model_response.get('data',[{}])[0].get('url') else [],
             'revised_prompt' : model_response.get('data',[{}])[0].get('revised_prompt', None),
             'user_urls': [
-                *({"url": u, "type": "image"} for u in (self.image_data or [])),
-                *({"url": u, "type": "pdf"} for u in (self.files or []))
+                *({'url': u, 'type': 'image'} for u in (self.image_data or [])),
+                *({'url': u, 'type': 'pdf'} for u in (self.files or [])),
+                *({'url': u, 'type': 'audio'} for u in (self.audio_data or []))
             ],
             'AiConfig' : self.customConfig,
             "firstAttemptError" : model_response.get('firstAttemptError') or '',

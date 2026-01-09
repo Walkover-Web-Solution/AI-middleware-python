@@ -164,6 +164,7 @@ def parse_request_body(request_body):
         "usage" : {},
         "type" : body.get('configuration',{}).get('type'),
         "apikey_object_id" : body.get('apikey_object_id'),
+        "audios" : [url.get('url') for url in body.get('user_urls', []) if isinstance(url, dict) and url.get('type') == 'audio' and url.get('url')],
         "images" : body.get('images') or [url.get('url') for url in body.get('user_urls', []) if isinstance(url, dict) and url.get('type') == 'image' and url.get('url')],
         "tool_call_count": body.get('tool_call_count'),
         "tokens" : {},
@@ -417,6 +418,7 @@ def build_service_params(parsed_data, custom_config, model_output_config, thread
         "token_calculator": token_calculator,
         "apikey_object_id" : parsed_data['apikey_object_id'],
         "images" : parsed_data['images'],
+        "audios" : parsed_data.get('audios'),
         "tool_call_count": parsed_data['tool_call_count'],
         "rag_data": parsed_data['rag_data'],
         "name" : parsed_data['name'],
@@ -793,7 +795,7 @@ def create_history_params(parsed_data, error=None, class_obj=None, thread_info=N
         "child_id": None,
         "prompt": parsed_data['configuration'].get('prompt'),
         "llm_urls": [],
-        "user_urls": ([{"url": u, "type": "image"} for u in parsed_data.get("images", [])] + [{"url": u, "type": "pdf"} for u in parsed_data.get("files", [])])
+        "user_urls": ([{"url": u, "type": "image"} for u in parsed_data.get("images", [])] + [{"url": u, "type": "pdf"} for u in parsed_data.get("files", [])] + [{"url": u, "type": "audio"} for u in parsed_data.get("audios", [])])
     }
 
 
