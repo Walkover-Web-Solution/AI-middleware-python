@@ -279,7 +279,27 @@ async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None)
                     '$map': {
                         'input': { '$ifNull': ['$doc_ids', []] },
                         'as': 'doc_id',
-                        'in': { '$toObjectId': '$$doc_id' }
+                        'in': {
+                            '$cond': [
+                                { '$eq': [{ '$type': '$$doc_id' }, 'object'] },
+                                {
+                                    '$convert': {
+                                        'input': '$$doc_id.resource_id',
+                                        'to': 'objectId',
+                                        'onError': None,
+                                        'onNull': None
+                                    }
+                                },
+                                {
+                                    '$convert': {
+                                        'input': '$$doc_id',
+                                        'to': 'objectId',
+                                        'onError': None,
+                                        'onNull': None
+                                    }
+                                }
+                            ]
+                        }
                     }
                 }
             },
@@ -596,7 +616,6 @@ async def get_bridges_with_tools_and_apikeys(bridge_id, org_id, version_id=None)
                 bridge_data['apikey_object_id'] = folder_result[0]['apikey_object_id']
             else:
                 bridge_data['folder_apikeys'] = {}
-                bridge_data['apikey_object_id'] = None
 
             if folder_result and folder_result[0].get('type'):
                 bridge_data['folder_type'] = folder_result[0]['type']

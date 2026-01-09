@@ -121,7 +121,7 @@ async def _prepare_configuration_response(configuration, service, bridge_id, api
             pre_tools_name = api_data.get('script_id')
             pre_tools_data_for_later = api_data
 
-    rag_data = bridge.get('rag_data')
+    rag_data = bridge.get('doc_ids')
     gpt_memory_context = bridge.get('gpt_memory_context')
     gpt_memory = result.get('bridges', {}).get('gpt_memory')
 
@@ -177,7 +177,7 @@ async def _prepare_configuration_response(configuration, service, bridge_id, api
         "user_id": result.get("bridges", {}).get("user_id"),
         'folder_id': result.get('bridges', {}).get('folder_id'),
         'web_search_filters': web_search_filters_value,
-        'chatbot_auto_answers': result.get('bridges', {}).get('chatbot_auto_answers')
+        'chatbot_auto_answers': bridge_data.get('bridges', {}).get('chatbot_auto_answers')
     }
 
     return None, base_config, result, resolved_bridge_id

@@ -37,7 +37,7 @@ class Queue2(BaseQueue):
         
         # Save conversation to Hippocampus for chatbot bridge types
         hippocampus_data = messages.get('save_to_hippocampus', {})
-        if hippocampus_data.get('bridgeType') and hippocampus_data.get('chatbot_auto_answers'):
+        if hippocampus_data.get('chatbot_auto_answers'):
             await save_conversation_to_hippocampus(
                 user_message=hippocampus_data.get('user_message', ''),
                 assistant_message=hippocampus_data.get('assistant_message', ''),
