@@ -7,7 +7,7 @@ from ....db_services import metrics_service
 from .utils import validate_tool_call, tool_call_formatter, sendResponse, make_code_mapping_by_service, process_data_and_run_tools
 from src.configs.serviceKeys import ServiceKeys
 from ..openAI.runModel import openai_response_model, openai_completion
-from ..anthrophic.antrophicModelRun import anthropic_runmodel
+from ..anthropic.anthropicModelRun import anthropic_runmodel
 from ..Mistral.mistral_model_run import mistral_model_run
 from ....configs.constant import service_name
 from ..groq.groqModelRun import groq_runmodel
@@ -62,6 +62,7 @@ class BaseService:
         self.tool_id_and_name_mapping = params.get('tool_id_and_name_mapping')
         self.batch = params.get('batch')
         self.webhook = params.get('webhook')
+        self.batch_variables = params.get('batch_variables')
         self.name = params.get('name')
         self.org_name = params.get('org_name')
         self.send_error_to_webhook = params.get('send_error_to_webhook')
@@ -73,6 +74,7 @@ class BaseService:
         self.web_search_filters = params.get('web_search_filters')
         self.folder_id = params.get('folder_id')
         self.bridge_configurations = params.get('bridge_configurations')
+        self.owner_id = params.get('owner_id')
 
 
     def aiconfig(self):
@@ -160,7 +162,7 @@ class BaseService:
         
         configuration, tools = self.update_configration(model_response, func_response_data, configuration, mapping_response_data, service, tools)
         if not self.playground:
-            asyncio.create_task(sendResponse(self.response_format, data = {'function_call': True, 'success': True, 'message': 'Going to GPT'}, success=True))
+            asyncio.create_task(sendResponse(self.response_format, data = {'function_call': True, 'success': True, 'message': 'Continuing AI reasoning…'}, success=True))
         ai_response = await self.chats(configuration, self.apikey, service, l)
         ai_response['tools'] = tools
         return await self.function_call(configuration, service, ai_response, l, tools)

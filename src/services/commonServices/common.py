@@ -36,7 +36,6 @@ from src.services.utils.common_utils import (
     create_latency_object,
     create_history_params,
     add_files_to_parse_data,
-    orchestrator_agent_chat,
     process_background_tasks_for_playground,
     process_variable_state,
     handle_agent_transfer,
@@ -47,7 +46,6 @@ from src.services.utils.guardrails_validator import guardrails_check
 from src.services.utils.rich_text_support import process_chatbot_response
 app = FastAPI()
 from src.services.utils.helper import Helper
-from src.services.commonServices.testcases import run_testcases as run_bridge_testcases
 from globals import *
 from src.services.cache_service import find_in_cache, store_in_cache
 from src.configs.constant import redis_keys
@@ -543,6 +541,7 @@ async def chat(request_body):
             error_object = {
                 "success": False,
                 "error": combined_error_string,
+                "message_id": parsed_data.get('message_id')
             }
         else:
             # Single error case
@@ -550,49 +549,11 @@ async def chat(request_body):
             error_object = {
                 "success": False,
                 "error": error_string,
+                "message_id": parsed_data.get('message_id')
             }
         if parsed_data['is_playground'] and parsed_data['body']['bridge_configurations'].get('playground_response_format'):
             await sendResponse(parsed_data['body']['bridge_configurations']['playground_response_format'], error_object, success=False, variables=parsed_data.get('variables',{}))
         raise ValueError(error_object)
-
-
-
-@handle_exceptions
-async def orchestrator_chat(request_body): 
-    try:
-        body = request_body.get('body',{})
-        # Extract user query from the request
-        user = body.get('user')
-        thread_id = body.get('thread_id')
-        sub_thread_id = body.get('sub_thread_id', thread_id)
-        body['state'] = request_body.get('state', {})
-
-        master_agent_id = None
-        master_agent_config = None
-        
-        # First try to find in Redis cache
-        if thread_id and sub_thread_id:
-            cached_agent = await find_in_cache(f"orchestrator_{thread_id}_{sub_thread_id}")
-            if cached_agent:
-                master_agent_id = json.loads(cached_agent)
-                master_agent_config = body.get('agent_configurations', {}).get(master_agent_id)
-        
-        # If not found in cache, get from request body
-        if not master_agent_id or not master_agent_config:
-            master_agent_id = body.get('master_agent_id')
-            master_agent_config = body.get('master_agent_config')
-        
-        if not master_agent_id or not master_agent_config:
-            raise ValueError("Master agent configuration not found")
-        
-        # Call master agent with orchestration capabilities directly
-        response = await orchestrator_agent_chat(master_agent_config, body, user)
-        return response
-        
-    except (Exception, ValueError, BadRequestException) as error:
-        print(f"Error in orchestrator_chat: {str(error)}")
-        traceback.print_exc()
-        return JSONResponse(status_code=500, content={"success": False, "error": str(error)})
 
 @handle_exceptions
 async def embedding(request_body):
@@ -667,21 +628,21 @@ async def batch(request_body):
         if not result["success"]:
             raise ValueError(result)
         
-        return JSONResponse(status_code=200, content={"success": True, "response": result["message"]})
+        response_content = {
+            "success": True,
+            "response": result["message"]
+        }
+        
+        # Include batch_id and messages if available
+        if "batch_id" in result:
+            response_content["batch_id"] = result["batch_id"]
+        if "messages" in result:
+            response_content["messages"] = result["messages"]
+        
+        return JSONResponse(status_code=200, content=response_content)
     except Exception as error:
         traceback.print_exc()
         raise ValueError(error)
-    
-    
-async def run_testcases(request_body):
-    try:
-        parsed_data = parse_request_body(request_body)
-        org_id = request_body['state']['profile']['org']['id']
-        result = await run_bridge_testcases(parsed_data, org_id, parsed_data['body']['bridge_id'], chat)
-        return JSONResponse(content={'success': True, 'response': {'testcases_result': dict(result)}})
-    except Exception as error:
-        logger.error(f'Error in running testcases, {str(error)}, {traceback.format_exc()}')
-        return JSONResponse(status_code=400, content={'success': False, 'error': str(error)})
     
 
 @handle_exceptions
@@ -731,11 +692,11 @@ async def image(request_body):
             raise ValueError(result)
 
         # Create latency object using utility function
+        if result.get('response') and result['response'].get('data'):
+            result['response']['data']['id'] = parsed_data['message_id']
+        await sendResponse(parsed_data['response_format'], result["response"], success=True, variables=parsed_data.get('variables',{}))
         latency = create_latency_object(timer, params)
         if not parsed_data['is_playground']:
-            if result.get('response') and result['response'].get('data'):
-                result['response']['data']['id'] = parsed_data['message_id']
-            await sendResponse(parsed_data['response_format'], result["response"], success=True, variables=parsed_data.get('variables',{}))
             # Update usage metrics for successful API calls
             update_usage_metrics(parsed_data, params, latency, result=result, success=True)
             # Process background tasks (handles both transfer and non-transfer cases)

@@ -40,7 +40,7 @@ redis_keys = {
     'metrix_bridges_' : 'metrix_bridges_',
     'rate_limit_' : 'rate_limit_',
     'files_' : 'files_',
-    'openai_batch_' : 'openai_batch_',
+    'batch_' : 'batch_',
     'avg_response_time_' : 'avg_response_time_',
     'gpt_memory_' : 'gpt_memory_',
     'timezone_and_org_' : 'timezone_and_org_',
@@ -71,4 +71,8 @@ new_agent_service = {
         "gemini":"gemini-2.5-flash",
         "ai_ml": "gpt-oss-20b",
         "grok": "grok-4-fast"
+}
+
+inbuild_tools = {
+    "Gtwy_Web_Search":"Gtwy_Web_Search"
 }
