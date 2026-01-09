@@ -6,7 +6,7 @@ import pydash as _
 import uuid
 import asyncio
 from ..utils.helper import Helper
-from .baseService.utils import sendResponse
+from .baseService.utils import sendResponse, make_request_data_and_publish_sub_queue
 from ..utils.ai_middleware_format import Response_formatter
 from ..utils.send_error_webhook import send_error_to_webhook
 from src.handler.executionHandler import handle_exceptions
@@ -45,7 +45,7 @@ from src.services.utils.rich_text_support import process_chatbot_response
 app = FastAPI()
 from src.services.utils.helper import Helper
 from globals import *
-from src.services.cache_service import find_in_cache, store_in_cache
+from src.services.cache_service import find_in_cache, store_in_cache, make_json_serializable
 from src.configs.constant import redis_keys
 
 configurationModel = db["configurations"]
@@ -220,6 +220,12 @@ async def chat(request_body):
                     'thread_info': thread_info,
                     'parent_id': parsed_data.get('parent_bridge_id', '')
                 }
+                
+                # Prepare queue data for this intermediate agent
+                queue_data = await make_request_data_and_publish_sub_queue(parsed_data, result, params, thread_info)
+                queue_data = make_json_serializable(queue_data)
+                current_history_data['queue_data'] = queue_data
+                
                 TRANSFER_HISTORY[transfer_request_id].append(current_history_data)
                 
                 # Handle agent transfer
