@@ -77,6 +77,13 @@ async def file_processing(request):
     # Check file type
     is_pdf = file.content_type == 'application/pdf' or file.filename.lower().endswith('.pdf')
     
+    # Check for document files
+    document_content_types = ['application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet']
+    document_extensions = ['.doc', '.docx', '.xls', '.xlsx']
+    is_document = (file.content_type in document_content_types or 
+                   any(file.filename.lower().endswith(ext) for ext in document_extensions))
+
+
     # Check for various video formats
     video_content_types = ['video/mp4', 'video/quicktime', 'video/avi', 'video/mov', 'video/webm', 'video/mkv']
     video_extensions = ['.mp4', '.mov', '.avi', '.webm', '.mkv', '.qt']
