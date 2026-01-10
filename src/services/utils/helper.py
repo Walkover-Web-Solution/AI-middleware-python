@@ -327,6 +327,10 @@ class Helper:
         prompt += '\n Available Knowledge Base :- Here are the available documents to get data when needed call the function get_knowledge_base_data: \n'
         
         for idx, data in enumerate(rag_data, 1):
+            # Skip if data is not a dictionary
+            if not isinstance(data, dict):
+                continue
+                
             collection_id = data.get('collection_id', '')
             resource_id = data.get('resource_id', '')
             collection_description = data.get('description', 'No description available')
