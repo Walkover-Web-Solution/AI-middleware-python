@@ -195,7 +195,7 @@ async def _collect_connected_agent_configs(result, org_id, visited):
 
     aggregated_configs = {}
 
-    for _, agent_info in connected_agents.items():
+    for agent_name, agent_info in connected_agents.items():
         bridge_id_value = agent_info.get('bridge_id')
         if not bridge_id_value or bridge_id_value in visited:
             continue
@@ -232,12 +232,12 @@ async def _collect_connected_agent_configs(result, org_id, visited):
                 web_search_filters_override
             )
         except Exception as exc:
-            logger.error(f"Error fetching configuration for connected agent {bridge_id_value}: {exc}")
-            continue
+            logger.error(f"Error fetching configuration for connected agent {agent_name}: {bridge_id_value}: {exc}")
+            raise Exception(f"Failed to configure connected agent {agent_name}: {bridge_id_value}: {str(exc)}") from exc
 
         if error:
-            logger.error(f"Skipping connected agent {bridge_id_value} due to error response: {error}")
-            continue
+            logger.error(f"Error configuring connected agent {agent_name}: {bridge_id_value}: {error}")
+            raise Exception(f"Failed to configure connected agent {agent_name}: {bridge_id_value}: {error.get('error', 'Unknown error')}")
 
         key = bridge_id_value or resolved_child_id
         resolved_id = resolved_child_id or bridge_id_value
