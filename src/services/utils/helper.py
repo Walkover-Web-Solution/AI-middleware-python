@@ -43,7 +43,10 @@ class Helper:
 
     @staticmethod
     def decrypt(encrypted_text):
+<<<<<<< Updated upstream
         encrypted_text = '5c43cf3f1b0ae74331aa749663ea33ec9a041ff817eaaf3319f2dc0cc18433ebe2cc45cb82042d685f0b0d19591bfb8c3a0fbedc87f610eef6e633df4d9dd1f5659ca52dd49f032028aa28cc889bddf441bf85c906eea7c70a5be1a6cbb567dd83b190e514634d3422b48f3835227d17cb74afe2e326b9f2ea8e3163a9c519961dd845d37841c6e32e1992e23dc2fa00d84bafef38832cc643f53c1855b86e52a820ad3f6b3aa20bb8afbd6a05598de2'
+=======
+>>>>>>> Stashed changes
         token = None
         encryption_key=Config.Encreaption_key
         secret_iv=Config.Secret_IV
