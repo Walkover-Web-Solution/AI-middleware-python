@@ -252,20 +252,25 @@ async def delete_doc(request):
         raise HTTPException(status_code=500, detail = error)
     
 
-async def get_text_from_vectorsQuery(args, Flag = True, score = 0.1, owner_id = None):
+async def get_text_from_vectorsQuery(args, Flag = True, score = 0.1, owner_id = None, resource_to_collection_mapping = None):
     try:
         query = args.get('query')
         top_k = args.get('top_k', 3)
         ownerId = owner_id
-        # Extract resourceId and collectionId from args
+        # Extract resourceId from args
         resource_id = args.get('resource_id')
-        collection_id = args.get('collection_id')
         
         if query is None:
             raise HTTPException(status_code=400, detail="Query is required.")
         
-        if not collection_id:
-            raise Exception("Collection ID not found in arguments.")
+        if not resource_id:
+            raise Exception("Resource ID not found in arguments.")
+        
+        # Get collection_id from mapping using resource_id (optional - multiple resources can share one collection)
+        if not resource_to_collection_mapping:
+            resource_to_collection_mapping = {}
+        
+        collection_id = resource_to_collection_mapping.get(resource_id)
         
         # Prepare Hippocampus API request
         hippocampus_url = 'http://hippocampus.gtwy.ai/search'
@@ -274,12 +279,15 @@ async def get_text_from_vectorsQuery(args, Flag = True, score = 0.1, owner_id = 
             'Content-Type': 'application/json'
         }
         
+        # Build payload - include collectionId only if available
         payload = {
             'query': query,
             'resourceId': resource_id,
-            'collectionId': collection_id,
             'ownerId': ownerId
         }
+        
+        if collection_id:
+            payload['collectionId'] = collection_id
         
         # Call Hippocampus API using async fetch
         api_response, response_headers = await fetch(
