@@ -1,7 +1,6 @@
 import json
 from google.genai import types
 
-
 def convert_to_gemini_format(config):
     """
     Convert OpenAI-style config to Gemini SDK format.
@@ -78,7 +77,10 @@ def convert_to_gemini_format(config):
                     image_url = item.get('image_url', {}).get('url', '')
                     if image_url:
                         parts.append(types.Part.from_uri(file_uri=image_url, mime_type="image/jpeg"))
-        
+                elif item.get('type') == 'audio_url':
+                    audio_url = item.get('audio_url', {}).get('url', '')
+                    if audio_url:
+                        parts.append(types.Part.from_uri(file_uri=audio_url,mime_type="audio/mp3"))
         if parts:
             contents.append(types.Content(role=gemini_role, parts=parts))
     

@@ -45,7 +45,9 @@ class GeminiHandler(BaseService):
             if self.reasoning_model:
                 self.customConfig["messages"] =  conversation + ([{"role": "user", "content": self.user}] if self.user else []) 
             else:
-                if not self.image_data:
+                is_multimodal = self.image_data or self.audio_data
+                    
+                if not is_multimodal:
                     self.customConfig["messages"] = [ {"role": "developer", "content": self.configuration['prompt']}] + conversation + ([{"role": "user", "content": self.user}] if self.user else []) 
                 else:
                     self.customConfig["messages"] = [{"role": "developer", "content": self.configuration['prompt']}] + conversation
@@ -55,6 +57,9 @@ class GeminiHandler(BaseService):
                     if isinstance(self.image_data, list):
                         for image_url in self.image_data:
                             user_content.append({"type": "image_url", "image_url": {"url": image_url}})
+                    if isinstance(self.audio_data, list):
+                        for audio_url in self.audio_data:
+                            user_content.append({"type": "audio_url", "audio_url": {"url": audio_url}})
                     self.customConfig["messages"].append({'role': 'user', 'content': user_content})
                 
             formatted_config = self.service_formatter(self.customConfig, service_name['gemini'])
