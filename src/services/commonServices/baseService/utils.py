@@ -433,7 +433,8 @@ async def make_request_data_and_publish_sub_queue(parsed_data, result, params, t
             "configration": parsed_data.get('configuration'),
             "bridgeId": parsed_data.get('bridge_id'),
             "message_id": parsed_data.get('message_id'),
-            "org_id": parsed_data.get('org_id')
+            "org_id": parsed_data.get('org_id'),
+            "is_playground": parsed_data.get('is_playground', False)
         },
         "total_token_calculation": {
             "tokens": parsed_data.get('tokens', {}),

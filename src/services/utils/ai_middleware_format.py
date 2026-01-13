@@ -400,7 +400,11 @@ async def Response_formatter(response = {}, service = None, tools={}, type='chat
             }
         }
 
-async def validateResponse(alert_flag, configration, bridgeId, message_id, org_id):
+async def validateResponse(alert_flag, configration, bridgeId, message_id, org_id, is_playground=False):
+    # Skip sending alerts for playground requests
+    if is_playground:
+        return
+    
     if alert_flag:
         await send_alert(data={"response":"\n..\n","configration":configration,"message_id":message_id,"bridge_id":bridgeId, "org_id": org_id, "message": "\n issue occurs"})
 
