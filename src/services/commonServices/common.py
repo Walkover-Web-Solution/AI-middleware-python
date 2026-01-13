@@ -582,13 +582,35 @@ async def image(request_body):
                     parsed_data['sub_thread_id'] = thread_info['sub_thread_id']
             
             # Create latency object and update usage metrics
-            latency = create_latency_object(timer, params) if 'params' in locals() and params else None
-            if latency:
-                update_usage_metrics(parsed_data, params, latency, error=error, success=False)
+            latency = create_latency_object(timer, params)
+            update_usage_metrics(parsed_data, params, latency, error=error, success=False)
             
             # Create history parameters
             parsed_data['historyParams'] = create_history_params(parsed_data, error, class_obj, thread_info if 'thread_info' in locals() else None)
-            await sendResponse(parsed_data['response_format'], result.get("modelResponse", str(error)), variables=parsed_data['variables']) if parsed_data['response_format']['type'] != 'default' else None
+            await sendResponse(parsed_data['response_format'], result.get("error", str(error)), variables=parsed_data['variables']) if parsed_data['response_format']['type'] != 'default' else None
             # Process background tasks for error handling
             await process_background_tasks_for_error(parsed_data, error)
-        raise ValueError(error)
+        # Check for a chained exception and create a structured error object
+        if error.__cause__:
+            # Combine both initial and fallback errors into a single string
+            combined_error_string = (
+                f"Initial Error: {str(error.__cause__)} (Type: {type(error.__cause__).__name__}). "
+                f"Fallback Error: {str(error)} (Type: {type(error).__name__}). "
+                f"For more support contact us at support@gtwy.ai"
+            )
+            error_object = {
+                "success": False,
+                "error": combined_error_string,
+                "message_id": parsed_data.get('message_id')
+            }
+        else:
+            # Single error case
+            error_string = f"{str(error)} (Type: {type(error).__name__}). For more support contact us at support@gtwy.ai"
+            error_object = {
+                "success": False,
+                "error": error_string,
+                "message_id": parsed_data.get('message_id')
+            }
+        if parsed_data['is_playground'] and parsed_data['body']['bridge_configurations'].get('playground_response_format'):
+            await sendResponse(parsed_data['body']['bridge_configurations']['playground_response_format'], error_object, success=False, variables=parsed_data.get('variables',{}))
+        raise ValueError(error_object)
