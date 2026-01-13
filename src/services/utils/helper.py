@@ -331,12 +331,10 @@ class Helper:
             if not isinstance(data, dict):
                 continue
                 
-            collection_id = data.get('collection_id', '')
             resource_id = data.get('resource_id', '')
             collection_description = data.get('description', 'No description available')
             
-            prompt += f"{idx}. Collection ID: {collection_id}\n"
-            prompt += f"   Resource ID: {resource_id}\n"
+            prompt += f"{idx}. Resource ID: {resource_id}\n"
             prompt += f"   Description: {collection_description}\n\n"
         
         return prompt

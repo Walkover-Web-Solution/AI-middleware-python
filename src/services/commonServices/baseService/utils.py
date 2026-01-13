@@ -228,7 +228,14 @@ async def process_data_and_run_tools(codes_mapping, self):
             if not tool_data.get("response"):
                 # if function is present in db/NO response, create task for async processing
                 if self.tool_id_and_name_mapping[name].get('type') == 'RAG':
-                    task = get_text_from_vectorsQuery({**tool_data.get("args"), "org_id": self.org_id}, Flag = True, owner_id = self.owner_id) 
+                    # Get the resource_to_collection_mapping from tool_id_and_name_mapping
+                    resource_to_collection_mapping = self.tool_id_and_name_mapping[name].get('resource_to_collection_mapping', {})
+                    task = get_text_from_vectorsQuery(
+                        {**tool_data.get("args"), "org_id": self.org_id}, 
+                        Flag=True, 
+                        owner_id=self.owner_id,
+                        resource_to_collection_mapping=resource_to_collection_mapping
+                    ) 
                 elif self.tool_id_and_name_mapping[name].get('type') == 'AGENT':
                     agent_args = {
                         "org_id": self.org_id, 

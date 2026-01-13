@@ -249,20 +249,22 @@ def add_rag_tool(tools, tool_id_and_name_mapping, rag_data):
     if not rag_data or rag_data == []:
         return
     
+    # Create mapping of resource_id to collection_id
+    resource_to_collection_mapping = {}
+    for data in rag_data:
+        if isinstance(data, dict):
+            resource_id = data.get('resource_id', '')
+            collection_id = data.get('collection_id', '')
+            if resource_id and collection_id:
+                resource_to_collection_mapping[resource_id] = collection_id
+    
     tools.append({
         'type': 'function', 
         'name': 'get_knowledge_base_data', 
-        'description': "When user want to take any data from the knowledge, Call this function to get the corresponding collection and resource id", 
+        'description': "When user want to take any data from the knowledge, Call this function to get the corresponding resource id", 
         'properties': {
             "resource_id": {
                 "description": "send resource id",
-                "type": "string",
-                "enum": [],
-                "required_params": [],
-                "parameter": {}
-            },
-            "collection_id": {
-                "description": "send collection id",
                 "type": "string",
                 "enum": [],
                 "required_params": [],
@@ -276,11 +278,12 @@ def add_rag_tool(tools, tool_id_and_name_mapping, rag_data):
                 "parameter": {}
             }
         }, 
-        'required': ['resource_id', 'collection_id', 'query']
+        'required': ['resource_id', 'query']
     })
     
     tool_id_and_name_mapping['get_knowledge_base_data'] = {
-        "type": "RAG"
+        "type": "RAG",
+        "resource_to_collection_mapping": resource_to_collection_mapping
     }
 
 def _should_enable_web_crawling_tool(built_in_tools):
