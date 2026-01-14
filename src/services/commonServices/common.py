@@ -471,7 +471,54 @@ async def batch(request_body):
         parsed_data = parse_request_body(request_body)
         if parsed_data['batch_webhook'] is None:
             raise ValueError("webhook is required")
-        #  add defualt varaibles in prompt eg : time and date
+        
+        # Validate batch_variables if provided
+        batch_variables = parsed_data.get('batch_variables')
+        if batch_variables is not None:
+            if not isinstance(batch_variables, list):
+                raise ValueError("batch_variables must be an array")
+            if len(batch_variables) != len(parsed_data['batch']):
+                raise ValueError(f"batch_variables array length ({len(batch_variables)}) must match batch array length ({len(parsed_data['batch'])})")
+        
+        # Step 2: Process prompts with variable replacement for each batch message
+        original_prompt = parsed_data['configuration'].get('prompt', '')
+        processed_prompts = []
+        all_missing_vars = {}
+        
+        if batch_variables is not None:
+            for idx, variables in enumerate(batch_variables):
+                # Replace variables in prompt for each message
+                # If a variable is not provided, the placeholder remains in the prompt
+                processed_prompt, missing_vars = Helper.replace_variables_in_prompt(
+                    original_prompt, 
+                    variables
+                )
+                processed_prompts.append(processed_prompt)
+                
+                # Collect missing variables from all batch items
+                if missing_vars:
+                    for key, value in missing_vars.items():
+                        if key not in all_missing_vars:
+                            all_missing_vars[key] = value
+        else:
+            # No batch_variables provided, use original prompt for all messages
+            for _ in parsed_data['batch']:
+                processed_prompts.append(original_prompt)
+        
+        # Send alert if there are any missing variables across all batch items
+        if all_missing_vars:
+            send_error(
+                parsed_data['bridge_id'], 
+                parsed_data['org_id'], 
+                all_missing_vars, 
+                error_type='Variable', 
+                bridge_name=parsed_data.get('name'), 
+                is_embed=parsed_data.get('is_embed'), 
+                user_id=parsed_data.get('user_id')
+            )
+        
+        # Store processed prompts in parsed_data
+        parsed_data['processed_prompts'] = processed_prompts
         
         # Step 3: Load Model Configuration
         model_config, custom_config, model_output_config = await load_model_configuration(
