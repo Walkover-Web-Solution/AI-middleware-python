@@ -28,19 +28,10 @@ class AnthropicBatch(BaseService):
                     "message": f"batch_variables array length ({len(batch_variables)}) must match batch array length ({len(self.batch)})"
                 }
         
-        # Get processed prompts from params (processed in common.py)
-        processed_prompts = self.processed_prompts if hasattr(self, 'processed_prompts') and self.processed_prompts else []
-
         # Construct batch requests in Anthropic format
-        for idx, message in enumerate(self.batch, start=1):
+        for idx, message in enumerate(self.batch):
             # Generate a unique custom_id for each request
             custom_id = str(uuid.uuid4())
-
-            # Get the processed prompt for this message (idx-1 because enumerate starts at 1)
-            current_system_prompt = self.configuration.get('prompt', '')
-            
-            if processed_prompts and idx - 1 < len(processed_prompts):
-                current_system_prompt = processed_prompts[idx - 1]
 
             # Construct Anthropic message format
             request_params = {
@@ -54,8 +45,8 @@ class AnthropicBatch(BaseService):
                 ]
             }
             
-            # Add system prompt
-            request_params["system"] = current_system_prompt
+            # Add processed system prompt
+            request_params["system"] = self.processed_prompts[idx]
             
             # Add other config from customConfig
             if self.customConfig:
@@ -79,7 +70,7 @@ class AnthropicBatch(BaseService):
             
             # Add batch_variables to mapping if provided
             if batch_variables is not None:
-                mapping_item["variables"] = batch_variables[idx - 1]
+                mapping_item["variables"] = batch_variables[idx]
             
             message_mappings.append(mapping_item)
 
