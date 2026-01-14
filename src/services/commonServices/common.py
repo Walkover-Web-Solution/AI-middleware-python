@@ -483,25 +483,39 @@ async def batch(request_body):
         # Step 2: Process prompts with variable replacement for each batch message
         original_prompt = parsed_data['configuration'].get('prompt', '')
         processed_prompts = []
+        all_missing_vars = {}
         
         if batch_variables is not None:
             for idx, variables in enumerate(batch_variables):
                 # Replace variables in prompt for each message
+                # If a variable is not provided, the placeholder remains in the prompt
                 processed_prompt, missing_vars = Helper.replace_variables_in_prompt(
                     original_prompt, 
                     variables
                 )
-                processed_prompts.append({
-                    "prompt": processed_prompt,
-                    "missing_variables": missing_vars
-                })
+                processed_prompts.append(processed_prompt)
+                
+                # Collect missing variables from all batch items
+                if missing_vars:
+                    for key, value in missing_vars.items():
+                        if key not in all_missing_vars:
+                            all_missing_vars[key] = value
         else:
             # No batch_variables provided, use original prompt for all messages
             for _ in parsed_data['batch']:
-                processed_prompts.append({
-                    "prompt": original_prompt,
-                    "missing_variables": {}
-                })
+                processed_prompts.append(original_prompt)
+        
+        # Send alert if there are any missing variables across all batch items
+        if all_missing_vars:
+            send_error(
+                parsed_data['bridge_id'], 
+                parsed_data['org_id'], 
+                all_missing_vars, 
+                error_type='Variable', 
+                bridge_name=parsed_data.get('name'), 
+                is_embed=parsed_data.get('is_embed'), 
+                user_id=parsed_data.get('user_id')
+            )
         
         # Store processed prompts in parsed_data
         parsed_data['processed_prompts'] = processed_prompts
