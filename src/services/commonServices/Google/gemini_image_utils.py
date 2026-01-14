@@ -20,7 +20,7 @@ async def handle_imagen_generation(client, model, prompt, configuration):
         prompt=prompt,
         config=types.GenerateImagesConfig(**configuration) if configuration else None
     )
-    
+
     # Process and upload images
     gcp_urls = []
     for img in response.generated_images:
@@ -43,8 +43,10 @@ async def handle_imagen_generation(client, model, prompt, configuration):
         "response": {
             "data": [{
                 "urls": gcp_urls,
-                "text_content": []
-            }]
+            }],
+            "usage_metadata": {
+                "total_images_generated": len(gcp_urls)
+            }
         }
     }
 
@@ -70,7 +72,7 @@ async def handle_gemini_generation(client, model, prompt, configuration):
     
     # Process response
     text_content = []
-    gcp_url = None
+    gcp_urls = []
     
     for part in response.candidates[0].content.parts:
         if part.text:
@@ -87,15 +89,16 @@ async def handle_gemini_generation(client, model, prompt, configuration):
                 real_time=True,
                 content_type="image/png"
             )
-    
+            gcp_urls.append(gcp_url)
     # Return formatted response
     return {
         "success": True,
         "response": {
             "data": [{
-                "url": gcp_url,
+                "urls": gcp_urls,
                 "text_content": text_content
-            }]
+            }],
+            "usage_metadata": response.model_dump().get('usage_metadata', {}) | {"total_images_generated": (len(gcp_urls))}
         }
     }
 
