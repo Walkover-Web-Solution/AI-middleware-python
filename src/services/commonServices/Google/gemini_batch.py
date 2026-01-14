@@ -11,7 +11,6 @@ from src.services.commonServices.Google.gemini_run_batch import create_batch_fil
 
 class GeminiBatch(BaseService):
     async def batch_execute(self):
-        system_prompt = self.configuration.get('prompt', '')
         batch_requests = []
         message_mappings = []
         
@@ -28,9 +27,9 @@ class GeminiBatch(BaseService):
                     "success": False,
                     "message": f"batch_variables array length ({len(batch_variables)}) must match batch array length ({len(self.batch)})"
                 }
-
+        
         # Construct batch requests in Gemini JSONL format
-        for idx, message in enumerate(self.batch, start=1):
+        for idx, message in enumerate(self.batch):
             # Generate a unique key for each request
             custom_id = str(uuid.uuid4())
 
@@ -45,10 +44,10 @@ class GeminiBatch(BaseService):
                 ]
             }
             
-            # Add system instruction 
+            # Add processed system instruction 
             request_content['config'] = {
                 'system_instruction': {
-                    'parts': [{'text': system_prompt}]
+                    'parts': [{'text': self.processed_prompts[idx]}]
                 }
             }
             
@@ -74,9 +73,9 @@ class GeminiBatch(BaseService):
                 "custom_id": custom_id
             }
             
-            # Add batch_variables to mapping if provided (idx-1 because enumerate starts at 1)
+            # Add batch_variables to mapping if provided
             if batch_variables is not None:
-                mapping_item["variables"] = batch_variables[idx - 1]
+                mapping_item["variables"] = batch_variables[idx]
             
             message_mappings.append(mapping_item)
 
