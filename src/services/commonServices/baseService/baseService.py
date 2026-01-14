@@ -63,6 +63,7 @@ class BaseService:
         self.batch = params.get('batch')
         self.webhook = params.get('webhook')
         self.batch_variables = params.get('batch_variables')
+        self.processed_prompts = params.get('processed_prompts')
         self.name = params.get('name')
         self.org_name = params.get('org_name')
         self.send_error_to_webhook = params.get('send_error_to_webhook')

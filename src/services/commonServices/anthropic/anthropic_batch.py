@@ -11,7 +11,6 @@ from .anthropic_run_batch import create_batch_requests
 
 class AnthropicBatch(BaseService):
     async def batch_execute(self):
-        system_prompt = self.configuration.get('prompt', '')
         batch_requests = []
         message_mappings = []
         
@@ -28,9 +27,9 @@ class AnthropicBatch(BaseService):
                     "success": False,
                     "message": f"batch_variables array length ({len(batch_variables)}) must match batch array length ({len(self.batch)})"
                 }
-
+        
         # Construct batch requests in Anthropic format
-        for idx, message in enumerate(self.batch, start=1):
+        for idx, message in enumerate(self.batch):
             # Generate a unique custom_id for each request
             custom_id = str(uuid.uuid4())
 
@@ -46,8 +45,8 @@ class AnthropicBatch(BaseService):
                 ]
             }
             
-            # Add system prompt
-            request_params["system"] = system_prompt
+            # Add processed system prompt
+            request_params["system"] = self.processed_prompts[idx]
             
             # Add other config from customConfig
             if self.customConfig:
@@ -71,7 +70,7 @@ class AnthropicBatch(BaseService):
             
             # Add batch_variables to mapping if provided
             if batch_variables is not None:
-                mapping_item["variables"] = batch_variables[idx - 1]
+                mapping_item["variables"] = batch_variables[idx]
             
             message_mappings.append(mapping_item)
 
