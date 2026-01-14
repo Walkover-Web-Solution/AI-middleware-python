@@ -11,7 +11,6 @@ from src.services.commonServices.Mistral.mistral_run_batch import create_batch_f
 
 class MistralBatch(BaseService):
     async def batch_execute(self):
-        system_prompt = self.configuration.get('prompt', '')
         batch_requests = []
         message_mappings = []
         
@@ -28,9 +27,9 @@ class MistralBatch(BaseService):
                     "success": False,
                     "message": f"batch_variables array length ({len(batch_variables)}) must match batch array length ({len(self.batch)})"
                 }
-
+        
         # Construct batch requests in Mistral JSONL format
-        for idx, message in enumerate(self.batch, start=1):
+        for idx, message in enumerate(self.batch):
             # Generate a unique custom_id for each request
             custom_id = str(uuid.uuid4())
 
@@ -40,10 +39,10 @@ class MistralBatch(BaseService):
                 "max_tokens": self.customConfig.get("max_tokens", 1024)
             }
             
-            # Add system message
+            # Add processed system message
             request_body["messages"].append({
                 "role": "system",
-                "content": system_prompt
+                "content": self.processed_prompts[idx]
             })
             
             # Add user message
@@ -73,7 +72,7 @@ class MistralBatch(BaseService):
             
             # Add batch_variables to mapping if provided
             if batch_variables is not None:
-                mapping_item["variables"] = batch_variables[idx - 1]
+                mapping_item["variables"] = batch_variables[idx]
             
             message_mappings.append(mapping_item)
 
