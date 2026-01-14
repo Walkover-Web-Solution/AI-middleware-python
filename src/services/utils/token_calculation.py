@@ -14,6 +14,16 @@ class TokenCalculator:
             "cache_creation_input_tokens":0,
             "reasoning_tokens": 0
         }
+        # Image-specific token tracking
+        self.image_usage = {
+            "text_input_tokens": 0,
+            "text_output_tokens": 0,
+            "image_input_tokens": 0,
+            "image_output_tokens": 0,
+            "cached_text_input_tokens": 0,
+            "cached_image_input_tokens": 0,
+            "total_images_generated": 0
+        }
 
     def calculate_usage(self, model_response):
         usage = {}
@@ -86,10 +96,83 @@ class TokenCalculator:
         self.total_usage["cache_creation_input_tokens"] += usage.get("cachingCreationInputTokens") or 0
         self.total_usage["reasoning_tokens"] += usage.get("reasoningTokens") or 0
 
+    def calculate_image_usage(self, model_response):
+        """
+        Calculate usage for image generation models
+        Handles both OpenAI and Gemini response structures
+        
+        Args:
+            model_response: Response from image generation API
+            
+        Returns:
+            Dictionary with image-specific usage metrics
+        """
+        usage = {}
+        match self.service:
+            case 'gemini':
+                # Gemini format
+                usage_metadata = model_response.get('usage', {})
+                
+                usage["total_images_generated"] = usage_metadata.get("total_images_generated", 0)
+
+                # Extract prompt (input) token details from modality breakdown
+                prompt_tokens_details = usage_metadata.get('prompt_tokens_details', [])
+                for detail in prompt_tokens_details:
+                    modality = detail.get('modality', '')
+                    token_count = detail.get('token_count', 0)
+                    
+                    if modality == 'TEXT':
+                        usage['text_input_tokens'] = token_count
+                    elif modality == 'IMAGE':
+                        usage['image_input_tokens'] = token_count
+                
+                # Extract candidates (output) token details from modality breakdown
+                candidates_tokens_details = usage_metadata.get('candidates_tokens_details', [])
+                for detail in candidates_tokens_details:
+                    modality = detail.get('modality', '')
+                    token_count = detail.get('token_count', 0)
+                    
+                    if modality == 'TEXT':
+                        usage['text_output_tokens'] = token_count
+                    elif modality == 'IMAGE':
+                        usage['image_output_tokens'] = token_count
+            
+            case 'openai':
+                # OpenAI format
+                usage_data = model_response.get('usage', {})
+                
+                usage["total_images_generated"] = usage_data.get("total_images_generated", 0)
+
+                # Extract input token details
+                input_tokens_details = usage_data.get('input_tokens_details', {})
+                usage['text_input_tokens'] = input_tokens_details.get('text_tokens', 0)
+                usage['image_input_tokens'] = input_tokens_details.get('image_tokens', 0)
+                usage['cached_text_input_tokens'] = input_tokens_details.get('cached_tokens', 0)
+                
+                # Extract output token details
+                # gpt-image-1.5 has detailed output_tokens_details, others don't
+                output_tokens_details = usage_data.get('output_tokens_details', {})
+                if output_tokens_details:
+                    # gpt-image-1.5: has separate text and image tokens in output
+                    usage['text_output_tokens'] = output_tokens_details.get('text_tokens', 0)
+                    usage['image_output_tokens'] = output_tokens_details.get('image_tokens', 0)
+                else:
+                    # gpt-image-1 and gpt-image-1-mini: all output tokens are image tokens
+                    usage['text_output_tokens'] = 0
+                    usage['image_output_tokens'] = usage_data.get('output_tokens', 0)
+            
+            case _:
+                # Default case - no image usage data available for this service
+                pass
+        
+        self._update_image_usage(usage)
+        return self.image_usage
+
 
     def calculate_total_cost(self, model, service):
         """
         Calculate total cost in dollars using accumulated total_usage
+        Automatically detects image models and uses appropriate calculation
         
         Args:
             model: model name
@@ -99,6 +182,8 @@ class TokenCalculator:
             Dictionary with cost breakdown using total_usage
         """
         model_obj = model_config_document[service][model]
+        
+        # Regular chat model cost calculation
         pricing = model_obj['outputConfig']['usage'][0]['total_cost']
 
         cost = {
@@ -141,6 +226,109 @@ class TokenCalculator:
         )
         
         return cost
+    
+    def calculate_image_cost(self, model):
+        """
+        Calculate cost for image generation models
+        
+        Args:
+            model: model name
+            service: service name
+            
+        Returns:
+            Dictionary with detailed cost breakdown for image models
+        """
+        model_obj = model_config_document[self.service][model]
+        pricing = model_obj['outputConfig']['usage'][0]['total_cost']
+        
+        cost = {
+            "text_input_cost": 0,
+            "text_output_cost": 0,
+            "image_input_cost": 0,
+            "image_output_cost": 0,
+            "cached_text_input_cost": 0,
+            "cached_image_input_cost": 0,
+            "total_cost": 0
+        }
+        
+        # Check if this is Gemini service with flat pricing structure
+        match self.service:
+            case 'gemini':
+                # Gemini has flat pricing: input_text, input_image, output_text, output_image
+                
+                if model_obj['model_name'].startswith("imagen"):
+                    # Calculate per Image cost
+                    cost["total_cost"] = self.image_usage['total_images_generated'] * pricing["output_image"]
+                    return cost
+
+                # Calculate input text cost (per million tokens)
+                if self.image_usage['text_input_tokens'] and pricing.get('input_text'):
+                    cost['text_input_cost'] = (self.image_usage['text_input_tokens'] / 1_000_000) * pricing['input_text']
+                
+                # Calculate input image cost (per million tokens)
+                if self.image_usage['image_input_tokens'] and pricing.get('input_image'):
+                    cost['image_input_cost'] = (self.image_usage['image_input_tokens'] / 1_000_000) * pricing['input_image']
+                
+                # Calculate output text cost (per million tokens)
+                if self.image_usage['text_output_tokens'] and pricing.get('output_text'):
+                    cost['text_output_cost'] = (self.image_usage['text_output_tokens'] / 1_000_000) * pricing['output_text']
+                
+                # Calculate output image cost (per million tokens)
+                if self.image_usage['image_output_tokens'] and pricing.get('output_image'):
+                    cost['image_output_cost'] = (self.image_usage['image_output_tokens'] / 1_000_000) * pricing['output_image']
+            
+            case 'openai':
+                # OpenAI has nested pricing structure: text_tokens.input, image_tokens.output, etc.
+                text_token_pricing = pricing.get('text_tokens', {})
+                image_token_pricing = pricing.get('image_tokens', {})
+                
+                # Calculate text token costs (per million tokens)
+                if self.image_usage['text_input_tokens'] and text_token_pricing.get('input'):
+                    cost['text_input_cost'] = (self.image_usage['text_input_tokens'] / 1_000_000) * text_token_pricing['input']
+                
+                if self.image_usage['text_output_tokens'] and text_token_pricing.get('output'):
+                    cost['text_output_cost'] = (self.image_usage['text_output_tokens'] / 1_000_000) * text_token_pricing['output']
+                
+                if self.image_usage['cached_text_input_tokens'] and text_token_pricing.get('cached_input'):
+                    cost['cached_text_input_cost'] = (self.image_usage['cached_text_input_tokens'] / 1_000_000) * text_token_pricing['cached_input']
+                
+                # Calculate image token costs (per million tokens)
+                if self.image_usage['image_input_tokens'] and image_token_pricing.get('input'):
+                    cost['image_input_cost'] = (self.image_usage['image_input_tokens'] / 1_000_000) * image_token_pricing['input']
+                
+                if self.image_usage['image_output_tokens'] and image_token_pricing.get('output'):
+                    cost['image_output_cost'] = (self.image_usage['image_output_tokens'] / 1_000_000) * image_token_pricing['output']
+                
+                if self.image_usage['cached_image_input_tokens'] and image_token_pricing.get('cached_input'):
+                    cost['cached_image_input_cost'] = (self.image_usage['cached_image_input_tokens'] / 1_000_000) * image_token_pricing['cached_input']
+            
+            case _:
+                # Default case - no specific pricing logic for this service
+                pass
+        
+        # Calculate total cost (token-based only)
+        cost['total_cost'] = (
+            cost['text_input_cost'] +
+            cost['text_output_cost'] +
+            cost['image_input_cost'] +
+            cost['image_output_cost'] +
+            cost['cached_text_input_cost'] +
+            cost['cached_image_input_cost']
+        )
+        
+        return cost
+
+    def _update_image_usage(self, usage):
+        self.image_usage["text_input_tokens"] += usage.get("text_input_tokens") or 0
+        self.image_usage["text_output_tokens"] += usage.get("text_output_tokens") or  0
+        self.image_usage["image_input_tokens"] += usage.get("image_input_tokens") or 0
+        self.image_usage["image_output_tokens"] += usage.get("image_output_tokens") or  0
+        self.image_usage["cached_text_input_tokens"] += usage.get("cached_text_input_tokens") or 0
+        self.image_usage["cached_image_input_tokens"] += usage.get("cached_image_input_tokens") or 0
+        self.image_usage["total_images_generated"] += usage.get("total_images_generated") or 0
 
     def get_total_usage(self):
         return self.total_usage
+    
+    def get_image_usage(self):
+        return self.image_usage
