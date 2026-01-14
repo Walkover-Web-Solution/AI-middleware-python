@@ -11,7 +11,6 @@ from .anthropic_run_batch import create_batch_requests
 
 class AnthropicBatch(BaseService):
     async def batch_execute(self):
-        system_prompt = self.configuration.get('prompt', '')
         batch_requests = []
         message_mappings = []
         
@@ -28,11 +27,23 @@ class AnthropicBatch(BaseService):
                     "success": False,
                     "message": f"batch_variables array length ({len(batch_variables)}) must match batch array length ({len(self.batch)})"
                 }
+        
+        # Get processed prompts from params (processed in common.py)
+        processed_prompts = self.processed_prompts if hasattr(self, 'processed_prompts') and self.processed_prompts else []
 
         # Construct batch requests in Anthropic format
         for idx, message in enumerate(self.batch, start=1):
             # Generate a unique custom_id for each request
             custom_id = str(uuid.uuid4())
+
+            # Get the processed prompt for this message (idx-1 because enumerate starts at 1)
+            current_system_prompt = self.configuration.get('prompt', '')
+            missing_variables = {}
+            
+            if processed_prompts and idx - 1 < len(processed_prompts):
+                prompt_data = processed_prompts[idx - 1]
+                current_system_prompt = prompt_data.get('prompt', current_system_prompt)
+                missing_variables = prompt_data.get('missing_variables', {})
 
             # Construct Anthropic message format
             request_params = {
@@ -47,7 +58,7 @@ class AnthropicBatch(BaseService):
             }
             
             # Add system prompt
-            request_params["system"] = system_prompt
+            request_params["system"] = current_system_prompt
             
             # Add other config from customConfig
             if self.customConfig:
@@ -72,6 +83,10 @@ class AnthropicBatch(BaseService):
             # Add batch_variables to mapping if provided
             if batch_variables is not None:
                 mapping_item["variables"] = batch_variables[idx - 1]
+            
+            # Add missing_variables to mapping if any
+            if missing_variables:
+                mapping_item["missing_variables"] = missing_variables
             
             message_mappings.append(mapping_item)
 

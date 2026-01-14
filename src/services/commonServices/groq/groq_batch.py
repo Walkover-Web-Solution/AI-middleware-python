@@ -11,7 +11,6 @@ from .groq_run_batch import create_batch_file, process_batch_file
 
 class GroqBatch(BaseService):
     async def batch_execute(self):
-        system_prompt = self.configuration.get('prompt', '')
         results = []
         message_mappings = []
         
@@ -28,11 +27,23 @@ class GroqBatch(BaseService):
                     "success": False,
                     "message": f"batch_variables array length ({len(batch_variables)}) must match batch array length ({len(self.batch)})"
                 }
+        
+        # Get processed prompts from params (processed in common.py)
+        processed_prompts = self.processed_prompts if hasattr(self, 'processed_prompts') and self.processed_prompts else []
 
         # Construct batch requests in OpenAI format (Groq is OpenAI-compatible)
         for idx, message in enumerate(self.batch, start=1):
             # Generate a unique ID for each request
             custom_id = str(uuid.uuid4())
+
+            # Get the processed prompt for this message (idx-1 because enumerate starts at 1)
+            current_system_prompt = self.configuration.get('prompt', '')
+            missing_variables = {}
+            
+            if processed_prompts and idx - 1 < len(processed_prompts):
+                prompt_data = processed_prompts[idx - 1]
+                current_system_prompt = prompt_data.get('prompt', current_system_prompt)
+                missing_variables = prompt_data.get('missing_variables', {})
 
             # Construct OpenAI-compatible request
             request_obj = {
@@ -48,7 +59,7 @@ class GroqBatch(BaseService):
             # Add system message 
             request_obj["body"]["messages"].append({
                 "role": "system",
-                "content": system_prompt
+                "content": current_system_prompt
             })
             
             # Add user message
@@ -75,6 +86,10 @@ class GroqBatch(BaseService):
             # Add batch_variables to mapping if provided (idx-1 because enumerate starts at 1)
             if batch_variables is not None:
                 mapping_item["variables"] = batch_variables[idx - 1]
+            
+            # Add missing_variables to mapping if any
+            if missing_variables:
+                mapping_item["missing_variables"] = missing_variables
             
             message_mappings.append(mapping_item)
 

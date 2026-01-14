@@ -569,7 +569,8 @@ def build_service_params_for_batch(parsed_data, custom_config, model_output_conf
         "batch" : parsed_data['batch'],
         "webhook" : parsed_data['batch_webhook'],
         "folder_id": parsed_data.get('folder_id'),
-        "batch_variables": parsed_data['batch_variables']
+        "batch_variables": parsed_data['batch_variables'],
+        "processed_prompts": parsed_data.get('processed_prompts', [])
     }
 
 

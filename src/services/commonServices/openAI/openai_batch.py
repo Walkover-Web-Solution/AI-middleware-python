@@ -10,7 +10,6 @@ from src.configs.constant import redis_keys
 
 class OpenaiBatch(BaseService):
     async def batch_execute(self):
-        system_prompt = self.configuration.get('prompt', '')
         results = []
         message_mappings = []
         
@@ -27,6 +26,9 @@ class OpenaiBatch(BaseService):
                     "success": False,
                     "message": f"batch_variables array length ({len(batch_variables)}) must match batch array length ({len(self.batch)})"
                 }
+        
+        # Get processed prompts from params (processed in common.py)
+        processed_prompts = self.processed_prompts if hasattr(self, 'processed_prompts') and self.processed_prompts else []
 
         # Assume "self.batch" is the list of messages we want to process
         for idx, message in enumerate(self.batch, start=1):
@@ -36,9 +38,18 @@ class OpenaiBatch(BaseService):
             # Generate a unique ID for each request
             custom_id = str(uuid.uuid4())
 
+            # Get the processed prompt for this message (idx-1 because enumerate starts at 1)
+            current_system_prompt = self.configuration.get('prompt', '')
+            missing_variables = {}
+            
+            if processed_prompts and idx - 1 < len(processed_prompts):
+                prompt_data = processed_prompts[idx - 1]
+                current_system_prompt = prompt_data.get('prompt', current_system_prompt)
+                missing_variables = prompt_data.get('missing_variables', {})
+
             # Add messages array with system prompt and user message
             body_data["messages"] = [
-                {"role": "system", "content": system_prompt},
+                {"role": "system", "content": current_system_prompt},
                 {"role": "user", "content": message}
             ]
 
@@ -62,6 +73,10 @@ class OpenaiBatch(BaseService):
             # Add batch_variables to mapping if provided (idx-1 because enumerate starts at 1)
             if batch_variables is not None:
                 mapping_item["variables"] = batch_variables[idx - 1]
+            
+            # Add missing_variables to mapping if any
+            if missing_variables:
+                mapping_item["missing_variables"] = missing_variables
             
             message_mappings.append(mapping_item)
 
