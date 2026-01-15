@@ -34,7 +34,6 @@ from src.services.utils.common_utils import (
     create_latency_object,
     create_history_params,
     add_files_to_parse_data,
-    orchestrator_agent_chat,
     process_background_tasks_for_playground,
     process_variable_state,
     handle_agent_transfer,
@@ -423,45 +422,6 @@ async def chat(request_body):
             await sendResponse(parsed_data['body']['bridge_configurations']['playground_response_format'], error_object, success=False, variables=parsed_data.get('variables',{}))
         raise ValueError(error_object)
 
-
-
-@handle_exceptions
-async def orchestrator_chat(request_body): 
-    try:
-        body = request_body.get('body',{})
-        # Extract user query from the request
-        user = body.get('user')
-        thread_id = body.get('thread_id')
-        sub_thread_id = body.get('sub_thread_id', thread_id)
-        body['state'] = request_body.get('state', {})
-
-        master_agent_id = None
-        master_agent_config = None
-        
-        # First try to find in Redis cache
-        if thread_id and sub_thread_id:
-            cached_agent = await find_in_cache(f"orchestrator_{thread_id}_{sub_thread_id}")
-            if cached_agent:
-                master_agent_id = json.loads(cached_agent)
-                master_agent_config = body.get('agent_configurations', {}).get(master_agent_id)
-        
-        # If not found in cache, get from request body
-        if not master_agent_id or not master_agent_config:
-            master_agent_id = body.get('master_agent_id')
-            master_agent_config = body.get('master_agent_config')
-        
-        if not master_agent_id or not master_agent_config:
-            raise ValueError("Master agent configuration not found")
-        
-        # Call master agent with orchestration capabilities directly
-        response = await orchestrator_agent_chat(master_agent_config, body, user)
-        return response
-        
-    except (Exception, ValueError, BadRequestException) as error:
-        print(f"Error in orchestrator_chat: {str(error)}")
-        traceback.print_exc()
-        return JSONResponse(status_code=500, content={"success": False, "error": str(error)})
-
 @handle_exceptions
 async def embedding(request_body):
     result = {}
@@ -669,13 +629,35 @@ async def image(request_body):
                     parsed_data['sub_thread_id'] = thread_info['sub_thread_id']
             
             # Create latency object and update usage metrics
-            latency = create_latency_object(timer, params) if 'params' in locals() and params else None
-            if latency:
-                update_usage_metrics(parsed_data, params, latency, error=error, success=False)
+            latency = create_latency_object(timer, params)
+            update_usage_metrics(parsed_data, params, latency, error=error, success=False)
             
             # Create history parameters
             parsed_data['historyParams'] = create_history_params(parsed_data, error, class_obj, thread_info if 'thread_info' in locals() else None)
-            await sendResponse(parsed_data['response_format'], result.get("modelResponse", str(error)), variables=parsed_data['variables']) if parsed_data['response_format']['type'] != 'default' else None
+            await sendResponse(parsed_data['response_format'], result.get("error", str(error)), variables=parsed_data['variables']) if parsed_data['response_format']['type'] != 'default' else None
             # Process background tasks for error handling
             await process_background_tasks_for_error(parsed_data, error)
-        raise ValueError(error)
+        # Check for a chained exception and create a structured error object
+        if error.__cause__:
+            # Combine both initial and fallback errors into a single string
+            combined_error_string = (
+                f"Initial Error: {str(error.__cause__)} (Type: {type(error.__cause__).__name__}). "
+                f"Fallback Error: {str(error)} (Type: {type(error).__name__}). "
+                f"For more support contact us at support@gtwy.ai"
+            )
+            error_object = {
+                "success": False,
+                "error": combined_error_string,
+                "message_id": parsed_data.get('message_id')
+            }
+        else:
+            # Single error case
+            error_string = f"{str(error)} (Type: {type(error).__name__}). For more support contact us at support@gtwy.ai"
+            error_object = {
+                "success": False,
+                "error": error_string,
+                "message_id": parsed_data.get('message_id')
+            }
+        if parsed_data['is_playground'] and parsed_data['body']['bridge_configurations'].get('playground_response_format'):
+            await sendResponse(parsed_data['body']['bridge_configurations']['playground_response_format'], error_object, success=False, variables=parsed_data.get('variables',{}))
+        raise ValueError(error_object)

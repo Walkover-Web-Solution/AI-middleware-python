@@ -1,4 +1,5 @@
 import hashlib
+import resource
 from Crypto.Cipher import AES
 import pydash as _
 import json
@@ -324,7 +325,19 @@ class Helper:
         return class_obj
     
     def add_doc_description_to_prompt(prompt, rag_data):
-        prompt += '\n Available Knowledge Base :- Here are the available documents to get data when needed call the function get_knowledge_base_data: \n' +  '\n'.join([f"name : {data.get('name')}, description : {data.get('description')},  doc_id : {data.get('_id')} \n" for data in rag_data])    
+        prompt += '\n Available Knowledge Base :- Here are the available documents to get data when needed call the function get_knowledge_base_data: \n'
+        
+        for idx, data in enumerate(rag_data, 1):
+            # Skip if data is not a dictionary
+            if not isinstance(data, dict):
+                continue
+                
+            resource_id = data.get('resource_id', '')
+            resource_description = data.get('description', 'No description available')
+            
+            prompt += f"{idx}. Resource ID: {resource_id}\n"
+            prompt += f"   Description: {resource_description}\n\n"
+        
         return prompt
     
     def append_tone_and_response_style_prompts(prompt, tone, response_style):
