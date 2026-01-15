@@ -38,7 +38,7 @@ class ConversationService:
                         # Default behavior for messages without URLs
                         content = message['content']
                     threads.append({'role': message['role'], 'content': content})
-            
+            print("hello")
             return {
                 'success': True, 
                 'messages': threads
