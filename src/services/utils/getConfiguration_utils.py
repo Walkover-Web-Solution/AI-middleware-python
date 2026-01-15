@@ -60,7 +60,7 @@ def setup_tool_choice(configuration, result, service):
     # Find tool choice from API calls
     for _, api_data in result.get('bridges', {}).get('apiCalls', {}).items():
         if api_data['_id'] in tool_choice_ids:
-            toolchoice = api_data.get('title')
+            toolchoice = api_data.get('title') or makeFunctionName(api_data['endpoint_name'] or api_data['function_name'])
             break
     if not toolchoice:
         connected_agents = result.get('bridges',{}).get('connected_agents',{})
@@ -85,7 +85,7 @@ def setup_tool_choice(configuration, result, service):
 
 def process_api_call_tool(api_data, variables_path_bridge):
     """Process a single API call and convert it to a tool format"""
-    name_of_function = api_data.get('title')
+    name_of_function = api_data.get('title')  or makeFunctionName(api_data['endpoint_name'] or api_data['function_name'])
     
     # Skip if status is paused and no function name
     if api_data.get('status') == 0 and not name_of_function:
@@ -234,7 +234,7 @@ def setup_pre_tools(bridge, result, variables):
     if api_data is None:
         raise Exception("Didn't find the pre_function")
     
-    name = api_data.get('title')
+    name = api_data.get('title')  or makeFunctionName(api_data['endpoint_name'] or api_data['function_name'])
     required_params = api_data.get('required_params', [])
     
     args = {}
