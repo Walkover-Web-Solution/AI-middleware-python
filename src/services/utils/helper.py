@@ -1,4 +1,5 @@
 import hashlib
+import resource
 from Crypto.Cipher import AES
 import pydash as _
 import json
@@ -332,10 +333,10 @@ class Helper:
                 continue
                 
             resource_id = data.get('resource_id', '')
-            collection_description = data.get('description', 'No description available')
+            resource_description = data.get('description', 'No description available')
             
             prompt += f"{idx}. Resource ID: {resource_id}\n"
-            prompt += f"   Description: {collection_description}\n\n"
+            prompt += f"   Description: {resource_description}\n\n"
         
         return prompt
     
