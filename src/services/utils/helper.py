@@ -1,5 +1,9 @@
 import hashlib
-import resource
+# import resource
+try:
+    import resource
+except ImportError:
+    resource = None 
 from Crypto.Cipher import AES
 import pydash as _
 import json

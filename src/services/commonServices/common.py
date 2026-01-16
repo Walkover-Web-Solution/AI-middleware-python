@@ -174,7 +174,8 @@ async def chat(request_body):
 
         # Handle missing variables
         if missing_vars:
-            send_error(parsed_data['bridge_id'], parsed_data['org_id'], missing_vars, error_type='Variable', bridge_name=parsed_data.get('name'), is_embed=parsed_data.get('is_embed'), user_id=parsed_data.get('user_id'))
+            send_error(parsed_data['bridge_id'], parsed_data['org_id'], missing_vars, error_type='Variable', bridge_name=parsed_data.get('name'), is_embed=parsed_data.get('is_embed'), user_id=parsed_data.get('user_id'),thread_id=parsed_data.get('thread_id'),     
+        service=parsed_data.get('service') )
         
         # Step 8: Configure Custom Settings
         custom_config = await configure_custom_settings(
@@ -324,7 +325,8 @@ async def chat(request_body):
 
 
         if original_error:
-            send_error(parsed_data['bridge_id'], parsed_data['org_id'], original_error, error_type='retry_mechanism', bridge_name=parsed_data.get('name'), is_embed=parsed_data.get('is_embed'), user_id=parsed_data.get('user_id'))
+            send_error(parsed_data['bridge_id'], parsed_data['org_id'], original_error, error_type='retry_mechanism', bridge_name=parsed_data.get('name'), is_embed=parsed_data.get('is_embed'), user_id=parsed_data.get('user_id'), thread_id=parsed_data.get('thread_id'),      
+        service=parsed_data.get('service') )
         
         if parsed_data['configuration']['type'] == 'chat':
             if parsed_data['is_rich_text'] and parsed_data['bridgeType'] and parsed_data['reasoning_model'] == False:
