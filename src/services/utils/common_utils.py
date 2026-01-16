@@ -611,9 +611,9 @@ def filter_missing_vars(missing_vars, variables_state):
 def get_service_by_model(model): 
     return next((s for s in model_config_document if model in model_config_document[s]), None)
 
-def send_error(bridge_id, org_id, error_message, error_type, bridge_name=None, is_embed=None, user_id=None):
+def send_error(bridge_id, org_id, error_message, error_type, bridge_name=None, is_embed=None, user_id=None, thread_id=None, service=None):
     asyncio.create_task(send_error_to_webhook(
-        bridge_id, org_id, error_message, error_type=error_type, bridge_name=bridge_name, is_embed=is_embed, user_id=user_id
+        bridge_id, org_id, error_message, error_type=error_type, bridge_name=bridge_name, is_embed=is_embed, user_id=user_id, thread_id=thread_id, service=service
     ))
 
 def restructure_json_schema(response_type, service):
