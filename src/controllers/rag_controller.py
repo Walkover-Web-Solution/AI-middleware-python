@@ -173,20 +173,44 @@ async def store_in_pinecone_and_mongo(embeddings, chunks, org_id, user_id, name,
 async def get_vectors_and_text(request):
     try:
         body = await request.json()
-        org_id = request.state.profile.get("org", {}).get("id", "")
         doc_id = body.get('doc_id')
         query = body.get('query')
         top_k = body.get('top_k', 2)
         score = body.get('score') or 0.1
         
-        if query is None and doc_id is None:
-            raise HTTPException(status_code=400, detail="Query and Doc_id required.")
+        if query is None or doc_id is None:
+            raise HTTPException(status_code=400, detail="Query and doc_id required.")
+        
+        # Fetch resource details from Hippocampus API
+        hippocampus_resource_url = f'http://hippocampus.gtwy.ai/resource/{doc_id}'
+        headers = {
+            'x-api-key': Config.HIPPOCAMPUS_API_KEY
+        }
+        
+        resource_response, _ = await fetch(
+            url=hippocampus_resource_url,
+            method="GET",
+            headers=headers
+        )
+        
+        # Extract owner_id and collection_id from response
+        owner_id = resource_response.get('ownerId')
+        collection_id = resource_response.get('collectionId')
+        
+        if not owner_id:
+            raise HTTPException(status_code=400, detail="Owner ID not found in resource response.")
+        
+        # Prepare resource_to_collection_mapping if collection_id exists
+        resource_to_collection_mapping = {}
+        if collection_id:
+            resource_to_collection_mapping[doc_id] = collection_id
+        
+        # Call get_text_from_vectorsQuery with fetched data
         text = await get_text_from_vectorsQuery({
-            'Document_id': doc_id, 
-            'query': query, 
-            'org_id': org_id,
+            'resource_id': doc_id, 
+            'query': query,
             'top_k': top_k
-        }, Flag = False, score = score)
+        }, Flag = False, score = score, owner_id = owner_id, resource_to_collection_mapping = resource_to_collection_mapping)
         
         # Check if the operation was successful based on status
         success = text.get('status') == 1
@@ -199,7 +223,7 @@ async def get_vectors_and_text(request):
         
     except Exception as error:
         print(f"Error in get_vectors_and_text: {error}")
-        raise HTTPException(status_code=400, detail=error)
+        raise HTTPException(status_code=400, detail=str(error))
 
 async def get_all_docs(request):
     try:
