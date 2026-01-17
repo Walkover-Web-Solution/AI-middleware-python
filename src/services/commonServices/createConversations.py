@@ -14,29 +14,36 @@ class ConversationService:
                 threads.append({'role': 'user', 'content': 'provide the summary of the previous conversation stored in the memory?'})
                 threads.append({'role': 'assistant', 'content': f'Summary of previous conversations :  {memory}' })
             for message in conversation or []:
-                if message['role'] != "tools_call" and message['role'] != "tool":
-                    if message['role'] == "assistant":
-                        content = [{"type": "output_text", "text": message['content']}]
-                    else:
-                        content = [{"type": "input_text", "text": message['content']}]
+                if message['role'] not in ["tools_call", "tool"]:
+                    has_media = 'user_urls' in message and isinstance(message['user_urls'], list) and len(message['user_urls']) > 0
+                    content_text = message.get('content') or ""
                     
-                    if 'user_urls' in message and isinstance(message['user_urls'], list):
-                        for url in message['user_urls']:
-                            if url.get('type') == 'image':
-                                content.append({
-                                    "type": "input_image",
-                                    "image_url": url.get('url')
-                                })
-                            elif url.get('url') not in files and url.get('url') not in seen_pdf_urls:
-                                content.append({
-                                    "type": "input_file",
-                                    "file_url": url.get('url')
-                                })
-                                # Add to seen URLs to prevent duplicates
-                                seen_pdf_urls.add(url.get('url'))
+                    if not content_text.strip() and not has_media:
+                        continue
+                    
+                    if message['role'] == "assistant":
+                        content = [{"type": "output_text", "text": content_text if content_text else " "}]
                     else:
-                        # Default behavior for messages without URLs
-                        content = message['content']
+                        if has_media:
+                            content = []
+                            if content_text.strip():
+                                content.append({"type": "input_text", "text": content_text})
+                            
+                            for url in message['user_urls']:
+                                if url.get('type') == 'image':
+                                    content.append({
+                                        "type": "input_image",
+                                        "image_url": url.get('url')
+                                    })
+                                elif url.get('url') not in files and url.get('url') not in seen_pdf_urls:
+                                    content.append({
+                                        "type": "input_file",
+                                        "file_url": url.get('url')
+                                    })
+                                    seen_pdf_urls.add(url.get('url'))
+                        else:
+                            content = content_text if content_text else " "
+                    
                     threads.append({'role': message['role'], 'content': content})
             
             return {
