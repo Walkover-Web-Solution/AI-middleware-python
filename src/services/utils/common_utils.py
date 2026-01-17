@@ -463,6 +463,12 @@ async def process_background_tasks(parsed_data, result, params, thread_info, tra
             'thread_info': thread_info,
             'parent_id': parsed_data.get('parent_bridge_id', '')
         }
+        
+        # Prepare queue data for final agent
+        queue_data = await make_request_data_and_publish_sub_queue(parsed_data, result, params, thread_info)
+        queue_data = make_json_serializable(queue_data)
+        current_history_data['queue_data'] = queue_data
+        
         TRANSFER_HISTORY[transfer_request_id].append(current_history_data)
         
         # Save all transfer history (each agent in the chain)
@@ -508,6 +514,11 @@ async def process_background_tasks(parsed_data, result, params, thread_info, tra
                     history_entry['thread_info']
                 ))
         
+        # Publish all agents to queue
+        for history_entry in transfer_chain:
+            if 'queue_data' in history_entry:
+                await sub_queue_obj.publish_message(history_entry['queue_data'])
+        
         # Clean up transfer history
         del TRANSFER_HISTORY[transfer_request_id]
     else:
@@ -524,11 +535,11 @@ async def process_background_tasks(parsed_data, result, params, thread_info, tra
             parsed_data['version_id'], 
             thread_info
         ))
-    
-    # Publish to queue (for both transfer and non-transfer cases)
-    data = await make_request_data_and_publish_sub_queue(parsed_data, result, params, thread_info)
-    data = make_json_serializable(data)
-    await sub_queue_obj.publish_message(data)
+        
+        # Publish single agent to queue
+        data = await make_request_data_and_publish_sub_queue(parsed_data, result, params, thread_info)
+        data = make_json_serializable(data)
+        await sub_queue_obj.publish_message(data)
 
 
 async def process_background_tasks_for_error(parsed_data, error):
