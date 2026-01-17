@@ -1,5 +1,4 @@
 import hashlib
-import resource
 from Crypto.Cipher import AES
 import pydash as _
 import json
