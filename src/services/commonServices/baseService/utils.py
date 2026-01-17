@@ -28,7 +28,7 @@ def clean_json(data):
 
 def validate_tool_call(service, response):
     match service: # TODO: Fix validation process.
-        case  'openai_completion' | 'groq' | 'grok' | 'open_router' | 'mistral' | 'gemini'| 'ai_ml':
+        case  'openai_completion' | 'groq' | 'grok' | 'open_router' | 'mistral' | 'ai_ml':
             tool_calls = response.get('choices', [])[0].get('message', {}).get("tool_calls", [])
             return len(tool_calls) > 0 if tool_calls is not None else False
         case 'openai':
@@ -39,6 +39,12 @@ def validate_tool_call(service, response):
                     response['content'][0]['text'] = json.dumps(item.get('input'))
                     return False
             return response.get('stop_reason') == 'tool_use'
+        case 'gemini':
+            candidates = response.get('candidates', [])
+            if not candidates:
+                return False
+            parts = candidates[0].get('content', {}).get('parts', [])
+            return any(isinstance(part, dict) and part.get('function_call') is not None for part in parts)
         case _:
             return False
 
