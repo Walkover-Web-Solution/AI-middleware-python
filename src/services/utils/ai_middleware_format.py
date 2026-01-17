@@ -172,7 +172,6 @@ async def Response_formatter(response = {}, service = None, tools={}, type='chat
         data_item = response.get('data', [{}])[0]
         # Handle both Imagen models (urls as list) and Gemini models (url as single value)
         urls = data_item.get('urls')
-        url = data_item.get('url')
         text_content = data_item.get('text_content', [])
         
         # If Imagen returned multiple URLs, format like OpenAI's multi-image response
@@ -180,24 +179,26 @@ async def Response_formatter(response = {}, service = None, tools={}, type='chat
             image_urls = []
             for img_url in urls:
                 image_urls.append({
-                    "revised_prompt": text_content,
                     "image_url": img_url,
                     "permanent_url": img_url
                 })
             
             return {
                 "data": {
-                    "image_urls": image_urls
-                }
+                    "revised_prompt": text_content,
+                    "image_urls": image_urls,
+                },
+                "usage": response.get("usage_metadata", {})
             }
         else:
             # Single image from Gemini image model
             return {
                 "data" : {
                     "revised_prompt" : text_content,
-                    "image_url" : url,
-                    "permanent_url" : url,
-                }
+                    "image_url" : urls,
+                    "permanent_url" : urls
+                },
+                "usage": response.get("usage_metadata", {})
             }
     elif service == service_name['gemini'] and type == 'video':
         return {
@@ -218,7 +219,9 @@ async def Response_formatter(response = {}, service = None, tools={}, type='chat
         return {
             "data": {
                 "image_urls": image_urls
-            }
+            },
+            # Preserve usage for token calculation
+            "usage": response.get('usage', {})
         }
     
     elif service == service_name['anthropic']:
