@@ -38,6 +38,78 @@ async def createConversationLog(conversation_log_data):
         session.close()
 
 
+async def updateConversationLog(log_id, update_data):
+    """
+    Update a conversation log entry
+    
+    Args:
+        log_id: ID of the conversation log to update
+        update_data: Dictionary containing fields to update
+        
+    Returns:
+        Boolean indicating success or failure
+    """
+    session = pg['session']()
+    try:
+        stmt = (
+            update(ConversationLog)
+            .where(ConversationLog.id == log_id)
+            .values(**update_data)
+        )
+        session.execute(stmt)
+        session.commit()
+        return True
+    except Exception as err:
+        logger.error(f"Error in updating conversation log: {str(err)}")
+        session.rollback()
+        return False
+    finally:
+        session.close()
+
+
+async def updateConversationLogByBatchData(batch_id, custom_id, update_data):
+    """
+    Update a conversation log entry by batch_id and custom_id
+    
+    Args:
+        batch_id: The batch ID from provider
+        custom_id: The custom ID for this specific message
+        update_data: Dictionary containing fields to update
+        
+    Returns:
+        Boolean indicating success or failure
+    """
+    session = pg['session']()
+    try:
+        # Find the log by querying the batch_data JSON column
+        # PostgreSQL JSON query: batch_data->>'batch_id' = batch_id AND batch_data->>'custom_id' = custom_id
+        stmt = (
+            update(ConversationLog)
+            .where(
+                and_(
+                    ConversationLog.batch_data['batch_id'].astext == batch_id,
+                    ConversationLog.batch_data['custom_id'].astext == custom_id
+                )
+            )
+            .values(**update_data)
+        )
+        result = session.execute(stmt)
+        session.commit()
+        
+        if result.rowcount > 0:
+            logger.info(f"Updated conversation log for batch_id={batch_id}, custom_id={custom_id}")
+            return True
+        else:
+            logger.warning(f"No conversation log found for batch_id={batch_id}, custom_id={custom_id}")
+            return False
+    except Exception as err:
+        logger.error(f"Error in updating conversation log by batch data: {str(err)}")
+        session.rollback()
+        return False
+    finally:
+        session.close()
+
+
 async def createOrchestratorConversationLog(orchestrator_log_data):
     """
     Create a single orchestrator conversation log entry with aggregated data from multiple agents

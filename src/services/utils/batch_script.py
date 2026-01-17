@@ -6,6 +6,7 @@ from .ai_middleware_format import process_batch_results
 from src.configs.constant import redis_keys
 from .batch_script_utils import get_batch_result_handler
 from globals import *
+from src.db_services.conversationDbService import updateConversationLogByBatchData
 
 
 async def repeat_function():
@@ -48,11 +49,54 @@ async def check_batch_status():
                     
                     if is_completed:
                         # Batch has reached a terminal state (completed, failed, expired, cancelled)
+                        
                         if results:
                             # Process and format the results (could be success or error results)
                             formatted_results = await process_batch_results(
                                 results, service, batch_id, batch_variables, custom_id_mapping
                             )
+                            
+                            # Update conversation logs with the results
+                            for formatted_result in formatted_results:
+                                custom_id = formatted_result.get('custom_id')
+                                
+                                if not custom_id:
+                                    # Skip if no custom_id (might be a batch-level error)
+                                    continue
+                                
+                                # Extract data from formatted result
+                                data = formatted_result.get('data', {})
+                                usage = formatted_result.get('usage', {})
+                                status_code = formatted_result.get('status_code')
+                                error = formatted_result.get('error')
+                                
+                                # Determine status and message
+                                is_success = status_code is None or status_code < 400
+                                llm_message = data.get('content') if is_success else None
+                                chatbot_message = data.get('content') if is_success else None
+                                error_message = error.get('message') if error else None
+                                
+                                # Prepare update data
+                                update_data = {
+                                    'llm_message': llm_message or error_message or "under process",
+                                    'chatbot_message': chatbot_message,
+                                    'status': is_success,
+                                    'error': error_message,
+                                    'finish_reason': data.get('finish_reason'),
+                                    'tokens': {
+                                        'input': usage.get('input_tokens'),
+                                        'output': usage.get('output_tokens'),
+                                        'total': usage.get('total_tokens')
+                                    } if usage else None,
+                                    'batch_data': {
+                                        'status': 'completed',
+                                        'batch_id': batch_id,
+                                        'custom_id': custom_id
+                                    }
+                                }
+                                
+                                # Update the conversation log by batch_id and custom_id
+                                await updateConversationLogByBatchData(batch_id, custom_id, update_data)
                             
                             # Check if all responses are errors
                             has_success = any(
@@ -63,6 +107,9 @@ async def check_batch_status():
                             await sendResponse(response_format, data=formatted_results, success=has_success)
                         else:
                             # No results but marked as completed - send generic error
+                            # We cannot update specific logs here as we don't have custom_ids
+                            # Logs will remain with "under process" status
+                            
                             error_response = [{
                                 "batch_id": batch_id,
                                 "error": {
