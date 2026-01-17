@@ -57,14 +57,11 @@ class GeminiHandler(BaseService):
                             user_content.append({"type": "image_url", "image_url": {"url": image_url}})
                     self.customConfig["messages"].append({'role': 'user', 'content': user_content})
                 
-            formatted_config = self.service_formatter(self.customConfig, service_name['gemini'])
-            if 'tools' not in formatted_config and 'parallel_tool_calls' in formatted_config:
-                del formatted_config['parallel_tool_calls']
+            self.customConfig = self.service_formatter(self.customConfig, service_name['gemini'])
+            if 'tools' not in self.customConfig and 'parallel_tool_calls' in self.customConfig:
+                del self.customConfig['parallel_tool_calls']
             
-            formatted_config_for_tools = formatted_config 
-
-            # Convert to Gemini SDK format
-            self.customConfig = convert_to_gemini_format(formatted_config)
+            formatted_config_for_tools = self.customConfig 
             
             gemini_response = await self.chats(self.customConfig, self.apikey, service_name['gemini'])
             model_response = gemini_response.get('modelResponse', {})
