@@ -113,6 +113,10 @@ redis_keys = {
     "usagealertsent_": "nd_usagealertsent_",
     "usagespikealert_": "nd_usagespikealert_",
     "blocked_orgs_": "nd_blocked_orgs_",
+    # Gtwy_Browser: single-container Steel lease + per-conversation browser state
+    "gtwy_browser_registry_": "nd_gtwy_browser_registry",
+    "gtwy_browser_thread_": "nd_gtwy_browser_thread_",
+    "gtwy_browser_ctx_": "nd_gtwy_browser_ctx_",
 }
 
 tag_keys = {
@@ -128,7 +132,7 @@ tag_keys = {
 
 limit_types = {"bridge": "bridge", "folder": "folder", "apikey": "apikey"}
 
-inbuild_tools = {"Gtwy_Web_Search": "Gtwy_Web_Search"}
+inbuild_tools = {"Gtwy_Web_Search": "Gtwy_Web_Search", "Gtwy_Browser": "Gtwy_Browser"}
 
 tool_types = {"AGENT": "AGENT"}
 
