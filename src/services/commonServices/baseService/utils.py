@@ -432,7 +432,32 @@ async def sendResponse(response_format, data, success=False, variables=None, met
             data_to_send["variables"] = variables
             if meta:
                 data_to_send["meta"] = meta
-            return await send_request(**response_format["cred"], method="POST", data=data_to_send)
+            webhook_response = await send_request(**response_format["cred"], method="POST", data=data_to_send)
+            _attach_webhook_response(response_format, webhook_response)
+            return webhook_response
+
+
+def _attach_webhook_response(response_format, webhook_response):
+    """Keep what the customer's webhook replied, on the response_format dict.
+
+    Mutates the caller's dict by design: callers pass parsed_data["response_format"],
+    which _attach_sub_thread_extras copies into conversation_log_data, so the reply
+    reaches the row of whichever path sent it. A locally built response_format
+    (alerts, batch) just drops it.
+
+    `webhook_response` is send_request's result: fetch's (body, headers) on a 2xx,
+    else {"error", "details"} — non-2xx included, since fetch raises on >=300.
+    Headers are noise for a log row, so only the body is kept.
+    """
+    try:
+        # A webhook that replies with a non-JSON body (bare "OK", empty 200)
+        # makes fetch raise inside send_request, so the error dict lands here
+        # too — worth storing as-is: it says the delivery result either way.
+        response_format["webhook_response"] = (
+            webhook_response[0] if isinstance(webhook_response, tuple) else webhook_response
+        )
+    except Exception as e:
+        logger.error(f"Failed to record webhook response: {e}")
 
 
 def merge_nested_agent_usage(content, tool_log):
