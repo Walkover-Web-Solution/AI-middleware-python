@@ -78,7 +78,9 @@ async def _run(args: dict, ctx: dict) -> dict:
             return _err(f"url not allowed: {exc}")
 
     try:
-        browser, page, registry, tab = await open_or_reuse_tab(tkey, ctx.get("org_id"), ctx.get("bridge_id"))
+        browser, page, registry, tab = await open_or_reuse_tab(
+            tkey, ctx.get("org_id"), ctx.get("bridge_id"), ctx.get("user_id")
+        )
     except BrowserBusy as busy:
         return _err(str(busy), retry_in_seconds=busy.retry_in)
     except SteelError as exc:

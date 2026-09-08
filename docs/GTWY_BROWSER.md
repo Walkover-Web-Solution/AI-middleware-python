@@ -44,6 +44,19 @@ one Chromium ── tab (own cookie jar) ── conversation A   logged in as us
   shows it in an iframe so the user logs in themselves. No snapshots are taken during the handoff,
   so typed credentials never reach the model or the logs. The handoff ends when the user sends
   the next message or the model navigates.
+- **Remembered logins.** With `GTWY_BROWSER_PERSIST_COOKIES=true`, a tab's cookies are exported
+  just before it closes and restored into the next tab opened for the same owner, so a user who
+  logged in yesterday is still signed in today. All of that tab's sites come back together, since
+  cookies are saved per jar rather than per site. The owner is the request's `user_id` when the
+  caller sends one, so one login serves every later conversation of that person; without a
+  `user_id` the owner falls back to the conversation, which still carries logins across days
+  within that thread. The blob is encrypted with the gateway's AES helper, stored under
+  `nd_gtwy_browser_ctx_<org>:user:<id>`, and expires after `GTWY_BROWSER_COOKIE_TTL_DAYS`.
+  Steel's own `GET /v1/sessions/{id}/context` cannot see these jars, so the export and import go
+  through CDP `Storage.getCookies` and `Storage.setCookies` with the jar's `browserContextId`.
+  Call `tabs.forget_cookies(owner)` to drop someone's saved logins: it deletes the stored blob and
+  empties any live jar of theirs, because otherwise closing that still-open tab would save the
+  same cookies straight back.
 - **Loop limit.** With `Gtwy_Browser` enabled and no explicit `settings.maximum_iterations`,
   the tool loop limit is 25 instead of 3.
 
@@ -138,6 +151,7 @@ embed an iframe yet, render `live_url` as a plain "Log in" link that opens in a 
 ## Redis keys
 
 ```
+nd_gtwy_browser_ctx_<org>:user:<user_id>            saved logins, encrypted (or :thread:<key>)
 nd_gtwy_browser_registry                            the shared Chrome: steel session + one record
                                                     per open tab {target_id, browser_context_id,
                                                     last_used_at, handoff_active}
@@ -169,8 +183,8 @@ lock_gtwy_browser_registry, lock_gtwy_browser_reaper  short SETNX locks
 
 ## Not in this POC
 
-- Persisting logins after a tab is closed (Steel `GET /v1/sessions/{id}/context` → `sessionContext`),
-  so a returning user does not log in again. Today a login lives as long as the tab.
-- Keying cookie jars by end user rather than by conversation, so one person's two chats share a login.
 - A pool of Steel containers, and scaling them with demand, for more than ~10 concurrent conversations.
+- A user-facing control to clear saved logins. `tabs.forget_cookies(owner)` exists; nothing calls it yet.
+- Local storage and IndexedDB are not saved, only cookies. Sites that keep their session outside
+  cookies will still ask the user to log in again.
 - Screenshot results are returned as base64 JPEG text; vision-model image attachment is not wired.

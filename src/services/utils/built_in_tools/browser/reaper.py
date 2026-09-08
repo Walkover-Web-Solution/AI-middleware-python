@@ -12,6 +12,7 @@ import globals as _globals
 from globals import logger
 from src.services.cache_service import acquire_lock, release_lock
 
+from . import cookies as cookie_store
 from . import steel_client
 from .connection import BrowserConnectionError, close_tab, get_browser, reset_connection
 from .session_store import (
@@ -76,6 +77,7 @@ async def reap_idle_tabs() -> None:
                     return
 
             for key, tab in idle:
+                await cookie_store.save_jar(browser, tab.get("browser_context_id"), tab.get("cookie_key"))
                 await close_tab(browser, tab.get("target_id"), tab.get("browser_context_id"))
                 drop_tab(registry, key)
                 await clear_thread_state(key)

@@ -155,6 +155,28 @@ async def close_tab(browser, target_id: str | None, browser_context_id: str | No
             logger.warning(f"Gtwy_Browser: disposing cookie jar failed: {exc.__class__.__name__}")
 
 
+async def export_jar_cookies(browser, browser_context_id: str) -> list[dict]:
+    """Every cookie in one tab's jar. Steel's own /context endpoint cannot see these jars."""
+    cdp = await _browser_cdp(browser)
+    result = await cdp.send("Storage.getCookies", {"browserContextId": browser_context_id})
+    return result.get("cookies") or []
+
+
+async def import_jar_cookies(browser, browser_context_id: str, cookies: list[dict]) -> int:
+    """Load cookies into one tab's jar. Returns how many were sent."""
+    if not cookies:
+        return 0
+    cdp = await _browser_cdp(browser)
+    await cdp.send("Storage.setCookies", {"browserContextId": browser_context_id, "cookies": cookies})
+    return len(cookies)
+
+
+async def clear_jar_cookies(browser, browser_context_id: str) -> None:
+    """Wipe every cookie in one tab's jar, so a later save writes nothing back."""
+    cdp = await _browser_cdp(browser)
+    await cdp.send("Storage.clearCookies", {"browserContextId": browser_context_id})
+
+
 async def reset_connection() -> None:
     async with _lock:
         await _teardown_locked()
