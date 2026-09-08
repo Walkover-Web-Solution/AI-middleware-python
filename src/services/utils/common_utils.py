@@ -1853,24 +1853,36 @@ async def sse_stream_and_finalize(class_obj, parsed_data, params, timer, thread_
                     transfer_result = await chat_function(transfer_request_body)
                     if is_nested_stream_call:
                         return transfer_result
-                else:
-                    logger.warning(f"SSE transfer: target agent {target_agent_id} not found, closing stream")
-                    if class_obj.streamer:
-                        await class_obj.streamer.emit_error(
-                            f"Transfer target agent {target_agent_id} not found in bridge_configurations"
-                        )
-                        if not is_nested_stream_call:
-                            await class_obj.streamer.close()
+                    # Hand-off done: the transfer target owns emit_done + close, and this
+                    # agent's history row is already queued on TRANSFER_HISTORY and flushed
+                    # by the target's process_background_tasks. Return instead of falling
+                    # through to the finalizer, which would emit a second `done` and — via
+                    # the outer error handler — a second conversation_logs row for the same
+                    # message_id.
+                    return {"success": True, "response": result.get("response", {})}
+
+                # An Exception, not a str: save_error_history -> create_history_params
+                # reads error.args.
+                transfer_missing_error = RuntimeError(
+                    f"Transfer target agent {target_agent_id} not found in bridge_configurations"
+                )
+                logger.warning(f"SSE transfer: target agent {target_agent_id} not found, closing stream")
+                if class_obj.streamer:
+                    await class_obj.streamer.emit_error(str(transfer_missing_error))
+                    if not is_nested_stream_call:
+                        await class_obj.streamer.close()
+                await save_error_history(
+                    parsed_data, transfer_missing_error, params, timer, class_obj, thread_info
+                )
+                return {"success": False, "message": str(transfer_missing_error), "response": {}}
             except Exception as transfer_err:
                 logger.error(f"SSE transfer handling error: {transfer_err}, {tb.format_exc()}")
                 if class_obj.streamer:
                     await class_obj.streamer.emit_error(str(transfer_err))
                     if not is_nested_stream_call:
                         await class_obj.streamer.close()
-                if is_nested_stream_call:
-                    await save_error_history(parsed_data, transfer_err, params, timer, class_obj, thread_info)
-                    return {"success": False, "message": str(transfer_err), "response": {}}
-            raise
+                await save_error_history(parsed_data, transfer_err, params, timer, class_obj, thread_info)
+                return {"success": False, "message": str(transfer_err), "response": {}}
 
         result["response"]["usage"] = params["token_calculator"].get_total_usage()
         if parsed_data.get("type") != "image":
