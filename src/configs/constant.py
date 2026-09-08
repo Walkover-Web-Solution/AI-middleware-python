@@ -1,3 +1,34 @@
+from enum import StrEnum
+
+
+class WireFormat(StrEnum):
+    """Accepted values of the ``wire_format`` field on a service document.
+
+    StrEnum members compare equal to the plain strings stored in Mongo, so the
+    predicates in service_registry.py can be used against raw registry values
+    unchanged. Mirrors the comment on ``wire_format`` in gtwy-node's
+    Service.model.js.
+    """
+
+    OPENAI_CHAT = "openai_chat"
+    OPENAI_RESPONSES = "openai_responses"
+    ANTHROPIC = "anthropic"
+    GEMINI = "gemini"
+    DEEPGRAM = "deepgram"
+
+
+class Client(StrEnum):
+    """Accepted values of the ``client`` field — which SDK makes the call."""
+
+    OPENAI_SDK = "openai_sdk"
+    OPENAI_COMPLETION_SDK = "openai_completion_sdk"
+    ANTHROPIC_SDK = "anthropic_sdk"
+    GEMINI_SDK = "gemini_sdk"
+    GROQ_SDK = "groq_sdk"
+    GROK_HTTP = "grok_http"
+    MISTRAL_SDK = "mistral_sdk"
+    MINIMAX_SDK = "minimax_sdk"
+    DEEPGRAM_SDK = "deepgram_sdk"
 
 
 api_key_status = {
@@ -44,7 +75,7 @@ bridge_ids = {
     "query_refiner": "69ae598263c3cc88af31170b",
 }
 
-__all__ = ["service_name", "bridge_ids"]
+__all__ = ["service_name", "bridge_ids", "WireFormat", "Client"]
 
 prebuilt_prompt_bridge_id = [
     "optimze_prompt",
@@ -68,6 +99,12 @@ redis_keys = {
     "bridgeusedcost_": "nd_bridgeusedcost_",
     "folderusedcost_": "nd_folderusedcost_",
     "apikeyusedcost_": "nd_apikeyusedcost_",
+    # Period-keyed apikey counters: the reset window is part of the key, so a new
+    # period reads as zero without anything expiring or being reset. The counter
+    # holds a bare number (atomic INCRBYFLOAT); the version/bridge ids that used
+    # to ride along in the same JSON blob live in the companion set.
+    "apikeyperiodcost_": "nd_apikeyperiodcost_",
+    "apikeyperiodrefs_": "nd_apikeyperiodrefs_",
     "apikeylastused_": "nd_apikeylastused_",
     "bridgelastused_": "nd_bridgelastused_",
     "files_": "nd_files_",
@@ -81,6 +118,7 @@ redis_keys = {
     "dailyusedcost_": "nd_dailyusedcost_",
     "usagealertsent_": "nd_usagealertsent_",
     "usagespikealert_": "nd_usagespikealert_",
+    "blocked_orgs_": "nd_blocked_orgs_",
 }
 
 tag_keys = {
@@ -97,6 +135,8 @@ tag_keys = {
 limit_types = {"bridge": "bridge", "folder": "folder", "apikey": "apikey"}
 
 inbuild_tools = {"Gtwy_Web_Search": "Gtwy_Web_Search"}
+
+tool_types = {"AGENT": "AGENT"}
 
 VALID_RESPONSE_TYPES = {"text", "json_object", "json_schema"}
 

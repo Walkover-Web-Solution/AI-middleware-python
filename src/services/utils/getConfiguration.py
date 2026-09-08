@@ -233,7 +233,7 @@ async def _prepare_configuration_response(
 
     variables, org_name = await updateVariablesWithTimeZone(variables, org_id)
 
-    add_connected_agents(bridges, tools, tool_id_and_name_mapping, orchestrator_flag)
+    add_connected_agents(bridges, tools, tool_id_and_name_mapping, orchestrator_flag, variables_path_bridge)
     web_search_filters_value = web_search_filters or bridges.get("web_search_filters") or {}
 
     # Fetch reviewer tools definitions if configured
@@ -284,6 +284,7 @@ async def _prepare_configuration_response(
         "folder_id": bridges.get("folder_id"),
         "wrapper_id": bridges.get("wrapper_id"),
         "web_search_filters": web_search_filters_value,
+        "chatbot": chatbot,
         "chatbot_auto_answers": chatbot_auto_answers,
         "cache_on": cache_on,
         "richui_templates": bridges.get("richui_templates"),

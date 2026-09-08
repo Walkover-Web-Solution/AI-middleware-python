@@ -132,7 +132,14 @@ class Helper:
         return prev_configuration
 
     @staticmethod
-    def replace_variables_in_prompt(prompt, Aviliable_variables):
+    def replace_variables_in_prompt(prompt, Aviliable_variables, service=None, configuration=None):
+        # Split prompt for Anthropic if service and configuration are provided
+        if service == service_name["anthropic"] and configuration is not None:
+            from ..commonServices.anthropic.anthropic_utils import split_prompt_for_anthropic
+            missing_vars = split_prompt_for_anthropic(configuration.get("prompt"), Aviliable_variables, configuration, service)
+            # Return early after splitting - no variable replacement needed
+            return configuration.get("prompt"), missing_vars
+
         missing_variables = {}
         placeholders = re.findall(r"\{\{(.*?)\}\}", prompt)
         flattened_json = Helper.custom_flatten(Aviliable_variables)
@@ -513,7 +520,13 @@ def build_rerun_queue_message(log, data_to_send):
     if bridge_id and bridge_id in bridge_confs:
         bridge_confs[bridge_id]["variables"] = merged_variables
 
-    body.setdefault("settings", {}).update({"response_format": {"type": "default"}, "stream": False})
+    stored_response_format = log.get("response_format") or {}
+    if stored_response_format.get("type") == "webhook" and (stored_response_format.get("cred") or {}).get("url"):
+        rerun_response_format = stored_response_format
+    else:
+        rerun_response_format = {"type": "default"}
+
+    body.setdefault("settings", {}).update({"response_format": rerun_response_format, "stream": False})
     return {"body": body, "state": data_to_send.get("state", {}), "path_params": data_to_send.get("path_params", {})}
 
 
