@@ -14,7 +14,7 @@ from src.configs.constant import GPT_MEMORY_TURNS_PER_CYCLE, inbuild_tools, redi
 from src.configs.service_registry import has_openai_choices_shape, uses_string_tool_choice
 from src.controllers.rag_controller import get_text_from_vectorsQuery
 from src.db_services.ConfigurationServices import get_skill_content_by_id
-from src.services.billing.billing_utils import build_llm_usage_event
+from src.services.billing.billing_utils import build_embed_hit_fee_event, build_llm_usage_event
 from src.services.utils.mcp_utils import MCP_NAME_SUFFIX, display_mcp_tool_name
 from src.services.cache_service import REDIS_PREFIX, client, find_in_cache, incr_in_cache, store_in_cache
 from src.services.mcp_gateway.client import call_mcp_tool
@@ -719,6 +719,25 @@ async def make_request_data_and_publish_sub_queue(parsed_data, result, params, t
         for usage in billable_usages
         if (event := build_llm_usage_event(usage, billing_message_id, parsed_data.get("org_id"), parsed_data.get("bridge_id")))
     ]
+
+    # The flat per-hit fee for embed traffic, on top of the model cost and its
+    # commission. Conditions, both read from state that already exists:
+    #   * payer["is_embed"] — from billing_attribution, i.e. the FIRST agent's
+    #     folder, so a nested agent outside an embed folder still counts as part
+    #     of the embed hit that started the run;
+    #   * this frame actually spent wallet money — either it ran on the platform
+    #     key, or it burned tokens there before falling back to the customer's
+    #     own key. An embed user paying with their own key owes nothing.
+    # Not gated on a non-zero model cost: a cache hit is still a hit.
+    #
+    # Emitted per FRAME on purpose. Several frames of one request will each emit
+    # this, and that is fine — they all carry the same message_id-derived
+    # transaction_id, so the dedup layers collapse them into a single charge.
+    # That is what removes any need for a "first frame" flag.
+    if payer["is_embed"] and (parsed_data.get("wallet") or parsed_data.get("_wallet_primary_cost")):
+        fee_event = build_embed_hit_fee_event(billing_message_id, parsed_data.get("org_id"))
+        if fee_event:
+            billing_events.append(fee_event)
 
     # Extract user and assistant messages for Hippocampus
     user_message = parsed_data.get("user", "")

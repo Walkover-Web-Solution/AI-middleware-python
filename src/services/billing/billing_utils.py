@@ -65,10 +65,46 @@ def _load_commission_pct() -> Decimal:
 _COMMISSION_PCT = _load_commission_pct()
 _COMMISSION_MULTIPLIER = Decimal(1) + (_COMMISSION_PCT / Decimal(100))
 
+
+def _load_embed_hit_fee() -> Decimal:
+    """Flat USD charged once per embed hit, on top of the model cost + commission.
+
+    Same shape as the commission loader, and for the same reason: unset means the
+    fee is off (a legitimate choice), but a value that IS set and nonsensical
+    refuses to start rather than quietly billing nothing for however long it
+    takes someone to notice.
+
+    NOT commissioned. This is already GTWY's own fee, so applying the commission
+    on top would charge a margin on a margin.
+    """
+    raw = Config.GTWY_EMBED_HIT_FEE_USD
+    if raw is None or str(raw).strip() == "":
+        return Decimal(0)
+    try:
+        fee = Decimal(str(raw))
+    except (InvalidOperation, ValueError):
+        raise RuntimeError(f"GTWY_EMBED_HIT_FEE_USD is not a number ({raw!r})")
+    if fee < 0:
+        raise RuntimeError(f"GTWY_EMBED_HIT_FEE_USD cannot be negative ({raw!r})")
+    return fee
+
+
+_EMBED_HIT_FEE_USD = _load_embed_hit_fee()
+
 logger.info(
     f"[billing] credit rate ${_CREDIT_RATE} per credit, GTWY commission {_COMMISSION_PCT}% "
     f"(multiplier {_COMMISSION_MULTIPLIER}). Node must match."
 )
+if _EMBED_HIT_FEE_USD > 0:
+    _fee_credits = (
+        (_EMBED_HIT_FEE_USD / _CREDIT_RATE).quantize(_CREDIT_QUANTUM, rounding=ROUND_HALF_UP)
+        if _CREDIT_RATE
+        else None
+    )
+    logger.info(
+        f"[billing] embed hit fee ${_EMBED_HIT_FEE_USD} per hit"
+        + (f" = {_fee_credits} credits at the current rate." if _fee_credits is not None else " (no credit rate — fee cannot be charged).")
+    )
 
 
 def build_llm_usage_event(usage: dict, message_id: str, org_id: str, bridge_id: str | None = None) -> dict | None:
@@ -117,6 +153,57 @@ def build_llm_usage_event(usage: dict, message_id: str, org_id: str, bridge_id: 
         "cost_usd": str(cost_usd),
         "base_credits": str(base_credits),
         "commission_pct": str(_COMMISSION_PCT),
+    }
+
+
+def build_embed_hit_fee_event(message_id: str, org_id: str) -> dict | None:
+    """The flat per-hit fee for an embed request, as its own billing event.
+
+    Separate from the usage event on purpose:
+      * it is visible as its own line in Lago, so a charge can be explained;
+      * it still applies when the model cost is zero (a cache hit is a hit);
+      * it gets its own idempotency key.
+
+    ONE FEE PER HIT, not per agent. The transaction_id is derived from the
+    request-level message_id ALONE — no bridge_id, no nonce — so every frame of
+    one request produces the SAME id. Nested agents, transfers and tool loops
+    therefore cannot stack fees: the first event through claims the id and the
+    rest are dropped as duplicates by all three dedup layers (this service's
+    Redis claim in apply_debit, Node's dispatch claim, and Lago's own
+    transaction_id dedup).
+
+    That dedup is the ONLY thing "once per hit" rests on, which is why callers
+    need no request-scoped flag and no notion of being the "first" frame: they
+    just emit whenever this frame spent wallet money on an embed hit.
+    """
+    if _EMBED_HIT_FEE_USD <= 0:
+        return None
+    if not message_id:
+        # Without it the id would be "embed-hit-None" for every request on the
+        # platform, and the first one would claim it forever. Skipping the fee is
+        # the only safe failure here.
+        logger.error(f"[billing] embed hit fee skipped for org {org_id}: no message_id to key the charge on")
+        return None
+    if _CREDIT_RATE is None:
+        logger.error(f"[billing] embed hit fee skipped for org {org_id}: no credit rate configured")
+        return None
+    try:
+        credits = (_EMBED_HIT_FEE_USD / _CREDIT_RATE).quantize(_CREDIT_QUANTUM, rounding=ROUND_HALF_UP)
+        if credits <= 0:
+            return None
+    except Exception as e:
+        logger.error(f"[billing] failed to build embed hit fee for org {org_id}: {e}")
+        return None
+
+    return {
+        "type": "embed_hit_fee",
+        "transaction_id": f"embed-hit-{message_id}",
+        "message_id": message_id,
+        "org_id": org_id,
+        "credits": str(credits),
+        # What it is made of, so the charge is explainable later. No
+        # commission_pct: the fee is GTWY's own and is never commissioned.
+        "fee_usd": str(_EMBED_HIT_FEE_USD),
     }
 
 
