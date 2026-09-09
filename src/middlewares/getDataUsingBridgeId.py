@@ -6,6 +6,7 @@ from pydantic import BaseModel, ValidationError
 
 from globals import logger, traceback
 from src.configs.model_configuration import model_config_document
+from src.services.billing.billing_utils import release_credits, reserve_credits_and_api_key_setup
 from src.services.utils.getConfiguration import getConfiguration
 
 
@@ -22,6 +23,8 @@ class add_configuration_data_to_body:
         self.schema_class = schema_class
 
     async def __call__(self, request: Request):
+        credit_hold_token = None
+        org_id = None
         try:
             body = await request.json()
 
@@ -70,6 +73,12 @@ class add_configuration_data_to_body:
                 # Return the actual error from getConfiguration directly
                 raise HTTPException(status_code=400, detail=db_config)
 
+            credit_hold_token, credit_error = await reserve_credits_and_api_key_setup(
+                org_id, db_config, is_batch=bool(body.get("batch"))
+            )
+            if credit_error:
+                raise HTTPException(status_code=400, detail=credit_error)
+
             bridge_configurations = db_config.get("bridge_configurations") or {}
 
             if not bridge_configurations:
@@ -111,6 +120,11 @@ class add_configuration_data_to_body:
                 body.get("configuration", {})["stream"] = explicit_stream
 
             body["bridge_configurations"] = bridge_configurations
+            # `wallet` and `org_billing_plan` already reached the body through
+            # body.update(primary_config) above — they are stamped on every cfg.
+            body["billing_attribution"] = db_config.get("billing_attribution") or {}
+            if credit_hold_token:
+                body["credit_hold_token"] = credit_hold_token
             service = body.get("service")
             model = (body.get("configuration") or {}).get("model")
             user = body.get("user")
@@ -137,11 +151,19 @@ class add_configuration_data_to_body:
                     )
 
             return db_config
-        except HTTPException as he:
-            raise he
         except RequestValidationError:
+            # No credit hold yet (validation runs before reserve) — just re-raise for 422 handler.
+            raise
+        except HTTPException:
+            # Validation failures after the reserve (empty bridge_configurations,
+            # "User message is compulsory", unknown model, ...) must hand the hold
+            # back too — this branch used to skip the release below and leak it.
+            if credit_hold_token and org_id:
+                await release_credits(org_id, credit_hold_token)
             raise
         except Exception as e:
+            if credit_hold_token and org_id:
+                await release_credits(org_id, credit_hold_token)
             logger.error(f"Error in get_data: {str(e)}, {traceback.format_exc()}")
             raise HTTPException(
                 status_code=400, detail={"success": False, "error": "Error in getting data: " + str(e)}
