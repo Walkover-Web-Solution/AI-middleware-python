@@ -86,3 +86,9 @@ class Config:
     # never rewrites past charges. MUST match Node's GTWY_COMMISSION_PCT, or
     # background AI jobs are billed at a different rate from main calls.
     GTWY_COMMISSION_PCT = os.getenv("GTWY_COMMISSION_PCT")
+    # Flat fee, in USD, charged once per EMBED user hit on top of the model cost
+    # and the commission above. Embed traffic is served through our own widget and
+    # carries per-hit costs a token count does not express. Unset or 0 disables it.
+    # Applied at charge time like the commission, so changing it needs no
+    # migration and never rewrites past charges.
+    GTWY_EMBED_HIT_FEE_USD = os.getenv("GTWY_EMBED_HIT_FEE_USD")
