@@ -8,7 +8,6 @@ from . import cookies as cookie_store
 from . import steel_client
 from .connection import (
     BrowserConnectionError,
-    clear_jar_cookies,
     close_tab,
     create_isolated_tab,
     find_page,
@@ -19,6 +18,7 @@ from .session_store import (
     acquire_registry_lock,
     clear_registry,
     clear_thread_state,
+    cookie_meta,
     drop_tab,
     empty_registry,
     evictable_tabs,
@@ -52,7 +52,7 @@ async def _ensure_session_and_browser(registry: dict) -> tuple[dict, object]:
         return registry, await get_browser(registry["steel_session_id"])
 
 
-async def open_or_reuse_tab(tkey: str, org_id, bridge_id, user_id=None) -> tuple[object, object, dict, dict]:
+async def open_or_reuse_tab(tkey: str, org_id, bridge_id) -> tuple[object, object, dict, dict]:
     """Return (browser, page, registry, tab) for this conversation.
 
     Reuses the conversation's own tab when it still exists, otherwise opens a new one in
@@ -80,7 +80,7 @@ async def open_or_reuse_tab(tkey: str, org_id, bridge_id, user_id=None) -> tuple
         open_tabs = len(registry.get("tabs") or {})
         if open_tabs >= max_tabs():
             for stale_key, stale_tab in evictable_tabs(registry, exclude=tkey):
-                await cookie_store.save_jar(browser, stale_tab.get("browser_context_id"), stale_tab.get("cookie_key"))
+                await cookie_store.save_jar(browser, stale_tab.get("browser_context_id"), stale_key, cookie_meta(stale_tab))
                 await close_tab(browser, stale_tab.get("target_id"), stale_tab.get("browser_context_id"))
                 drop_tab(registry, stale_key)
                 await clear_thread_state(stale_key)
@@ -92,15 +92,13 @@ async def open_or_reuse_tab(tkey: str, org_id, bridge_id, user_id=None) -> tuple
                 raise BrowserBusy(seconds_until_a_tab_frees(registry, exclude=tkey), open_tabs)
 
         target_id, browser_context_id = await create_isolated_tab(browser)
-        cookie_key = cookie_store.owner_key(org_id, user_id, tkey)
-        # Put this owner's saved logins back so a returning user does not sign in again.
-        await cookie_store.restore_jar(browser, browser_context_id, cookie_key)
+        # Put this conversation's saved logins back so a returning user does not sign in again.
+        await cookie_store.restore_jar(browser, browser_context_id, tkey)
         tab = touch_tab(
             registry,
             tkey,
             target_id=target_id,
             browser_context_id=browser_context_id,
-            cookie_key=cookie_key,
             handoff_active=False,
             org_id=org_id,
             bridge_id=bridge_id,
@@ -141,7 +139,7 @@ async def release_tab(tkey: str, reason: str = "") -> None:
         if tab:
             try:
                 browser = await get_browser(registry["steel_session_id"])
-                await cookie_store.save_jar(browser, tab.get("browser_context_id"), tab.get("cookie_key"))
+                await cookie_store.save_jar(browser, tab.get("browser_context_id"), tkey, cookie_meta(tab))
                 await close_tab(browser, tab.get("target_id"), tab.get("browser_context_id"))
             except (BrowserConnectionError, SteelError) as exc:
                 logger.warning(f"Gtwy_Browser: could not close tab of {tkey}: {exc}")
@@ -152,37 +150,5 @@ async def release_tab(tkey: str, reason: str = "") -> None:
         else:
             await steel_client.release_session(registry.get("steel_session_id"))
             await clear_registry()
-    finally:
-        await release_registry_lock()
-
-
-async def forget_cookies(owner: str) -> None:
-    """Drop an owner's saved logins for good.
-
-    Deleting the stored blob is not enough on its own: a tab of theirs may still be
-    open, and closing it would save the same cookies straight back. So the live jars
-    are emptied first, which also signs the user out of the tab they are holding.
-    """
-    await cookie_store.forget(owner)
-    if not await acquire_registry_lock():
-        return
-    try:
-        registry = await get_registry()
-        if not registry or not registry.get("steel_session_id"):
-            return
-        matching = [tab for tab in (registry.get("tabs") or {}).values() if tab.get("cookie_key") == owner]
-        if not matching:
-            return
-        try:
-            browser = await get_browser(registry["steel_session_id"])
-        except BrowserConnectionError as exc:
-            logger.warning(f"Gtwy_Browser: could not reach the browser to clear jars for {owner}: {exc}")
-            return
-        for tab in matching:
-            try:
-                await clear_jar_cookies(browser, tab.get("browser_context_id"))
-            except Exception as exc:
-                logger.warning(f"Gtwy_Browser: could not clear a live jar for {owner}: {exc.__class__.__name__}")
-        logger.info(f"Gtwy_Browser: emptied {len(matching)} live tab(s) for {owner}")
     finally:
         await release_registry_lock()

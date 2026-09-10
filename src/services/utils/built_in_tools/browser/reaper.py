@@ -19,6 +19,7 @@ from .session_store import (
     acquire_registry_lock,
     clear_registry,
     clear_thread_state,
+    cookie_meta,
     drop_tab,
     get_registry,
     release_registry_lock,
@@ -77,7 +78,7 @@ async def reap_idle_tabs() -> None:
                     return
 
             for key, tab in idle:
-                await cookie_store.save_jar(browser, tab.get("browser_context_id"), tab.get("cookie_key"))
+                await cookie_store.save_jar(browser, tab.get("browser_context_id"), key, cookie_meta(tab))
                 await close_tab(browser, tab.get("target_id"), tab.get("browser_context_id"))
                 drop_tab(registry, key)
                 await clear_thread_state(key)

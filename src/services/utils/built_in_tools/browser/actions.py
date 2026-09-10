@@ -5,8 +5,6 @@ separate ``snapshot`` call after it. Functions return ``(response, ref_map)``;
 ``ref_map`` is ``None`` when the action did not produce a new snapshot.
 """
 
-import base64
-import io
 import re
 from urllib.parse import urlparse
 
@@ -19,8 +17,6 @@ NAVIGATE_TIMEOUT_MS = 30_000
 ACTION_TIMEOUT_MS = 10_000
 SETTLE_TIMEOUT_MS = 3_000
 SCROLL_PIXELS = 600
-SCREENSHOT_MAX_WIDTH = 800
-SCREENSHOT_JPEG_QUALITY = 55
 LOGIN_PATH_RE = re.compile(
     r"/(ap/signin|signin|sign-in|sign_in|login|log-in|log_in|auth/login|sessions/new|account/login|"
     r"oauth2?/(auth|authorize)|authorize|sso)(/|$|\?)",
@@ -139,47 +135,6 @@ async def do_back(page):
     await page.go_back(wait_until="domcontentloaded", timeout=NAVIGATE_TIMEOUT_MS)
     await _settle(page)
     return await snapshot_page(page)
-
-
-def _downscale_jpeg(png_bytes: bytes) -> tuple[bytes, str]:
-    try:
-        from PIL import Image
-    except ImportError:
-        return png_bytes, "image/png"
-    with Image.open(io.BytesIO(png_bytes)) as image:
-        image = image.convert("RGB")
-        if image.width > SCREENSHOT_MAX_WIDTH:
-            ratio = SCREENSHOT_MAX_WIDTH / image.width
-            image = image.resize((SCREENSHOT_MAX_WIDTH, max(1, int(image.height * ratio))))
-        buffer = io.BytesIO()
-        image.save(buffer, format="JPEG", quality=SCREENSHOT_JPEG_QUALITY, optimize=True)
-        return buffer.getvalue(), "image/jpeg"
-
-
-async def do_screenshot(page):
-    raw = await page.screenshot(type="png", full_page=False, timeout=ACTION_TIMEOUT_MS)
-    data, mime = _downscale_jpeg(raw)
-    response = {
-        "url": page.url,
-        "title": await page.title(),
-        "mime_type": mime,
-        "image_base64": base64.b64encode(data).decode("ascii"),
-    }
-    return response, None
-
-
-async def do_tabs(page):
-    context = page.context
-    tabs = []
-    for index, tab in enumerate(context.pages):
-        if tab.is_closed():
-            continue
-        try:
-            title = await tab.title()
-        except Exception:
-            title = ""
-        tabs.append({"index": index, "url": tab.url, "title": title, "active": tab == page})
-    return {"tabs": tabs}, None
 
 
 async def looks_like_login_page(page) -> bool:

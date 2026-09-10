@@ -20,6 +20,8 @@ from globals import logger
 from . import steel_client
 
 CONNECT_TIMEOUT_MS = 10_000
+CONNECT_ATTEMPTS = 4
+CONNECT_RETRY_SECONDS = 1.5
 TAB_APPEAR_TIMEOUT_SECONDS = 10
 
 _lock = asyncio.Lock()
@@ -53,11 +55,28 @@ async def get_browser(steel_session_id: str):
             raise BrowserConnectionError("playwright is not installed on this server") from exc
 
         playwright = await async_playwright().start()
-        try:
-            browser = await playwright.chromium.connect_over_cdp(steel_client.cdp_ws_url(), timeout=CONNECT_TIMEOUT_MS)
-        except Exception as exc:
+        browser = None
+        last_error = None
+        # A session that was just created is still relaunching Chrome, so the first connect can
+        # be refused. Retry briefly rather than failing the turn.
+        # Playwright rejects an empty headers dict ("expected array, got object"), so only pass it
+        # when Steel actually needs the key.
+        auth = steel_client.auth_headers()
+        extra = {"headers": auth} if auth else {}
+        for attempt in range(CONNECT_ATTEMPTS):
+            try:
+                browser = await playwright.chromium.connect_over_cdp(
+                    steel_client.cdp_ws_url(), timeout=CONNECT_TIMEOUT_MS, **extra
+                )
+                break
+            except Exception as exc:
+                last_error = exc
+                if attempt + 1 < CONNECT_ATTEMPTS:
+                    await asyncio.sleep(CONNECT_RETRY_SECONDS)
+        if browser is None:
             await playwright.stop()
-            raise BrowserConnectionError(f"could not connect to the browser: {exc.__class__.__name__}") from exc
+            detail = str(last_error).strip().splitlines()[0][:160] if last_error else "unknown error"
+            raise BrowserConnectionError(f"could not connect to the browser: {detail}") from last_error
 
         _state.update(playwright=playwright, browser=browser, session_id=steel_session_id, cdp=None, pages={})
         logger.info(f"Gtwy_Browser: connected over CDP for session {steel_client.redact_session_id(steel_session_id)}")
@@ -169,12 +188,6 @@ async def import_jar_cookies(browser, browser_context_id: str, cookies: list[dic
     cdp = await _browser_cdp(browser)
     await cdp.send("Storage.setCookies", {"browserContextId": browser_context_id, "cookies": cookies})
     return len(cookies)
-
-
-async def clear_jar_cookies(browser, browser_context_id: str) -> None:
-    """Wipe every cookie in one tab's jar, so a later save writes nothing back."""
-    cdp = await _browser_cdp(browser)
-    await cdp.send("Storage.clearCookies", {"browserContextId": browser_context_id})
 
 
 async def reset_connection() -> None:

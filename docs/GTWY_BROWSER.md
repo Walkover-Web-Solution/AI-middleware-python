@@ -4,7 +4,7 @@
 list, the model can drive a real Chromium running in a self-hosted
 [Steel](https://github.com/steel-dev/steel-browser) container: navigate, read an
 accessibility snapshot with element refs, click, type, press keys, scroll, take
-a screenshot, and hand the browser to the user when a login or CAPTCHA is needed.
+and hand the browser to the user when a login or CAPTCHA is needed.
 
 ## How it works
 
@@ -45,18 +45,34 @@ one Chromium ── tab (own cookie jar) ── conversation A   logged in as us
   so typed credentials never reach the model or the logs. The handoff ends when the user sends
   the next message or the model navigates.
 - **Remembered logins.** With `GTWY_BROWSER_PERSIST_COOKIES=true`, a tab's cookies are exported
-  just before it closes and restored into the next tab opened for the same owner, so a user who
+  just before it closes and restored into the next tab that conversation opens, so a user who
   logged in yesterday is still signed in today. All of that tab's sites come back together, since
-  cookies are saved per jar rather than per site. The owner is the request's `user_id` when the
-  caller sends one, so one login serves every later conversation of that person; without a
-  `user_id` the owner falls back to the conversation, which still carries logins across days
-  within that thread. The blob is encrypted with the gateway's AES helper, stored under
-  `nd_gtwy_browser_ctx_<org>:user:<id>`, and expires after `GTWY_BROWSER_COOKIE_TTL_DAYS`.
-  Steel's own `GET /v1/sessions/{id}/context` cannot see these jars, so the export and import go
-  through CDP `Storage.getCookies` and `Storage.setCookies` with the jar's `browserContextId`.
-  Call `tabs.forget_cookies(owner)` to drop someone's saved logins: it deletes the stored blob and
-  empties any live jar of theirs, because otherwise closing that still-open tab would save the
-  same cookies straight back.
+  cookies are saved per jar rather than per site.
+
+  **MongoDB is the source of truth and Redis is a cache in front of it**, because a login is user
+  state that must survive a Redis flush. The collection is `gtwy_browser_cookies`, one document per
+  conversation, holding nothing but an encrypted blob:
+
+  ```
+  { "scope_key": "<org_id>:<thread_id>:<sub_thread_id>",
+    "org_id": ..., "bridge_id": ...,
+    "cookies": "<Helper.encrypt(json)>", "cookie_count": 6, "version": 1,
+    "updated_at": ..., "expires_at": ... }
+  ```
+
+  Two indexes are created at startup: unique on `scope_key`, and a TTL index on `expires_at` with
+  `expireAfterSeconds=0`. The deadline lives in the document, so changing
+  `GTWY_BROWSER_COOKIE_TTL_DAYS` needs no index rebuild. Mongo's TTL sweep runs about once a
+  minute, so reads also check expiry rather than trusting deletion. Redis holds the same blob under
+  `nd_gtwy_browser_ctx_<scope_key>` for `GTWY_BROWSER_COOKIE_CACHE_TTL_SECONDS`. A read tries Redis,
+  falls back to Mongo and warms the cache; a write goes to Mongo and then refreshes Redis. If Mongo
+  is unreachable the turn still succeeds and the user simply signs in again.
+
+  Steel's own `GET /v1/sessions/{id}/context` cannot see these jars, so export and import go through
+  CDP `Storage.getCookies` and `Storage.setCookies` with the jar's `browserContextId`.
+  `browserCookieService.delete_browser_cookies(scope_key)` is the sign-out and privacy hook. Note
+  that deleting the document is not enough on its own while that conversation's tab is still open:
+  closing it saves the same cookies back, so clear the live jar too.
 - **Loop limit.** With `Gtwy_Browser` enabled and no explicit `settings.maximum_iterations`,
   the tool loop limit is 25 instead of 3.
 
@@ -80,13 +96,25 @@ services:
     restart: unless-stopped
 ```
 
-Steel has no authentication. Keep port 3000 reachable by gtwy on a private network and
-by end users only through an authenticated reverse proxy or VPN.
+**Steel ships with no authentication of its own, so the ingress in front of it carries the
+policy.** Three rules, and the first is the important one:
+
+1. `/v1/sessions/debug` and `/v1/sessions/cast` stay public, but reject any request whose `pageId`
+   is not 32 hex characters. Without this, `/v1/sessions/debug` with no `pageId` serves the
+   interactive multi-tab player, which lets anyone with the URL watch and click inside every
+   conversation's browser, including one where a user is mid-login.
+2. Everything else under `/v1/`, including session create, release and `/v1/devtools/*`, is
+   restricted to the gateway's egress addresses and must carry `X-Steel-Api-Key`.
+3. `/v1/health` from the load balancer only.
+
+gtwy sends that header on every REST call and on the CDP websocket handshake. Deploy order matters:
+Steel must accept the header before the allowlist is enforced, or the pods lock themselves out.
 
 ## Configure gtwy
 
 ```
-STEEL_API_URL=http://steel:3000            # private address gtwy uses; empty disables the tool
+STEEL_API_URL=https://api-1.browser.embarko.ai   # empty disables the tool
+STEEL_API_KEY=                              # required by the hardened ingress; see Security below
 STEEL_CDP_URL=                              # optional, default derived: ws://steel:3000/
 STEEL_PUBLIC_URL=https://steel.yourhost.com # optional, rewrites the live view host for users
 GTWY_BROWSER_IDLE_TIMEOUT_SECONDS=300
@@ -107,7 +135,7 @@ Enable the tool on a bridge by adding `"Gtwy_Browser"` to its `built_in_tools`, 
 
 | Param | Used by | Notes |
 |---|---|---|
-| `action` | all | `navigate`, `snapshot`, `click`, `type`, `press`, `scroll`, `back`, `screenshot`, `tabs`, `request_user_action` |
+| `action` | all | `navigate`, `snapshot`, `click`, `type`, `press`, `scroll`, `back`, `request_user_action` |
 | `url` | navigate | http(s) only; private and internal hosts are blocked |
 | `ref` | click, type | e.g. `e12`, from the latest snapshot |
 | `text` | type | replaces the field's value; password fields are refused |
@@ -151,7 +179,7 @@ embed an iframe yet, render `live_url` as a plain "Log in" link that opens in a 
 ## Redis keys
 
 ```
-nd_gtwy_browser_ctx_<org>:user:<user_id>            saved logins, encrypted (or :thread:<key>)
+nd_gtwy_browser_ctx_<org>:<thread>:<sub_thread>      cached copy of the saved logins (Mongo is truth)
 nd_gtwy_browser_registry                            the shared Chrome: steel session + one record
                                                     per open tab {target_id, browser_context_id,
                                                     last_used_at, handoff_active}
@@ -177,14 +205,14 @@ lock_gtwy_browser_registry, lock_gtwy_browser_reaper  short SETNX locks
 
    The dev helper `scripts/browser_ask.sh` sends one message and prints the streamed events:
    `TOKEN=<jwt> THREAD=demo-1 ./scripts/browser_ask.sh "Open https://example.com and tell me the heading."`
-6. Reaper: after the idle timeout the lease key disappears and Steel reports the session released.
+6. Reaper: after the idle timeout the tab is closed and its cookies saved; once no tab is left the Steel session is released.
 7. Handoff: "Log into https://github.com and tell me my username" produces a `browser_handoff`
    event with a live URL; `snapshot` in the same turn is refused; the next user message lets it continue.
 
 ## Not in this POC
 
 - A pool of Steel containers, and scaling them with demand, for more than ~10 concurrent conversations.
-- A user-facing control to clear saved logins. `tabs.forget_cookies(owner)` exists; nothing calls it yet.
+- A user-facing control to clear saved logins. `delete_browser_cookies(scope_key)` exists; nothing calls it yet.
 - Local storage and IndexedDB are not saved, only cookies. Sites that keep their session outside
   cookies will still ask the user to log in again.
 - Screenshot results are returned as base64 JPEG text; vision-model image attachment is not wired.

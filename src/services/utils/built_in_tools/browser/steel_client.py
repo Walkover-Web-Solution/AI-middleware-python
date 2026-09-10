@@ -29,6 +29,12 @@ def _base_url() -> str:
     return (Config.STEEL_API_URL or "").rstrip("/")
 
 
+def auth_headers() -> dict:
+    """Header the hardened Steel ingress requires. Empty when no key is configured."""
+    key = getattr(Config, "STEEL_API_KEY", None)
+    return {"X-Steel-Api-Key": key} if key else {}
+
+
 def steel_host() -> str | None:
     """Hostname of the Steel API, used by the SSRF guard so the model cannot browse Steel itself."""
     if not is_configured():
@@ -89,7 +95,7 @@ async def _request(method: str, path: str, json_body: dict | None = None) -> dic
     url = f"{_base_url()}{path}"
     try:
         async with httpx.AsyncClient(timeout=STEEL_HTTP_TIMEOUT) as client:
-            response = await client.request(method, url, json=json_body)
+            response = await client.request(method, url, json=json_body, headers=auth_headers())
     except httpx.HTTPError as exc:
         raise SteelError(f"steel unreachable: {exc.__class__.__name__}") from exc
     if response.status_code >= 400:
@@ -122,20 +128,3 @@ async def release_session(session_id: str) -> bool:
         # and never fatal: the next create_session() relaunches Chrome anyway.
         logger.warning(f"Gtwy_Browser: release of {redact_session_id(session_id)} failed: {exc}")
         return False
-
-
-async def get_session(session_id: str) -> dict | None:
-    try:
-        return await _request("GET", f"/v1/sessions/{session_id}")
-    except SteelError as exc:
-        logger.warning(f"Gtwy_Browser: get_session {redact_session_id(session_id)} failed: {exc}")
-        return None
-
-
-async def get_session_context(session_id: str) -> dict | None:
-    """Cookies/localStorage export for future persistence (Phase 3)."""
-    try:
-        return await _request("GET", f"/v1/sessions/{session_id}/context")
-    except SteelError as exc:
-        logger.warning(f"Gtwy_Browser: get_session_context {redact_session_id(session_id)} failed: {exc}")
-        return None

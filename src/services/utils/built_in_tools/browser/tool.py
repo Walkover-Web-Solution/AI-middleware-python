@@ -19,10 +19,8 @@ from .actions import (
     do_click,
     do_navigate,
     do_press,
-    do_screenshot,
     do_scroll,
     do_snapshot,
-    do_tabs,
     do_type,
     looks_like_login_page,
 )
@@ -78,9 +76,7 @@ async def _run(args: dict, ctx: dict) -> dict:
             return _err(f"url not allowed: {exc}")
 
     try:
-        browser, page, registry, tab = await open_or_reuse_tab(
-            tkey, ctx.get("org_id"), ctx.get("bridge_id"), ctx.get("user_id")
-        )
+        browser, page, registry, tab = await open_or_reuse_tab(tkey, ctx.get("org_id"), ctx.get("bridge_id"))
     except BrowserBusy as busy:
         return _err(str(busy), retry_in_seconds=busy.retry_in)
     except SteelError as exc:
@@ -169,10 +165,6 @@ async def _dispatch(action: str, args: dict, page, state: dict):
         return await do_scroll(page, args.get("direction"))
     if action == "back":
         return await do_back(page)
-    if action == "screenshot":
-        return await do_screenshot(page)
-    if action == "tabs":
-        return await do_tabs(page)
     raise BrowserActionError(f"unsupported action {action}")
 
 

@@ -16,8 +16,6 @@ BROWSER_ACTIONS = [
     "press",
     "scroll",
     "back",
-    "screenshot",
-    "tabs",
     "request_user_action",
 ]
 
@@ -28,8 +26,7 @@ DESCRIPTION = (
     "Snapshots are an accessibility tree; interactive elements carry refs like [e5]. "
     "Use `ref` values only from the most recent snapshot: refs become stale after any "
     "navigation or action, and a stale ref returns an error telling you to snapshot again. "
-    "Use `snapshot` to re-read the page without acting, `screenshot` only when layout matters "
-    "(it costs many tokens), `back` to go to the previous page, `tabs` to list open tabs. "
+    "Use `snapshot` to re-read the page without acting and `back` to go to the previous page. "
     "LOGINS: you never type credentials, but you DO help the user log in. When a task needs the "
     "user's account (orders, cart, profile, inbox, dashboard), first navigate to the relevant page. "
     "If the page shows a sign-in form, a CAPTCHA, an OTP prompt, or asks for payment or personal "

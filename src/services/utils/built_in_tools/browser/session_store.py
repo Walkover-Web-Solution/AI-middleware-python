@@ -30,7 +30,7 @@ from globals import logger
 from src.configs.constant import redis_keys
 from src.services.cache_service import acquire_lock, delete_in_cache, find_in_cache, release_lock, store_in_cache
 
-REGISTRY_KEY = redis_keys["gtwy_browser_registry_"]
+REGISTRY_KEY = redis_keys["gtwy_browser_registry"]
 THREAD_PREFIX = redis_keys["gtwy_browser_thread_"]
 REGISTRY_LOCK = "gtwy_browser_registry"
 REGISTRY_LOCK_TTL = 30
@@ -120,6 +120,11 @@ def touch_tab(registry: dict, tkey: str, **updates) -> dict:
     tab["last_used_at"] = time.time()
     tab.update(updates)
     return tab
+
+
+def cookie_meta(tab: dict | None) -> dict:
+    """Fields worth keeping alongside a stored cookie blob, for support queries."""
+    return {"org_id": (tab or {}).get("org_id"), "bridge_id": (tab or {}).get("bridge_id")}
 
 
 def evictable_tabs(registry: dict, exclude: str) -> list[tuple[str, dict]]:

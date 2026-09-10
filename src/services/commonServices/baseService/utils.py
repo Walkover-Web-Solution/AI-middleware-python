@@ -481,8 +481,6 @@ def _browser_ctx(self, tool_call_key):
     return {
         "org_id": getattr(self, "org_id", None),
         "bridge_id": getattr(self, "bridge_id", None),
-        # caller-supplied end user, so saved logins follow the person across conversations
-        "user_id": getattr(self, "user_id", None),
         "thread_id": getattr(self, "thread_id", None),
         "sub_thread_id": getattr(self, "sub_thread_id", None),
         "message_id": getattr(self, "message_id", None),
